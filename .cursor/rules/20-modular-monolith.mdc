@@ -1,0 +1,13 @@
+---
+description: Keep Cleanora as one deployable modular monolith with isolated capabilities.
+globs: "src/**/*.ts"
+alwaysApply: false
+---
+
+- Build one deployable application composed of cohesive business modules.
+- Communicate through explicit public contracts.
+- Share infrastructure only through controlled adapters.
+- Do not add microservice networking, service discovery, or distributed deployment assumptions.
+- Avoid premature event-bus complexity; use internal domain/application events only when they reduce coupling.
+- Keep behavior and persistence access owned by the responsible module.
+- Release 3 infrastructure does not automatically split the monolith.

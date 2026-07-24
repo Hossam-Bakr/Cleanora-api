@@ -1,0 +1,37 @@
+{
+  "info": {
+    "_postman_id": "534205cd-61cf-4f16-95b5-4966f792cba3",
+    "name": "Cleanora R1-P00 Foundation",
+    "description": "Implemented system health and readiness APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Liveness",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/system/health/live",
+              "host": ["{{baseUrl}}"],
+              "path": ["system", "health", "live"]
+            }
+          }
+        },
+        {
+          "name": "Readiness",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/system/health/ready",
+              "host": ["{{baseUrl}}"],
+              "path": ["system", "health", "ready"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

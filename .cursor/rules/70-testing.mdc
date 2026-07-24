@@ -1,0 +1,13 @@
+---
+description: Require risk-proportionate automated tests and truthful quality reporting.
+globs: "{src/**/*.ts,tests/**/*.ts,specs/**/*.md}"
+alwaysApply: false
+---
+
+- Trace tests to active acceptance criteria and business invariants.
+- Add unit tests for domain behavior and integration tests for database/API boundaries.
+- Test authorization failures, validation failures, ownership, and invalid state transitions.
+- Test idempotency and concurrency for payments, queues, transitions, assignments, and winner selection when applicable.
+- Use deterministic fixtures and isolate external adapters.
+- Add regression coverage for every accepted defect or review finding.
+- Never claim a check passed without running it and reporting the actual command/result.

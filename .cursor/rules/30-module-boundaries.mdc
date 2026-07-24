@@ -1,0 +1,16 @@
+---
+description: Enforce Cleanora module ownership, imports, layers, and transaction boundaries.
+globs: "src/**/*.ts"
+alwaysApply: false
+---
+
+- Import another module only through `#modules/<module-name>`, which resolves to its public `index.ts`, or another approved contract path.
+- Never import another module's controller, repository, Prisma implementation, internal schema, or tests.
+- Keep routes/controllers thin; put workflows in services/use cases.
+- Keep persistence operations in the owning repository/infrastructure layer.
+- Validate API boundaries with Zod.
+- Keep Prisma models centralized in `prisma/schema.prisma`; do not create duplicate ORM model classes.
+- Use module `types.ts`, `contracts.ts`, or domain value objects rather than ORM `model.ts`.
+- Document the application service and transaction owner for cross-module transactions.
+- Shared code must be genuinely generic and contain no module-specific business rules.
+- Expose stable public contracts without leaking internal persistence models.

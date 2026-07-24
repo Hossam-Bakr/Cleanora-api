@@ -1,0 +1,15 @@
+---
+description: Route every Cleanora task through minimal, phase-scoped context.
+alwaysApply: true
+---
+
+Read `AGENTS.md` and `docs/ai/context-router.md` first.
+
+- Load the repository-local current phase pointer, active phase artifacts, and only the smallest matching rules.
+- Normally use three to six context files.
+- Expand context only for a concrete dependency.
+- Summarize loaded context in at most five bullets.
+- Never preload all documents or ordinary future phase specifications.
+- Never paste full documents into responses.
+- Keep work within one active phase or one defect.
+- Treat missing canonical context as a gap; do not invent behavior or inspect another project.

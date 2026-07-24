@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  runtime  = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// R1-P00 is architecture-only. Product models are introduced by their owning phases.
+
+enum ConfigValueKind {
+  STRING
+  NUMBER
+  BOOLEAN
+  OBJECT
+  ARRAY
+}
+
+enum ConfigResolutionPolicy {
+  GLOBAL_ONLY
+  COUNTRY_OVERRIDE_WITH_GLOBAL_FALLBACK
+  COUNTRY_REQUIRED
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+  UNKNOWN
+}
+
+model Currency {
+  id            String    @id @default(cuid())
+  code          String    @unique @db.VarChar(3)
+  nameEn        String    @map("name_en")
+  nameAr        String    @map("name_ar")
+  decimalPlaces Int       @map("decimal_places")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  countries     Country[] @relation("CountryDefaultCurrency")
+
+  @@index([isActive])
+  @@map("currencies")
+}
+
+model Country {
+  id                String          @id @default(cuid())
+  code              String          @unique @db.VarChar(2)
+  nameEn            String          @map("name_en")
+  nameAr            String          @map("name_ar")
+  defaultCurrencyId String          @map("default_currency_id")
+  defaultLocale     String          @map("default_locale")
+  supportedLocales  Json            @map("supported_locales")
+  isActive          Boolean         @default(true) @map("is_active")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  defaultCurrency   Currency        @relation("CountryDefaultCurrency", fields: [defaultCurrencyId], references: [id], onDelete: Restrict)
+  countryConfigs    CountryConfig[]
+
+  @@index([isActive])
+  @@index([defaultCurrencyId])
+  @@map("countries")
+}
+
+model AppConfig {
+  id               String                 @id @default(cuid())
+  key              String                 @unique
+  value            Json?
+  valueKind        ConfigValueKind        @map("value_kind")
+  resolutionPolicy ConfigResolutionPolicy @map("resolution_policy")
+  description      String?
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+
+  @@map("app_configs")
+}
+
+model CountryConfig {
+  id        String          @id @default(cuid())
+  countryId String          @map("country_id")
+  key       String
+  value     Json
+  valueKind ConfigValueKind @map("value_kind")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  country   Country         @relation(fields: [countryId], references: [id], onDelete: Restrict)
+
+  @@unique([countryId, key])
+  @@index([key])
+  @@map("country_configs")
+}
+
+model AuditLog {
+  id         String         @id @default(cuid())
+  actorType  AuditActorType @map("actor_type")
+  actorId    String?        @map("actor_id")
+  action     String
+  targetType String         @map("target_type")
+  targetId   String?        @map("target_id")
+  reason     String?
+  context    Json?
+  requestId  String?        @map("request_id")
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([actorType, actorId])
+  @@index([targetType, targetId])
+  @@index([action])
+  @@map("audit_logs")
+}

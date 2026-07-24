@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit and Push"
+  short_description: "Safely validate, commit, and push"
+  default_prompt: "Use $commit-and-push after I say exactly commit and push."

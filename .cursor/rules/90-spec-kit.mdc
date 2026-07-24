@@ -1,0 +1,13 @@
+---
+description: Keep implementation traceable to one active Spec Kit phase.
+globs: "specs/**/*.md"
+alwaysApply: false
+---
+
+- Maintain one active phase with `spec.md`, `plan.md`, and `tasks.md`.
+- Derive product behavior from repository-local canonical documents.
+- Record open product questions and block affected implementation.
+- Keep acceptance criteria testable and tasks dependency-ordered.
+- Make module ownership, public contracts, authorization, audit, migrations, and tests explicit.
+- Do not implement future phase scope.
+- Initialize `.specify/` only through an inspected official Spec Kit CLI workflow.

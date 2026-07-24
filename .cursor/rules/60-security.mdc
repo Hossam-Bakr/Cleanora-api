@@ -1,0 +1,14 @@
+---
+description: Protect Cleanora identity, authorization, payments, secrets, and audit trails.
+globs: "{src/**/*.ts,prisma/**}"
+alwaysApply: false
+---
+
+- Deny by default and enforce permissions server-side.
+- Validate ownership, actor state, bans, suspensions, and resource state at protected boundaries.
+- Never log credentials, OTPs, tokens, secrets, full payment payloads, or sensitive personal data.
+- Keep secrets in configured environment providers; never commit them.
+- Rate-limit abuse-prone endpoints and use secure token generation and comparison.
+- Verify payment webhook authenticity and idempotency; gateway redirects are not payment proof.
+- Audit privileged writes with actor, reason, timestamp, and before/after evidence.
+- Protect uploads and external callbacks against spoofing and unsafe content.

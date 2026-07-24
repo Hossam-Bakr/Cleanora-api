@@ -1,0 +1,4 @@
+interface:
+  display_name: "Module Boundary Reviewer"
+  short_description: "Review module boundaries with evidence"
+  default_prompt: "Use $module-boundary-reviewer to review the current Cleanora diff."

@@ -1,0 +1,12 @@
+---
+description: Apply strict, maintainable TypeScript quality rules.
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+- Preserve strict typing; avoid `any`, unchecked casts, and non-null assertions without evidence.
+- Prefer small cohesive functions, explicit dependencies, and domain-oriented names.
+- Model expected failures explicitly and preserve error causes.
+- Keep business behavior deterministic and testable.
+- Do not silence compiler, linter, or runtime errors to make a check pass.
+- Avoid placeholder code and premature abstractions.
