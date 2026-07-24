@@ -78,14 +78,14 @@ model AppConfig {
 }
 
 model CountryConfig {
-  id        String          @id @default(cuid())
-  countryId String          @map("country_id")
-  key       String
-  value     Json
-  valueKind ConfigValueKind @map("value_kind")
-  createdAt DateTime        @default(now()) @map("created_at")
-  updatedAt DateTime        @updatedAt @map("updated_at")
-  country   Country         @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  id         String          @id @default(cuid())
+  countryId  String          @map("country_id")
+  key        String
+  value      Json
+  valueKind  ConfigValueKind @map("value_kind")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+  country    Country         @relation(fields: [countryId], references: [id], onDelete: Restrict)
 
   @@unique([countryId, key])
   @@index([key])
@@ -93,16 +93,16 @@ model CountryConfig {
 }
 
 model AuditLog {
-  id         String         @id @default(cuid())
-  actorType  AuditActorType @map("actor_type")
-  actorId    String?        @map("actor_id")
-  action     String
+  id        String         @id @default(cuid())
+  actorType AuditActorType @map("actor_type")
+  actorId   String?        @map("actor_id")
+  action    String
   targetType String         @map("target_type")
-  targetId   String?        @map("target_id")
-  reason     String?
-  context    Json?
-  requestId  String?        @map("request_id")
-  createdAt  DateTime       @default(now()) @map("created_at")
+  targetId  String?        @map("target_id")
+  reason    String?
+  context   Json?
+  requestId String?        @map("request_id")
+  createdAt DateTime       @default(now()) @map("created_at")
 
   @@index([createdAt])
   @@index([actorType, actorId])

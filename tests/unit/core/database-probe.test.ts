@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from "vitest";
 
 import { createDatabaseProbe } from "../../../src/core/health/database-probe.js";
 

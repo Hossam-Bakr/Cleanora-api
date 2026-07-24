@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 
 import { resolveEffectiveConfig } from "../../../../src/modules/configuration/application/resolve-effective-config.js";
 import type {
@@ -9,7 +8,12 @@ import type {
 
 function createRepositories(
   appConfig: AppConfigRecord | undefined,
-  countryConfig?: CountryConfigRecord
+  countryConfig?: CountryConfigRecord,
+  options: {
+    readonly countryActive?: boolean;
+    readonly omitCountryId?: boolean;
+    readonly anyCountryOverride?: boolean;
+  } = {}
 ): ConfigurationRepositories {
   return {
     currency: { findByCode: async () => undefined },
@@ -21,12 +25,16 @@ function createRepositories(
         defaultCurrencyCode: "XXX",
         defaultLocale: "en-XX",
         supportedLocales: ["en-XX"],
-        isActive: true
+        isActive: options.countryActive ?? true
       }),
-      findIdByCode: async () => "country-xx"
+      findIdByCode: async () =>
+        options.omitCountryId ? undefined : "country-xx"
     },
     appConfig: { findByKey: async () => appConfig },
-    countryConfig: { findByCountryIdAndKey: async () => countryConfig }
+    countryConfig: {
+      existsByKey: async () => options.anyCountryOverride ?? false,
+      findByCountryIdAndKey: async () => countryConfig
+    }
   };
 }
 
@@ -40,7 +48,7 @@ describe("resolveEffectiveConfig failures", () => {
     ).rejects.toMatchObject({ code: "CONFIG_KEY_UNKNOWN" });
   });
 
-  it("rejects a country record for a GLOBAL_ONLY key", async () => {
+  it("rejects a corrupt GLOBAL_ONLY override without country context", async () => {
     await expect(
       resolveEffectiveConfig(
         createRepositories(
@@ -50,11 +58,26 @@ describe("resolveEffectiveConfig failures", () => {
             valueKind: "STRING",
             resolutionPolicy: "GLOBAL_ONLY"
           },
+          undefined,
+          { anyCountryOverride: true }
+        ),
+        "platform.default_timezone"
+      )
+    ).rejects.toMatchObject({ code: "CONFIG_COUNTRY_OVERRIDE_REJECTED" });
+  });
+
+  it("rejects a corrupt GLOBAL_ONLY override with country context", async () => {
+    await expect(
+      resolveEffectiveConfig(
+        createRepositories(
           {
             key: "platform.default_timezone",
-            value: "Africa/Cairo",
-            valueKind: "STRING"
-          }
+            value: "UTC",
+            valueKind: "STRING",
+            resolutionPolicy: "GLOBAL_ONLY"
+          },
+          undefined,
+          { anyCountryOverride: true }
         ),
         "platform.default_timezone",
         "XX"
@@ -79,5 +102,93 @@ describe("resolveEffectiveConfig failures", () => {
         "XX"
       )
     ).rejects.toMatchObject({ code: "CONFIG_VALUE_INVALID" });
+  });
+
+  it("rejects persisted policy metadata that disagrees with the key catalog", async () => {
+    await expect(
+      resolveEffectiveConfig(
+        createRepositories({
+          key: "platform.default_timezone",
+          value: "UTC",
+          valueKind: "STRING",
+          resolutionPolicy: "COUNTRY_REQUIRED"
+        }),
+        "platform.default_timezone"
+      )
+    ).rejects.toMatchObject({ code: "CONFIG_VALUE_INVALID" });
+  });
+
+  it("rejects persisted app configuration kind metadata that disagrees with the key catalog", async () => {
+    await expect(
+      resolveEffectiveConfig(
+        createRepositories({
+          key: "platform.default_timezone",
+          value: "UTC",
+          valueKind: "OBJECT",
+          resolutionPolicy: "GLOBAL_ONLY"
+        }),
+        "platform.default_timezone"
+      )
+    ).rejects.toMatchObject({ code: "CONFIG_VALUE_INVALID" });
+  });
+
+  it("rejects persisted country configuration kind metadata that disagrees with the key catalog", async () => {
+    await expect(
+      resolveEffectiveConfig(
+        createRepositories(
+          {
+            key: "country.supported_locales",
+            value: ["en-XX"],
+            valueKind: "ARRAY",
+            resolutionPolicy: "COUNTRY_OVERRIDE_WITH_GLOBAL_FALLBACK"
+          },
+          {
+            key: "country.supported_locales",
+            value: ["en-XX"],
+            valueKind: "STRING"
+          }
+        ),
+        "country.supported_locales",
+        "XX"
+      )
+    ).rejects.toMatchObject({ code: "CONFIG_VALUE_INVALID" });
+  });
+
+  it("fails closed when a country-required value has no country context", async () => {
+    await expect(
+      resolveEffectiveConfig(
+        createRepositories({
+          key: "country.currency_code",
+          value: null,
+          valueKind: "STRING",
+          resolutionPolicy: "COUNTRY_REQUIRED"
+        }),
+        "country.currency_code"
+      )
+    ).rejects.toMatchObject({ code: "CONFIG_COUNTRY_VALUE_REQUIRED" });
+  });
+
+  it("rejects inactive countries and absent repository identifiers", async () => {
+    const appConfig = {
+      key: "country.supported_locales",
+      value: ["en-XX"],
+      valueKind: "ARRAY",
+      resolutionPolicy: "COUNTRY_OVERRIDE_WITH_GLOBAL_FALLBACK" as const
+    };
+
+    await expect(
+      resolveEffectiveConfig(
+        createRepositories(appConfig, undefined, { countryActive: false }),
+        "country.supported_locales",
+        "XX"
+      )
+    ).rejects.toMatchObject({ code: "COUNTRY_UNAVAILABLE" });
+    await expect(
+      resolveEffectiveConfig(
+        createRepositories(appConfig, undefined, { omitCountryId: true }),
+        "country.supported_locales",
+        "XX"
+      )
+    ).rejects.toMatchObject({ code: "COUNTRY_UNAVAILABLE" });
   });
 });

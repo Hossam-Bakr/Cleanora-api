@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { describe, expect, it } from "vitest";
 
 import { createApp } from "../../src/app.js";
 import { validateRequest } from "../../src/core/http/validate-request.js";

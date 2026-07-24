@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest";
 
-import { loadEnvironment } from "../../../src/config/env.js";
+import {
+  loadEnvironment,
+  mapEnvironmentDiagnostics
+} from "../../../src/config/env.js";
+import {
+  createStartupFailureContext,
+  startApplication
+} from "../../../src/server.js";
 
 const validEnvironment: NodeJS.ProcessEnv = {
   NODE_ENV: "test",
@@ -55,15 +61,36 @@ describe("loadEnvironment", () => {
   });
 
   it("allows foundation startup without optional authentication values", () => {
-    const { JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, ...foundationEnvironment } =
+    const {
+      JWT_ACCESS_SECRET: _jwtAccessSecret,
+      JWT_REFRESH_SECRET: _jwtRefreshSecret,
+      ...foundationEnvironment
+    } =
       validEnvironment;
 
     expect(loadEnvironment(foundationEnvironment).NODE_ENV).toBe("test");
   });
 
+  it("treats empty future-auth placeholders as absent during R1-P01", () => {
+    const environment = loadEnvironment({
+      ...validEnvironment,
+      JWT_ACCESS_SECRET: "",
+      JWT_REFRESH_SECRET: "",
+      GOOGLE_CLIENT_ID: "",
+      GOOGLE_CLIENT_SECRET: "",
+      GOOGLE_REDIRECT_URI: ""
+    });
+
+    expect(environment.JWT_ACCESS_SECRET).toBeUndefined();
+    expect(environment.JWT_REFRESH_SECRET).toBeUndefined();
+    expect(environment.GOOGLE_CLIENT_ID).toBeUndefined();
+    expect(environment.GOOGLE_CLIENT_SECRET).toBeUndefined();
+    expect(environment.GOOGLE_REDIRECT_URI).toBeUndefined();
+  });
+
   it("rejects missing required database and CORS configuration", () => {
-    const { DATABASE_URL, ...withoutDatabaseUrl } = validEnvironment;
-    const { CORS_ORIGINS, ...withoutCorsOrigins } = validEnvironment;
+    const { DATABASE_URL: _databaseUrl, ...withoutDatabaseUrl } = validEnvironment;
+    const { CORS_ORIGINS: _corsOrigins, ...withoutCorsOrigins } = validEnvironment;
 
     expect(() => loadEnvironment(withoutDatabaseUrl)).toThrow(
       /DATABASE_URL/
@@ -72,4 +99,95 @@ describe("loadEnvironment", () => {
       /CORS_ORIGINS/
     );
   });
+
+  it("maps missing DATABASE_URL and invalid CORS_ORIGINS to safe field diagnostics", () => {
+    const { DATABASE_URL: _databaseUrl, ...withoutDatabaseUrl } = validEnvironment;
+    const databaseDiagnostics = captureDiagnostics(withoutDatabaseUrl);
+    const corsDiagnostics = captureDiagnostics({
+      ...validEnvironment,
+      CORS_ORIGINS: "not-an-origin"
+    });
+
+    expect(databaseDiagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "DATABASE_URL" })
+      ])
+    );
+    expect(
+      corsDiagnostics.some((diagnostic) =>
+        diagnostic.field.startsWith("CORS_ORIGINS")
+      )
+    ).toBe(true);
+  });
+
+  it("never exposes JWT secret or DATABASE_URL contents in diagnostics", () => {
+    const shortSecret = "short-jwt-secret-value";
+    const databaseContents = "database-password-and-host-value";
+    const jwtDiagnostics = captureDiagnostics({
+      ...validEnvironment,
+      JWT_ACCESS_SECRET: shortSecret
+    });
+    const databaseDiagnostics = captureDiagnostics({
+      ...validEnvironment,
+      DATABASE_URL: databaseContents
+    });
+    const serialized = JSON.stringify([
+      ...jwtDiagnostics,
+      ...databaseDiagnostics
+    ]);
+
+    expect(serialized).toContain("JWT_ACCESS_SECRET");
+    expect(serialized).toContain("DATABASE_URL");
+    expect(serialized).not.toContain(shortSecret);
+    expect(serialized).not.toContain(databaseContents);
+  });
+
+  it("fails validation before database composition or listening can begin", async () => {
+    const { DATABASE_URL: _databaseUrl, ...withoutDatabaseUrl } = validEnvironment;
+    let databaseCreationAttempted = false;
+
+    await expect(
+      startApplication({
+        environmentInput: withoutDatabaseUrl,
+        createDatabase: () => {
+          databaseCreationAttempted = true;
+          throw new Error("database creation must not run");
+        },
+        installSignalHandlers: false
+      })
+    ).rejects.toBeDefined();
+
+    expect(databaseCreationAttempted).toBe(false);
+  });
+
+  it("creates a structured startup context without raw Zod issues", () => {
+    const context = captureStartupFailureContext({
+      ...validEnvironment,
+      DATABASE_URL: "private-database-contents"
+    });
+    const serialized = JSON.stringify(context);
+
+    expect(context).toMatchObject({ errorName: "ZodError" });
+    expect(serialized).toContain("DATABASE_URL");
+    expect(serialized).not.toContain("private-database-contents");
+    expect(serialized).not.toContain('"input"');
+  });
 });
+
+function captureDiagnostics(input: NodeJS.ProcessEnv) {
+  try {
+    loadEnvironment(input);
+    throw new Error("Expected environment validation to fail");
+  } catch (error: unknown) {
+    return mapEnvironmentDiagnostics(error);
+  }
+}
+
+function captureStartupFailureContext(input: NodeJS.ProcessEnv) {
+  try {
+    loadEnvironment(input);
+    throw new Error("Expected environment validation to fail");
+  } catch (error: unknown) {
+    return createStartupFailureContext(error);
+  }
+}

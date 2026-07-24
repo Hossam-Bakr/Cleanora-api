@@ -1,4 +1,4 @@
-import type { ModuleRegistrar } from "#routes/register-modules";
+import type { ModuleRegistrar } from "#core/http/module-registrar";
 
 import {
   assertCountryCurrencySupported as assertCountryCurrencySupportedWithRepositories,

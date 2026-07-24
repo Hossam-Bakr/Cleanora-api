@@ -1,7 +1,6 @@
 import { Writable } from "node:stream";
 
 import type { DestinationStream } from "pino";
-import { describe, expect, it } from "vitest";
 
 import { createApp } from "../../src/app.js";
 import { createPinoLogging } from "../../src/integrations/logging/pino-logger.js";
@@ -41,6 +40,28 @@ describe("Pino logging", () => {
       profile: {
         credential: "do-not-log",
         apiKey: "do-not-log"
+      },
+      payload: {
+        identity: {
+          token: "nested-token-must-not-log",
+          email: "nested-private@example.test"
+        },
+        authentication: {
+          credentials: {
+            password: "nested-password-must-not-log",
+            otp: "nested-otp-must-not-log",
+            secret: "nested-secret-must-not-log"
+          }
+        },
+        sessions: [
+          {
+            refreshToken: "nested-refresh-token-must-not-log",
+            cookie: "nested-cookie-must-not-log"
+          }
+        ],
+        payment: {
+          paymentPayload: "nested-payment-payload-must-not-log"
+        }
       }
     });
     logger.warn("warning event");
@@ -53,6 +74,14 @@ describe("Pino logging", () => {
     expect(output).not.toContain("do-not-log");
     expect(output).not.toContain("private@example.test");
     expect(output).not.toContain("+201000000000");
+    expect(output).not.toContain("nested-token-must-not-log");
+    expect(output).not.toContain("nested-private@example.test");
+    expect(output).not.toContain("nested-password-must-not-log");
+    expect(output).not.toContain("nested-otp-must-not-log");
+    expect(output).not.toContain("nested-secret-must-not-log");
+    expect(output).not.toContain("nested-refresh-token-must-not-log");
+    expect(output).not.toContain("nested-cookie-must-not-log");
+    expect(output).not.toContain("nested-payment-payload-must-not-log");
     expect(output).toContain("child event");
   });
 

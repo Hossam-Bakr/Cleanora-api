@@ -1,6 +1,6 @@
 import { loadEnvFile } from "node:process";
 
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 try {
   loadEnvFile();
@@ -22,6 +22,11 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts"
   },
   datasource: {
-    url: env("DATABASE_URL")
+    // Schema-only commands must run on clean CI workers without a database.
+    // Port 1 is deliberately unreachable; commands that connect still fail
+    // safely unless the caller supplies an explicit DATABASE_URL.
+    url:
+      process.env["DATABASE_URL"] ??
+      "postgresql://unconfigured:unconfigured@127.0.0.1:1/cleanora_unconfigured"
   }
 });

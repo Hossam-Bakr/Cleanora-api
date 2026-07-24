@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 
 import { createApp } from "../../../src/app.js";
 import { MemoryRateLimiterAdapter } from "../../../src/integrations/security/memory-rate-limiter.adapter.js";

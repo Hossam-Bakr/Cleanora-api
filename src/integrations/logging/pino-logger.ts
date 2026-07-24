@@ -15,6 +15,10 @@ import type {
 const pino = require("pino") as typeof import("pino");
 const pinoHttp = require("pino-http") as typeof import("pino-http").default;
 
+const REDACTION_CENSOR = "[REDACTED]";
+const SENSITIVE_CONTEXT_KEY =
+  /(password|passcode|token|credential|api[_-]?key|email|phone|otp|secret|authorization|cookie|payment[_-]?payload)/i;
+
 const REDACTED_PATHS = [
   "password",
   "token",
@@ -53,24 +57,74 @@ class PinoLoggerAdapter implements Logger {
   constructor(private readonly instance: PinoInstance) {}
 
   debug(message: string, context: LogContext = {}): void {
-    this.instance.debug(context, message);
+    this.instance.debug(sanitizeLogContext(context), message);
   }
 
   info(message: string, context: LogContext = {}): void {
-    this.instance.info(context, message);
+    this.instance.info(sanitizeLogContext(context), message);
   }
 
   warn(message: string, context: LogContext = {}): void {
-    this.instance.warn(context, message);
+    this.instance.warn(sanitizeLogContext(context), message);
   }
 
   error(message: string, context: LogContext = {}): void {
-    this.instance.error(context, message);
+    this.instance.error(sanitizeLogContext(context), message);
   }
 
   child(context: LogContext): Logger {
-    return new PinoLoggerAdapter(this.instance.child(context));
+    return new PinoLoggerAdapter(this.instance.child(sanitizeLogContext(context)));
   }
+}
+
+/**
+ * Redact sensitive keys recursively before Pino serializes application context.
+ * Pino's path wildcards cover shallow fields; this guard also covers nested
+ * JSON objects and arrays without changing Error and other non-plain values.
+ */
+function sanitizeLogContext(context: LogContext): LogContext {
+  return sanitizeLogValue(context, new WeakMap<object, unknown>()) as LogContext;
+}
+
+function sanitizeLogValue(
+  value: unknown,
+  visited: WeakMap<object, unknown>
+): unknown {
+  if (typeof value !== "object" || value === null) {
+    return value;
+  }
+
+  if (value instanceof Error || value instanceof Date || Buffer.isBuffer(value)) {
+    return value;
+  }
+
+  const existing = visited.get(value);
+  if (existing !== undefined) {
+    return existing;
+  }
+
+  if (Array.isArray(value)) {
+    const sanitized: unknown[] = [];
+    visited.set(value, sanitized);
+    for (const item of value) {
+      sanitized.push(sanitizeLogValue(item, visited));
+    }
+    return sanitized;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) {
+    return value;
+  }
+
+  const sanitized: Record<string, unknown> = {};
+  visited.set(value, sanitized);
+  for (const [key, item] of Object.entries(value)) {
+    sanitized[key] = SENSITIVE_CONTEXT_KEY.test(key)
+      ? REDACTION_CENSOR
+      : sanitizeLogValue(item, visited);
+  }
+  return sanitized;
 }
 
 function readRequestId(request: IncomingMessage): string | undefined {
@@ -114,7 +168,7 @@ export function createPinoLogging(
       base: baseContext,
       redact: {
         paths: [...REDACTED_PATHS],
-        censor: "[REDACTED]"
+        censor: REDACTION_CENSOR
       }
     },
     destination

@@ -51,6 +51,7 @@ export interface ConfigurationRepositories {
     findByKey(key: string): Promise<AppConfigRecord | undefined>;
   };
   readonly countryConfig: {
+    existsByKey(key: string): Promise<boolean>;
     findByCountryIdAndKey(
       countryId: string,
       key: string

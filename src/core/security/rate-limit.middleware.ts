@@ -48,7 +48,7 @@ export function createRateLimitMiddleware(
       }
 
       next();
-    } catch (error: unknown) {
+    } catch {
       response.status(503).json(
         createFailureResponse(request, {
           code: "RATE_LIMITER_UNAVAILABLE",

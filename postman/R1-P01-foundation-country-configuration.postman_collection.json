@@ -1,0 +1,107 @@
+{
+  "info": {
+    "name": "Cleanora R1-P01 Foundation & Country Configuration",
+    "description": "Implemented public system-health checks. Configuration and audit are in-process module contracts in R1-P01 and have no public CRUD endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "System health",
+      "item": [
+        {
+          "name": "Live",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/system/health/live"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns liveness envelope', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data.status).to.eql('ok');",
+                  "  pm.expect(body.requestId).to.be.a('string');",
+                  "  const headerRequestId = pm.response.headers.get('x-request-id');",
+                  "  pm.expect(headerRequestId).to.eql(body.requestId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ready",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/system/health/ready"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns readiness envelope', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect([200, 503]).to.include(pm.response.code);",
+                  "  pm.expect(body.requestId).to.be.a('string');",
+                  "  const headerRequestId = pm.response.headers.get('x-request-id');",
+                  "  pm.expect(headerRequestId).to.eql(body.requestId);",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.data.status).to.eql('ready');",
+                  "  } else {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.error.code).to.eql('DEPENDENCY_NOT_READY');",
+                  "    pm.expect(JSON.stringify(body)).not.to.match(/postgres(?:ql)?:\\/\\/|DATABASE_URL|SELECT\\s/i);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Database",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/system/health/database"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns database health envelope', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect([200, 503]).to.include(pm.response.code);",
+                  "  pm.expect(body.requestId).to.be.a('string');",
+                  "  const headerRequestId = pm.response.headers.get('x-request-id');",
+                  "  pm.expect(headerRequestId).to.eql(body.requestId);",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.data.status).to.eql('up');",
+                  "  } else {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.error.code).to.eql('DATABASE_UNAVAILABLE');",
+                  "    pm.expect(JSON.stringify(body)).not.to.match(/postgres(?:ql)?:\\/\\/|DATABASE_URL|SELECT\\s/i);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

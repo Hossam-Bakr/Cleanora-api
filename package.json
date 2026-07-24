@@ -10,11 +10,11 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:unit": "vitest run tests/unit",
-    "test:integration": "vitest run tests/integration",
-    "test:e2e": "vitest run tests/e2e",
-    "test:coverage": "vitest run --coverage",
+    "test": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run",
+    "test:unit": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run tests/unit",
+    "test:integration": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run tests/integration",
+    "test:e2e": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run tests/e2e",
+    "test:coverage": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --coverage",
     "db:check": "node --env-file=.env --conditions=development --import tsx scripts/check-database.ts",
     "auth:inspect": "node --env-file=.env --conditions=development --import tsx scripts/inspect-auth.ts",
     "seed": "node --env-file=.env --conditions=development --import tsx scripts/seed.ts",
@@ -26,7 +26,8 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate:status": "prisma migrate status",
-    "db:validate-clean-migration": "node --env-file=.env --conditions=development --import tsx scripts/validate-clean-migration.ts",
+    "db:validate-clean-migration": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-clean-migration.ts",
+    "db:ci-validate": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/ci-db-validate.ts",
     "ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run prisma:validate && npm run docs:check && npm run openapi:validate"
   },
   "imports": {
@@ -76,6 +77,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
     "@eslint/js": "^9.30.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -88,8 +90,8 @@
     "prisma": "7.9.0",
     "supertest": "^7.2.2",
     "tsx": "^4.23.1",
-    "typescript": "^7.0.2",
-    "typescript-eslint": "^8.35.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.10"
   },
   "overrides": {

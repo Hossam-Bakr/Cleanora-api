@@ -1,4 +1,5 @@
 import { getPrismaClient } from "#integrations/database/prisma-client-accessor";
+import type { Prisma } from "#generated/prisma/client";
 
 import type {
   AuditLogWriter,
@@ -19,7 +20,9 @@ export class AuditLogRepository implements AuditLogWriter {
         targetType: input.targetType,
         ...(input.targetId === undefined ? {} : { targetId: input.targetId }),
         ...(input.reason === undefined ? {} : { reason: input.reason }),
-        ...(input.context === undefined ? {} : { context: input.context }),
+        ...(input.context === undefined
+          ? {}
+          : { context: input.context as Prisma.InputJsonValue }),
         ...(input.requestId === undefined ? {} : { requestId: input.requestId })
       }
     });

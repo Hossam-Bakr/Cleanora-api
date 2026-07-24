@@ -1,6 +1,5 @@
 import type { AddressInfo } from "node:net";
 
-import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../../src/app.js";
 import { createTestEnvironment } from "../helpers/test-environment.js";

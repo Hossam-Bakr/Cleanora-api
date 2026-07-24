@@ -9,6 +9,8 @@ import type { ReadinessProbe } from "#core/health/readiness";
 
 export class PrismaLifecycle {
   readonly client: PrismaClient;
+  private connectPromise: Promise<void> | undefined;
+  private disconnectPromise: Promise<void> | undefined;
 
   /**
    * @desc Create the shared Prisma database lifecycle.
@@ -28,7 +30,8 @@ export class PrismaLifecycle {
    * server starts accepting requests.
    */
   async connect(): Promise<void> {
-    await this.client.$connect();
+    this.connectPromise ??= this.client.$connect();
+    await this.connectPromise;
   }
 
   /**
@@ -37,7 +40,8 @@ export class PrismaLifecycle {
    * @explanation This function closes database resources during shutdown.
    */
   async disconnect(): Promise<void> {
-    await this.client.$disconnect();
+    this.disconnectPromise ??= this.client.$disconnect();
+    await this.disconnectPromise;
   }
 
   /**

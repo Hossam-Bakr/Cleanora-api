@@ -50,8 +50,7 @@ R1-P01 reuses and freezes this envelope for all HTTP endpoints. No alternate sha
   "success": false,
   "error": {
     "code": "INTERNAL_SERVER_ERROR",
-    "message": "An unexpected error occurred",
-    "details": {}
+    "message": "Internal server error"
   },
   "requestId": "<uuid>"
 }

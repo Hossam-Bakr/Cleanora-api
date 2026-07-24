@@ -4,4 +4,9 @@ export {
   DEFAULT_SHUTDOWN_TIMEOUT_MS,
   SYSTEM_ROUTE_SUFFIX
 } from "./constants.js";
-export { loadEnvironment, type AppEnvironment } from "./env.js";
+export {
+  loadEnvironment,
+  mapEnvironmentDiagnostics,
+  type AppEnvironment,
+  type EnvironmentDiagnostic
+} from "./env.js";

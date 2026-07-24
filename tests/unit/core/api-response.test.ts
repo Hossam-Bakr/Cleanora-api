@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from "vitest";
 
 import {
   createFailureResponse,
@@ -9,9 +8,11 @@ describe("API response helpers", () => {
   it("creates a standard success envelope with optional metadata", () => {
     const request = { requestId: "request-123" } as never;
     const json = vi.fn();
-    const response = { status: vi.fn().mockReturnValue({ json }) } as never;
+    const response = { status: vi.fn().mockReturnValue({ json }) };
 
-    sendSuccess(request, response, 201, { id: "country-eg" }, { page: 1 });
+    sendSuccess(request, response as never, 201, { id: "country-eg" }, {
+      page: 1
+    });
 
     expect(response.status).toHaveBeenCalledWith(201);
     expect(json).toHaveBeenCalledWith({

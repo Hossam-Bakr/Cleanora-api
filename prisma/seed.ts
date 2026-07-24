@@ -1,12 +1,12 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from "../src/generated/prisma/client.js";
+import { Prisma, PrismaClient } from "../src/generated/prisma/client.js";
 
 /**
  * Seed only R1-P01 reference data. Every write uses its approved natural key.
  */
 export async function seed(): Promise<void> {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = process.env["DATABASE_URL"];
   if (connectionString === undefined || connectionString.length === 0) {
     throw new Error("DATABASE_URL is required to run the seed");
   }
@@ -73,13 +73,13 @@ export async function seed(): Promise<void> {
       where: { key: "country.display_name" },
       create: {
         key: "country.display_name",
-        value: null,
+        value: Prisma.JsonNull,
         valueKind: "OBJECT",
         resolutionPolicy: "COUNTRY_REQUIRED",
         description: "Localized country display name"
       },
       update: {
-        value: null,
+        value: Prisma.JsonNull,
         valueKind: "OBJECT",
         resolutionPolicy: "COUNTRY_REQUIRED"
       }
@@ -103,13 +103,13 @@ export async function seed(): Promise<void> {
       where: { key: "country.currency_code" },
       create: {
         key: "country.currency_code",
-        value: null,
+        value: Prisma.JsonNull,
         valueKind: "STRING",
         resolutionPolicy: "COUNTRY_REQUIRED",
         description: "Country default currency code"
       },
       update: {
-        value: null,
+        value: Prisma.JsonNull,
         valueKind: "STRING",
         resolutionPolicy: "COUNTRY_REQUIRED"
       }

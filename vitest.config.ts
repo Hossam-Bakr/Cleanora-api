@@ -1,11 +1,14 @@
+
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    conditions: ["development"]
+    conditions: ["development"],
+    dedupe: ["vitest", "@vitest/runner", "@vitest/expect", "@vitest/utils"]
   },
   test: {
     environment: "node",
+    globals: true,
     include: ["tests/**/*.test.ts", "src/**/*.test.ts"],
     restoreMocks: true,
     clearMocks: true,

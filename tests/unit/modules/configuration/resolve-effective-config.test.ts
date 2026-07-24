@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 
 import { resolveEffectiveConfig } from "../../../../src/modules/configuration/application/resolve-effective-config.js";
 import type {
@@ -9,7 +8,8 @@ import type {
 
 function createRepositories(
   appConfig: AppConfigRecord,
-  countryConfig?: CountryConfigRecord
+  countryConfig?: CountryConfigRecord,
+  anyCountryOverride = false
 ): ConfigurationRepositories {
   return {
     currency: { findByCode: async () => undefined },
@@ -29,7 +29,10 @@ function createRepositories(
       findIdByCode: async (code) => (code === "XX" ? "country-xx" : undefined)
     },
     appConfig: { findByKey: async () => appConfig },
-    countryConfig: { findByCountryIdAndKey: async () => countryConfig }
+    countryConfig: {
+      existsByKey: async () => anyCountryOverride,
+      findByCountryIdAndKey: async () => countryConfig
+    }
   };
 }
 
@@ -51,6 +54,20 @@ describe("resolveEffectiveConfig", () => {
       source: "global",
       resolutionPolicy: "GLOBAL_ONLY"
     });
+  });
+
+  it("reports a missing GLOBAL_ONLY global value explicitly", async () => {
+    await expect(
+      resolveEffectiveConfig(
+        createRepositories({
+          key: "platform.default_timezone",
+          value: null,
+          valueKind: "STRING",
+          resolutionPolicy: "GLOBAL_ONLY"
+        }),
+        "platform.default_timezone"
+      )
+    ).rejects.toMatchObject({ code: "CONFIG_VALUE_MISSING" });
   });
 
   it("prefers a country value for fallback-policy keys", async () => {

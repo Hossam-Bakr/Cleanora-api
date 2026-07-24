@@ -18,4 +18,3 @@
 | OQ-011 | Exact provider payout schedule and supported payout rails | Settlements | Make schedule and methods configurable; production values require approval |
 | OQ-012 | Final rules for review deletion, provider response, and abuse reports | Reviews, admin | Do not add unapproved destructive behavior |
 | OQ-013 | Exact premium price, duration, and gallery limits | Premium | Build configurable plans/benefits in Release 2 |
-| OQ-014 | Whether Google sign-in is available to every account type or consumers only | Authentication | Architecture supports linking; enable audiences only after product confirmation |

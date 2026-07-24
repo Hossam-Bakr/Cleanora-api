@@ -8,6 +8,7 @@ export {
 export { createErrorMiddleware } from "./error.middleware.js";
 export { notFoundMiddleware } from "./not-found.middleware.js";
 export { requestIdMiddleware } from "./request-id.middleware.js";
+export type { ModuleRegistrar } from "./module-registrar.js";
 export {
   validateRequest,
   type RequestValidationSchemas

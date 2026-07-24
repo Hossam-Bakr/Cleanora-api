@@ -6,6 +6,7 @@ coverage/
 !.env.example
 src/generated/
 *.log
+*.session.sql
 *.tsbuildinfo
 .DS_Store
 Thumbs.db

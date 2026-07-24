@@ -6,7 +6,7 @@
 const js = require("@eslint/js");
 const tseslint = require("typescript-eslint");
 
-module.exports = tseslint.config(
+module.exports = [
   {
     ignores: [
       "dist/**",
@@ -21,6 +21,16 @@ module.exports = tseslint.config(
   {
     files: ["**/*.{ts,tsx,js,cjs,mjs}"],
     languageOptions: {
+      globals: {
+        require: "readonly",
+        module: "readonly",
+        process: "readonly",
+        console: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        Buffer: "readonly",
+        exports: "readonly"
+      },
       parserOptions: {
         ecmaVersion: 2024,
         sourceType: "module"
@@ -35,4 +45,4 @@ module.exports = tseslint.config(
       ]
     }
   }
-);
+];

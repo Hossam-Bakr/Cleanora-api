@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:coverage
+      - run: npm run prisma:validate
+      - run: npm run docs:check
+      - run: npm run openapi:validate
+
+  database-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL || vars.CI_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Validate clean migration and repeatable seed
+        if: env.CI_DATABASE_URL != ''
+        run: npm run db:ci-validate
+      - name: Report unavailable database proof
+        if: env.CI_DATABASE_URL == ''
+        run: echo "CI_DATABASE_URL is not configured; clean migration/seed proof was skipped as unavailable."

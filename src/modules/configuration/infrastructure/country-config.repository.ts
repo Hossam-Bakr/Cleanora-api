@@ -6,6 +6,15 @@ import type { CountryConfigRecord } from "../domain/configuration.types.js";
  * Read country-scoped configuration records without leaking Prisma models.
  */
 export class CountryConfigRepository {
+  async existsByKey(key: string): Promise<boolean> {
+    const config = await getPrismaClient().countryConfig.findFirst({
+      where: { key },
+      select: { key: true }
+    });
+
+    return config !== null;
+  }
+
   async findByCountryIdAndKey(
     countryId: string,
     key: string

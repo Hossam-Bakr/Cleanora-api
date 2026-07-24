@@ -1,4 +1,4 @@
-import type { ModuleRegistrar } from "#routes/register-modules";
+import type { ModuleRegistrar } from "#core/http/module-registrar";
 
 import { writeAudit as writeWithRepository } from "./application/write-audit.js";
 import type { AuditRecord, WriteAuditInput } from "./domain/audit.types.js";

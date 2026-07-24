@@ -25,7 +25,10 @@ export async function resolveEffectiveConfig<T = unknown>(
     throw configurationError("CONFIG_KEY_UNKNOWN", `Unknown configuration key: ${key}`);
   }
 
-  if (appConfig.resolutionPolicy !== definition.resolutionPolicy) {
+  if (
+    appConfig.resolutionPolicy !== definition.resolutionPolicy ||
+    appConfig.valueKind !== definition.valueKind
+  ) {
     throw configurationError("CONFIG_VALUE_INVALID", "Configuration policy is invalid");
   }
 
@@ -42,18 +45,29 @@ export async function resolveEffectiveConfig<T = unknown>(
     }
   }
 
-  const countryConfig =
-    countryId === undefined
-      ? undefined
-      : await repositories.countryConfig.findByCountryIdAndKey(countryId, key);
-
   if (
     definition.resolutionPolicy === "GLOBAL_ONLY" &&
-    countryConfig !== undefined
+    (await repositories.countryConfig.existsByKey(key))
   ) {
     throw configurationError(
       "CONFIG_COUNTRY_OVERRIDE_REJECTED",
       "Country override is not permitted for this configuration key"
+    );
+  }
+
+  const countryConfig =
+    definition.resolutionPolicy === "GLOBAL_ONLY" || countryId === undefined
+      ? undefined
+      : await repositories.countryConfig.findByCountryIdAndKey(countryId, key);
+
+  if (
+    countryConfig !== undefined &&
+    (countryConfig.valueKind !== definition.valueKind ||
+      countryConfig.valueKind !== appConfig.valueKind)
+  ) {
+    throw configurationError(
+      "CONFIG_VALUE_INVALID",
+      "Configuration value kind is invalid"
     );
   }
 

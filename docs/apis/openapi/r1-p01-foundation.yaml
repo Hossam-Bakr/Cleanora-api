@@ -1,0 +1,117 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P01 Foundation API
+  version: 1.0.0
+  description: Implemented public system-health endpoints for R1-P01.
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/v1/system/health/live:
+    get:
+      operationId: systemHealthLive
+      summary: Check process liveness
+      responses:
+        "200":
+          description: Process is alive.
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+  /api/v1/system/health/ready:
+    get:
+      operationId: systemHealthReady
+      summary: Check required dependency readiness
+      responses:
+        "200":
+          description: All dependency probes succeeded.
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+        "503":
+          description: One or more required dependencies are unavailable.
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFailure"
+  /api/v1/system/health/database:
+    get:
+      operationId: systemHealthDatabase
+      summary: Check database connectivity
+      responses:
+        "200":
+          description: Database connectivity succeeded.
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+        "503":
+          description: Database connectivity is unavailable.
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiFailure"
+components:
+  headers:
+    RequestId:
+      description: Server-normalized request correlation UUID.
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    ApiSuccess:
+      type: object
+      required: [success, data, requestId]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          additionalProperties: true
+        requestId:
+          type: string
+          format: uuid
+        meta:
+          type: object
+          additionalProperties: true
+    ApiFailure:
+      type: object
+      required: [success, error, requestId]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              examples:
+                - REQUEST_VALIDATION_FAILED
+                - DEPENDENCY_NOT_READY
+                - DATABASE_UNAVAILABLE
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+        requestId:
+          type: string
+          format: uuid

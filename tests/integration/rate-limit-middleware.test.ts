@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from "vitest";
 
 import { requestIdMiddleware } from "../../src/core/http/request-id.middleware.js";
 import { createRateLimitMiddleware } from "../../src/core/security/rate-limit.middleware.js";
@@ -63,32 +62,27 @@ describe("rate-limit middleware", () => {
     });
   });
 
-  it("passes limiter failures to the next error middleware", async () => {
+  it("fails closed with the standard unavailable envelope when limiter storage fails", async () => {
     const app = express();
-    const error = new Error("adapter failed");
     app.use(requestIdMiddleware);
     app.use(
       createRateLimitMiddleware({
-        limiter: { consume: vi.fn().mockRejectedValue(error) },
+        limiter: { consume: vi.fn().mockRejectedValue(new Error("adapter failed")) },
         scope: "auth-login",
         limit: 5,
         windowSeconds: 60,
         subject: () => "subject"
       })
     );
-    app.use(
-      (
-        receivedError: unknown,
-        _request: import("express").Request,
-        response: import("express").Response,
-        _next: import("express").NextFunction
-      ) => {
-        response
-          .status(receivedError === error ? 503 : 500)
-          .json({ forwarded: true });
-      }
-    );
+    const response = await request(app).get("/").expect(503);
 
-    await request(app).get("/").expect(503, { forwarded: true });
+    expect(response.body).toMatchObject({
+      success: false,
+      error: {
+        code: "RATE_LIMITER_UNAVAILABLE",
+        message: "Rate limiter is unavailable"
+      },
+      requestId: expect.any(String)
+    });
   });
 });

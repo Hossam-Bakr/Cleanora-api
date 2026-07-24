@@ -5,9 +5,40 @@ import {
   DEFAULT_SHUTDOWN_TIMEOUT_MS
 } from "./constants.js";
 
+export interface EnvironmentDiagnostic {
+  readonly field: string;
+  readonly code: string;
+  readonly message: string;
+}
+
 const secretSchema = z
   .string()
   .min(32, "JWT secrets must contain at least 32 characters");
+
+const optionalSecretSchema = z.preprocess(
+  emptyStringToUndefined,
+  secretSchema.optional()
+);
+const optionalTextSchema = z.preprocess(
+  emptyStringToUndefined,
+  z.string().min(1).optional()
+);
+const optionalUrlSchema = z.preprocess(
+  emptyStringToUndefined,
+  z.url().optional()
+);
+
+const databaseUrlSchema = z
+  .string()
+  .min(1, "DATABASE_URL is required")
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "postgresql:" || url.protocol === "postgres:";
+    } catch {
+      return false;
+    }
+  }, "DATABASE_URL must be a valid PostgreSQL URL");
 
 const environmentSchema = z
   .object({
@@ -19,7 +50,7 @@ const environmentSchema = z
       .string()
       .regex(/^\/api\/v\d+$/, "API_PREFIX must look like /api/v1")
       .default("/api/v1"),
-    DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+    DATABASE_URL: databaseUrlSchema,
     CORS_ORIGINS: z
       .string()
       .min(1, "CORS_ORIGINS is required")
@@ -33,13 +64,13 @@ const environmentSchema = z
     LOG_LEVEL: z
       .enum(["debug", "info", "warn", "error"])
       .default("info"),
-    JWT_ACCESS_SECRET: secretSchema.optional(),
+    JWT_ACCESS_SECRET: optionalSecretSchema,
     JWT_ACCESS_TTL_SECONDS: z.coerce
       .number()
       .int()
       .positive()
       .default(900),
-    JWT_REFRESH_SECRET: secretSchema.optional(),
+    JWT_REFRESH_SECRET: optionalSecretSchema,
     JWT_REFRESH_TTL_SECONDS: z.coerce
       .number()
       .int()
@@ -62,9 +93,9 @@ const environmentSchema = z
     AUTH_COOKIE_SAME_SITE: z
       .enum(["lax", "strict", "none"])
       .default("lax"),
-    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
-    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
-    GOOGLE_REDIRECT_URI: z.url().optional(),
+    GOOGLE_CLIENT_ID: optionalTextSchema,
+    GOOGLE_CLIENT_SECRET: optionalTextSchema,
+    GOOGLE_REDIRECT_URI: optionalUrlSchema,
     SHUTDOWN_TIMEOUT_MS: z.coerce
       .number()
       .int()
@@ -116,6 +147,12 @@ const environmentSchema = z
 
 export type AppEnvironment = z.infer<typeof environmentSchema>;
 
+function emptyStringToUndefined(value: unknown): unknown {
+  return typeof value === "string" && value.trim().length === 0
+    ? undefined
+    : value;
+}
+
 /**
  * @desc Validate and normalize application environment values.
  * @access Internal configuration
@@ -127,4 +164,28 @@ export function loadEnvironment(
   input: NodeJS.ProcessEnv = process.env
 ): AppEnvironment {
   return environmentSchema.parse(input);
+}
+
+/**
+ * @desc Map Zod environment failures into safe structured diagnostics.
+ * @access Internal process lifecycle
+ * @explanation Only field paths, issue codes, and schema-authored messages are
+ * returned. Raw issues and received environment values are deliberately
+ * excluded so startup logging cannot expose credentials or secrets.
+ */
+export function mapEnvironmentDiagnostics(
+  error: unknown
+): readonly EnvironmentDiagnostic[] {
+  if (!(error instanceof z.ZodError)) {
+    return [];
+  }
+
+  return error.issues.map((issue) => ({
+    field:
+      issue.path.length === 0
+        ? "environment"
+        : issue.path.map(String).join("."),
+    code: issue.code,
+    message: issue.message
+  }));
 }

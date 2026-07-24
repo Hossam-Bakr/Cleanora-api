@@ -289,3 +289,22 @@ Applied production migrations must not be edited or deleted. Corrections use for
 
 Future-release models must not be created early without a documented dependency.
 
+---
+
+## DEC-015 — Release 1 Google sign-in is individual-only
+
+**Date:** 2026-07-24
+**Status:** Approved
+
+Google sign-in is enabled only for `INDIVIDUAL` accounts in Release 1.
+
+The identity architecture remains extensible for other account types, but
+company, engineer, provider-owner, worker, and other audiences are not enabled
+for Google authentication in R1-P02.
+
+Google authentication and account linking never bypass required phone
+verification or any actor-specific verification gate. A new or linked
+individual account remains restricted until its required phone verification is
+complete.
+
+This decision resolves OQ-014.

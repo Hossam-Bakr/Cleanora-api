@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from "vitest";
 
 import { requestIdMiddleware } from "../../../src/core/http/request-id.middleware.js";
 

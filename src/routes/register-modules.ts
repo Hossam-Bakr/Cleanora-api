@@ -1,12 +1,10 @@
 import type { Express } from "express";
 
+import type { ModuleRegistrar } from "#core/http/module-registrar";
 import { adminModuleRegistrar } from "#modules/admin";
 import { configurationModuleRegistrar } from "#modules/configuration";
 
-export interface ModuleRegistrar {
-  readonly name: string;
-  register(app: Express): void;
-}
+export type { ModuleRegistrar } from "#core/http/module-registrar";
 
 export const foundationModuleRegistrars: readonly ModuleRegistrar[] = [
   configurationModuleRegistrar,
