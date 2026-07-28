@@ -3,6 +3,15 @@ import { join } from "node:path";
 
 
 describe("CI database validation gate", () => {
+  it("generates Prisma Client automatically before every production build", async () => {
+    const packageJson = JSON.parse(
+      await readFile(join(process.cwd(), "package.json"), "utf8")
+    ) as { scripts: Record<string, string> };
+
+    expect(packageJson.scripts["prebuild"]).toBe("npm run prisma:generate");
+    expect(packageJson.scripts["build"]).toBe("tsc -p tsconfig.build.json");
+  });
+
   it("generates Prisma Client before typecheck and binds the isolated coverage database", async () => {
     const workflow = await readFile(
       join(process.cwd(), ".github/workflows/ci.yml"),

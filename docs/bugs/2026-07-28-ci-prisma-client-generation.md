@@ -1,15 +1,16 @@
-# Bug Report — CI Prisma Client generation
+# Bug Report — Clean-build Prisma Client generation
 
 ## Observed behavior
 
-Both the pull-request and push `quality` checks failed during
-`npm run typecheck`. TypeScript could not resolve the generated Prisma Client,
-which also caused secondary implicit-`any` and unknown-error diagnostics in
-Prisma-dependent files.
+Both the GitHub `quality` checks and the Railway production build failed before
+Prisma Client existed. GitHub failed during `npm run typecheck`; Railway failed
+during `npm run build`. TypeScript could not resolve the generated Prisma
+Client, which also caused secondary implicit-`any` and unknown-error
+diagnostics in Prisma-dependent files.
 
 ## Expected behavior
 
-A clean GitHub Actions checkout must generate Prisma Client before running
+Every clean checkout or deployment must generate Prisma Client before running
 typecheck, lint, tests, or build commands that import generated Prisma types.
 
 ## Reproduction
@@ -38,6 +39,8 @@ prerequisite would have failed after the typecheck issue was resolved.
 ## Fix
 
 - Generate Prisma Client immediately after dependency installation.
+- Add the npm `prebuild` lifecycle so any `npm run build`, including Railway,
+  generates Prisma Client before TypeScript compilation.
 - Explicitly bind `TEST_DATABASE_URL` from the matching GitHub Actions secret
   or variable.
 - Fail with a clear preflight message if the isolated test database is absent.
@@ -48,6 +51,7 @@ prerequisite would have failed after the typecheck issue was resolved.
 `tests/unit/tooling/ci-database-gate.test.ts` verifies that:
 
 - Prisma generation appears before typecheck in the quality job.
+- The production build has a `prebuild` Prisma-generation lifecycle.
 - The quality job binds `TEST_DATABASE_URL`.
 - A clear missing-test-database diagnostic is present.
 
@@ -55,7 +59,8 @@ prerequisite would have failed after the typecheck issue was resolved.
 
 - `npm run prisma:generate` — PASS
 - `npm run typecheck` — PASS
-- Unit suite — 52 files and 203 tests PASS
+- `npm run build` — PASS and automatically ran `prisma:generate` first
+- Unit suite — 52 files and 204 tests PASS
 - Changed-file ESLint — PASS
 - `git diff --check` — PASS, with existing line-ending warnings only
 

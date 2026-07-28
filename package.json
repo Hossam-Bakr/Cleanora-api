@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "dev": "node --env-file=.env --conditions=development --import tsx src/server.ts",
+    "prebuild": "npm run prisma:generate",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",

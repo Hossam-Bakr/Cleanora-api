@@ -300,7 +300,8 @@ use the development database as an automated test target.
 
 For a Railway service connected to GitHub:
 
-- Use `npm ci && npm run prisma:generate && npm run build` as the build process.
+- Use `npm ci && npm run build` as the build process. The npm `prebuild`
+  lifecycle generates Prisma Client automatically before TypeScript compiles.
 - Use `npm run start` as the start command.
 - Configure `/api/v1/system/health/live` as the health-check path.
 - Store every secret and connection string in Railway environment variables.
