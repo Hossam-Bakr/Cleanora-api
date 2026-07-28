@@ -78,7 +78,7 @@ function redirectGoogleResult(
   result: {
     readonly status: "success" | "error";
     readonly intent: "sign-in" | "link";
-    readonly verification?: "phone-required" | "complete";
+    readonly verification?: "complete";
     readonly reason?: GoogleBrowserFailureReason;
   },
 ): void {
@@ -394,9 +394,7 @@ export function createAuthenticationController(
           redirectGoogleResult(response, googleBrowser, {
             status: "success",
             intent: "sign-in",
-            verification: result.verificationOnly
-              ? "phone-required"
-              : "complete",
+            verification: "complete",
           });
           return;
         }
@@ -419,36 +417,6 @@ export function createAuthenticationController(
     };
   /** @desc Complete Google authentication @route GET /api/v1/auth/google/callback @access Correlated browser callback @explanation Uses the server-held transaction intent to finish either sign-in or deliberate account linking through the one provider-registered callback URI. */
   const googleCallback = completeGoogleCallback("sign-in");
-  /** @desc Request Google phone verification @route POST /api/v1/auth/google/phone/request @access Private @explanation Binds a unique phone and emails a temporary phone-verification OTP to the authenticated user's verified Google email until SMS is available. */
-  const googlePhoneRequest: RequestHandler = async (
-    request,
-    response,
-    next,
-  ) => {
-    try {
-      sendSuccess(
-        request,
-        response,
-        202,
-        await service.bindGooglePhone(principal(response), request.body.phone),
-      );
-    } catch (error) {
-      next(error);
-    }
-  };
-  /** @desc Verify a Google individual phone @route POST /api/v1/auth/google/phone/verify @access Private @explanation Consumes the phone OTP for the authenticated Google identity and atomically promotes that session to full access. */
-  const googlePhoneVerify: RequestHandler = async (request, response, next) => {
-    try {
-      sendSuccess(
-        request,
-        response,
-        200,
-        await service.verifyGooglePhone(principal(response), request.body),
-      );
-    } catch (error) {
-      next(error);
-    }
-  };
   /** @desc Start deliberate Google linking @route GET /api/v1/auth/google/link @access Private @explanation Binds one-time Google state to the current verified individual. */
   const googleLink: RequestHandler = async (request, response, next) => {
     try {
@@ -493,8 +461,6 @@ export function createAuthenticationController(
     googleStart,
     googleBrowserStart,
     googleCallback,
-    googlePhoneRequest,
-    googlePhoneVerify,
     googleLink,
     googleUnlink,
   };

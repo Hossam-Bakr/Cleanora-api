@@ -69,16 +69,16 @@ describe("canonical Auth Postman artifacts", () => {
       (request) => `${request.method} ${request.route}`,
     );
 
-    expect(requests).toHaveLength(19);
+    expect(requests).toHaveLength(17);
     expect(new Set(keys).size).toBe(keys.length);
     expect(
       requests.filter((request) =>
         request.folder.startsWith("Google Authentication"),
       ),
-    ).toHaveLength(7);
+    ).toHaveLength(5);
     expect(
       requests.filter((request) => request.folder.includes("Google")),
-    ).toHaveLength(7);
+    ).toHaveLength(5);
     expect(keys).toEqual(
       expect.arrayContaining([
         "POST /auth/signup",
@@ -86,8 +86,6 @@ describe("canonical Auth Postman artifacts", () => {
         "POST /auth/refresh",
         "GET /auth/google/browser",
         "GET /auth/google/callback",
-        "POST /auth/google/phone/request",
-        "POST /auth/google/phone/verify",
       ]),
     );
     expect(keys).not.toContain("GET /auth/google/result");
@@ -122,7 +120,6 @@ describe("canonical Auth Postman artifacts", () => {
       "testPassword",
       "newPassword",
       "emailOtp",
-      "phoneOtp",
       "challengeId",
       "passwordResetCode",
       "accessToken",

@@ -13,8 +13,8 @@ function cookie(response: import('supertest').Response): string {
 
 async function createVerified(context: Awaited<ReturnType<typeof startAuthenticationTestApp>>, label: string) {
   const identity = uniqueIdentity(label);
-  const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, password: identity.password }).expect(202);
-  await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId: signup.body.data.challengeId, code: context.sms.latest(identity.phone)!.value }).expect(200);
+  const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
+  await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId: signup.body.data.challengeId, code: context.email.latest(identity.email)!.value }).expect(200);
   return identity;
 }
 
@@ -25,15 +25,15 @@ describe('password recovery and authenticated change', () => {
       const identity = await createVerified(context, 'reset');
       const first = await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: identity.password }).expect(200);
       const second = await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: identity.password }).expect(200);
-      const unknown = await request(context.app).post('/api/v1/auth/password/forgot').send({ accountCategory: 'INDIVIDUAL', identifier: '+201999999999' }).expect(202);
-      const known = await request(context.app).post('/api/v1/auth/password/forgot').send({ accountCategory: 'INDIVIDUAL', identifier: identity.phone }).expect(202);
+      const unknown = await request(context.app).post('/api/v1/auth/password/forgot').send({ accountCategory: 'INDIVIDUAL', identifier: 'absent@example.test' }).expect(202);
+      const known = await request(context.app).post('/api/v1/auth/password/forgot').send({ accountCategory: 'INDIVIDUAL', identifier: identity.email }).expect(202);
       expect(unknown.body.data).toMatchObject({ accepted: true });
       expect(known.body.data).toMatchObject({ accepted: true });
       expect(unknown.body.data.challengeId).toMatch(/^[0-9a-f-]{36}$/u);
       expect(known.body.data.challengeId).toMatch(/^[0-9a-f-]{36}$/u);
       expect(unknown.body.data.challengeId).not.toBe(known.body.data.challengeId);
 
-      const code = context.sms.latest(identity.phone)!.value;
+      const code = context.email.latest(identity.email)!.value;
       expect(code).toMatch(/^\d{4}$/u);
       const nextPassword = 'Different-password-456!';
       const resetInput = { challengeId: known.body.data.challengeId, code, newPassword: nextPassword };

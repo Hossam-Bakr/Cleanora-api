@@ -9,7 +9,7 @@ const dependencies = {
   passwordHasher: { hash: async () => 'hash', verify: async () => true, dummyVerify: async () => undefined },
   tokens: { issueAccess: () => ({ token: 'access', expiresAt: new Date(now.getTime() + 60_000) }), issueRefresh: (_claims: object, expiresAt: Date) => ({ token: 'refresh', expiresAt }), verifyAccess: () => ({ userId: 'user-1', sessionId: 'session-1', credentialVersion: 1 }), verifyRefresh: () => ({ userId: 'user-1', sessionId: 'session-1', credentialVersion: 1, rotationCounter: 0, jwtId: 'jwt' }) },
   verifier: { randomOtp: () => '123456', randomSecret: () => 'secret', verifyOtp: () => 'otp', verifyReset: () => 'reset', verifyRefresh: () => 'refresh-verifier', hashDestination: () => 'a'.repeat(64), equals: (left: string, right: string) => left === right },
-  sms: { send: async () => undefined }, email: { send: async () => undefined }, accessTtlSeconds: 900, refreshTtlSeconds: 3600, privacyHashSecret: 'privacy-test-secret'
+  email: { send: async () => undefined }, accessTtlSeconds: 900, refreshTtlSeconds: 3600, privacyHashSecret: 'privacy-test-secret'
 };
 
 describe('Google provider assurance', () => {
@@ -29,11 +29,11 @@ describe('Google provider assurance', () => {
     await expect(new AuthenticationService(dependencies).googleSignIn({ subject: 'subject-1', email: 'company@example.test', emailVerified: true })).rejects.toMatchObject({ code: 'AUTH_SOCIAL_AUTHENTICATION_FAILED' });
   });
 
-  it('persists verified provider assurance but keeps a new individual phone-restricted', async () => {
-    const user = { id: 'user-1', phoneE164: null, emailNormalized: 'user@example.test', accountCategories: ['INDIVIDUAL'], verifiedCategories: [], status: 'ACTIVE', suspendedUntil: null, statusChangedAt: now, phoneVerifiedAt: null, emailVerifiedAt: null, createdAt: now, updatedAt: now };
+  it('persists verified provider assurance and creates a full individual session', async () => {
+    const user = { id: 'user-1', phoneE164: null, emailNormalized: 'user@example.test', accountCategories: ['INDIVIDUAL'], verifiedCategories: ['INDIVIDUAL'], status: 'ACTIVE', suspendedUntil: null, statusChangedAt: now, phoneVerifiedAt: null, emailVerifiedAt: new Date(), createdAt: now, updatedAt: now };
     const socialCreate = vi.fn(async () => ({}));
     const userCreate = vi.fn(async () => user);
-    const transaction = { user: { create: userCreate }, socialAccount: { create: socialCreate } };
+    const transaction = { user: { create: userCreate }, socialAccount: { create: socialCreate }, authEvent: { create: vi.fn(async () => ({})) } };
     const client = {
       socialAccount: { findUnique: vi.fn(async () => null) },
       user: { findUnique: vi.fn(async () => null) },
@@ -45,8 +45,8 @@ describe('Google provider assurance', () => {
     bindPrismaClient(client);
 
     const result = await new AuthenticationService(dependencies).googleSignIn({ subject: 'subject-1', email: 'User@Example.Test', emailVerified: true });
-    expect(result.verificationOnly).toBe(true);
-    expect(result.principal).toMatchObject({ accountCategories: ['INDIVIDUAL'], verifiedCategories: [], verificationOnly: true });
+    expect(result.verificationOnly).toBe(false);
+    expect(result.principal).toMatchObject({ accountCategories: ['INDIVIDUAL'], verifiedCategories: ['INDIVIDUAL'], verificationOnly: false });
     expect(userCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         emailNormalized: 'user@example.test',

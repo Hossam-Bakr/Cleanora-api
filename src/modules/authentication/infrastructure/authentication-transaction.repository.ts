@@ -72,20 +72,15 @@ export class AuthenticationTransactionRepository {
       if (consumed.count !== 1) return false;
       await transaction.user.update({
         where: { id: challenge.userId },
-        data:
-          challenge.purpose === "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION"
-            ? { emailVerifiedAt: new Date() }
-            : {
-                verifiedCategories: [
-                  ...new Set([
-                    ...user.verifiedCategories,
-                    challenge.accountCategory,
-                  ]),
-                ],
-                ...(challenge.channel === "SMS"
-                  ? { phoneVerifiedAt: new Date() }
-                  : { emailVerifiedAt: new Date() }),
-              },
+        data: {
+          verifiedCategories: [
+            ...new Set([
+              ...user.verifiedCategories,
+              challenge.accountCategory,
+            ]),
+          ],
+          emailVerifiedAt: new Date(),
+        },
       });
       if (session !== undefined) {
         const promoted = await transaction.userSession.updateMany({
@@ -127,7 +122,7 @@ export class AuthenticationTransactionRepository {
             emailNormalized: input.emailNormalized,
             emailVerifiedAt: new Date(),
             accountCategories: ["INDIVIDUAL"],
-            verifiedCategories: [],
+            verifiedCategories: ["INDIVIDUAL"],
           },
         });
         await transaction.socialAccount.create({
@@ -143,6 +138,17 @@ export class AuthenticationTransactionRepository {
             lastAuthenticatedAt: new Date(),
           },
         });
+        await transaction.authEvent.create({
+          data: {
+            userId: user.id,
+            eventType: "VERIFICATION_COMPLETED",
+            outcome: "SUCCEEDED",
+            context: {
+              category: "INDIVIDUAL",
+              channel: "GOOGLE_VERIFIED_EMAIL",
+            },
+          },
+        });
         return user;
       });
     } catch (error) {
@@ -153,6 +159,47 @@ export class AuthenticationTransactionRepository {
         return null;
       throw error;
     }
+  }
+
+  async activateGoogleIndividual(userId: string) {
+    return getPrismaClient().$transaction(async (transaction) => {
+      const current = await transaction.user.findUnique({
+        where: { id: userId },
+      });
+      if (
+        current === null ||
+        !current.accountCategories.includes("INDIVIDUAL")
+      ) {
+        return null;
+      }
+      if (current.verifiedCategories.includes("INDIVIDUAL")) {
+        return current;
+      }
+      const user = await transaction.user.update({
+        where: { id: userId },
+        data: {
+          emailVerifiedAt: current.emailVerifiedAt ?? new Date(),
+          verifiedCategories: [
+            ...new Set([
+              ...current.verifiedCategories,
+              "INDIVIDUAL" as AccountCategory,
+            ]),
+          ],
+        },
+      });
+      await transaction.authEvent.create({
+        data: {
+          userId,
+          eventType: "VERIFICATION_COMPLETED",
+          outcome: "SUCCEEDED",
+          context: {
+            category: "INDIVIDUAL",
+            channel: "GOOGLE_VERIFIED_EMAIL",
+          },
+        },
+      });
+      return user;
+    });
   }
 
   linkGoogle(input: {

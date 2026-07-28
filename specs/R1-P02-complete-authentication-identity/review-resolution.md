@@ -362,3 +362,21 @@ success-response contracts:
 Unit, focused database-backed all-category signup, typecheck, lint, production
 build, documentation, and diff checks pass. Operational SMTP acceptance on
 Railway remains required after the human deploys the code and variables.
+## DEC-028 runtime remediation status
+
+The reported startup conflict was reproduced from configuration rather than
+from the HTTP lifecycle. Local `.env` contained obsolete hosted SMS fallback
+flags and duplicate secure-cookie values. Those flags and duplicate values are
+removed, environment validation now requires the only live delivery capability
+(email), and startup emits value-free field diagnostics or a safe machine error
+code.
+
+The prior Individual verification database constraint was incompatible with
+the new owner-approved email-only flow. It is corrected only through the new
+forward migration `r1_p02_email_verification_for_individuals`; the applied
+historical migration remains unchanged.
+
+Static gates and unit tests pass. Database-backed acceptance, SMTP provider
+acceptance, and Railway acceptance remain operational gates because this
+execution environment cannot reach the configured Neon/SMTP services. R1-P02
+remains In Progress and no phase-completion claim is made.

@@ -13,7 +13,6 @@ describe('business signup and category enrollment', () => {
       const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory, phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
       const delivery = context.email.latest(identity.email);
       expect(delivery?.idempotencyKey).toBe(signup.body.data.challengeId);
-      expect(context.sms.all()).toHaveLength(0);
 
       await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId: signup.body.data.challengeId, code: delivery!.value }).expect(200);
       const user = await context.prisma.user.findUniqueOrThrow({ where: { emailNormalized: identity.email } });
@@ -30,7 +29,7 @@ describe('business signup and category enrollment', () => {
     const identity = uniqueIdentity('enrollment');
     try {
       const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
-      await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId: signup.body.data.challengeId, code: context.sms.latest(identity.phone)!.value }).expect(200);
+      await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId: signup.body.data.challengeId, code: context.email.latest(identity.email)!.value }).expect(200);
       const login = await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: identity.password }).expect(200);
 
       const enrollment = await request(context.app).post('/api/v1/auth/account-categories').set('Authorization', `Bearer ${login.body.data.accessToken}`).send({ accountCategory: 'COMPANY' }).expect(202);

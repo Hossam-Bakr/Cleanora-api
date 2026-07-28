@@ -1,229 +1,135 @@
-# Google Sign-In Frontend Integration
+# Google Sign-In — Frontend Integration
 
-Status: Implemented in R1-P02; phase remains In Progress.
+Status: R1-P02 email-only identity contract under DEC-028.
 
-## Required configuration
+## Required environment
 
-- Google Cloud authorized redirect URI:
-  `http://localhost:8000/api/v1/auth/google/callback`
-- Backend `GOOGLE_REDIRECT_URI`: the same backend URI.
-- Backend `GOOGLE_FRONTEND_CALLBACK_URI`:
-  `http://localhost:5173/auth/google/callback` for the current local frontend.
-- The frontend callback origin must exist in `CORS_ORIGINS`.
+The backend owns the Google callback. The frontend owns only the final
+allowlisted callback page.
 
-Do not register the frontend callback URI with Google. Google returns to the
-backend first so Cleanora can validate and consume the OIDC transaction.
-
-The backend does not render a Google success page. Bassam must implement the
-frontend callback route and perform the refresh bootstrap described below.
-
-Until a real SMS provider is connected, Google phone OTPs are emailed to the
-authenticated user's verified Google email (server-resolved from the linked
-SocialAccount). The API challenge remains an SMS phone challenge. Standard
-Individual signup uses its normalized account email for the same development
-delivery bridge; there is no fixed recipient configuration.
-
-## Sign-in flow
-
-```mermaid
-flowchart TD
-  A[User clicks Sign in with Google] --> B[Frontend navigates to GET /api/v1/auth/google/browser]
-  B --> C[Backend redirects to Google OIDC]
-  C --> D[User selects Google account]
-  D --> E[Google returns to GET /api/v1/auth/google/callback]
-  E --> F[Backend validates identity, creates/links user, sets HttpOnly refresh cookie]
-  F --> G[Redirect to GOOGLE_FRONTEND_CALLBACK_URI with safe query markers only]
-  G --> H[Frontend POST /api/v1/auth/refresh with credentials include]
-  H --> I{verificationOnly?}
-  I -->|no| J[Redirect home]
-  I -->|yes| K[Show phone popup]
-  K --> L[POST /api/v1/auth/google/phone/request]
-  L --> M[Backend emails temporary OTP to verified Google email]
-  M --> N[User enters OTP]
-  N --> O[POST /api/v1/auth/google/phone/verify]
-  O --> P[Session promoted; GET /auth/me; redirect home]
+```text
+GOOGLE_REDIRECT_URI=https://<api-host>/api/v1/auth/google/callback
+GOOGLE_FRONTEND_CALLBACK_URI=https://<frontend-host>/auth/google/callback
 ```
 
-## 1. Initiate Google Sign-In
+The frontend origin must also appear in `CORS_ORIGINS`. Production cookies
+require HTTPS and `AUTH_COOKIE_SECURE=true`.
 
-Use top-level browser navigation (not XHR) so the Google state cookie is owned
-by the browser that will complete the callback:
+## Browser flow
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant F as Frontend
+  participant B as Cleanora API
+  participant G as Google
+
+  U->>F: Click Sign in with Google
+  F->>B: Top-level GET /api/v1/auth/google/browser
+  B->>B: Create state, nonce and PKCE transaction
+  B-->>G: 303 redirect + correlation cookie
+  U->>G: Authenticate and consent
+  G-->>B: GET /api/v1/auth/google/callback
+  B->>B: Validate correlation and verified Google email
+  B->>B: Find/create active Individual + session
+  B-->>F: 303 callback + HttpOnly refresh cookie
+  F->>B: POST /api/v1/auth/refresh (credentials included)
+  B-->>F: accessToken + safe user
+  F->>B: GET /api/v1/auth/me (Bearer accessToken)
+  B-->>F: canonical safe user
+  F-->>U: Render Home
+```
+
+## Start sign-in
+
+Use top-level navigation. Do not fetch this route with XHR and do not start the
+flow in Postman before continuing in Chrome.
 
 ```ts
 window.location.assign(
-  "http://localhost:8000/api/v1/auth/google/browser",
+  `${apiOrigin}/api/v1/auth/google/browser`,
 );
 ```
 
-Use `/auth/google/browser` for Chrome. Do not call `/auth/google` in Postman and
-then copy its authorization URL into Chrome: the state cookie stays in
-Postman's cookie jar, so the Chrome callback correctly fails correlation.
+## Frontend callback
 
-## 2. Backend OAuth callback behavior
+The callback URL contains safe markers only:
 
-`GET /api/v1/auth/google/callback`:
+```text
+/auth/google/callback?google=success&intent=sign-in&verification=complete
+```
 
-- validates correlation cookie, state, nonce, PKCE, and the one-time transaction;
-- creates or updates the local Individual user and linked Google SocialAccount;
-- establishes the session through the HttpOnly refresh cookie (no tokens in the URL);
-- redirects to the configured frontend callback.
-
-## 3. Frontend callback URL
-
-Configured by `GOOGLE_FRONTEND_CALLBACK_URI`, for example:
-
-`http://localhost:5173/auth/google/callback`
-
-Safe query markers only:
-
-- `google=success|error`
-- `intent=sign-in|link`
-- `verification=phone-required|complete` on successful sign-in
-- `reason=correlation-failed|provider-rejected|authentication-failed` on failure
-
-Access tokens, refresh tokens, authorization codes, state values, and raw
-provider errors are never placed in the redirect URL.
-
-## 4. Bootstrap the authenticated session
+On that page, bootstrap the session from the HttpOnly refresh cookie:
 
 ```ts
-const response = await fetch(
-  "http://localhost:8000/api/v1/auth/refresh",
-  {
-    method: "POST",
-    credentials: "include",
-  },
-);
-const body = await response.json();
-// body.data.accessToken, body.data.verificationOnly, body.data.user
+const response = await fetch(`${apiBaseUrl}/auth/refresh`, {
+  method: "POST",
+  credentials: "include",
+  headers: { Origin: window.location.origin },
+});
+
+const envelope = await response.json();
+if (!response.ok) {
+  // Show a safe retry message and return to the login page.
+}
+
+const { accessToken, user } = envelope.data;
+// Keep accessToken in memory only.
 ```
 
-Required:
+The frontend must not read, store, or display the refresh cookie. It is
+`HttpOnly`. It must not store the access token in `localStorage`.
 
-- `credentials: "include"` so the HttpOnly refresh cookie is sent
-- trusted `Origin` for browser credentialed POSTs (must be in `CORS_ORIGINS`)
-- keep the returned access token in memory only; send `Authorization: Bearer <accessToken>`
+## Google identity result
 
-## 5. Detect phone verification required
-
-Phone verification is required when any of these are true after refresh:
-
-- redirect query `verification=phone-required`
-- `data.verificationOnly === true`
-- `data.user.phoneVerified === false`
-- `GET /auth/me` returns `data.user` with Individual pending / phone not verified
-
-## 6. Phone request and verify schemas
-
-### `POST /api/v1/auth/google/phone/request`
-
-Headers:
-
-- `Authorization: Bearer <verification-only-access-token>`
-- `Content-Type: application/json`
-
-Body (strict; extra fields such as `email` are rejected):
-
-```json
-{ "phone": "+201234567890" }
-```
-
-Success `202`:
+Google sign-in is Individual-only. A new identity is accepted only when Google
+asserts a verified email. It is immediately eligible for a full session:
 
 ```json
 {
   "success": true,
   "data": {
-    "accepted": true,
-    "challengeId": "<uuid>",
-    "nextAction": "VERIFY_ACCOUNT",
-    "accountCategory": "INDIVIDUAL",
-    "purpose": "CATEGORY_VERIFICATION",
-    "channel": "SMS",
-    "maskedDestination": "+20******7890",
-    "expiresAt": "<ISO-8601>",
-    "resendAvailableAt": "<ISO-8601>"
-  },
-  "requestId": "<id>"
-}
-```
-
-Notes:
-
-- `channel` remains `SMS` because the challenge verifies the phone number.
-- During development, the OTP is emailed to the linked verified Google email.
-- The OTP is never returned in the response.
-- The recipient email is never taken from the request body.
-
-### `POST /api/v1/auth/google/phone/verify`
-
-Headers:
-
-- `Authorization: Bearer <the-same-access-token>`
-- `Content-Type: application/json`
-
-Body:
-
-```json
-{
-  "challengeId": "<challenge-id>",
-  "code": "123456"
-}
-```
-
-Success `200`:
-
-```json
-{
-  "success": true,
-  "data": {
-    "verified": true,
+    "accessToken": "<short-lived-access-token>",
+    "accessExpiresAt": "2026-07-28T12:15:00.000Z",
     "verificationOnly": false,
-    "nextAction": "CONTINUE"
+    "user": {
+      "id": "<user-id>",
+      "displayName": "Google Display Name",
+      "avatarUrl": "https://lh3.googleusercontent.com/...",
+      "email": "user@example.com",
+      "phone": null,
+      "emailVerified": true,
+      "phoneVerified": false,
+      "status": "ACTIVE",
+      "accountCategories": ["INDIVIDUAL"],
+      "verifiedCategories": ["INDIVIDUAL"],
+      "pendingCategories": []
+    }
   },
-  "requestId": "<id>"
+  "requestId": "<request-id>"
 }
 ```
 
-## 7. Cookies, credentials, headers, CSRF
+`phoneVerified: false` is intentional. R1-P02 has no Google phone modal,
+`/google/phone/request`, or `/google/phone/verify`. Real phone ownership
+verification is deferred to R1-P26.
 
-| Concern | Behavior |
-|---|---|
-| Refresh cookie | HttpOnly, path `/api/v1/auth`, name from `AUTH_REFRESH_COOKIE_NAME` |
-| Google state cookie | Set during `/google/browser`; required for callback correlation |
-| Credentialed browser calls | `credentials: "include"` + allowlisted Origin |
-| Access token | Bearer header only; never in cookies or URLs |
-| CSRF | Trusted-origin check on credentialed auth mutations; refresh cookie is not readable by JS |
+## Refresh and retry rule
 
-## 8. Expected errors
+For protected requests:
 
-| Situation | Typical result |
-|---|---|
-| Missing/invalid access token | `401 AUTHENTICATION_REQUIRED` / `AUTH_ACCESS_TOKEN_INVALID` |
-| Extra body fields on phone request | `400 REQUEST_VALIDATION_FAILED` |
-| Invalid phone format | `400 AUTH_PHONE_FORMAT_INVALID` |
-| Phone already owned by another user | `409 AUTH_PHONE_ALREADY_REGISTERED` |
-| No verified Google email for delivery | `403 AUTH_GOOGLE_EMAIL_UNAVAILABLE` |
-| Invalid / expired / reused / foreign OTP | `400 AUTH_VERIFICATION_FAILED` |
-| Email delivery unavailable | `503 AUTH_PROVIDER_UNAVAILABLE` |
+1. Send `Authorization: Bearer <accessToken>`.
+2. On the first access `401`, call `POST /auth/refresh` once with
+   `credentials: "include"`.
+3. Replace the in-memory access token.
+4. Retry the original request once.
+5. Never create a recursive refresh loop.
 
-## 9. After successful verification
+## Security rules
 
-1. Treat the same access token as fully usable after server-side promotion.
-2. Call `GET /api/v1/auth/me` with the Bearer token and use `data.user` as the
-   canonical updated user.
-3. Redirect the user to the home page.
-4. Do not restart Google OAuth.
-
-## Linking flow
-
-1. A fully verified individual calls `GET /auth/google/link` with the access
-   token.
-2. The frontend navigates to the returned `authorizationUrl` in the same
-   browser.
-3. Google returns to the common backend `/auth/google/callback`.
-4. The backend reads the stored `LINK` intent and bound user/session, links the
-   provider identity, and redirects to the frontend callback with
-   `google=success&intent=link`.
-
-The callback never requires a bearer token from Google or from a callback URL.
+- Never put access tokens, refresh tokens, Google codes, state, nonce, or PKCE
+  values in frontend URLs.
+- Never merge accounts only because emails match.
+- Never accept display name or avatar from the Cleanora client as Google proof.
+- Never claim a phone is verified in R1-P02.
+- Use Chrome for the redirect flow; use Postman only for contract inspection.

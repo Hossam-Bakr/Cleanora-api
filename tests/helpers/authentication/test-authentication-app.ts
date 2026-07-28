@@ -14,8 +14,7 @@ import { DeterministicGoogleAdapter } from './deterministic-google.adapter.js';
 
 export async function startAuthenticationTestApp() {
   const database = await startTestDatabaseLifecycle();
-  const sms = new DeterministicAuthenticationInbox('SMS');
-  const email = new DeterministicAuthenticationInbox('EMAIL');
+  const email = new DeterministicAuthenticationInbox();
   const google = new DeterministicGoogleAdapter();
   const { url: testDatabaseUrl } = requireApprovedTestDatabaseUrl();
   const environment = createTestEnvironment({ AUTH_ENABLED: true, GOOGLE_AUTH_ENABLED: true, DATABASE_URL: testDatabaseUrl });
@@ -28,7 +27,6 @@ export async function startAuthenticationTestApp() {
     tokens: new JwtTokenServiceAdapter({ accessSecret: environment.JWT_ACCESS_SECRET!, refreshSecret: environment.JWT_REFRESH_SECRET!, issuer: environment.JWT_ISSUER, audience: environment.JWT_AUDIENCE, accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS }),
     verifier: new CryptoVerifierAdapter(environment.AUTH_VERIFIER_SECRET!),
     privacyHashSecret: environment.AUTH_PRIVACY_HASH_SECRET!,
-    sms,
     email,
     accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
     refreshTtlSeconds: environment.JWT_REFRESH_TTL_SECONDS,
@@ -44,7 +42,6 @@ export async function startAuthenticationTestApp() {
     app,
     database,
     prisma: database.client,
-    sms,
     email,
     google,
     logger,

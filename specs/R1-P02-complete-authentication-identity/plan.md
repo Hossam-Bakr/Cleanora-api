@@ -263,7 +263,9 @@ ACTIVE generation N
 - Provider subject is authoritative; verified email never auto-links.
 - Start/link creates a 10-minute one-time transaction and correlation cookie; the single backend callback atomically consumes both and derives SIGN_IN versus LINK from that transaction.
 - The callback redirects only to the configured allowlisted frontend callback URI. It never places access/refresh tokens, authorization codes, state, nonce, or provider errors in that URL; the frontend obtains an access token through the ordinary refresh-cookie exchange.
-- A new Google individual receives a verification-only session, uses `POST /google/phone/request` to bind a unique phone, and uses `POST /google/phone/verify` to consume the OTP and atomically promote that exact session.
+- Under DEC-028, a new Google Individual becomes active only from a
+  provider-verified email. No Google phone endpoint or phone-restricted session
+  remains in R1-P02; phone ownership is deferred to R1-P26.
 - Linking requires a recent full individual session whose user/session identifiers are bound to the one-time transaction; callback handling does not depend on a browser-supplied bearer token.
 - Unlinking requires recent authentication and a remaining password/recovery method; revoke Google-origin families.
 - Non-individual audiences fail before provider interaction.

@@ -27,6 +27,11 @@
 - DEC-027 permits a separately enabled and acknowledged hosted-preview
   SMS-to-email fallback while a real SMS provider is unavailable. It does not
   prove phone ownership and must be replaced before production readiness.
+- DEC-028 supersedes the temporary SMS/fallback and Google phone-gate rules:
+  every supported self-signup category requires email and receives account
+  verification and recovery credentials by email; phone values remain
+  unverified; Google-verified email activates an Individual identity; real
+  phone ownership verification is deferred to R1-P26.
 - DEC-020 standardizes descriptive API failures, permits field-specific
   phone/email conflict disclosure only during public signup, and replaces the
   former 12-character password minimum with a 7–128 character
@@ -92,6 +97,11 @@
 
 ### Session 2026-07-28
 
+- Q: Which verification channel is authoritative for the remainder of R1-P02?
+  → A: Email for every supported self-signup category and for password
+  recovery. Phone may be collected but is not verified. SMS and Google phone
+  verification are removed from this phase and deferred to R1-P26.
+
 - Q: How can every signup category be exercised on the hosted preview before a
   real SMS provider is connected? → A: Direct email categories use the
   configured SMTP provider. Individual SMS intents may be redirected to the
@@ -118,9 +128,9 @@ As an individual, company representative, engineer, or provider owner, I need to
 
 **Acceptance Scenarios**:
 
-1. **Given** a new individual supplies a valid phone and password, **When** signup succeeds, **Then** the account remains pending until a six-digit SMS code verifies the phone.
-2. **Given** an individual supplies an email, **When** phone verification completes, **Then** the account may become active while email verification remains encouraged and non-blocking.
-3. **Given** a company or engineer supplies the required phone, email, and password, **When** signup succeeds, **Then** email verification is blocking and phone SMS verification is not required.
+1. **Given** a new individual supplies a valid phone, email, and password, **When** signup succeeds, **Then** the account remains pending until a six-digit email code verifies the account, while the phone remains unverified.
+2. **Given** any supported self-signup category, **When** its email verification completes, **Then** that category becomes active without claiming phone ownership.
+3. **Given** a company or engineer supplies the required phone, email, and password, **When** signup succeeds, **Then** email verification is blocking and phone verification is deferred.
 4. **Given** a provider owner supplies the required phone, email, and password, **When** signup succeeds, **Then** email verification is blocking and no provider profile or provider-management behavior is created.
 5. **Given** an authenticated identity requests another supported self-signup account category, **When** category enrollment succeeds, **Then** the existing user record gains the category in pending state, existing verified categories remain usable, and only the new category is blocked until its verification gate completes, without creating a duplicate identity, role, permission, or profile.
 6. **Given** an unauthenticated signup uses an identifier already associated
@@ -164,8 +174,8 @@ As an account holder, I need to recover a forgotten password without account enu
 **Acceptance Scenarios**:
 
 1. **Given** any syntactically valid recovery identifier, **When** password recovery is requested, **Then** the response is indistinguishable whether or not an account exists.
-2. **Given** an individual or worker account exists, **When** recovery is requested, **Then** a single-use expiring four-digit reset code is delivered by SMS to its registered phone without persisting the raw code.
-3. **Given** a company, engineer, or provider-owner account with verified email exists, **When** recovery is requested, **Then** a single-use expiring four-digit reset code is delivered through that verified email without persisting the raw code.
+2. **Given** an eligible account with a verified email exists, **When** recovery is requested, **Then** a single-use expiring four-digit reset code is delivered through that email without persisting the raw code.
+3. **Given** any syntactically valid but absent or ineligible email, **When** recovery is requested, **Then** the response remains indistinguishable and no message is sent.
 4. **Given** a valid challenge ID and unused four-digit reset code, **When** a compliant new password is submitted, **Then** the password changes, the proof is consumed, every session is revoked, no new session is issued, a security event is recorded, and the user must log in with the new password.
 5. **Given** an expired, already-used, invalid, or attempt-exhausted recovery challenge/code pair, **When** reset is attempted, **Then** the password remains unchanged and the response reveals no secret or account details.
 6. **Given** an authenticated user supplies the correct current password and a compliant new password, **When** change-password succeeds, **Then** the new password replaces the old one, every other session is revoked, and the current session is immediately rotated.

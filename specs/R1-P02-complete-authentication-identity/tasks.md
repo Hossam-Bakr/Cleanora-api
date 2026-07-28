@@ -810,3 +810,25 @@ ownership and does not replace the future real SMS provider.
 - [x] T204 Add regression coverage and run focused unit, typecheck, lint, build,
   docs, and diff checks without committing, pushing, deploying, migrating, or
   running coverage.
+
+---
+
+## Phase 29: Email-Only Authentication and Hosting Parity
+
+Human-approved scope correction under DEC-028. Phone ownership verification is
+deferred to R1-P26 and must not be inferred from stored phone values.
+
+- [x] T205 Remove SMS and SMS-to-email adapters, environment flags, runtime
+  composition, and Google phone request/verify endpoints from R1-P02.
+- [x] T206 Require email for every supported signup category, deliver all
+  account-verification and recovery credentials through SMTP, and keep
+  `phoneVerifiedAt` unset.
+- [x] T207 Activate new Google Individuals only from a verified Google email
+  without creating a phone-restricted session or phone-verification claim.
+- [x] T208 Normalize local `.env` and `.env.example`, reject auth startup
+  without email delivery, and preserve production secure-cookie validation.
+- [x] T209 Align Swagger, static OpenAPI, Postman, active phase contracts,
+  frontend guidance, and historical focused tests with DEC-028.
+- [ ] T210 Pass typecheck, lint, unit, focused integration/E2E, build, Prisma,
+  docs, OpenAPI, and local production-style startup validation; record Railway
+  variable and deployment handoff without deploying.

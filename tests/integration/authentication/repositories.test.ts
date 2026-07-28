@@ -123,10 +123,10 @@ describe('authentication repository conditional mutations', () => {
     const now = new Date();
     const transaction = {
       otpCode: {
-        findFirst: vi.fn(async () => ({ id: 'challenge-1', userId: 'user-1', accountCategory: 'INDIVIDUAL', purpose: 'CATEGORY_VERIFICATION', channel: 'SMS', status: 'ACTIVE', expiresAt: new Date(now.getTime() + 60_000) })),
+        findFirst: vi.fn(async () => ({ id: 'challenge-1', userId: 'user-1', accountCategory: 'INDIVIDUAL', purpose: 'CATEGORY_VERIFICATION', channel: 'EMAIL', status: 'ACTIVE', expiresAt: new Date(now.getTime() + 60_000) })),
         updateMany: vi.fn(async () => ({ count: 0 }))
       },
-      user: { findUnique: vi.fn(async () => ({ id: 'user-1', phoneE164: '+201000000000', emailNormalized: null, accountCategories: ['INDIVIDUAL'], verifiedCategories: [], status: 'ACTIVE', suspendedUntil: null, statusChangedAt: now, phoneVerifiedAt: null, emailVerifiedAt: null, createdAt: now, updatedAt: now })), update: vi.fn() },
+      user: { findUnique: vi.fn(async () => ({ id: 'user-1', phoneE164: '+201000000000', emailNormalized: 'user@example.test', accountCategories: ['INDIVIDUAL'], verifiedCategories: [], status: 'ACTIVE', suspendedUntil: null, statusChangedAt: now, phoneVerifiedAt: null, emailVerifiedAt: null, createdAt: now, updatedAt: now })), update: vi.fn() },
       authEvent: { create: vi.fn() }
     };
     bindPrismaClient({ $transaction: vi.fn(async (work: (value: typeof transaction) => unknown) => work(transaction)) } as unknown as PrismaClient);

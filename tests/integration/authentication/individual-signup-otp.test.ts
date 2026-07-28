@@ -5,8 +5,8 @@ const request = require('supertest') as typeof import('supertest');
 // Remote test databases can need more than Vitest's unit-test default on a cold connection.
 vi.setConfig({ testTimeout: 30_000 });
 
-describe('individual signup and mandatory phone OTP', () => {
-  it('binds each development email delivery to its own normalized signup email', async () => {
+describe('individual signup and mandatory email OTP', () => {
+  it('delivers each verification code to its own normalized signup email', async () => {
     const context = await startAuthenticationTestApp();
     const first = uniqueIdentity('signup-recipient-first');
     const second = uniqueIdentity('signup-recipient-second');
@@ -30,16 +30,16 @@ describe('individual signup and mandatory phone OTP', () => {
         })
         .expect(202);
 
-      expect(context.sms.latest(first.email.toLowerCase())).toMatchObject({
+      expect(context.email.latest(first.email.toLowerCase())).toMatchObject({
         idempotencyKey: firstSignup.body.data.challengeId,
-        temporaryEmailDeliveryAddress: first.email.toLowerCase(),
+        destination: first.email.toLowerCase(),
       });
-      expect(context.sms.latest(second.email.toLowerCase())).toMatchObject({
+      expect(context.email.latest(second.email.toLowerCase())).toMatchObject({
         idempotencyKey: secondSignup.body.data.challengeId,
-        temporaryEmailDeliveryAddress: second.email.toLowerCase(),
+        destination: second.email.toLowerCase(),
       });
       expect(
-        context.sms.all().map((delivery) => delivery.temporaryEmailDeliveryAddress),
+        context.email.all().map((delivery) => delivery.destination),
       ).toEqual([first.email.toLowerCase(), second.email.toLowerCase()]);
       expect(JSON.stringify([firstSignup.body, secondSignup.body])).not.toMatch(
         /\b\d{6}\b/u,
@@ -69,13 +69,13 @@ describe('individual signup and mandatory phone OTP', () => {
           where: { phoneE164: identity.phone },
         }),
       ).toBe(0);
-      expect(context.sms.all()).toHaveLength(0);
+      expect(context.email.all()).toHaveLength(0);
     } finally {
       await context.stop();
     }
   });
 
-  it('creates a pending individual, verifies only the SMS challenge, and rejects replay', async () => {
+  it('creates a pending individual, verifies the email challenge, and rejects replay', async () => {
     const context = await startAuthenticationTestApp();
     const identity = uniqueIdentity('individual');
     try {
@@ -83,20 +83,18 @@ describe('individual signup and mandatory phone OTP', () => {
       expect(signup.body.data).toMatchObject({
         accepted: true,
         nextAction: 'VERIFY_ACCOUNT',
-        channel: 'SMS',
+        channel: 'EMAIL',
         purpose: 'CATEGORY_VERIFICATION',
         accountCategory: 'INDIVIDUAL',
       });
       expect(signup.body.data.userId).toBeUndefined();
-      expect(signup.body.data.maskedDestination).toMatch(/^\+20/);
+      expect(signup.body.data.maskedDestination).toContain('@');
       const challengeId = signup.body.data.challengeId as string;
-      const delivery = context.sms.latest(identity.phone);
+      const delivery = context.email.latest(identity.email);
       expect(delivery).toMatchObject({
         idempotencyKey: challengeId,
-        destination: identity.phone,
-        temporaryEmailDeliveryAddress: identity.email.toLowerCase(),
+        destination: identity.email.toLowerCase(),
       });
-      expect(context.email.all()).toHaveLength(0);
 
       const pending = await context.prisma.user.findUniqueOrThrow({ where: { phoneE164: identity.phone } });
       expect(pending).toMatchObject({ accountCategories: ['INDIVIDUAL'], verifiedCategories: [], phoneVerifiedAt: null, emailVerifiedAt: null });
@@ -109,8 +107,8 @@ describe('individual signup and mandatory phone OTP', () => {
       await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId, code: delivery!.value }).expect(400);
       const stored = await context.prisma.user.findUniqueOrThrow({ where: { id: pending.id } });
       expect(stored.verifiedCategories).toEqual(['INDIVIDUAL']);
-      expect(stored.phoneVerifiedAt).toBeInstanceOf(Date);
-      expect(stored.emailVerifiedAt).toBeNull();
+      expect(stored.phoneVerifiedAt).toBeNull();
+      expect(stored.emailVerifiedAt).toBeInstanceOf(Date);
     } finally {
       await context.stop();
     }
@@ -120,7 +118,7 @@ describe('individual signup and mandatory phone OTP', () => {
     const context = await startAuthenticationTestApp();
     const identity = uniqueIdentity('attempts');
     try {
-      const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, password: identity.password }).expect(202);
+      const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
       const challengeId = signup.body.data.challengeId as string;
       await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId, code: '000000' }).expect(400);
       const challenge = await context.prisma.otpCode.findUniqueOrThrow({ where: { id: challengeId } });
@@ -145,7 +143,7 @@ describe('individual signup and mandatory phone OTP', () => {
         expect.objectContaining({ path: 'phone' }),
       );
       expect(await context.prisma.user.count({ where: { emailNormalized: identity.email } })).toBe(0);
-      expect(context.sms.all()).toHaveLength(0);
+      expect(context.email.all()).toHaveLength(0);
     } finally {
       await context.stop();
     }
@@ -197,7 +195,7 @@ describe('individual signup and mandatory phone OTP', () => {
           },
         }),
       ).toBe(1);
-      expect(context.sms.all()).toHaveLength(1);
+      expect(context.email.all()).toHaveLength(1);
     } finally {
       await context.stop();
     }

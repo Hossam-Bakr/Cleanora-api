@@ -6,7 +6,6 @@ import type {
   EndpointLimitPolicy,
   OneTimeVerifierPort,
   PasswordHasherPort,
-  SmsAuthenticationDeliveryPort,
   TokenServicePort,
 } from "../domain/authentication.ports.js";
 import { assertSelfSignupCategory } from "../domain/account-category.policy.js";
@@ -41,7 +40,6 @@ import {
 } from "../domain/verification-eligibility.policy.js";
 import {
   maskEmailDestination,
-  maskPhoneDestination,
 } from "../domain/destination-presentation.js";
 import { AUTH_RATE_LIMITS } from "../domain/rate-limit.policy.js";
 import { UserRepository } from "../infrastructure/user.repository.js";
@@ -58,7 +56,6 @@ export interface AuthenticationServiceDependencies {
   readonly passwordHasher: PasswordHasherPort;
   readonly tokens: TokenServicePort;
   readonly verifier: OneTimeVerifierPort;
-  readonly sms: SmsAuthenticationDeliveryPort;
   readonly email: EmailAuthenticationDeliveryPort;
   readonly accessTtlSeconds: number;
   readonly refreshTtlSeconds: number;
@@ -293,26 +290,10 @@ export class AuthenticationService {
       purpose,
       channel,
       maskedDestination:
-        channel === "SMS"
-          ? maskPhoneDestination(destination)
-          : maskEmailDestination(destination),
+        maskEmailDestination(destination),
       expiresAt: challenge.expiresAt.toISOString(),
       resendAvailableAt: challenge.resendAvailableAt.toISOString(),
     };
-  }
-
-  private async trustedTemporaryPhoneEmail(
-    identity: IdentityState,
-  ): Promise<string | undefined> {
-    const googleAccount = await this.social.findGoogleByUserId(identity.id);
-    if (
-      googleAccount?.providerEmailNormalized !== null &&
-      googleAccount?.providerEmailNormalized !== undefined &&
-      googleAccount.providerEmailVerifiedAt !== null
-    ) {
-      return googleAccount.providerEmailNormalized;
-    }
-    return identity.emailNormalized ?? undefined;
   }
 
   private async requestVerificationForUser(
@@ -356,10 +337,6 @@ export class AuthenticationService {
         destination,
       );
     }
-    const temporaryEmailDeliveryAddress =
-      channel === "SMS"
-        ? await this.trustedTemporaryPhoneEmail(identity)
-        : undefined;
     try {
       const delivery = {
         idempotencyKey: challenge.id,
@@ -368,16 +345,8 @@ export class AuthenticationService {
         accountCategory: category,
         purpose,
         expiresAt: challenge.expiresAt,
-        ...(temporaryEmailDeliveryAddress === undefined
-          ? {}
-          : { temporaryEmailDeliveryAddress }),
       };
-      // The SMS port decides how to deliver an SMS intent. In local development
-      // it may redirect to the trusted server-resolved email; production
-      // adapters can ignore that metadata and deliver to the phone.
-      await (channel === "SMS"
-        ? this.dependencies.sms.send(delivery)
-        : this.dependencies.email.send(delivery));
+      await this.dependencies.email.send(delivery);
       await this.otps.activate(challenge.id);
     } catch {
       await this.otps.failDelivery(challenge.id);
@@ -449,25 +418,6 @@ export class AuthenticationService {
       nextAction: (session === undefined ? "LOGIN" : "CONTINUE") as AuthNextAction,
       ...(session === undefined ? {} : { verificationOnly: false }),
     };
-  }
-
-  async verifyGooglePhone(
-    principal: AuthenticationPrincipal,
-    input: { challengeId: string; code: string },
-  ) {
-    if (
-      !principal.verificationOnly ||
-      !principal.accountCategories.includes("INDIVIDUAL")
-    ) {
-      throw authenticationError("AUTH_SOCIAL_AUTHENTICATION_FAILED");
-    }
-    return this.verifyCode(input, {
-      userId: principal.userId,
-      sessionId: principal.sessionId,
-      expectedCategory: "INDIVIDUAL",
-      expectedPurpose: "CATEGORY_VERIFICATION",
-      expectedChannel: "SMS",
-    });
   }
 
   async login(
@@ -737,18 +687,12 @@ export class AuthenticationService {
     const challengeId = randomUUID();
     try {
       const channel = recoveryChannel(input.category);
-      const normalized =
-        channel === "SMS"
-          ? normalizePhone(input.identifier)
-          : normalizeEmail(input.identifier);
-      const user =
-        channel === "SMS"
-          ? await this.users.findByPhone(normalized)
-          : await this.users.findByEmail(normalized);
+      const normalized = normalizeEmail(input.identifier);
+      const user = await this.users.findByEmail(normalized);
       if (
         user !== null &&
         user.accountCategories.includes(input.category) &&
-        (channel === "SMS" || user.emailVerifiedAt !== null)
+        user.emailVerifiedAt !== null
       ) {
         const policy = (await this.dependencies.policy?.recovery()) ?? {
           ttlSeconds: 1800,
@@ -770,10 +714,6 @@ export class AuthenticationService {
           expiresAt: new Date(Date.now() + policy.ttlSeconds * 1000),
           maxAttempts: policy.maxAttempts,
         });
-        const temporaryEmailDeliveryAddress =
-          channel === "SMS"
-            ? await this.trustedTemporaryPhoneEmail(this.users.map(user))
-            : undefined;
         const delivery = {
           idempotencyKey: challengeId,
           destination: normalized,
@@ -781,14 +721,9 @@ export class AuthenticationService {
           accountCategory: input.category,
           purpose: "PASSWORD_RESET" as const,
           expiresAt: new Date(Date.now() + policy.ttlSeconds * 1000),
-          ...(temporaryEmailDeliveryAddress === undefined
-            ? {}
-            : { temporaryEmailDeliveryAddress }),
         };
         try {
-          await (channel === "SMS"
-            ? this.dependencies.sms.send(delivery)
-            : this.dependencies.email.send(delivery));
+          await this.dependencies.email.send(delivery);
           await this.resets.activate(challengeId);
         } catch (error) {
           await this.resets.failDelivery(challengeId);
@@ -971,11 +906,13 @@ export class AuthenticationService {
     }
     if (!user?.accountCategories.includes("INDIVIDUAL"))
       throw authenticationError("AUTH_SOCIAL_AUTHENTICATION_FAILED");
+    if (!user.verifiedCategories.includes("INDIVIDUAL")) {
+      user = await this.transactions.activateGoogleIndividual(user.id);
+      if (user === null)
+        throw authenticationError("AUTH_SOCIAL_AUTHENTICATION_FAILED");
+    }
     const identity = this.users.map(user);
-    const capability =
-      identity.phoneVerifiedAt === null
-        ? "VERIFICATION_ONLY"
-        : loginCapability(identity);
+    const capability = loginCapability(identity);
     const credential = await this.credentials.findByUserId(user.id);
     return this.issueSession(
       identity,
@@ -1015,40 +952,6 @@ export class AuthenticationService {
       throw authenticationError("AUTH_SOCIAL_LINK_FAILED");
     }
     return principal;
-  }
-
-  async bindGooglePhone(principal: AuthenticationPrincipal, phone: string) {
-    if (
-      !principal.verificationOnly ||
-      !principal.accountCategories.includes("INDIVIDUAL")
-    )
-      throw authenticationError("AUTH_SOCIAL_AUTHENTICATION_FAILED");
-    const googleAccount = await this.social.findGoogleByUserId(principal.userId);
-    if (
-      googleAccount === null ||
-      googleAccount.providerEmailNormalized === null ||
-      googleAccount.providerEmailVerifiedAt === null
-    ) {
-      throw authenticationError("AUTH_GOOGLE_EMAIL_UNAVAILABLE");
-    }
-    const normalizedPhone = normalizePhone(phone);
-    const existing = await this.users.findByPhone(normalizedPhone);
-    if (existing !== null && existing.id !== principal.userId) {
-      throw authenticationError("AUTH_PHONE_ALREADY_REGISTERED");
-    }
-    const user = await this.users.bindPhone(principal.userId, normalizedPhone);
-    if (user === null) {
-      const concurrentOwner = await this.users.findByPhone(normalizedPhone);
-      if (concurrentOwner !== null && concurrentOwner.id !== principal.userId) {
-        throw authenticationError("AUTH_PHONE_ALREADY_REGISTERED");
-      }
-      throw authenticationError("AUTH_SIGNUP_UNAVAILABLE");
-    }
-    return this.requestVerificationForUser(
-      this.users.map(user),
-      "INDIVIDUAL",
-      "CATEGORY_VERIFICATION",
-    );
   }
 
   async linkGoogle(

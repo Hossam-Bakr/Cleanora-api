@@ -14,13 +14,13 @@ function cookie(response: import('supertest').Response): string {
 async function signupAndVerify(context: Awaited<ReturnType<typeof startAuthenticationTestApp>>, category: 'INDIVIDUAL' | 'COMPANY', label: string) {
   const identity = uniqueIdentity(label);
   const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: category, phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
-  const delivery = category === 'INDIVIDUAL' ? context.sms.latest(identity.phone) : context.email.latest(identity.email);
+  const delivery = context.email.latest(identity.email);
   await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId: signup.body.data.challengeId, code: delivery!.value }).expect(200);
   return identity;
 }
 
 describe('R1-P02 end-to-end authentication journeys', () => {
-  it('completes individual signup through mandatory phone verification', async () => {
+  it('completes individual signup through mandatory email verification', async () => {
     const context = await startAuthenticationTestApp();
     try { const identity = await signupAndVerify(context, 'INDIVIDUAL', 'e2e-individual'); await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: identity.password }).expect(200); }
     finally { await context.stop(); }
@@ -40,13 +40,13 @@ describe('R1-P02 end-to-end authentication journeys', () => {
 
   it('changes a known password and completes forgotten-password recovery', async () => {
     const context = await startAuthenticationTestApp();
-    try { const identity = await signupAndVerify(context, 'INDIVIDUAL', 'e2e-recovery'); const login = await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: identity.password }).expect(200); const changedPassword = 'Changed-e2e-password-456!'; await request(context.app).post('/api/v1/auth/password/change').set('Origin', origin).set('Cookie', cookie(login)).set('Authorization', `Bearer ${login.body.data.accessToken}`).send({ currentPassword: identity.password, newPassword: changedPassword }).expect(200); const forgot = await request(context.app).post('/api/v1/auth/password/forgot').send({ accountCategory: 'INDIVIDUAL', identifier: identity.phone }).expect(202); const resetPassword = 'Reset-e2e-password-789!'; await request(context.app).post('/api/v1/auth/password/reset').send({ challengeId: forgot.body.data.challengeId, code: context.sms.latest(identity.phone)!.value, newPassword: resetPassword }).expect(200); await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: resetPassword }).expect(200); }
+    try { const identity = await signupAndVerify(context, 'INDIVIDUAL', 'e2e-recovery'); const login = await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: identity.password }).expect(200); const changedPassword = 'Changed-e2e-password-456!'; await request(context.app).post('/api/v1/auth/password/change').set('Origin', origin).set('Cookie', cookie(login)).set('Authorization', `Bearer ${login.body.data.accessToken}`).send({ currentPassword: identity.password, newPassword: changedPassword }).expect(200); const forgot = await request(context.app).post('/api/v1/auth/password/forgot').send({ accountCategory: 'INDIVIDUAL', identifier: identity.email }).expect(202); const resetPassword = 'Reset-e2e-password-789!'; await request(context.app).post('/api/v1/auth/password/reset').send({ challengeId: forgot.body.data.challengeId, code: context.email.latest(identity.email)!.value, newPassword: resetPassword }).expect(200); await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: resetPassword }).expect(200); }
     finally { await context.stop(); }
   });
 
-  it('keeps Google sign-in gated until phone verification', async () => {
+  it('completes Google sign-in from verified email without claiming phone ownership', async () => {
     const context = await startAuthenticationTestApp(); const agent = request.agent(context.app); const identity = uniqueIdentity('e2e-google'); context.google.program({ subject: `e2e-${identity.email}`, email: identity.email, emailVerified: true });
-    try { const start = await agent.get('/api/v1/auth/google').expect(200); const state = new URL(start.body.data.authorizationUrl).searchParams.get('state')!; await agent.get('/api/v1/auth/google/callback').query({ state, code: 'fake' }).expect(303); const restricted = await agent.post('/api/v1/auth/refresh').set('Origin', origin).expect(200); expect(restricted.body.data.verificationOnly).toBe(true); const access = restricted.body.data.accessToken as string; const bind = await agent.post('/api/v1/auth/google/phone/request').set('Authorization', `Bearer ${access}`).send({ phone: identity.phone }).expect(202); await agent.post('/api/v1/auth/google/phone/verify').set('Authorization', `Bearer ${access}`).send({ challengeId: bind.body.data.challengeId, code: context.sms.latest(identity.email.toLowerCase())!.value }).expect(200); const me = await agent.get('/api/v1/auth/me').set('Authorization', `Bearer ${access}`).expect(200); expect(me.body.data).toMatchObject({ verificationOnly: false, user: { phoneVerified: true } }); }
+    try { const start = await agent.get('/api/v1/auth/google').expect(200); const state = new URL(start.body.data.authorizationUrl).searchParams.get('state')!; const callback = await agent.get('/api/v1/auth/google/callback').query({ state, code: 'fake' }).expect(303); expect(callback.headers['location']).toContain('verification=complete'); const session = await agent.post('/api/v1/auth/refresh').set('Origin', origin).expect(200); expect(session.body.data.verificationOnly).toBe(false); const access = session.body.data.accessToken as string; const me = await agent.get('/api/v1/auth/me').set('Authorization', `Bearer ${access}`).expect(200); expect(me.body.data).toMatchObject({ verificationOnly: false, user: { emailVerified: true, phoneVerified: false } }); }
     finally { await context.stop(); }
   });
 

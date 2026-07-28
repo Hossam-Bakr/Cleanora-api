@@ -21,8 +21,6 @@ and human approval.
 | GET | `/google` | Public/rate-limited | Create Google state and return an authorization URL to an API client |
 | GET | `/google/browser` | Public/rate-limited | Create Google state and redirect a top-level browser to Google |
 | GET | `/google/callback` | Correlated browser callback | Complete sign-in or linking from the server-held transaction intent and redirect to the frontend |
-| POST | `/google/phone/request` | Verification-only Google session/rate-limited | Bind a unique phone and send its verification OTP |
-| POST | `/google/phone/verify` | Verification-only Google session/rate-limited | Consume the phone OTP and atomically promote that session to full access |
 | GET | `/google/link` | Full authenticated individual | Start deliberate Google account linking |
 | DELETE | `/social/google` | Full authenticated individual | Unlink Google only when another recoverable credential remains |
 
@@ -70,9 +68,9 @@ numeric sequences are rejected.
    `GOOGLE_FRONTEND_CALLBACK_URI?google=success&intent=sign-in`.
 6. The frontend callback calls `POST /refresh` with
    `credentials: "include"` and initializes its session from `data.user`.
-7. A new Google identity without a verified phone receives a
-   verification-only access token. It calls `/google/phone/request`, then
-   `/google/phone/verify`; successful verification upgrades that same session.
+7. A new Google identity is active only when Google supplies a verified email.
+   R1-P02 exposes no Google phone-verification endpoint and makes no phone
+   ownership claim; that work is deferred to R1-P26.
 
 Because Cleanora is greenfield, no duplicate legacy Google callback or phone
 binding aliases are exposed. New integrations use only the canonical routes

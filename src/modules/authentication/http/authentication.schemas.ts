@@ -25,11 +25,10 @@ const requiredPhoneSchema = z
   .refine((phone) => phone.length === 0 || isPhoneFormatValid(phone), {
     message: "Enter a valid international phone number, for example +201012345678",
   });
-const optionalEmailSchema = z
+const requiredEmailSchema = z
   .string()
   .trim()
-  .pipe(z.email("Enter a valid email address"))
-  .optional();
+  .pipe(z.email("Enter a valid email address"));
 const passwordSchema = z
   .string()
   .min(7, "Password must contain at least 7 characters")
@@ -52,22 +51,10 @@ export const signupSchema = z.object({
     .object({
       accountCategory: selfSignupCategorySchema,
       phone: requiredPhoneSchema,
-      email: optionalEmailSchema,
+      email: requiredEmailSchema,
       password: passwordSchema,
     })
-    .strict()
-    .superRefine((value, context) => {
-      if (
-        value.accountCategory !== "INDIVIDUAL" &&
-        value.email === undefined
-      ) {
-        context.addIssue({
-          code: "custom",
-          message: "Email is required for this account category",
-          path: ["email"],
-        });
-      }
-    }),
+    .strict(),
 });
 
 export const enrollSchema = z.object({
@@ -85,10 +72,7 @@ export const otpRequestSchema = z.object({
       userId: z.string().min(1, "User ID is required").optional(),
       accountCategory: selfSignupCategorySchema.optional(),
       purpose: z
-        .enum([
-          "CATEGORY_VERIFICATION",
-          "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION",
-        ])
+        .literal("CATEGORY_VERIFICATION")
         .optional(),
     })
     .strict()
@@ -134,7 +118,7 @@ export const forgotSchema = z.object({
   body: z
     .object({
       accountCategory: categorySchema,
-      identifier: z.string().min(1, "Recovery identifier is required"),
+      identifier: requiredEmailSchema,
     })
     .strict(),
 });
@@ -156,14 +140,6 @@ export const changeSchema = z.object({
     .object({
       currentPassword: z.string().min(1, "Current password is required"),
       newPassword: passwordSchema,
-    })
-    .strict(),
-});
-
-export const googlePhoneSchema = z.object({
-  body: z
-    .object({
-      phone: requiredPhoneSchema,
     })
     .strict(),
 });

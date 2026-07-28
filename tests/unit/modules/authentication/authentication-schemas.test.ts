@@ -9,7 +9,7 @@ import {
 } from "../../../../src/modules/authentication/http/authentication.schemas.js";
 
 describe("authentication HTTP schemas", () => {
-  it("requires email for non-individual signup while accepting optional individual email", () => {
+  it("requires email for every self-signup category", () => {
     expect(
       signupSchema.safeParse({
         body: {
@@ -34,10 +34,20 @@ describe("authentication HTTP schemas", () => {
         body: {
           accountCategory: "INDIVIDUAL",
           phone: "+201012345678",
+          email: "person@example.test",
           password: "safe-pass",
         },
       }).success,
     ).toBe(true);
+    expect(
+      signupSchema.safeParse({
+        body: {
+          accountCategory: "INDIVIDUAL",
+          phone: "+201012345678",
+          password: "safe-pass",
+        },
+      }).success,
+    ).toBe(false);
   });
 
   it("aggregates simultaneous phone and password policy failures", () => {
@@ -45,6 +55,7 @@ describe("authentication HTTP schemas", () => {
       body: {
         accountCategory: "INDIVIDUAL",
         phone: "not-a-phone",
+        email: "not-an-email",
         password: "1234567",
       },
     });
@@ -53,7 +64,9 @@ describe("authentication HTTP schemas", () => {
       return;
     }
     const paths = result.error.issues.map((issue) => issue.path.join("."));
-    expect(paths).toEqual(expect.arrayContaining(["body.phone", "body.password"]));
+    expect(paths).toEqual(
+      expect.arrayContaining(["body.phone", "body.email", "body.password"]),
+    );
   });
 
   it("rejects worker enrollment and accepts supported category enrollment", () => {
@@ -124,6 +137,14 @@ describe("authentication HTTP schemas", () => {
     expect(
       forgotSchema.safeParse({
         body: { accountCategory: "INDIVIDUAL", identifier: "+201012345678" },
+      }).success,
+    ).toBe(false);
+    expect(
+      forgotSchema.safeParse({
+        body: {
+          accountCategory: "INDIVIDUAL",
+          identifier: "person@example.test",
+        },
       }).success,
     ).toBe(true);
   });

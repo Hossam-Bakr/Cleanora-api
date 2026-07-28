@@ -10,7 +10,6 @@ import {
   changeSchema,
   enrollSchema,
   forgotSchema,
-  googlePhoneSchema,
   loginSchema,
   otpRequestSchema,
   otpVerifySchema,
@@ -210,20 +209,6 @@ export function createAuthenticationRouter(
     "/google/callback",
     ...policy("google-callback", AUTH_RATE_LIMITS.google),
     controller.googleCallback,
-  );
-  router.post(
-    "/google/phone/request",
-    authenticateAccess,
-    validateRequest({ body: googlePhoneSchema.shape.body }),
-    ...policy("otp-send", AUTH_RATE_LIMITS.otpSend, (request) => request.body.phone),
-    controller.googlePhoneRequest,
-  );
-  router.post(
-    "/google/phone/verify",
-    authenticateAccess,
-    validateRequest({ body: otpVerifySchema.shape.body }),
-    ...policy("otp-verify", AUTH_RATE_LIMITS.otpVerify),
-    controller.googlePhoneVerify,
   );
   router.get(
     "/google/link",

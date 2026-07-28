@@ -858,3 +858,54 @@ The local `email:check` attempt did not complete within the restricted
 environment's 60-second limit, so SMTP is not claimed operational. The command
 now tolerates a missing `.env` file and can be run inside the deployed Railway
 container using its injected variables.
+## DEC-028 email-only authentication and hosting parity
+
+The human owner moved real phone ownership verification out of R1-P02 and into
+R1-P26. R1-P02 now requires an account email for every supported self-signup
+category and uses SMTP for six-digit account verification and four-digit
+password recovery. Phone values remain stored but unverified.
+
+Implemented:
+
+- removed SMS/unavailable-SMS/SMS-to-email delivery ports, adapters, flags, and
+  composition;
+- removed Google phone request/verify routes and the phone-restricted Google
+  session;
+- made signup email mandatory for Individual, Company, Engineer, and
+  Provider-owner;
+- made email the only verification and recovery target;
+- activated new Google Individuals only from Google-verified email while
+  leaving `phoneVerifiedAt` null;
+- added forward migration
+  `r1_p02_email_verification_for_individuals` to replace the applied
+  phone-only Individual verification constraint while preserving historical
+  already-phone-verified rows;
+- normalized `.env` and `.env.example`, including one canonical cookie setting
+  and no SMS flags;
+- added safe Gmail app-password whitespace normalization;
+- updated runtime/static OpenAPI, Swagger, Postman, frontend guidance, roadmap,
+  decision log, phase contract, and focused tests.
+
+Validation passed:
+
+- TypeScript typecheck
+- ESLint
+- production build with Prisma generation
+- Prisma schema validation and client generation
+- unit suite: 51 files / 199 tests
+- OpenAPI validation
+- documentation checks
+- `git diff --check`
+
+Runtime/database validation remains blocked in the Codex sandbox:
+
+- the direct Neon migration/status command returned a schema-engine connection
+  failure;
+- the compiled production-style startup reached Prisma and failed with safe
+  machine code `EACCES`;
+- SMTP verification timed out because outbound provider access is unavailable;
+- the isolated test database does not yet contain the forward migration, so
+  database-backed email-verification tests cannot pass until the approved
+  direct test migration URL is supplied and deployed.
+
+No commit, push, Railway deployment, or production migration was performed.

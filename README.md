@@ -313,16 +313,15 @@ For a Railway service connected to GitHub:
 - Set production CORS origins and secure-cookie settings explicitly.
 - Set `EMAIL_AUTH_ENABLED=true` and provide the complete SMTP group before
   expecting any email-backed signup category to work.
-- A temporary hosted preview may set both
-  `AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED=true` and
-  `AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED=true`. This redirects individual
-  phone OTP intents to the account email and does not prove phone ownership.
+- R1-P02 uses email for every supported signup verification and recovery
+  journey. Do not configure SMS, Twilio, or SMS-to-email fallback flags.
+- Phone ownership verification and a real SMS provider are deferred to R1-P26.
 - Use a direct approved database connection for `prisma migrate deploy`.
 - Apply reviewed migrations as a controlled release step.
 - Do not run `prisma migrate dev`, test seeds, database reset, or test suites
   against the production database.
-- Replace every SMS-to-email fallback with a real SMS provider before
-  production launch.
+- Ensure the DEC-028 forward migration is deployed before accepting an
+  Individual email-verification challenge.
 
 The deployed service must fail closed when required authentication, database,
 email, or Google configuration is incomplete.

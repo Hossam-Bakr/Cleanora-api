@@ -20,12 +20,10 @@ export type { AccountCategory, AuthenticationPrincipal, UserStatus, IdentityStat
 export type {
   AuthenticationDelivery,
   EmailAuthenticationDeliveryPort,
-  SmsAuthenticationDeliveryPort,
 } from "./domain/authentication.ports.js";
 export {
   formatDeliveryExpiry,
   maskEmailDestination,
-  maskPhoneDestination,
 } from './domain/destination-presentation.js';
 export type {
   AccessTokenClaims,

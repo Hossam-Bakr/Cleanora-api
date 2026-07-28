@@ -48,12 +48,6 @@ export interface AuthenticationDelivery {
     | "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION"
     | "PASSWORD_RESET";
   readonly expiresAt?: Date;
-  /** Development-only redirect resolved by the server, never by client input. */
-  readonly temporaryEmailDeliveryAddress?: string;
-}
-
-export interface SmsAuthenticationDeliveryPort {
-  send(message: AuthenticationDelivery): Promise<void>;
 }
 
 export interface EmailAuthenticationDeliveryPort {

@@ -585,3 +585,30 @@ SMS authentication intents to the server-resolved account email. This mode:
 
 The local-only `AUTH_DEV_SMS_FALLBACK_TO_EMAIL` mode remains available for
 development and cannot be enabled together with the hosted-preview mode.
+
+---
+
+## DEC-028 — Email-only R1-P02 authentication; phone verification deferred
+
+**Date:** 2026-07-28
+**Status:** Approved by human owner; supersedes DEC-017, DEC-023, DEC-024 phone-gate rules, and DEC-027
+
+R1-P02 uses email as its only account-verification and password-recovery
+delivery channel in local development and hosted environments:
+
+- every supported self-signup category requires a normalized email address;
+- every signup verification code and password-reset code is delivered to that
+  account-bound email through the configured SMTP provider;
+- phone numbers may still be collected as contact identifiers, but R1-P02 does
+  not set `phoneVerifiedAt` or claim phone ownership;
+- SMS adapters, SMS-to-email preview adapters, their environment flags, and the
+  Google phone-verification endpoints are removed from the R1-P02 runtime;
+- a new Google identity whose provider email is verified receives an active
+  Individual category immediately and does not enter a phone-restricted
+  session; and
+- a real SMS provider, phone challenge endpoints, phone ownership verification,
+  migration/backfill strategy, and launch acceptance are deferred to R1-P26.
+
+This is a product-scope change, not a claim that email proves ownership of a
+phone number. R1-P26 must define how existing unverified phone values are
+verified without silently marking historical data as verified.

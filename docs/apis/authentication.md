@@ -11,12 +11,10 @@ documented in:
 - `docs/phases/release-1/R1-P02-authentication/security-session-design.md`
 - `docs/apis/google-sign-in-frontend.md`
 
-The implementation is capability-gated by `AUTH_ENABLED`. Production SMS stays
-disabled until the human owner selects a vendor and supplies credentials.
-While SMS is unavailable, Google phone OTPs are emailed to the authenticated
-user's verified Google email; standard Individual signup phone OTPs are sent to
-that signup's normalized account email. Both recipients are resolved
-server-side and no fixed development inbox is accepted.
+The implementation is capability-gated by `AUTH_ENABLED` and requires the
+complete SMTP capability. Under DEC-028, every supported self-signup category
+receives verification and recovery credentials at its account-bound email.
+Phone values remain unverified and SMS is not part of R1-P02.
 
 DEC-020 standardizes JSON failures as `code`, matching numeric `statusCode`,
 safe descriptive `message`, optional field-level `details`, and `requestId`.
@@ -36,8 +34,8 @@ authentication boundary expires it as known stale localhost state.
 
 Google browser sign-in uses a backend callback followed by a safe frontend
 redirect. Tokens and provider callback parameters are never placed in the
-frontend redirect URL. New Google identities verify their phone through the
-authenticated `/google/phone/request` and `/google/phone/verify` endpoints.
+frontend redirect URL. New Google identities become active only when Google
+asserts a verified email; R1-P02 exposes no Google phone-verification endpoint.
 The backend never renders a Google result page. Chrome flows begin at
 `/google/browser`, return through `/google/callback`, then redirect to the
 configured frontend callback. The frontend calls `/refresh` with credentials

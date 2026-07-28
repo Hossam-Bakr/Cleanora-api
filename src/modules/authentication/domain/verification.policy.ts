@@ -5,5 +5,6 @@ export const OTP_MAX_ATTEMPTS = 5;
 export const OTP_RESEND_SECONDS = 60;
 
 export function blockingVerificationChannel(category: AccountCategory): AuthDeliveryChannel {
-  return category === 'INDIVIDUAL' || category === 'WORKER' ? 'SMS' : 'EMAIL';
+  void category;
+  return 'EMAIL';
 }

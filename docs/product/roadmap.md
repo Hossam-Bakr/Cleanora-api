@@ -402,14 +402,13 @@ Implement the complete Release 1 identity journey in one phase.
 - Phone/password login
 - Logout and logout-all
 - Current-user endpoint
-- SMS OTP for individual phone verification
-- Email OTP for company, engineer, and provider activation
-- Optional soft email verification for individual
+- Required email OTP for individual, company, engineer, and provider-owner activation
+- Phone is collected as an unverified contact identifier; ownership verification is deferred to R1-P26
 - Forgot/reset/change password
 - Access and refresh/session lifecycle
 - Session revocation
 - Google sign-in and account linking
-- Actor-specific post-social-login verification gates
+- Verified Google email activates an Individual identity without a phone gate
 - Authentication rate limits and events
 - Ban/suspension enforcement at login and request authentication
 
@@ -425,8 +424,8 @@ Implement the complete Release 1 identity journey in one phase.
 
 ### Done When
 
-- Every Release 1 actor follows the correct verification rule.
-- Google sign-in does not bypass required verification.
+- Every R1-P02 self-signup actor completes the required email verification.
+- Google sign-in trusts only Google-verified email and creates no phone-verification claim.
 - Worker login is restricted to provider-created workers.
 - Session expiry, revocation, and retry behavior are tested.
 - Authentication documentation is complete.
@@ -1384,6 +1383,10 @@ Prove that Release 1 is operationally and financially ready.
 - Rollback runbook
 - Monitoring and incident procedures
 - Launch metrics
+- Real SMS provider selection and production integration
+- Phone OTP request/verification endpoints and abuse controls
+- Existing unverified-phone migration/backfill strategy
+- Phone ownership acceptance for signup and Google identities
 
 ### Done When
 
@@ -1393,6 +1396,7 @@ Prove that Release 1 is operationally and financially ready.
 - Financial reports reconcile.
 - Backup and rollback are verified.
 - Product and engineering approve production release.
+- Real phone verification proves ownership without treating R1-P02 phone values as already verified.
 
 ---
 

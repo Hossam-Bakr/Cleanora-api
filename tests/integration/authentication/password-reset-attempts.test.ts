@@ -7,7 +7,7 @@ function service() {
     passwordHasher: { hash: async () => 'new-hash', verify: async () => true, dummyVerify: async () => undefined },
     tokens: { issueAccess: () => ({ token: 'access', expiresAt: new Date() }), issueRefresh: (_claims, expiresAt) => ({ token: 'refresh', expiresAt }), verifyAccess: () => ({ userId: 'user-1', sessionId: 'session-1', credentialVersion: 1 }), verifyRefresh: () => ({ userId: 'user-1', sessionId: 'session-1', credentialVersion: 1, rotationCounter: 0, jwtId: 'jwt' }) },
     verifier: { randomOtp: () => '123456', randomSecret: () => 'secret', verifyOtp: () => 'otp', verifyReset: (_id, secret) => secret, verifyRefresh: () => 'refresh', hashDestination: () => 'a'.repeat(64), equals: (left, right) => left === right },
-    sms: { send: async () => undefined }, email: { send: async () => undefined }, accessTtlSeconds: 900, refreshTtlSeconds: 3600, privacyHashSecret: 'privacy-test-secret'
+    email: { send: async () => undefined }, accessTtlSeconds: 900, refreshTtlSeconds: 3600, privacyHashSecret: 'privacy-test-secret'
   });
 }
 

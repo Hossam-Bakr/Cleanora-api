@@ -23,14 +23,14 @@ describe('OTP category and enrollment integrity', () => {
     expect(() => verificationTarget({ ...pendingIndividual, accountCategories: ['WORKER'] }, 'WORKER', 'CATEGORY_VERIFICATION')).toThrow();
   });
 
-  it('derives individual phone and business email targets from stored state', () => {
-    expect(verificationTarget(pendingIndividual, 'INDIVIDUAL', 'CATEGORY_VERIFICATION')).toMatchObject({ channel: 'SMS', destination: pendingIndividual.phoneE164 });
+  it('derives email targets for individual and business enrollment', () => {
+    expect(verificationTarget(pendingIndividual, 'INDIVIDUAL', 'CATEGORY_VERIFICATION')).toMatchObject({ channel: 'EMAIL', destination: pendingIndividual.emailNormalized });
     expect(verificationTarget(pendingCompany, 'COMPANY', 'CATEGORY_VERIFICATION')).toMatchObject({ channel: 'EMAIL', destination: pendingCompany.emailNormalized });
   });
 
-  it('allows optional individual email only after mandatory phone verification', () => {
+  it('rejects the retired optional-individual-email transition', () => {
     expect(() => verificationTarget(pendingIndividual, 'INDIVIDUAL', 'OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION')).toThrow();
-    expect(verificationTarget({ ...pendingIndividual, verifiedCategories: ['INDIVIDUAL'], phoneVerifiedAt: new Date() }, 'INDIVIDUAL', 'OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION')).toMatchObject({ channel: 'EMAIL' });
+    expect(() => verificationTarget({ ...pendingIndividual, verifiedCategories: ['INDIVIDUAL'], phoneVerifiedAt: new Date() }, 'INDIVIDUAL', 'OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION')).toThrow();
   });
 
   it('rejects verification when stored enrollment state has no eligible destination or transition', () => {
@@ -40,7 +40,7 @@ describe('OTP category and enrollment integrity', () => {
       'CATEGORY_VERIFICATION'
     )).toThrow();
     expect(() => verificationTarget(
-      { ...pendingIndividual, phoneE164: null },
+      { ...pendingIndividual, emailNormalized: null },
       'INDIVIDUAL',
       'CATEGORY_VERIFICATION'
     )).toThrow();
@@ -71,14 +71,14 @@ describe('OTP category and enrollment integrity', () => {
   });
 
   it.each([
-    { userId: 'other-user', accountCategory: 'INDIVIDUAL', purpose: 'CATEGORY_VERIFICATION', channel: 'SMS', destinationHash: 'phone-hash' },
-    { userId: 'user-1', accountCategory: 'COMPANY', purpose: 'CATEGORY_VERIFICATION', channel: 'SMS', destinationHash: 'phone-hash' },
-    { userId: 'user-1', accountCategory: 'INDIVIDUAL', purpose: 'OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION', channel: 'SMS', destinationHash: 'phone-hash' },
-    { userId: 'user-1', accountCategory: 'INDIVIDUAL', purpose: 'CATEGORY_VERIFICATION', channel: 'EMAIL', destinationHash: 'phone-hash' },
-    { userId: 'user-1', accountCategory: 'INDIVIDUAL', purpose: 'CATEGORY_VERIFICATION', channel: 'SMS', destinationHash: 'other-destination' }
+    { userId: 'other-user', accountCategory: 'INDIVIDUAL', purpose: 'CATEGORY_VERIFICATION', channel: 'EMAIL', destinationHash: 'email-hash' },
+    { userId: 'user-1', accountCategory: 'COMPANY', purpose: 'CATEGORY_VERIFICATION', channel: 'EMAIL', destinationHash: 'email-hash' },
+    { userId: 'user-1', accountCategory: 'INDIVIDUAL', purpose: 'OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION', channel: 'EMAIL', destinationHash: 'email-hash' },
+    { userId: 'user-1', accountCategory: 'INDIVIDUAL', purpose: 'CATEGORY_VERIFICATION', channel: 'SMS', destinationHash: 'email-hash' },
+    { userId: 'user-1', accountCategory: 'INDIVIDUAL', purpose: 'CATEGORY_VERIFICATION', channel: 'EMAIL', destinationHash: 'other-destination' }
   ] as const)('rejects a challenge rebound to another target %#', (challenge) => {
     const target = verificationTarget(pendingIndividual, 'INDIVIDUAL', 'CATEGORY_VERIFICATION');
-    expect(() => assertVerificationChallengeTarget(target, challenge, 'phone-hash')).toThrow();
+    expect(() => assertVerificationChallengeTarget(target, challenge, 'email-hash')).toThrow();
   });
 
   it('accepts a challenge bound to the exact verification target', () => {
@@ -90,10 +90,10 @@ describe('OTP category and enrollment integrity', () => {
           userId: 'user-1',
           accountCategory: 'INDIVIDUAL',
           purpose: 'CATEGORY_VERIFICATION',
-          channel: 'SMS',
-          destinationHash: 'phone-hash',
+          channel: 'EMAIL',
+          destinationHash: 'email-hash',
         },
-        'phone-hash',
+        'email-hash',
       ),
     ).not.toThrow();
   });

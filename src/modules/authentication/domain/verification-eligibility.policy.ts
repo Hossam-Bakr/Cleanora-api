@@ -25,35 +25,10 @@ export function verificationTarget(
 ): VerificationTarget {
   if (!identity.accountCategories.includes(category) || category === "WORKER")
     throw authenticationError("AUTH_VERIFICATION_FAILED");
-  if (purpose === "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION") {
-    if (
-      category !== "INDIVIDUAL" ||
-      identity.phoneVerifiedAt === null ||
-      identity.emailNormalized === null ||
-      identity.emailVerifiedAt !== null
-    )
-      throw authenticationError("AUTH_VERIFICATION_FAILED");
-    return {
-      userId: identity.id,
-      category,
-      purpose,
-      channel: "EMAIL",
-      destination: identity.emailNormalized,
-    };
-  }
+  if (purpose !== "CATEGORY_VERIFICATION")
+    throw authenticationError("AUTH_VERIFICATION_FAILED");
   if (identity.verifiedCategories.includes(category))
     throw authenticationError("AUTH_VERIFICATION_FAILED");
-  if (category === "INDIVIDUAL") {
-    if (identity.phoneE164 === null)
-      throw authenticationError("AUTH_VERIFICATION_FAILED");
-    return {
-      userId: identity.id,
-      category,
-      purpose,
-      channel: "SMS",
-      destination: identity.phoneE164,
-    };
-  }
   if (identity.emailNormalized === null)
     throw authenticationError("AUTH_VERIFICATION_FAILED");
   return {

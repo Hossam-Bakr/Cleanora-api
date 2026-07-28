@@ -46,49 +46,6 @@ export class UserRepository {
       },
     });
   }
-  async verifyCategory(
-    userId: string,
-    category: AccountCategory,
-    channel: "SMS" | "EMAIL",
-  ) {
-    const user = await this.findById(userId);
-    if (user === null) return null;
-    return getPrismaClient().user.update({
-      where: { id: userId },
-      data: {
-        verifiedCategories: [
-          ...new Set([...user.verifiedCategories, category]),
-        ],
-        ...(channel === "SMS"
-          ? { phoneVerifiedAt: new Date() }
-          : { emailVerifiedAt: new Date() }),
-      },
-    });
-  }
-  verifyOptionalEmail(userId: string) {
-    return getPrismaClient().user.update({
-      where: { id: userId },
-      data: { emailVerifiedAt: new Date() },
-    });
-  }
-
-
-  async bindPhone(userId: string, phoneE164: string) {
-    try {
-      return await getPrismaClient().user.update({
-        where: { id: userId },
-        data: { phoneE164 },
-      });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002"
-      )
-        return null;
-      throw error;
-    }
-  }
-
   
   map = mapIdentity;
 }

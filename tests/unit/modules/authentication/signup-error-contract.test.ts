@@ -36,7 +36,6 @@ function createService(): AuthenticationService {
       hashDestination: () => "a".repeat(64),
       equals: (left, right) => left === right,
     },
-    sms: { send: async () => undefined },
     email: { send: async () => undefined },
     accessTtlSeconds: 900,
     refreshTtlSeconds: 3600,

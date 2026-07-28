@@ -34,20 +34,29 @@
 | GET | `/google` | Public | 200 | Start individual-only OIDC transaction and return its authorization URL |
 | GET | `/google/browser` | Public | 303 | Start the same transaction and redirect a top-level browser to Google |
 | GET | `/google/callback` | Correlation cookie | 303 | Consume the stored SIGN_IN/LINK transaction and redirect safely to the frontend |
-| POST | `/google/phone/request` | Private Google-restricted | 202 | Bind unique phone and request blocking SMS verification |
-| POST | `/google/phone/verify` | Private Google-restricted | 200 | Verify the exact Individual phone challenge and promote the same session |
 | GET | `/google/link` | Private recent full individual | 200 | Start deliberate link bound to current user/session |
 | DELETE | `/social/google` | Private recent full individual | 200 | Unlink only with another recoverable method |
 
 ## Request and response direction
 
-`/signup` uses one discriminated `accountCategory` body. Individual requires phone/password and optional email. Company, engineer, and provider owner require phone/email/password. Worker is rejected before persistence. The 202 response returns opaque `challengeId`, `nextAction: VERIFY_ACCOUNT`, channel, purpose, masked destination, expiry, and resend availability. It never returns `userId`, passwords, OTPs, or a session.
+`/signup` uses one discriminated `accountCategory` body. Every supported
+self-signup category requires phone, email, and password. Email is the only
+R1-P02 verification and recovery channel; phone ownership is deferred to
+R1-P26. Worker is rejected before persistence. The 202 response returns opaque
+`challengeId`, `nextAction: VERIFY_ACCOUNT`, channel, purpose, masked
+destination, expiry, and resend availability. It never returns `userId`,
+passwords, OTPs, or a session.
 
 `/account-categories` locks the authenticated user's row, collision-checks identifiers, adds only the new pending category, and creates its gate. It never creates a user, role, permission, or profile. The 202 response uses the same verification-challenge shape as signup.
 
-`/otp/request` accepts either opaque `challengeId` (preferred after signup) or `userId` plus `accountCategory` (and optional purpose for optional individual email). The challenge selector owns category, purpose, channel, and destination; clients cannot retarget another identity. The 202 response matches the signup verification-challenge shape.
+`/otp/request` accepts either opaque `challengeId` (preferred after signup) or
+`userId` plus `accountCategory`. The only public purpose is
+`CATEGORY_VERIFICATION`, and its destination is the stored account email.
 
-`/otp/verify` requires matching `challengeId` and a six-digit code. Public success returns `{ verified: true, nextAction: "LOGIN" }` and issues no session. Authenticated Google phone verification returns `{ verified: true, verificationOnly: false, nextAction: "CONTINUE" }` after promoting that session.
+`/otp/verify` requires matching `challengeId` and a six-digit code. Public
+success returns `{ verified: true, nextAction: "LOGIN" }` and issues no
+session. Google sign-in trusts only a provider-verified email and has no
+R1-P02 phone-verification endpoint.
 
 Chrome Google authentication starts only through `/google/browser`, preserving
 the state cookie in the same browser. `/google` is an API-style inspection

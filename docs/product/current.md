@@ -11,7 +11,7 @@
 | Frontend Owner | `TBD` |
 | Started At | `2026-07-24` |
 | Completed At | `—` |
-| Last Updated | `2026-07-26` |
+| Last Updated | `2026-07-28` |
 
 ## Active phase — R1-P02
 
@@ -72,6 +72,13 @@ the account-bound email only, emits a startup warning, and states that the
 delivery does not prove phone ownership. Direct email categories and the
 fallback both require a valid SMTP configuration. This preview exception must
 be replaced by real SMS before production readiness.
+
+DEC-028 supersedes the temporary SMS and phone-gate decisions. R1-P02 now uses
+email as the only verification and recovery delivery channel for every
+supported self-signup category in both local and hosted environments. Phone
+values remain unverified, Google verified-email sign-in creates a fully active
+Individual identity, and real phone ownership verification is deferred to
+R1-P26. Obsolete SMS adapters and flags are no longer part of startup.
 
 ## Completed phase — R1-P01
 

@@ -127,6 +127,10 @@ export class NodemailerEmailAdapter implements EmailPort {
 export function createNodemailerEmailAdapter(
   configuration: SmtpEmailConfiguration,
 ): NodemailerEmailAdapter {
+  const password = normalizeSmtpPassword(
+    configuration.host,
+    configuration.password,
+  );
   const transport = loadNodemailer().createTransport({
     host: configuration.host,
     port: configuration.port,
@@ -134,7 +138,7 @@ export function createNodemailerEmailAdapter(
     requireTLS: configuration.requireTls,
     auth: {
       user: configuration.user,
-      pass: configuration.password,
+      pass: password,
     },
     connectionTimeout: configuration.connectionTimeoutMilliseconds,
     socketTimeout: configuration.socketTimeoutMilliseconds,
@@ -144,4 +148,17 @@ export function createNodemailerEmailAdapter(
     name: configuration.fromName,
     address: configuration.fromEmail,
   });
+}
+
+/**
+ * Gmail displays app passwords in four-character groups. Accept that copied
+ * presentation safely while leaving every non-Gmail SMTP password unchanged.
+ */
+export function normalizeSmtpPassword(host: string, password: string): string {
+  if (host.trim().toLowerCase() !== "smtp.gmail.com") {
+    return password;
+  }
+
+  const compact = password.replace(/\s/gu, "");
+  return compact.length === 16 ? compact : password;
 }

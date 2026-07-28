@@ -1,15 +1,16 @@
-import type { AuthenticationDelivery, EmailAuthenticationDeliveryPort, SmsAuthenticationDeliveryPort } from '../../../src/modules/authentication/index.js';
+import type {
+  AuthenticationDelivery,
+  EmailAuthenticationDeliveryPort,
+} from '../../../src/modules/authentication/index.js';
 
 export interface DeliveredAuthenticationValue extends AuthenticationDelivery {
-  readonly channel: 'SMS' | 'EMAIL';
+  readonly channel: 'EMAIL';
 }
 
 /** Test-only inbox retaining raw challenge values inside one test process. */
-export class DeterministicAuthenticationInbox implements SmsAuthenticationDeliveryPort, EmailAuthenticationDeliveryPort {
+export class DeterministicAuthenticationInbox implements EmailAuthenticationDeliveryPort {
   private readonly messages: DeliveredAuthenticationValue[] = [];
   private nextFailure: Error | undefined;
-
-  constructor(private readonly channel: 'SMS' | 'EMAIL') {}
 
   async send(message: AuthenticationDelivery): Promise<void> {
     if (this.nextFailure !== undefined) {
@@ -17,15 +18,14 @@ export class DeterministicAuthenticationInbox implements SmsAuthenticationDelive
       this.nextFailure = undefined;
       throw failure;
     }
-    this.messages.push({ ...message, channel: this.channel });
+    this.messages.push({ ...message, channel: 'EMAIL' });
   }
 
   latest(destination?: string): DeliveredAuthenticationValue | undefined {
     return [...this.messages].reverse().find(
       (message) =>
         destination === undefined ||
-        message.destination === destination ||
-        message.temporaryEmailDeliveryAddress === destination,
+        message.destination === destination,
     );
   }
 

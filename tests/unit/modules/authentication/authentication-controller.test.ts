@@ -374,40 +374,14 @@ describe('authentication controller failure alternatives', () => {
     },
   );
 
-  it('verifies a Google phone against the authenticated session', async () => {
-    const service = {
-      verifyGooglePhone: vi.fn(async () => ({
-        verified: true,
-        verificationOnly: false,
-        nextAction: 'CONTINUE'
-      }))
-    };
-    const controller = createAuthenticationController(service as never, cookies);
-    const responseValue = response({ authenticationPrincipal: principal });
-    const next = vi.fn();
-
-    await controller.googlePhoneVerify(
-      request({ body: { challengeId: 'challenge-1', code: '123456' } }) as never,
-      responseValue as never,
-      next
-    );
-
-    expect(service.verifyGooglePhone).toHaveBeenCalledWith(principal, {
-      challengeId: 'challenge-1',
-      code: '123456'
-    });
-    expect(responseValue.status).toHaveBeenCalledWith(200);
-    expect(next).not.toHaveBeenCalled();
-  });
-
   it('registers signup and OTP journeys through the public controller contract', async () => {
     const challenge = {
       accepted: true,
       challengeId: 'challenge-1',
       nextAction: 'VERIFY_ACCOUNT',
-      channel: 'SMS',
+      channel: 'EMAIL',
       purpose: 'CATEGORY_VERIFICATION',
-      maskedDestination: '+20******5678',
+      maskedDestination: 'p***n@example.test',
       expiresAt: '2026-07-28T12:00:00.000Z',
       resendAvailableAt: '2026-07-28T12:01:00.000Z',
     };
@@ -426,7 +400,6 @@ describe('authentication controller failure alternatives', () => {
       logout: vi.fn(async () => ({ loggedOut: true })),
       logoutByRefresh: vi.fn(async () => ({ loggedOut: true })),
       logoutAll: vi.fn(async () => ({ loggedOutAll: true })),
-      bindGooglePhone: vi.fn(async () => challenge),
       unlinkGoogle: vi.fn(async () => ({ unlinked: true })),
     };
     const controller = createAuthenticationController(service as never, cookies);
@@ -435,7 +408,12 @@ describe('authentication controller failure alternatives', () => {
     await controller.signup(
       request({
         requestId: 'req-signup',
-        body: { accountCategory: 'INDIVIDUAL', phone: '+201012345678', password: 'safe-pass' },
+        body: {
+          accountCategory: 'INDIVIDUAL',
+          phone: '+201012345678',
+          email: 'person@example.test',
+          password: 'safe-pass',
+        },
         ip: '127.0.0.1',
         get: vi.fn((name: string) => (name === 'user-agent' ? 'unit-agent' : undefined)),
       }) as never,
@@ -498,7 +476,7 @@ describe('authentication controller failure alternatives', () => {
 
     const forgotResponse = response();
     await controller.forgot(
-      request({ body: { accountCategory: 'INDIVIDUAL', identifier: '+201012345678' } }) as never,
+      request({ body: { accountCategory: 'INDIVIDUAL', identifier: 'person@example.test' } }) as never,
       forgotResponse as never,
       vi.fn(),
     );
@@ -556,15 +534,6 @@ describe('authentication controller failure alternatives', () => {
     const logoutAllResponse = response({ authenticationPrincipal: principal });
     await controller.logoutAll(request() as never, logoutAllResponse as never, vi.fn());
     expect(service.logoutAll).toHaveBeenCalledWith('user-1');
-
-    const phoneRequestResponse = response({ authenticationPrincipal: principal });
-    await controller.googlePhoneRequest(
-      request({ body: { phone: '+201098765432' } }) as never,
-      phoneRequestResponse as never,
-      vi.fn(),
-    );
-    expect(service.bindGooglePhone).toHaveBeenCalledWith(principal, '+201098765432');
-    expect(phoneRequestResponse.status).toHaveBeenCalledWith(202);
 
     const unlinkResponse = response({ authenticationPrincipal: principal });
     await controller.googleUnlink(request() as never, unlinkResponse as never, vi.fn());

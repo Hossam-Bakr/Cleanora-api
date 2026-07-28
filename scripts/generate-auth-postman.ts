@@ -132,7 +132,7 @@ const collection = {
           method: "POST",
           route: "/auth/signup",
           description:
-            "Creates an account and stores challengeId. In local development, the Individual phone OTP is emailed to the normalized testEmail; the client cannot override the recipient. Possible 400/409/429/503 responses are documented in Swagger.",
+            "Creates an account and stores challengeId. Every self-signup category receives its verification code at the required normalized testEmail. Phone verification is deferred to R1-P26. Possible 400/409/429/503 responses are documented in Swagger.",
           body: {
             accountCategory: "INDIVIDUAL",
             phone: "{{testPhone}}",
@@ -146,8 +146,8 @@ const collection = {
             nextAction: "VERIFY_ACCOUNT",
             accountCategory: "INDIVIDUAL",
             purpose: "CATEGORY_VERIFICATION",
-            channel: "SMS",
-            maskedDestination: "+20******7890",
+            channel: "EMAIL",
+            maskedDestination: "t***t@example.com",
             expiresAt: "2026-07-27T12:10:00.000Z",
             resendAvailableAt: "2026-07-27T12:01:00.000Z",
           },
@@ -212,7 +212,7 @@ const collection = {
             "Enumeration-safe recovery request. Every valid request returns an opaque challengeId. Existing eligible accounts receive a four-digit code out of band.",
           body: {
             accountCategory: "INDIVIDUAL",
-            identifier: "{{testPhone}}",
+            identifier: "{{testEmail}}",
           },
           status: 202,
           example: {
@@ -264,38 +264,6 @@ const collection = {
             "Provider-owned browser callback. Google supplies state/code. On success the backend writes the refresh cookie and redirects to frontendUrl/auth/google/callback with safe markers only. Do not manually send it in normal Postman testing.",
           noAuth: true,
           browserOnly: true,
-        }),
-        requestItem({
-          name: "Request Google Phone OTP",
-          method: "POST",
-          route: "/auth/google/phone/request",
-          description:
-            "Requires a verification-only Google Bearer session. The temporary phone OTP recipient is derived only from the linked verified Google email; no email field is accepted.",
-          body: { phone: "{{testPhone}}" },
-          status: 202,
-          example: {
-            accepted: true,
-            challengeId: "<challenge-id>",
-            nextAction: "VERIFY_ACCOUNT",
-            channel: "SMS",
-            maskedDestination: "+20******7890",
-          },
-        }),
-        requestItem({
-          name: "Verify Google Phone OTP",
-          method: "POST",
-          route: "/auth/google/phone/verify",
-          description:
-            "Verifies the same-user phone challenge and promotes the verification-only session.",
-          body: {
-            challengeId: "{{challengeId}}",
-            code: "{{phoneOtp}}",
-          },
-          example: {
-            verified: true,
-            verificationOnly: false,
-            nextAction: "CONTINUE",
-          },
         }),
         requestItem({
           name: "Start Google Link",
@@ -402,7 +370,6 @@ const secretEnvironmentValues = [
   ["testPassword", "", "Current test password"],
   ["newPassword", "", "Replacement test password"],
   ["emailOtp", "", "Signup/account six-digit OTP; never export a real value"],
-  ["phoneOtp", "", "Google phone six-digit OTP; never export a real value"],
   ["challengeId", "", "Latest opaque verification challenge; captured automatically"],
   [
     "passwordResetCode",

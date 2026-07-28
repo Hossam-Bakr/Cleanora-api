@@ -118,7 +118,7 @@ export const cleanoraOpenApiDocument = {
     {
       name: "Google Identity",
       description:
-        "Individual-only Google sign-in, browser callback, mandatory phone verification, deliberate linking, and safe unlinking.",
+        "Individual-only Google sign-in through a verified provider email, browser callback, deliberate linking, and safe unlinking.",
     },
     {
       name: "API Documentation",
@@ -182,7 +182,7 @@ export const cleanoraOpenApiDocument = {
         operationId: "signup",
         summary: "Register a public account category",
         description:
-          "Creates an authentication identity for an approved self-signup category and sends the category's blocking verification credential. Worker self-signup is prohibited. In local development, an Individual phone OTP is temporarily emailed to the normalized signup email because SMS is unavailable; the client cannot choose a different recipient and this does not prove phone ownership. The frontend should navigate to its verification screen using the returned opaque challenge.",
+          "Creates an authentication identity for an approved self-signup category and sends its blocking verification code to the required normalized email address. Worker self-signup is prohibited. Phone ownership verification is deferred to R1-P26. The frontend should navigate to its verification screen using the returned opaque challenge.",
         requestBody: jsonRequest(
           "SignupRequest",
           "Category-specific signup identifiers and a policy-compliant password.",
@@ -620,56 +620,6 @@ export const cleanoraOpenApiDocument = {
         },
       },
     },
-    "/auth/google/phone/request": {
-      post: {
-        tags: ["Google Identity"],
-        operationId: "requestGooglePhoneVerification",
-        summary: "Request the mandatory Google phone OTP",
-        description:
-          "Allows only an authenticated verification-only Google Individual to bind a unique phone and request its blocking SMS verification challenge. While SMS is unavailable, the OTP is emailed to the linked verified Google email resolved server-side; clients cannot choose the recipient.",
-        security: [{ bearerAuth: [] }],
-        requestBody: jsonRequest(
-          "GooglePhoneRequest",
-          "Unique phone number to bind to the Google identity.",
-        ),
-        responses: {
-          "202": successResponse(
-            "The phone was bound and its verification challenge was created.",
-            "VerificationChallengeData",
-          ),
-          "400": apiErrorResponse,
-          "401": apiErrorResponse,
-          "403": apiErrorResponse,
-          "409": apiErrorResponse,
-          "429": rateLimitResponse,
-          "503": apiErrorResponse,
-        },
-      },
-    },
-    "/auth/google/phone/verify": {
-      post: {
-        tags: ["Google Identity"],
-        operationId: "verifyGooglePhone",
-        summary: "Verify the Google identity phone",
-        description:
-          "Consumes only a same-user Individual/CATEGORY_VERIFICATION/SMS challenge and atomically promotes the exact verification-only session to full access. The existing access token can then call `/auth/me` to obtain updated state.",
-        security: [{ bearerAuth: [] }],
-        requestBody: jsonRequest(
-          "OtpVerifyRequest",
-          "Google phone challenge ID and matching six-digit code.",
-        ),
-        responses: {
-          "200": successResponse(
-            "The phone was verified and the current session was promoted.",
-            "GooglePhoneVerificationData",
-          ),
-          "400": apiErrorResponse,
-          "401": apiErrorResponse,
-          "403": apiErrorResponse,
-          "429": rateLimitResponse,
-        },
-      },
-    },
     "/auth/google/link": {
       get: {
         tags: ["Google Identity"],
@@ -833,7 +783,7 @@ export const cleanoraOpenApiDocument = {
       SignupRequest: {
         type: "object",
         additionalProperties: false,
-        required: ["accountCategory", "phone", "password"],
+        required: ["accountCategory", "phone", "email", "password"],
         properties: {
           accountCategory: {
             $ref: "#/components/schemas/SelfSignupCategory",
@@ -848,7 +798,7 @@ export const cleanoraOpenApiDocument = {
             type: "string",
             format: "email",
             description:
-              "Optional for Individual and required for business categories.",
+              "Required verification and recovery address for every self-signup category.",
             example: "user@example.com",
           },
           password: {
@@ -894,10 +844,7 @@ export const cleanoraOpenApiDocument = {
           },
           purpose: {
             type: "string",
-            enum: [
-              "CATEGORY_VERIFICATION",
-              "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION",
-            ],
+            enum: ["CATEGORY_VERIFICATION"],
           },
         },
         anyOf: [
@@ -954,9 +901,10 @@ export const cleanoraOpenApiDocument = {
           },
           identifier: {
             type: "string",
+            format: "email",
             description:
-              "Registered phone for Individual/Worker, verified email for business categories.",
-            example: "+201234567890",
+              "Verified account email for every supported category.",
+            example: "user@example.com",
           },
         },
       },
@@ -1012,17 +960,6 @@ export const cleanoraOpenApiDocument = {
             maxLength: 128,
             description:
               "Seven or more characters; common, repeated, and sequential values are rejected.",
-          },
-        },
-      },
-      GooglePhoneRequest: {
-        type: "object",
-        additionalProperties: false,
-        required: ["phone"],
-        properties: {
-          phone: {
-            type: "string",
-            example: "+201234567890",
           },
         },
       },
@@ -1086,13 +1023,10 @@ export const cleanoraOpenApiDocument = {
           },
           purpose: {
             type: "string",
-            enum: [
-              "CATEGORY_VERIFICATION",
-              "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION",
-            ],
+            enum: ["CATEGORY_VERIFICATION"],
           },
-          channel: { type: "string", enum: ["SMS", "EMAIL"] },
-          maskedDestination: { type: "string", example: "+20******7890" },
+          channel: { type: "string", enum: ["EMAIL"] },
+          maskedDestination: { type: "string", example: "u***r@example.com" },
           expiresAt: { type: "string", format: "date-time" },
           resendAvailableAt: { type: "string", format: "date-time" },
         },
@@ -1211,16 +1145,6 @@ export const cleanoraOpenApiDocument = {
             description:
               "One-time provider authorization URL. Do not persist it.",
           },
-        },
-      },
-      GooglePhoneVerificationData: {
-        type: "object",
-        additionalProperties: false,
-        required: ["verified", "verificationOnly", "nextAction"],
-        properties: {
-          verified: { type: "boolean", const: true },
-          verificationOnly: { type: "boolean", const: false },
-          nextAction: { type: "string", const: "CONTINUE" },
         },
       },
       PasswordResetData: {

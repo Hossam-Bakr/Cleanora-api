@@ -2,7 +2,7 @@ import { DeterministicAuthenticationInbox } from '../../../helpers/authenticatio
 
 describe('deterministic authentication delivery inbox', () => {
   it('retains values only in process and supports programmable failure/reset', async () => {
-    const inbox = new DeterministicAuthenticationInbox('SMS');
+    const inbox = new DeterministicAuthenticationInbox();
     await inbox.send({ idempotencyKey: 'one', destination: '+201000000000', value: '123456' });
     expect(inbox.latest()?.value).toBe('123456');
     inbox.failNext();

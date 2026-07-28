@@ -24,7 +24,6 @@ import { createApp } from "./app.js";
 import { Argon2PasswordHasherAdapter } from "./integrations/authentication/argon2-password-hasher.adapter.js";
 import { CryptoVerifierAdapter } from "./integrations/authentication/crypto-verifier.adapter.js";
 import { JwtTokenServiceAdapter } from "./integrations/authentication/jwt-token-service.adapter.js";
-import { UnavailableSmsAdapter } from "./integrations/sms/unavailable-sms.adapter.js";
 import {
   createAuthenticationModule,
   createAuthenticationPolicy,
@@ -37,7 +36,6 @@ import {
   createNodemailerEmailAdapter,
 } from "./integrations/email/nodemailer.adapter.js";
 import { UnavailableEmailAdapter } from "./integrations/email/unavailable-email.adapter.js";
-import { SmsToEmailFallbackAdapter } from "./integrations/sms/sms-to-email-fallback.adapter.js";
 
 interface DatabaseLifecycle {
   readonly client: PrismaClient;
@@ -180,21 +178,6 @@ export async function startApplication(
           socketTimeoutMilliseconds: environment.SMTP_SOCKET_TIMEOUT_MS!,
         })
       : new UnavailableEmailAdapter();
-    const smsToEmailFallbackMode = environment.AUTH_DEV_SMS_FALLBACK_TO_EMAIL
-      ? "development"
-      : environment.AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED
-        ? "hosted-preview"
-        : undefined;
-    const smsDelivery =
-      smsToEmailFallbackMode === undefined
-        ? new UnavailableSmsAdapter()
-        : new SmsToEmailFallbackAdapter(smsToEmailFallbackMode, emailPort);
-    if (smsToEmailFallbackMode !== undefined) {
-      logger.warn("SMS intents are being redirected to account email", {
-        deliveryMode: smsToEmailFallbackMode,
-        phoneOwnershipVerifiedByDelivery: false,
-      });
-    }
     const authentication = environment.AUTH_ENABLED
       ? createAuthenticationModule({
           basePath: `${environment.API_PREFIX}/auth`,
@@ -218,7 +201,6 @@ export async function startApplication(
           ),
           privacyHashSecret: environment.AUTH_PRIVACY_HASH_SECRET!,
           policy: createAuthenticationPolicy(),
-          sms: smsDelivery,
           email: new AuthenticationEmailAdapter(emailPort),
           accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
           refreshTtlSeconds: environment.JWT_REFRESH_TTL_SECONDS,

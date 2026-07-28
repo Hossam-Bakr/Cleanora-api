@@ -37,8 +37,8 @@ describe('authentication domain policies', () => {
     expect(() => assertPasswordPolicy(`safe-${'x'.repeat(120)}`)).not.toThrow();
   });
 
-  it('keeps worker blocking verification on SMS while company uses email', () => {
-    expect(blockingVerificationChannel('WORKER')).toBe('SMS');
+  it('uses email as the only R1-P02 verification channel', () => {
+    expect(blockingVerificationChannel('WORKER')).toBe('EMAIL');
     expect(blockingVerificationChannel('COMPANY')).toBe('EMAIL');
     expect(blockingVerificationChannel('ENGINEER')).toBe('EMAIL');
   });
@@ -47,9 +47,9 @@ describe('authentication domain policies', () => {
     expect(pendingCategories(['INDIVIDUAL', 'COMPANY'], ['INDIVIDUAL'])).toEqual(['COMPANY']);
   });
   it('selects actor-specific channels', () => {
-    expect(blockingVerificationChannel('INDIVIDUAL')).toBe('SMS');
+    expect(blockingVerificationChannel('INDIVIDUAL')).toBe('EMAIL');
     expect(blockingVerificationChannel('PROVIDER_OWNER')).toBe('EMAIL');
-    expect(recoveryChannel('WORKER')).toBe('SMS');
+    expect(recoveryChannel('WORKER')).toBe('EMAIL');
     expect(recoveryChannel('ENGINEER')).toBe('EMAIL');
   });
   it('keeps a verified category usable while another is pending', () => {

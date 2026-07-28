@@ -11,11 +11,7 @@ export function createTestEnvironment(
 ): AppEnvironment {
   return {
     AUTH_ENABLED: false,
-    SMS_AUTH_ENABLED: false,
     EMAIL_AUTH_ENABLED: false,
-    AUTH_DEV_SMS_FALLBACK_TO_EMAIL: false,
-    AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED: false,
-    AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED: false,
     GOOGLE_AUTH_ENABLED: false,
     AUTH_VERIFIER_SECRET: 'test-verifier-secret-that-is-longer-than-32-chars',
     AUTH_PRIVACY_HASH_SECRET: 'test-privacy-secret-that-is-longer-than-32-chars',
