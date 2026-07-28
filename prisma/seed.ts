@@ -115,6 +115,19 @@ export async function seed(): Promise<void> {
       }
     });
 
+    for (const config of [
+      { key: 'auth.signin_policy', value: { maxFailures: 5, windowSeconds: 900, lockSeconds: 900 } },
+      { key: 'auth.verification_policy', value: { ttlSeconds: 600, maxAttempts: 5, resendSeconds: 60 } },
+      { key: 'auth.recovery_policy', value: { ttlSeconds: 1800, maxAttempts: 5 } },
+      { key: 'auth.endpoint_limits', value: { signupPer15Minutes: 5, loginPer15Minutes: 20 } }
+    ] as const) {
+      await prisma.appConfig.upsert({
+        where: { key: config.key },
+        create: { key: config.key, value: config.value, valueKind: 'OBJECT', resolutionPolicy: config.key === 'auth.verification_policy' || config.key === 'auth.recovery_policy' ? 'COUNTRY_OVERRIDE_WITH_GLOBAL_FALLBACK' : 'GLOBAL_ONLY', description: 'R1-P02 non-secret authentication policy' },
+        update: { value: config.value, valueKind: 'OBJECT', resolutionPolicy: config.key === 'auth.verification_policy' || config.key === 'auth.recovery_policy' ? 'COUNTRY_OVERRIDE_WITH_GLOBAL_FALLBACK' : 'GLOBAL_ONLY' }
+      });
+    }
+
     await prisma.countryConfig.upsert({
       where: {
         countryId_key: { countryId: country.id, key: "country.display_name" }

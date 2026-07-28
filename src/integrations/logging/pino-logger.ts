@@ -17,7 +17,7 @@ const pinoHttp = require("pino-http") as typeof import("pino-http").default;
 
 const REDACTION_CENSOR = "[REDACTED]";
 const SENSITIVE_CONTEXT_KEY =
-  /(password|passcode|token|credential|api[_-]?key|email|phone|otp|secret|authorization|cookie|payment[_-]?payload)/i;
+  /(password|passcode|token|credential|verifier|jwt|api[_-]?key|email|phone|otp|secret|authorization|cookie|payment[_-]?payload)/i;
 
 const REDACTED_PATHS = [
   "password",

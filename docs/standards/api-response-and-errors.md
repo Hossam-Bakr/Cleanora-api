@@ -30,13 +30,24 @@ All business and system endpoints use the same JSON envelopes.
   "success": false,
   "error": {
     "code": "REQUEST_VALIDATION_FAILED",
+    "statusCode": 400,
     "message": "Request validation failed",
     "details": {
       "issues": [
         {
+          "path": "phone",
+          "code": "custom",
+          "message": "Enter a valid international phone number, for example +201012345678"
+        },
+        {
           "path": "email",
           "code": "invalid_format",
           "message": "Enter a valid email address"
+        },
+        {
+          "path": "password",
+          "code": "custom",
+          "message": "Password must not be common, repeated, or sequential"
         }
       ]
     }
@@ -44,6 +55,21 @@ All business and system endpoints use the same JSON envelopes.
   "requestId": "8d98a068-5e5d-45b7-a038-6a92aebaa1c2"
 }
 ```
+
+- `error.code` is the stable machine-readable contract used for frontend
+  branching and localization.
+- `error.statusCode` always equals the actual HTTP response status.
+- `error.message` is a safe descriptive English message. A frontend may show
+  it during development and should localize by `error.code` for production.
+- `error.details` is optional and may identify safe input fields and reasons.
+  It never contains submitted values or authentication secrets.
+- `REQUEST_VALIDATION_FAILED` returns every independently detectable body,
+  parameter, and query issue in `error.details.issues`. Validation must not
+  force the client to fix one field and resubmit merely to discover the next
+  invalid field.
+- A safe state-dependent operation may also use `error.details.issues` when
+  multiple approved conflict fields are known at once. Passwords and other
+  secrets are never conflict fields and must never appear in those issues.
 
 ## Error families
 

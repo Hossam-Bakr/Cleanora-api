@@ -6,6 +6,7 @@ import {
   assertAppliedMigration,
   assertDatabaseEmpty,
   assertExactPostDeployTables,
+  assertForwardMigrationSql,
   assertSafeCleanTestDatabaseUrl
 } from "../../scripts/validate-clean-migration.js";
 
@@ -70,6 +71,7 @@ describe("R1-P01 migration boundary", () => {
       "currencies"
     ];
 
+    expected.push('users', 'user_credentials', 'user_sessions', 'otp_codes', 'password_reset_tokens', 'social_accounts', 'auth_events');
     expect(() => assertExactPostDeployTables(expected)).not.toThrow();
     expect(() =>
       assertExactPostDeployTables([...expected, "future_phase_table"])
@@ -86,9 +88,36 @@ describe("R1-P01 migration boundary", () => {
           migration_name: "r1_p01_foundation_country_configuration",
           finished_at: new Date(),
           rolled_back_at: null
+        },
+        {
+          migration_name: 'r1_p02_complete_authentication',
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name: 'r1_p02_fix_phone_e164_constraint',
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p02_google_provider_profile_claims",
+          finished_at: new Date(),
+          rolled_back_at: null
         }
       ])
     ).not.toThrow();
     expect(() => assertAppliedMigration([])).toThrow(/migration history/i);
+  });
+});
+
+describe('strict E.164 forward migration validation', () => {
+  it('rejects comments, unrelated SQL, and destructive SQL', () => {
+    const approved = `ALTER TABLE users DROP CONSTRAINT users_phone_e164_check;
+ALTER TABLE users ADD CONSTRAINT users_phone_e164_check
+CHECK (phone_e164 IS NULL OR phone_e164 ~ '^\\+[1-9][0-9]{1,14}$');`;
+    expect(() => assertForwardMigrationSql(approved)).not.toThrow();
+    expect(() => assertForwardMigrationSql(`-- ignored comment\n${approved}`)).toThrow(/unrelated SQL/u);
+    expect(() => assertForwardMigrationSql(`${approved}\nSELECT 1;`)).toThrow(/unrelated SQL/u);
+    expect(() => assertForwardMigrationSql(`${approved}\nDROP TABLE users;`)).toThrow(/destructive SQL/u);
   });
 });

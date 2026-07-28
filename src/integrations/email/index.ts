@@ -1,4 +1,9 @@
 export {
+  createNodemailerEmailAdapter,
+  EmailDeliveryError,
+  mapEmailDeliveryError,
   NodemailerEmailAdapter,
-  type NodemailerTransport
+  type EmailDeliveryErrorName,
+  type NodemailerTransport,
+  type SmtpEmailConfiguration
 } from "./nodemailer.adapter.js";

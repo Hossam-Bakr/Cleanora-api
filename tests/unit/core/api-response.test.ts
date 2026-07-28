@@ -29,6 +29,7 @@ describe("API response helpers", () => {
     expect(
       createFailureResponse(request, {
         code: "REQUEST_VALIDATION_FAILED",
+        statusCode: 400,
         message: "Request validation failed",
         details: { issues: [] }
       })
@@ -36,6 +37,7 @@ describe("API response helpers", () => {
       success: false,
       error: {
         code: "REQUEST_VALIDATION_FAILED",
+        statusCode: 400,
         message: "Request validation failed",
         details: { issues: [] }
       },

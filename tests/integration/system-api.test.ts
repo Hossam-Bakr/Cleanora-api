@@ -188,6 +188,7 @@ describe("system API", () => {
 
     expect(response.body.error).toEqual({
       code: "INTERNAL_SERVER_ERROR",
+      statusCode: 500,
       message: "Internal server error"
     });
     expect(JSON.stringify(response.body)).not.toContain(

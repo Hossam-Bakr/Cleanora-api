@@ -12,6 +12,8 @@
 - Cookie-state routes require a trusted `Origin`.
 - Phone/email are normalized before lookup, uniqueness, limits, or hashing.
 - Enumeration-sensitive accepted flows use equivalent public envelopes.
+- Every JSON failure includes `error.code`, `error.statusCode`,
+  `error.message`, optional safe field details, and `requestId`.
 
 ## Routes
 
@@ -29,32 +31,51 @@
 | POST | `/password/forgot` | Public | 202 | Generic recovery acceptance on authoritative channel |
 | POST | `/password/reset` | Public | 200 | Change password, revoke all, issue no session |
 | POST | `/password/change` | Private + current refresh | 200 | Verify current password, revoke others, rotate current |
-| GET | `/google` | Public | 200/302 | Start individual-only OIDC transaction |
-| GET | `/google/callback` | Correlation cookie | 200 | Consume OIDC transaction and issue full/restricted session |
-| POST | `/google/phone` | Private Google-restricted | 202 | Bind unique phone and request blocking SMS verification |
-| GET | `/google/link` | Private recent full individual | 200/302 | Start deliberate link bound to current user |
-| GET | `/google/link/callback` | Private correlation | 200 | Complete linking after both proofs |
+| GET | `/google` | Public | 200 | Start individual-only OIDC transaction and return its authorization URL |
+| GET | `/google/browser` | Public | 303 | Start the same transaction and redirect a top-level browser to Google |
+| GET | `/google/callback` | Correlation cookie | 303 | Consume the stored SIGN_IN/LINK transaction and redirect safely to the frontend |
+| POST | `/google/phone/request` | Private Google-restricted | 202 | Bind unique phone and request blocking SMS verification |
+| POST | `/google/phone/verify` | Private Google-restricted | 200 | Verify the exact Individual phone challenge and promote the same session |
+| GET | `/google/link` | Private recent full individual | 200 | Start deliberate link bound to current user/session |
 | DELETE | `/social/google` | Private recent full individual | 200 | Unlink only with another recoverable method |
 
 ## Request and response direction
 
-`/signup` uses one discriminated `accountCategory` body. Individual requires phone/password and optional email. Company, engineer, and provider owner require phone/email/password. Worker is rejected before persistence. The 202 response has the same safe accepted shape and opaque challenge-selector shape even when no real challenge is created.
+`/signup` uses one discriminated `accountCategory` body. Individual requires phone/password and optional email. Company, engineer, and provider owner require phone/email/password. Worker is rejected before persistence. The 202 response returns opaque `challengeId`, `nextAction: VERIFY_ACCOUNT`, channel, purpose, masked destination, expiry, and resend availability. It never returns `userId`, passwords, OTPs, or a session.
 
-`/account-categories` locks the authenticated user's row, collision-checks identifiers, adds only the new pending category, and creates its gate. It never creates a user, role, permission, or profile.
+`/account-categories` locks the authenticated user's row, collision-checks identifiers, adds only the new pending category, and creates its gate. It never creates a user, role, permission, or profile. The 202 response uses the same verification-challenge shape as signup.
 
-`/otp/request` and `/otp/verify` identify category, purpose, channel, destination, and opaque challenge selector as applicable. Optional individual email verification uses the same endpoints but never controls protected access.
+`/otp/request` accepts either opaque `challengeId` (preferred after signup) or `userId` plus `accountCategory` (and optional purpose for optional individual email). The challenge selector owns category, purpose, channel, and destination; clients cannot retarget another identity. The 202 response matches the signup verification-challenge shape.
 
-`/login` accepts normalized phone/password only. Valid proof returns access token, expiry, verification-only flag, and safe identity/category state; refresh is cookie-only. Wrong password, unknown phone, missing worker/credential, suspended, and banned use generic public login semantics.
+`/otp/verify` requires matching `challengeId` and a six-digit code. Public success returns `{ verified: true, nextAction: "LOGIN" }` and issues no session. Authenticated Google phone verification returns `{ verified: true, verificationOnly: false, nextAction: "CONTINUE" }` after promoting that session.
 
-`/me` returns only user ID, approved safe identifier presentation, enrolled/verified/pending categories, status, and restricted flag. It excludes credentials, hashes, session internals, token material, challenge metadata, provider claims, and status reasons.
+Chrome Google authentication starts only through `/google/browser`, preserving
+the state cookie in the same browser. `/google` is an API-style inspection
+endpoint and its Postman state cookie cannot be transferred to Chrome. The
+backend callback writes the HttpOnly refresh cookie and redirects to the
+allowlisted frontend callback. Bassam's frontend calls `/refresh` with
+credentials included and receives the safe user. Failure redirects expose only
+stable safe reasons, never raw Google errors.
 
-Forgot includes category plus its authoritative identifier and always returns the same 202 envelope for syntactically valid input. Reset accepts `<challenge-id>.<random-secret>` and a new password, then returns no session. Change requires bearer, current refresh cookie, current password, and a distinct compliant new password.
+`/login` accepts normalized phone/password only. Valid proof returns access
+token, expiry, verification-only flag, canonical `user`, and the existing
+backward-compatible `identity`; refresh is cookie-only. Refresh and password
+change return the same safe user shape. Wrong password, unknown phone, missing
+worker/credential, suspended, and banned use generic public login semantics.
+
+`/me` returns `{ user, verificationOnly }`, where `user` contains only id,
+approved safe identifier presentation, verification booleans,
+enrolled/verified/pending categories, and status. It excludes credentials,
+hashes, session internals, token material, challenge metadata, provider claims,
+and status reasons. Clients never supply `userId` to rehydrate a session.
+
+Forgot includes category plus its authoritative identifier and always returns `{ accepted: true }` for syntactically valid input. It never returns challenge ID, reset ID, reset token, destination, or account existence. Reset accepts the complete composite `<reset-id>.<random-secret>` as `token` plus `newPassword`, then returns `{ passwordReset: true, nextAction: "LOGIN" }` with no session. Change requires bearer, current refresh cookie, current password, and a distinct compliant new password.
 
 ## Cookie contract
 
 | Attribute | Rule |
 |---|---|
-| Name | Validated environment value, default `cleanora_refresh` |
+| Name | Validated environment value, default `cleanora_refresh_token` |
 | `HttpOnly` | Always true |
 | `Secure` | True in production; required with `SameSite=None` |
 | `SameSite` | Default `Lax` |
@@ -64,11 +85,20 @@ Forgot includes category plus its authoritative identifier and always returns th
 
 Clear-cookie responses use identical attributes.
 
+The safe authenticated-user object includes nullable `displayName` and
+`avatarUrl` fields. They contain sanitized presentation claims from a linked
+Google identity, or `null` for identities without those provider claims. These
+fields are authentication-provider metadata and do not create an actor profile.
+
+Google OAuth correlation uses `cleanora_google_oauth_state`. Under the
+canonical configuration, the backend expires but never authenticates
+`cleanora_refresh`, `fs_refreshtoken`, or `cleanora_google_state`.
+
 ## Stable errors
 
 | Code | HTTP | Safe meaning |
 |---|---:|---|
-| `REQUEST_VALIDATION_FAILED` | 400 | Existing Zod field contract |
+| `REQUEST_VALIDATION_FAILED` | 400 | Every independently detectable Zod field issue in one response |
 | `AUTHENTICATION_REQUIRED` | 401 | Missing access proof |
 | `AUTHENTICATION_FAILED` | 401 | Generic login/eligibility failure |
 | `AUTH_ACCESS_TOKEN_INVALID` | 401 | Invalid/expired/mismatched access proof |
@@ -77,7 +107,12 @@ Clear-cookie responses use identical attributes.
 | `AUTH_ACCOUNT_UNAVAILABLE` | 403 | Authenticated identity cannot continue; no reason detail |
 | `AUTH_ACCOUNT_CATEGORY_NOT_ALLOWED` | 403 | Worker enrollment or disabled Google audience |
 | `AUTH_CATEGORY_STATE_CONFLICT` | 409 | Authenticated category transition invalid |
-| `AUTH_SIGNUP_UNAVAILABLE` | 409 | Generic authenticated collision/state failure |
+| `AUTH_PHONE_FORMAT_INVALID` | 400 | Phone is not a valid normalizable E.164 value |
+| `AUTH_EMAIL_FORMAT_INVALID` | 400 | Email is not syntactically valid |
+| `AUTH_PHONE_ALREADY_REGISTERED` | 409 | Signup phone already belongs to an identity |
+| `AUTH_EMAIL_ALREADY_REGISTERED` | 409 | Signup email already belongs to an identity |
+| `AUTH_SIGNUP_IDENTIFIERS_ALREADY_REGISTERED` | 409 | Signup phone and email both conflict; both safe fields appear in `details.issues` |
+| `AUTH_SIGNUP_UNAVAILABLE` | 409 | Non-field-specific signup conflict fallback |
 | `AUTH_VERIFICATION_FAILED` | 400 | Wrong/expired/used/superseded/exhausted challenge |
 | `AUTH_PASSWORD_RESET_FAILED` | 400 | Invalid/expired/used/exhausted reset proof |
 | `AUTH_CURRENT_PASSWORD_INVALID` | 400 | Current-password proof failed |
@@ -91,5 +126,17 @@ Clear-cookie responses use identical attributes.
 | `AUTH_PROVIDER_UNAVAILABLE` | 503 | Enabled provider unavailable where generic acceptance is not required |
 | `AUTH_EVENT_WRITE_FAILED` | 500 | Mandatory evidence could not be recorded |
 
-Never expose separate codes for an existing email/phone, missing worker, ban/suspension reason, Google subject linked elsewhere, refresh reuse, or absent recovery identity.
+Signup is the human-approved exception that exposes only whether the normalized
+`phone` or `email` field conflicts. Never expose the owning identity, other
+account data, missing worker, ban/suspension reason, Google subject linked
+elsewhere, refresh reuse, or absent recovery identity. Login and
+forgot-password remain enumeration-safe.
 
+## Password policy
+
+- Length: 7–128 characters and no more than 512 UTF-8 bytes.
+- No uppercase/lowercase/symbol composition requirement.
+- Numbers-only passwords are accepted when they are not predictable.
+- Common values, repeated characters/patterns, and ascending or descending
+  numeric sequences are rejected.
+- The same policy applies to signup, reset, and authenticated change.

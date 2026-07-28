@@ -35,6 +35,7 @@ describe("API response envelopes", () => {
       success: false,
       error: {
         code: "REQUEST_VALIDATION_FAILED",
+        statusCode: 400,
         message: "Request validation failed",
         details: {
           issues: [expect.objectContaining({ path: "email" })]
@@ -68,6 +69,7 @@ describe("API response envelopes", () => {
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
+        statusCode: 500,
         message: "Internal server error"
       },
       requestId: expect.any(String)

@@ -3,12 +3,14 @@ import type { RequestHandler } from "express";
 import type { RateLimiterPort } from "./rate-limit.port.js";
 import { createFailureResponse } from "#core/http/api-response";
 
+import type { Request } from 'express';
+
 export interface RateLimitMiddlewareOptions {
   readonly limiter: RateLimiterPort;
   readonly scope: string;
   readonly limit: number;
   readonly windowSeconds: number;
-  subject(requestIp: string | undefined): string;
+  subject(requestIp: string | undefined, request?: Request): string;
 }
 
 /**
@@ -25,7 +27,7 @@ export function createRateLimitMiddleware(
       const decision = await options.limiter.consume(
         {
           scope: options.scope,
-          subject: options.subject(request.ip)
+          subject: options.subject(request.ip, request)
         },
         options.limit,
         options.windowSeconds
@@ -41,7 +43,8 @@ export function createRateLimitMiddleware(
         response.status(429).json(
           createFailureResponse(request, {
             code: "RATE_LIMIT_EXCEEDED",
-            message: "Too many requests"
+            statusCode: 429,
+            message: "Too many requests. Wait before trying again."
           })
         );
         return;
@@ -52,7 +55,8 @@ export function createRateLimitMiddleware(
       response.status(503).json(
         createFailureResponse(request, {
           code: "RATE_LIMITER_UNAVAILABLE",
-          message: "Rate limiter is unavailable"
+          statusCode: 503,
+          message: "Request protection is temporarily unavailable. Please try again later."
         })
       );
     }

@@ -52,10 +52,12 @@ implementation benchmark at 64 MiB memory, three iterations, one lane, and a
 target runtime, but must not lower this baseline without an approved security
 decision. Store the self-describing PHC string and a hash-policy version.
 
-The password policy is 12–128 characters, with a bounded encoded-byte length,
-no arbitrary composition rule, and rejection of a new password equal to the
-current password. Unknown-phone login performs one fixed dummy Argon2id verify
-to reduce timing disclosure. Successful verification may rehash an older
+The password policy is 7–128 characters, with a bounded encoded-byte length
+and no arbitrary character-class composition rule. Numbers-only passwords are
+accepted when they are not common, repeated, repeated-pattern, or ascending or
+descending sequences. A new password equal to the current password is also
+rejected. Unknown-phone login performs one fixed dummy Argon2id verify to
+reduce timing disclosure. Successful verification may rehash an older
 approved hash.
 
 **Rejected alternatives**:
@@ -353,4 +355,3 @@ objects to the logger.
 4. Memory rate limits and Google transaction state are process-local. Enabling
    multiple API processes requires an approved shared adapter; R1-P02 does not
    introduce Redis, Docker, or cloud work.
-

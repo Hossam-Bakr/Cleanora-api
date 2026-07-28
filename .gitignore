@@ -10,3 +10,5 @@ src/generated/
 *.tsbuildinfo
 .DS_Store
 Thumbs.db
+.runtime-smoke/
+.npm-cache-local/

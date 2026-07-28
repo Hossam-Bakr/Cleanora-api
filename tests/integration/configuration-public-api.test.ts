@@ -9,8 +9,9 @@ import {
   startTestDatabaseLifecycle,
   stopTestDatabaseLifecycle
 } from "../helpers/test-database-lifecycle.js";
+import { hasApprovedTestDatabaseUrl } from "../helpers/resolve-test-database-url.js";
 
-const hasDatabase = process.env["DATABASE_URL"] !== undefined;
+const hasDatabase = hasApprovedTestDatabaseUrl();
 const databaseTestTimeoutMs = 15_000;
 
 describe.skipIf(!hasDatabase)("configuration public API", () => {

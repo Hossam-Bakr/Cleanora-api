@@ -17,6 +17,26 @@ const displayNameSchema = z.object({
 }).strict();
 
 export const CONFIG_KEY_CATALOG = {
+  'auth.signin_policy': {
+    valueSchema: z.object({ maxFailures: z.number().int().positive(), windowSeconds: z.number().int().positive(), lockSeconds: z.number().int().positive() }).strict(),
+    valueKind: 'OBJECT',
+    resolutionPolicy: 'GLOBAL_ONLY'
+  },
+  'auth.verification_policy': {
+    valueSchema: z.object({ ttlSeconds: z.number().int().positive(), maxAttempts: z.number().int().positive(), resendSeconds: z.number().int().positive() }).strict(),
+    valueKind: 'OBJECT',
+    resolutionPolicy: 'COUNTRY_OVERRIDE_WITH_GLOBAL_FALLBACK'
+  },
+  'auth.recovery_policy': {
+    valueSchema: z.object({ ttlSeconds: z.number().int().positive(), maxAttempts: z.number().int().positive() }).strict(),
+    valueKind: 'OBJECT',
+    resolutionPolicy: 'COUNTRY_OVERRIDE_WITH_GLOBAL_FALLBACK'
+  },
+  'auth.endpoint_limits': {
+    valueSchema: z.object({ signupPer15Minutes: z.number().int().positive(), loginPer15Minutes: z.number().int().positive() }).strict(),
+    valueKind: 'OBJECT',
+    resolutionPolicy: 'GLOBAL_ONLY'
+  },
   "platform.default_timezone": {
     valueSchema: z.string().min(1),
     valueKind: "STRING",

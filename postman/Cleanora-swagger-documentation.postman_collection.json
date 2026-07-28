@@ -1,0 +1,67 @@
+{
+  "info": {
+    "_postman_id": "48177777-34d0-48d1-9dad-1201571dd948",
+    "name": "Cleanora Swagger Documentation",
+    "description": "Read-only checks for the professional Cleanora Swagger UI and complete OpenAPI 3.1 contract. Import Cleanora-local.postman_environment.json and select the Cleanora Local environment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "Open Swagger UI",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Swagger UI is available', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.headers.get('content-type')).to.include('text/html');",
+              "  pm.expect(pm.response.text()).to.include('Cleanora API Documentation');",
+              "  pm.expect(pm.response.headers.get('cache-control')).to.eql('no-store');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "description": "Returns the interactive Swagger UI. Open the same URL in a browser for the full interactive experience.",
+        "url": "{{baseUrl}}/docs"
+      }
+    },
+    {
+      "name": "Get Complete OpenAPI Document",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const document = pm.response.json();",
+              "pm.test('OpenAPI contract is complete', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(document.openapi).to.eql('3.1.0');",
+              "  pm.expect(document.info.title).to.eql('Cleanora API');",
+              "  pm.expect(document.paths).to.have.property('/auth/signup');",
+              "  pm.expect(document.paths).to.have.property('/auth/password/reset');",
+              "  pm.expect(document.paths).to.have.property('/auth/google/callback');",
+              "  pm.expect(document.paths).to.not.have.property('/auth/google/result');",
+              "  pm.expect(document.paths).to.have.property('/system/health/ready');",
+              "  pm.expect(document.paths).to.have.property('/docs/openapi.json');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "description": "Returns the machine-readable OpenAPI 3.1 document used by Swagger UI and client tooling.",
+        "url": "{{baseUrl}}/docs/openapi.json"
+      }
+    }
+  ]
+}

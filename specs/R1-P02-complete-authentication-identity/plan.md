@@ -27,11 +27,14 @@ The design uses one user identity with independently enrolled and verified accou
 
 - Login is phone/password only. The older preparation note mentioning email login is superseded by the approved specification.
 - Google authentication is enabled only for `INDIVIDUAL` in Release 1 and never satisfies phone verification.
+- Google uses one provider-registered backend callback for both sign-in and deliberate linking. The server-held transaction owns the intent, and the frontend redirect contains no tokens or raw provider parameters.
+- The backend does not render a Google result page. The common backend callback always hands off to the allowlisted frontend callback, which bootstraps through refresh with credentials included.
 - One authenticated identity may enroll another approved self-signup category; worker enrollment remains prohibited.
 - Existing verified categories remain usable when another category is pending.
 - Individual/worker recovery is SMS; company/engineer/provider-owner recovery is verified email, with no silent fallback.
 - Password reset revokes all sessions and creates no session.
 - Password change revokes other sessions and rotates the current family.
+- DEC-024 narrows the development-only SMS-to-email adapter to server-resolved account recipients: standard signup uses the normalized signup email and Google phone verification uses the linked provider-verified Google email. No fixed inbox or client-selected recipient is accepted.
 
 ## Constitution Check
 
@@ -258,16 +261,19 @@ ACTIVE generation N
 
 - Use authorization-code OIDC with PKCE S256, state, nonce, issuer/audience/signature/expiry checks, and one-time correlation.
 - Provider subject is authoritative; verified email never auto-links.
-- Start/link creates a 10-minute one-time transaction and correlation cookie; callback atomically consumes both.
-- A new Google individual receives a verification-only session and uses `POST /google/phone` once to bind a unique phone before SMS verification.
-- Linking requires a recent full individual session and state bound to that user.
+- Start/link creates a 10-minute one-time transaction and correlation cookie; the single backend callback atomically consumes both and derives SIGN_IN versus LINK from that transaction.
+- The callback redirects only to the configured allowlisted frontend callback URI. It never places access/refresh tokens, authorization codes, state, nonce, or provider errors in that URL; the frontend obtains an access token through the ordinary refresh-cookie exchange.
+- A new Google individual receives a verification-only session, uses `POST /google/phone/request` to bind a unique phone, and uses `POST /google/phone/verify` to consume the OTP and atomically promote that exact session.
+- Linking requires a recent full individual session whose user/session identifiers are bound to the one-time transaction; callback handling does not depend on a browser-supplied bearer token.
 - Unlinking requires recent authentication and a remaining password/recovery method; revoke Google-origin families.
 - Non-individual audiences fail before provider interaction.
 
 ## Password, Session, OTP, and Rate Policies
 
 - Argon2id baseline: 64 MiB, three iterations, one lane, 32-byte output; benchmark and record target latency before finalizing.
-- Password length: 12–128 characters with bounded encoded bytes.
+- Password length: 7–128 characters with bounded encoded bytes; numbers-only
+  is allowed, while common, repeated, repeated-pattern, and ascending or
+  descending sequential values are rejected.
 - Access JWT: HS256, 900-second default, pinned issuer/audience/type/version/`sub`/`sid`/UUID `jti`.
 - Refresh family: 30-day default fixed absolute expiry; rotate on every refresh; no grace window.
 - OTP: six digits, 10-minute TTL, five attempts, 60-second resend cooldown, three sends/15 minutes and five/24 hours per scope.
@@ -291,7 +297,7 @@ The exact route/transport/error matrix is in [contracts/authentication-api.md](c
 
 All responses reuse the stable envelope and request ID. Refresh values never appear in JSON. Public flows do not expose account existence, matched identifier, ban/suspension reason, provider collision, or refresh-reuse detail.
 
-Implementation documentation must create and validate `docs/apis/openapi/r1-p02-authentication.yaml`; reconcile `docs/apis/authentication.md` and stale prepared R1-P02 docs; expand the Postman collection for every route and negative case; assert status/envelope/request-ID/cookies; keep access/OTP/reset values secret; and leave refresh tokens solely in Postman's cookie jar.
+Implementation documentation must create and validate `docs/apis/openapi/r1-p02-authentication.yaml`; reconcile `docs/apis/authentication.md` and stale prepared R1-P02 docs; keep exactly one Postman request for every genuine route; document negative cases as OpenAPI responses; assert status/envelope/request-ID/cookies; keep access/OTP/reset values secret; and leave refresh tokens solely in Postman's cookie jar.
 
 ## Prisma and Migration Plan
 

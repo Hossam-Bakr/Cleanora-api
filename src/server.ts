@@ -4,7 +4,7 @@ import {
   APPLICATION_NAME,
   loadEnvironment,
   mapEnvironmentDiagnostics,
-  type AppEnvironment
+  type AppEnvironment,
 } from "#config/index";
 import type { DatabaseProbe } from "#core/health/database-probe";
 import type { ReadinessProbe } from "#core/health/readiness";
@@ -12,14 +12,32 @@ import type { Logger } from "#core/logging/logger";
 import type { PrismaClient } from "#generated/prisma/client";
 import {
   bindPrismaClient,
-  PrismaLifecycle
+  PrismaLifecycle,
 } from "#integrations/database/index";
 import {
   createPinoLogging,
-  type PinoLogging
+  type PinoLogging,
 } from "#integrations/logging/index";
 
 import { createApp } from "./app.js";
+
+import { Argon2PasswordHasherAdapter } from "./integrations/authentication/argon2-password-hasher.adapter.js";
+import { CryptoVerifierAdapter } from "./integrations/authentication/crypto-verifier.adapter.js";
+import { JwtTokenServiceAdapter } from "./integrations/authentication/jwt-token-service.adapter.js";
+import { UnavailableSmsAdapter } from "./integrations/sms/unavailable-sms.adapter.js";
+import {
+  createAuthenticationModule,
+  createAuthenticationPolicy,
+} from "./modules/authentication/index.js";
+import { MemoryRateLimiterAdapter } from "./integrations/security/memory-rate-limiter.adapter.js";
+import { OpenIdClientGoogleAdapter } from "./integrations/google/openid-client-google.adapter.js";
+import { MemoryGoogleTransactionStoreAdapter } from "./integrations/authentication/memory-google-transaction-store.adapter.js";
+import { AuthenticationEmailAdapter } from "./integrations/email/authentication-email.adapter.js";
+import {
+  createNodemailerEmailAdapter,
+} from "./integrations/email/nodemailer.adapter.js";
+import { UnavailableEmailAdapter } from "./integrations/email/unavailable-email.adapter.js";
+import { DevelopmentSmsToEmailAdapter } from "./integrations/sms/development-sms-to-email.adapter.js";
 
 interface DatabaseLifecycle {
   readonly client: PrismaClient;
@@ -34,7 +52,7 @@ export interface StartApplicationDependencies {
   readonly createDatabase?: (connectionString: string) => DatabaseLifecycle;
   readonly createLogging?: (
     level: AppEnvironment["LOG_LEVEL"],
-    baseContext: Readonly<Record<string, unknown>>
+    baseContext: Readonly<Record<string, unknown>>,
   ) => PinoLogging;
   readonly createApplication?: typeof createApp;
   readonly installSignalHandlers?: boolean;
@@ -43,6 +61,19 @@ export interface StartApplicationDependencies {
 export interface StartedApplication {
   readonly server: Server;
   readonly shutdown: (signal: NodeJS.Signals) => Promise<void>;
+}
+
+function rejectAfter(
+  timeoutMilliseconds: number,
+  setTimer: (timer: NodeJS.Timeout) => void,
+): Promise<never> {
+  return new Promise<never>((_resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("Graceful shutdown timed out"));
+    }, timeoutMilliseconds);
+    timer.unref();
+    setTimer(timer);
+  });
 }
 
 /** Close the HTTP listener without dropping active connections. */
@@ -67,7 +98,7 @@ export function createGracefulShutdown(
   server: Server,
   database: Pick<DatabaseLifecycle, "disconnect">,
   logger: Logger,
-  timeoutMilliseconds: number
+  timeoutMilliseconds: number,
 ): (signal: NodeJS.Signals) => Promise<void> {
   let shutdownPromise: Promise<void> | undefined;
 
@@ -87,12 +118,9 @@ export function createGracefulShutdown(
       try {
         await Promise.race([
           closeResources,
-          new Promise<never>((_resolve, reject) => {
-            timeout = setTimeout(() => {
-              reject(new Error("Graceful shutdown timed out"));
-            }, timeoutMilliseconds);
-            timeout.unref();
-          })
+          rejectAfter(timeoutMilliseconds, (timer) => {
+            timeout = timer;
+          }),
         ]);
         logger.info("Graceful shutdown completed");
       } catch (error: unknown) {
@@ -117,15 +145,15 @@ export function createGracefulShutdown(
  * registration and is reused by health probes, repositories, and shutdown.
  */
 export async function startApplication(
-  dependencies: StartApplicationDependencies = {}
+  dependencies: StartApplicationDependencies = {},
 ): Promise<StartedApplication> {
   const environment = loadEnvironment(
-    dependencies.environmentInput ?? process.env
+    dependencies.environmentInput ?? process.env,
   );
   const loggingFactory = dependencies.createLogging ?? createPinoLogging;
   const logging = loggingFactory(environment.LOG_LEVEL, {
     application: APPLICATION_NAME,
-    environment: environment.NODE_ENV
+    environment: environment.NODE_ENV,
   });
   const { logger } = logging;
   const database =
@@ -137,12 +165,80 @@ export async function startApplication(
   try {
     bindPrismaClient(database.client);
     const applicationFactory = dependencies.createApplication ?? createApp;
+    const rateLimiter = new MemoryRateLimiterAdapter();
+    const emailPort = environment.AUTH_ENABLED && environment.EMAIL_AUTH_ENABLED
+      ? createNodemailerEmailAdapter({
+          host: environment.SMTP_HOST!,
+          port: environment.SMTP_PORT!,
+          secure: environment.SMTP_SECURE!,
+          requireTls: environment.SMTP_REQUIRE_TLS!,
+          user: environment.SMTP_USER!,
+          password: environment.SMTP_PASSWORD!,
+          fromName: environment.SMTP_FROM_NAME!,
+          fromEmail: environment.SMTP_FROM_EMAIL!,
+          connectionTimeoutMilliseconds: environment.SMTP_CONNECTION_TIMEOUT_MS!,
+          socketTimeoutMilliseconds: environment.SMTP_SOCKET_TIMEOUT_MS!,
+        })
+      : new UnavailableEmailAdapter();
+    const smsDelivery = environment.AUTH_DEV_SMS_FALLBACK_TO_EMAIL
+      ? new DevelopmentSmsToEmailAdapter(
+          environment.NODE_ENV,
+          emailPort,
+        )
+      : new UnavailableSmsAdapter();
+    const authentication = environment.AUTH_ENABLED
+      ? createAuthenticationModule({
+          basePath: `${environment.API_PREFIX}/auth`,
+          trustedOrigins: environment.CORS_ORIGINS,
+          cookie: {
+            name: environment.AUTH_REFRESH_COOKIE_NAME,
+            path: environment.AUTH_REFRESH_COOKIE_PATH,
+            secure: environment.AUTH_COOKIE_SECURE,
+            sameSite: environment.AUTH_COOKIE_SAME_SITE,
+          },
+          passwordHasher: new Argon2PasswordHasherAdapter(),
+          tokens: new JwtTokenServiceAdapter({
+            accessSecret: environment.JWT_ACCESS_SECRET!,
+            refreshSecret: environment.JWT_REFRESH_SECRET!,
+            issuer: environment.JWT_ISSUER,
+            audience: environment.JWT_AUDIENCE,
+            accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
+          }),
+          verifier: new CryptoVerifierAdapter(
+            environment.AUTH_VERIFIER_SECRET!,
+          ),
+          privacyHashSecret: environment.AUTH_PRIVACY_HASH_SECRET!,
+          policy: createAuthenticationPolicy(),
+          sms: smsDelivery,
+          email: new AuthenticationEmailAdapter(emailPort),
+          accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
+          refreshTtlSeconds: environment.JWT_REFRESH_TTL_SECONDS,
+          rateLimiter,
+          ...(environment.GOOGLE_AUTH_ENABLED
+            ? {
+                googleIdentity: new OpenIdClientGoogleAdapter(
+                  environment.GOOGLE_CLIENT_ID!,
+                  environment.GOOGLE_CLIENT_SECRET!,
+                  environment.GOOGLE_REDIRECT_URI!,
+                ),
+                googleTransactions: new MemoryGoogleTransactionStoreAdapter(),
+                googleProviderCallbackUri:
+                  environment.GOOGLE_REDIRECT_URI!,
+                googleFrontendCallbackUri:
+                  environment.GOOGLE_FRONTEND_CALLBACK_URI!,
+              }
+            : {}),
+        })
+      : undefined;
     const app = applicationFactory({
       environment,
       logger,
       requestLogger: logging.requestLogger,
       databaseProbe: database.databaseProbe(),
-      readinessProbes: [database.readinessProbe()]
+      readinessProbes: [database.readinessProbe()],
+      rateLimiter,
+      modules:
+        authentication === undefined ? [] : [authentication.moduleRegistrar],
     });
     const server = app.listen(environment.PORT, () => {
       logger.info("HTTP server listening", { port: environment.PORT });
@@ -151,7 +247,7 @@ export async function startApplication(
       server,
       database,
       logger,
-      environment.SHUTDOWN_TIMEOUT_MS
+      environment.SHUTDOWN_TIMEOUT_MS,
     );
 
     if (dependencies.installSignalHandlers !== false) {
@@ -159,7 +255,7 @@ export async function startApplication(
         process.once(signal, () => {
           void shutdown(signal).catch((error: unknown) => {
             logger.error("Graceful shutdown failed", {
-              errorName: error instanceof Error ? error.name : "UnknownError"
+              errorName: error instanceof Error ? error.name : "UnknownError",
             });
             process.exitCode = 1;
           });
@@ -176,7 +272,7 @@ export async function startApplication(
 
 /** Create a structured, value-free startup failure context for the logger. */
 export function createStartupFailureContext(
-  error: unknown
+  error: unknown,
 ): Readonly<Record<string, unknown>> {
   const diagnostics = mapEnvironmentDiagnostics(error);
 
@@ -184,16 +280,19 @@ export function createStartupFailureContext(
     errorName: error instanceof Error ? error.name : "UnknownError",
     ...(diagnostics.length === 0
       ? {}
-      : { environmentDiagnostics: diagnostics })
+      : { environmentDiagnostics: diagnostics }),
   };
 }
 
 if (require.main === module) {
   void startApplication().catch((error: unknown) => {
     const { logger } = createPinoLogging("error", {
-      application: APPLICATION_NAME
+      application: APPLICATION_NAME,
     });
-    logger.error("Application startup failed", createStartupFailureContext(error));
+    logger.error(
+      "Application startup failed",
+      createStartupFailureContext(error),
+    );
     process.exitCode = 1;
   });
 }

@@ -9,6 +9,12 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
+    // Keep one file and one worker active because database suites share one isolated remote target.
+    // Vitest 4: maxWorkers 1 replaces singleFork. Multiple workers each open a pg pool; under coverage
+    // that contention surfaces as signup 500s and Prisma "Unable to start a transaction in the given time".
+    fileParallelism: false,
+    maxWorkers: 1,
+    pool: "forks",
     include: ["tests/**/*.test.ts", "src/**/*.test.ts"],
     restoreMocks: true,
     clearMocks: true,

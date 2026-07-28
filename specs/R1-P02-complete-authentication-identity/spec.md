@@ -21,6 +21,19 @@
 - DEC-012 requires a standalone repository-local product.
 - DEC-014 requires incremental, phase-owned persistence changes.
 - DEC-015 resolves OQ-014: Google sign-in is enabled for `INDIVIDUAL` accounts only in Release 1. Other account types remain architecturally extensible but disabled. Google authentication never bypasses phone verification or another required verification gate.
+- DEC-017 preserves every production verification rule while allowing unavailable local-development SMS delivery intents to be redirected to one configured developer email inbox for manual runtime acceptance only. The redirect is forbidden in test/production, does not prove phone ownership, exposes no secret through logs/events/errors/API responses, and must be removed before production readiness.
+- DEC-018 requires a browser-safe Google flow: one provider-registered backend callback derives SIGN_IN versus LINK from a server-held one-time transaction, redirects only to an allowlisted frontend URI without tokens or provider secrets, and uses authenticated phone request/verification to promote the exact verification-only session.
+- DEC-024 supersedes DEC-019: the backend never renders a Google result page and always redirects to the allowlisted frontend callback.
+- DEC-020 standardizes descriptive API failures, permits field-specific
+  phone/email conflict disclosure only during public signup, and replaces the
+  former 12-character password minimum with a 7–128 character
+  predictability-based policy.
+
+- DEC-021 requires validation to return every independently detectable issue
+  in one response and adopts the explicit `cleanora_refresh_token` and
+  `cleanora_google_oauth_state` cookie names while expiring known legacy names.
+- DEC-022 aggregates simultaneous public-signup phone and email conflicts into
+  one safe issues array; passwords are never duplicate identifiers.
 
 **Dependency**: R1-P01 is Complete with final independent verdict `APPROVED`. R1-P02 reuses its startup, validation, response, request-tracing, logging, configuration, audit, database-lifecycle, testing, and coverage foundations.
 
@@ -46,6 +59,34 @@
 - Q: Does a newly added pending account category block an identity’s already verified categories? → A: No. Existing verified categories remain usable; only the newly added category is blocked until its verification gate completes.
 - Q: What happens to sessions and sign-in state after a successful password reset? → A: Revoke all sessions and require a fresh login with the new password; password reset does not automatically sign in.
 
+### Session 2026-07-26
+
+- Q: What should signup return when the normalized phone or email already
+  belongs to an identity? → A: Return a field-specific `409` conflict code,
+  safe descriptive message, and field/reason details. This limited signup-only
+  existence disclosure is human-approved; login and forgot-password remain
+  enumeration-safe and reveal no account details.
+- Q: What password policy should signup, reset, and change-password enforce? →
+  A: Accept 7–128 characters without composition rules, including numbers-only
+  passwords, but reject common, repeated, repeated-pattern, and ascending or
+  descending sequential values.
+
+### Session 2026-07-27
+
+- Q: Should invalid phone, email, and password values fail one at a time? →
+  A: No. Return all independently detectable request validation issues in one
+  `400 REQUEST_VALIDATION_FAILED` response so the frontend can render every
+  field error after one submission.
+- Q: Which authentication cookie names are canonical? → A:
+  `cleanora_refresh_token` is the rotating refresh credential and
+  `cleanora_google_oauth_state` is Google OAuth correlation. Expire the known
+  stale `cleanora_refresh`, `fs_refreshtoken`, and `cleanora_google_state`
+  names; do not accept them under the canonical configuration.
+- Q: What happens when both signup phone and email are already registered? →
+  A: Return one `409 AUTH_SIGNUP_IDENTIFIERS_ALREADY_REGISTERED` response with
+  both safe fields in `error.details.issues`. Never compare or report a
+  password as duplicated.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Register and Complete the Correct Verification Journey (Priority: P1)
@@ -63,7 +104,11 @@ As an individual, company representative, engineer, or provider owner, I need to
 3. **Given** a company or engineer supplies the required phone, email, and password, **When** signup succeeds, **Then** email verification is blocking and phone SMS verification is not required.
 4. **Given** a provider owner supplies the required phone, email, and password, **When** signup succeeds, **Then** email verification is blocking and no provider profile or provider-management behavior is created.
 5. **Given** an authenticated identity requests another supported self-signup account category, **When** category enrollment succeeds, **Then** the existing user record gains the category in pending state, existing verified categories remain usable, and only the new category is blocked until its verification gate completes, without creating a duplicate identity, role, permission, or profile.
-6. **Given** an unauthenticated signup uses an identifier already associated with an identity, **When** signup is attempted, **Then** the response does not disclose account details and no duplicate identity or category is created.
+6. **Given** an unauthenticated signup uses an identifier already associated
+   with an identity, **When** signup is attempted, **Then** the response
+   identifies only the conflicting `phone` or `email` field with a stable
+   `409` code, reveals no other account details, and creates no duplicate
+   identity or category.
 7. **Given** a worker-facing entry point, **When** self-signup or category enrollment is attempted, **Then** the operation is unavailable and no worker identity or category is created.
 
 ---
@@ -123,6 +168,8 @@ As an individual customer, I need to sign in or link my account with Google whil
 3. **Given** an unauthenticated Google identity shares an email with an existing account, **When** safe ownership cannot be established, **Then** the system does not silently merge or link the identities.
 4. **Given** a company, engineer, provider owner, or worker attempts Google authentication, **When** the account type is evaluated, **Then** Google authentication is rejected without enabling that audience.
 5. **Given** Google authentication succeeds but the individual phone remains unverified, **When** protected functionality is requested, **Then** access remains blocked until phone verification completes.
+6. **Given** Google redirects to the backend callback, **When** state, nonce, PKCE, and the one-time transaction are valid, **Then** the backend completes the stored sign-in/link intent and redirects to the allowlisted frontend without placing tokens, authorization codes, state, or provider errors in the URL.
+7. **Given** a new Google individual has a verification-only session, **When** that principal requests and correctly verifies a phone OTP, **Then** the challenge must belong to the same user and the exact session is atomically promoted to full access without a second Google sign-in.
 
 ---
 
@@ -295,7 +342,10 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 
 - **SC-001**: 100% of supported signup tests apply the correct verification rule: blocking phone verification for individuals and blocking email verification for company, engineer, and provider-owner accounts.
 - **SC-002**: 100% of worker self-signup attempts are rejected before creating an identity, while eligible pre-provisioned worker login cases succeed.
-- **SC-003**: Across all authentication and recovery enumeration tests, existing and absent accounts produce equivalent public response semantics with zero account-specific disclosure.
+- **SC-003**: Across login and recovery enumeration tests, existing and absent
+  accounts produce equivalent public response semantics with zero
+  account-specific disclosure. Public signup is the approved exception and
+  may identify only a normalized phone/email conflict field.
 - **SC-004**: 100% of expired, used, superseded, invalid, or attempt-exhausted one-time codes and reset credentials are rejected without changing protected identity state.
 - **SC-005**: 100% of successful refreshes invalidate the prior refresh credential and preserve exactly one valid successor for that rotation path.
 - **SC-006**: 100% of detected refresh-token reuse cases revoke the affected session family and prevent subsequent family use.

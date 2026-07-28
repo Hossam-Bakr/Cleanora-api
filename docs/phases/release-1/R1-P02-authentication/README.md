@@ -4,8 +4,8 @@
 |---|---|
 | Release | Release 1 — Core Marketplace |
 | Phase | R1-P02 |
-| Status | Prepared, not active |
-| Current active phase | R1-P00 |
+| Status | In Progress |
+| Current active phase | R1-P02 |
 | Depends on | R1-P00 and R1-P01 |
 | Canonical source | Vision section 4; roadmap R1-P02 |
 | Approved decisions | DEC-011, DEC-012, DEC-014 |
@@ -30,25 +30,15 @@ Release 1 actor.
 - Banned or suspended accounts are denied at login and protected requests.
 - Access JWT plus rotating refresh JWT cookie follows ADR-0010.
 
-## Preparation files
+## Phase files
 
 - [API contract](api-contract.md)
 - [Session and cookie security](security-session-design.md)
 - [Test plan](test-plan.md)
 - [Implementation checklist](implementation-checklist.md)
 
-## Must resolve before activation
+## Remaining operations gate
 
-1. Complete and approve R1-P00 and R1-P01.
-2. Resolve OQ-014: Google sign-in audiences.
-3. Select the SMS OTP provider for Egypt.
-4. Benchmark and approve the final Argon2id parameters from ADR-0013.
-5. Decide how R1-P02 represents actor/account kind before R1-P03 creates the
-   complete role/permission model.
-6. Decide whether worker login completion moves to R1-P07 or whether the
-   minimal worker identity relation moves into R1-P02.
-7. Pull a minimal notification/template delivery foundation forward or define
-   the approved R1-P02-owned OTP delivery tables before R1-P23.
-
-No auth table, migration, or endpoint may be implemented until these affected
-decisions are recorded in the active phase artifacts.
+Egypt SMS vendor selection and production credentials remain human-owned. The
+phase uses only the approved delivery port and deterministic unavailable/test
+adapters; no production SMS network integration is activated here.

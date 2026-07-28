@@ -43,7 +43,8 @@ describe("MemoryRateLimiterAdapter", () => {
 
     expect(response.body.error).toMatchObject({
       code: "RATE_LIMITER_UNAVAILABLE",
-      message: "Rate limiter is unavailable"
+      message:
+        "Request protection is temporarily unavailable. Please try again later."
     });
     expect(JSON.stringify(response.body)).not.toContain("storage unavailable");
   });

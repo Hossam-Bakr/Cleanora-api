@@ -7,6 +7,11 @@ const { existsSync } = require("node:fs");
 const { resolve } = require("node:path");
 
 const requiredPaths = [
+  'docs/swagger/README.md',
+  'src/swagger/openapi.document.ts',
+  'postman/Cleanora-swagger-documentation.postman_collection.json',
+  'docs/apis/openapi/r1-p02-authentication.yaml',
+  'postman/R1-P02-authentication.postman_collection.json',
   "docs/apis/foundation-system.md",
   "docs/apis/openapi/r1-p01-foundation.yaml",
   "docs/apis/README.md",

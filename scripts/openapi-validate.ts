@@ -1,39 +1,21 @@
-/**
- * @desc Validate the R1-P01 OpenAPI foundation document.
- * @access Maintainer tooling
- * @explanation Parses YAML and validates the complete OpenAPI schema instead
- * of relying on text matches. An optional path supports isolated regressions.
- */
-import { relative, resolve } from "node:path";
+/** Validate every phase-owned OpenAPI document, or one explicitly requested path. */
+import { relative, resolve } from 'node:path';
+import { cleanoraOpenApiDocument } from '../src/swagger/openapi.document.js';
 
 interface OpenApiParser {
-  validate(documentPath: string): Promise<unknown>;
+  validate(document: string | Readonly<Record<string, unknown>>): Promise<unknown>;
 }
-
-const openApiParser = require("@apidevtools/swagger-parser") as OpenApiParser;
-const defaultDocumentPath = "docs/apis/openapi/r1-p01-foundation.yaml";
+const openApiParser = require('@apidevtools/swagger-parser') as OpenApiParser;
+const defaults = ['docs/apis/openapi/r1-p01-foundation.yaml', 'docs/apis/openapi/r1-p02-authentication.yaml'];
 
 async function main(): Promise<void> {
-  const requestedPath = process.argv[2] ?? defaultDocumentPath;
-  const documentPath = resolve(process.cwd(), requestedPath);
-
+  const paths = process.argv[2] === undefined ? defaults : [process.argv[2]];
   try {
-    await openApiParser.validate(documentPath);
-    process.stdout.write(
-      `${JSON.stringify({
-        ok: true,
-        path: relative(process.cwd(), documentPath).replaceAll("\\", "/")
-      })}\n`
-    );
+    for (const value of paths) await openApiParser.validate(resolve(process.cwd(), value!));
+    await openApiParser.validate(cleanoraOpenApiDocument);
+    process.stdout.write(`${JSON.stringify({ ok: true, paths: paths.map((value) => relative(process.cwd(), resolve(process.cwd(), value!)).replaceAll('\\', '/')), runtimeDocument: 'src/swagger/openapi.document.ts' })}\n`);
   } catch (error: unknown) {
-    process.stderr.write(
-      `${JSON.stringify({
-        ok: false,
-        error: "OPENAPI_INVALID",
-        path: relative(process.cwd(), documentPath).replaceAll("\\", "/"),
-        message: error instanceof Error ? error.message : "Validation failed"
-      })}\n`
-    );
+    process.stderr.write(`${JSON.stringify({ ok: false, error: 'OPENAPI_INVALID', paths, message: error instanceof Error ? error.message : 'Validation failed' })}\n`);
     process.exitCode = 1;
   }
 }

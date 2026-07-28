@@ -54,6 +54,9 @@ describe("process-wide Prisma lifecycle", () => {
     const connect = vi
       .spyOn(lifecycle.client, "$connect")
       .mockResolvedValue(undefined);
+    const warm = vi
+      .spyOn(lifecycle.client, "$queryRaw")
+      .mockResolvedValue([{ ok: 1 }] as never);
     const disconnect = vi
       .spyOn(lifecycle.client, "$disconnect")
       .mockResolvedValue(undefined);
@@ -62,6 +65,7 @@ describe("process-wide Prisma lifecycle", () => {
     await Promise.all([lifecycle.disconnect(), lifecycle.disconnect()]);
 
     expect(connect).toHaveBeenCalledTimes(1);
+    expect(warm).toHaveBeenCalledTimes(1);
     expect(disconnect).toHaveBeenCalledTimes(1);
   });
 

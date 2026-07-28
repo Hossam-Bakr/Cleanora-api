@@ -8,17 +8,32 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 
 const executeFile = promisify(execFile);
-const migrationName = "r1_p01_foundation_country_configuration";
+const migrationNames = [
+  'r1_p01_foundation_country_configuration',
+  'r1_p02_complete_authentication',
+  'r1_p02_fix_phone_e164_constraint',
+  'r1_p02_google_provider_profile_claims'
+] as const;
 const expectedTables = [
   "currencies",
   "countries",
   "app_configs",
   "country_configs",
-  "audit_logs"
+  "audit_logs",
+  'users',
+  'user_credentials',
+  'user_sessions',
+  'otp_codes',
+  'password_reset_tokens',
+  'social_accounts',
+  'auth_events'
 ] as const;
 const expectedPostDeployTables = ["_prisma_migrations", ...expectedTables] as const;
 const destructivePattern =
   /\b(DROP\s+TABLE|TRUNCATE|DELETE\s+FROM)\b/i;
+const expectedForwardMigrationSql = 'ALTER TABLE users DROP CONSTRAINT users_phone_e164_check; ALTER TABLE users ADD CONSTRAINT users_phone_e164_check CHECK (phone_e164 IS NULL OR phone_e164 ~ \'^\\+[1-9][0-9]{1,14}$\');';
+const expectedGoogleProfileClaimsSql =
+  'ALTER TABLE "social_accounts" ADD COLUMN "provider_display_name" VARCHAR(200), ADD COLUMN "provider_avatar_url" VARCHAR(2048);';
 
 export interface MigrationHistoryRow {
   readonly migration_name: string;
@@ -57,7 +72,7 @@ export function assertSafeCleanTestDatabaseUrl(
   );
   if (
     !isLocalHost &&
-    !/(^|[._/-])(test|ci|clean|proof|r1[_-]?p01)([._/-]|$)/u.test(
+    !/(^|[._/-])(test|ci|clean|proof|r1[_-]?p0[12])([._/-]|$)/u.test(
       targetName.toLowerCase()
     )
   ) {
@@ -73,6 +88,24 @@ export function assertDatabaseEmpty(tableNames: readonly string[]): void {
     throw new Error(
       `Clean migration target must be empty before deploy; found tables: ${tableNames.join(", ")}`
     );
+  }
+}
+
+/** Accept only the reviewed E.164 constraint replacement, with no ignored text. */
+export function assertForwardMigrationSql(sql: string): void {
+  if (destructivePattern.test(sql)) throw new Error('E.164 forward migration contains destructive SQL');
+  const normalized = sql.replace(/\s+/gu, ' ').trim();
+  if (normalized !== expectedForwardMigrationSql) throw new Error('E.164 forward migration contains unrelated SQL');
+}
+
+/** Accept only the two reviewed nullable Google presentation-claim columns. */
+export function assertGoogleProfileClaimsMigrationSql(sql: string): void {
+  if (destructivePattern.test(sql)) {
+    throw new Error("Google profile-claims migration contains destructive SQL");
+  }
+  const normalized = sql.replace(/\s+/gu, " ").trim();
+  if (normalized !== expectedGoogleProfileClaimsSql) {
+    throw new Error("Google profile-claims migration contains unrelated SQL");
   }
 }
 
@@ -95,44 +128,33 @@ export function assertExactPostDeployTables(
   }
 }
 
-/** Require one successful, non-rolled-back history row for this phase. */
+/** Require one successful, non-rolled-back history row for each phase. */
 export function assertAppliedMigration(
   rows: readonly MigrationHistoryRow[]
 ): void {
-  const applied = rows.filter(
-    (row) =>
-      row.migration_name === migrationName &&
-      row.finished_at !== null &&
-      row.rolled_back_at === null
-  );
-
-  if (applied.length !== 1) {
-    throw new Error(
-      `Migration history must contain one successful ${migrationName} row; found ${String(applied.length)}`
-    );
+  for (const migrationName of migrationNames) {
+    const applied = rows.filter((row) => row.migration_name === migrationName && row.finished_at !== null && row.rolled_back_at === null);
+    if (applied.length !== 1) throw new Error(`Migration history must contain one successful ${migrationName} row; found ${String(applied.length)}`);
   }
 }
 
 async function validateMigrationFolder(): Promise<void> {
-  const migrationPath = join(
-    process.cwd(),
-    "prisma",
-    "migrations",
-    migrationName,
-    "migration.sql"
-  );
-  await access(migrationPath);
-  const sql = await readFile(migrationPath, "utf8");
-
-  if (destructivePattern.test(sql)) {
-    throw new Error(
-      `Migration ${migrationName} contains unexplained destructive SQL`
-    );
-  }
-
-  for (const table of expectedTables) {
-    if (!sql.includes(`"${table}"`)) {
-      throw new Error(`Migration SQL is missing expected table ${table}`);
+  for (const migrationName of migrationNames) {
+    const migrationPath = join(process.cwd(), 'prisma', 'migrations', migrationName, 'migration.sql');
+    await access(migrationPath);
+    const sql = await readFile(migrationPath, 'utf8');
+    if (destructivePattern.test(sql)) throw new Error(`Migration ${migrationName} contains unexplained destructive SQL`);
+    if (migrationName === 'r1_p02_fix_phone_e164_constraint') {
+      assertForwardMigrationSql(sql);
+      continue;
+    }
+    if (migrationName === "r1_p02_google_provider_profile_claims") {
+      assertGoogleProfileClaimsMigrationSql(sql);
+      continue;
+    }
+    const ownedTables = migrationName.includes('p01') ? expectedTables.slice(0, 5) : expectedTables.slice(5);
+    for (const table of ownedTables) {
+      if (!sql.includes(`"${table}"`)) throw new Error(`Migration ${migrationName} is missing expected table ${table}`);
     }
   }
 }
@@ -179,7 +201,7 @@ async function assertPostDeployState(
         finished_at,
         rolled_back_at
       FROM "_prisma_migrations"
-      WHERE migration_name = ${migrationName}
+      WHERE migration_name IN (${migrationNames[0]}, ${migrationNames[1]}, ${migrationNames[2]}, ${migrationNames[3]})
     `;
     assertAppliedMigration(history);
   } finally {
@@ -189,8 +211,8 @@ async function assertPostDeployState(
 
 async function run(): Promise<void> {
   await validateMigrationFolder();
-  console.info(`Validated migration folder: ${migrationName}`);
-  console.info(`Expected P01 tables: ${expectedTables.join(", ")}`);
+  console.info(`Validated migration folders: ${migrationNames.join(', ')}`);
+  console.info(`Expected product tables: ${expectedTables.join(', ')}`);
   console.info("SQL review: no DROP TABLE / TRUNCATE / DELETE FROM detected");
 
   const connectionString = process.env["CI_DATABASE_URL"];

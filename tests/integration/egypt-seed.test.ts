@@ -6,8 +6,9 @@ import {
   startTestDatabaseLifecycle,
   stopTestDatabaseLifecycle
 } from "../helpers/test-database-lifecycle.js";
+import { hasApprovedTestDatabaseUrl } from "../helpers/resolve-test-database-url.js";
 
-const hasDatabase = process.env["DATABASE_URL"] !== undefined;
+const hasDatabase = hasApprovedTestDatabaseUrl();
 
 describe.skipIf(!hasDatabase)("Egypt seed", () => {
   let database: PrismaLifecycle;

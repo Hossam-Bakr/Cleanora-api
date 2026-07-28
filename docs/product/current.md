@@ -11,7 +11,7 @@
 | Frontend Owner | `TBD` |
 | Started At | `2026-07-24` |
 | Completed At | `—` |
-| Last Updated | `2026-07-24` |
+| Last Updated | `2026-07-26` |
 
 ## Active phase — R1-P02
 
@@ -29,8 +29,42 @@ passed:
 - DEC-014 requires R1-P02 to own any later schema/migration changes incrementally
 - DEC-015 resolves OQ-014: Release 1 Google sign-in is enabled for individual accounts only and never bypasses required verification
 
-Activation is project-management status only. No R1-P02 product code, migration,
-test execution, commit, or push was performed.
+R1-P02 implementation is underway. Authentication code, its additive migration,
+and focused tests exist. Coverage-only remediation is paused under DEC-016
+(branches 73.8% vs 75% accepted as temporary debt; thresholds unchanged;
+T099/T118 unchecked). DEC-017 authorizes a development-only SMS-to-email
+delivery redirect without changing production verification rules. Development
+migration/seed, SMTP delivery, health, signup, and representative auth error
+paths have since been exercised successfully.
+
+DEC-018 corrects Google for browser use: one provider-registered backend
+callback handles sign-in/link intent, redirects safely to the allowlisted
+frontend without tokens in the URL, and uses authenticated phone OTP request
+and verification to promote the exact restricted session. Focused unit,
+database integration, E2E, typecheck, lint, build, OpenAPI, docs, and Postman
+contract checks pass. Full real-provider Chrome acceptance, remaining manual
+auth journeys, T099/T118, and final review remain open. No coverage, full CI,
+converge, commit, push, deployment, or production migration was performed for
+DEC-018.
+
+Professional runtime API documentation is now available at `/api/v1/docs`,
+with the machine-readable OpenAPI 3.1 document at
+`/api/v1/docs/openapi.json`. It covers every currently implemented system
+health and authentication operation and includes a separate Postman
+documentation collection. This documentation addition does not change the
+phase status or close any remaining runtime or validation work.
+
+DEC-024 removes the API-hosted Google result page and fixed development OTP
+recipient. Google now hands off only to the configured frontend callback, which
+bootstraps through `/auth/refresh` with credentials included. Until real SMS is
+integrated, standard signup phone OTPs go to that account's normalized email
+and Google phone OTPs go to the linked verified Google email. Login, refresh,
+password change, and `/auth/me` share one safe frontend user contract.
+
+DEC-025 adds nullable, provider-asserted Google display-name and HTTPS avatar
+claims to that safe contract and a local `frontend/` integration demonstration.
+Static validation passes; applying the additive development migration and one
+real-provider Chrome journey remain open as T192.
 
 ## Completed phase — R1-P01
 

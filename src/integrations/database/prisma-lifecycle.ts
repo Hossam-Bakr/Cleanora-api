@@ -1,3 +1,4 @@
+import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "#generated/prisma/client";
@@ -7,37 +8,56 @@ import {
 } from "#core/health/database-probe";
 import type { ReadinessProbe } from "#core/health/readiness";
 
+/** Keep one small process-owned pool so tests and app composition cannot open unbounded pg clients. */
+const DEFAULT_POOL_MAX = 2;
+
 export class PrismaLifecycle {
   readonly client: PrismaClient;
+  private readonly pool: pg.Pool;
   private connectPromise: Promise<void> | undefined;
   private disconnectPromise: Promise<void> | undefined;
 
   /**
    * @desc Create the shared Prisma database lifecycle.
    * @access Internal infrastructure only
-   * @explanation This constructor creates one Prisma client for the whole
-   * application and keeps the database adapter outside business modules.
+   * @explanation This constructor creates one Prisma client and one explicit
+   * pg pool for the whole application so repositories share connections and
+   * disconnect can deterministically end the pool.
    */
-  constructor(connectionString: string) {
-    const adapter = new PrismaPg({ connectionString });
+  constructor(
+    connectionString: string,
+    options: { readonly maxConnections?: number } = {}
+  ) {
+    this.pool = new pg.Pool({
+      connectionString,
+      max: options.maxConnections ?? DEFAULT_POOL_MAX,
+      allowExitOnIdle: true
+    });
+    const adapter = new PrismaPg(this.pool, { disposeExternalPool: true });
     this.client = new PrismaClient({ adapter });
   }
 
   /**
    * @desc Connect the application to PostgreSQL.
    * @access Internal infrastructure only
-   * @explanation This function opens the database connection before the HTTP
-   * server starts accepting requests.
+   * @explanation This function opens the database connection and warms one
+   * pooled client before HTTP handlers or tests start transactions, so the
+   * first interactive transaction is not racing a cold SSL handshake under
+   * Prisma's default transaction maxWait.
    */
   async connect(): Promise<void> {
-    this.connectPromise ??= this.client.$connect();
+    this.connectPromise ??= (async () => {
+      await this.client.$connect();
+      await this.client.$queryRaw`SELECT 1`;
+    })();
     await this.connectPromise;
   }
 
   /**
    * @desc Disconnect the application from PostgreSQL.
    * @access Internal infrastructure only
-   * @explanation This function closes database resources during shutdown.
+   * @explanation This function closes Prisma and ends the owned pg pool so
+   * test compositions cannot leave remote connections behind.
    */
   async disconnect(): Promise<void> {
     this.disconnectPromise ??= this.client.$disconnect();

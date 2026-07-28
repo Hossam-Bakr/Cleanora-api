@@ -308,3 +308,232 @@ individual account remains restricted until its required phone verification is
 complete.
 
 This decision resolves OQ-014.
+
+---
+
+## DEC-016 — R1-P02 temporary branch-coverage debt (not a DoD exception)
+
+**Date:** 2026-07-25
+**Status:** Approved (temporary)
+
+For R1-P02 final quality gates, the human owner accepted the latest measured
+coverage evidence without further coverage-only remediation:
+
+- 67/67 test files and 202/202 tests passed
+- Statements 90.73%, functions 88.44%, lines 91.71%
+- Branches **73.8%** versus the planned **75%** threshold (8-branch gap)
+- Production dependency audit: 0 vulnerabilities
+
+This is **documented technical debt**, not a claim that the coverage gate
+passed, and **not** yet a formal Definition-of-Done exception. Configured
+thresholds must not be lowered or bypassed. Tasks **T099** and **T118** remain
+unchecked until the owner decides whether to grant a formal DoD exception after
+runtime acceptance. Coverage-only percentage-chasing tests are stopped for now.
+
+---
+
+## DEC-017 — Development-only SMS delivery redirect
+
+**Date:** 2026-07-26
+**Status:** Approved (temporary development operations)
+
+Production verification rules remain unchanged: individual verification and
+individual/worker recovery are normally delivered by SMS, while company,
+engineer, and provider-owner verification and recovery use email.
+
+While real SMS transport is unavailable, local development may redirect an SMS
+delivery intent to one configured developer-owned email inbox. This redirect:
+
+- is allowed only when `NODE_ENV=development`;
+- is forbidden in test and production;
+- does not prove ownership of the authoritative phone number;
+- exists only for manual endpoint/runtime acceptance until a real SMS provider is connected;
+- keeps email as the only temporary secret-delivery surface; and
+- must be removed before production readiness.
+
+Raw OTPs and password-reset credentials must never be written to application
+logs, errors, auth events, audit context, or API responses. Production must
+continue to use a real SMS delivery adapter or fail closed; it must never
+silently substitute ordinary email.
+
+---
+
+## DEC-018 — Browser-safe Google callback and phone verification
+
+**Date:** 2026-07-26
+**Status:** Approved for R1-P02 implementation
+
+Google sign-in and deliberate Google linking use one provider-registered
+backend callback URI. The server-held one-time transaction records the intent;
+link callbacks do not depend on a bearer token surviving cross-site browser
+navigation.
+
+The backend callback validates the correlation cookie, state, nonce, PKCE, and
+one-time transaction, then redirects to an allowlisted frontend callback URI.
+The frontend redirect contains only safe outcome markers. Access tokens,
+refresh tokens, authorization codes, state values, and raw provider errors are
+forbidden in its URL.
+
+After a successful sign-in callback, the frontend exchanges the HttpOnly
+refresh cookie through the normal refresh endpoint. A new Google individual
+uses authenticated phone request and verification endpoints. Successful OTP
+verification atomically verifies the identity and promotes the exact
+verification-only session to full access.
+
+---
+
+## DEC-019 — Development-only Google browser result page
+
+**Date:** 2026-07-26
+**Status:** Approved (temporary development integration)
+
+Until the Cleanora frontend exists and serves its Google callback route, local
+development may redirect the completed backend callback to
+`/api/v1/auth/google/result` on the API origin.
+
+This result page:
+
+- is registered only when `NODE_ENV=development`;
+- keeps state, nonce, PKCE, provider errors, access tokens, and refresh tokens
+  out of the URL and rendered output;
+- exchanges the HttpOnly refresh cookie through the normal refresh endpoint;
+- keeps the access token only in page memory;
+- supports the mandatory Google Individual phone-verification journey; and
+- must be replaced by the real frontend callback before production readiness.
+
+Production behavior remains the DEC-018 frontend handoff. The provider still
+returns only to the configured backend `GOOGLE_REDIRECT_URI`.
+
+---
+
+## DEC-020 — Descriptive API failures and practical password policy
+
+**Date:** 2026-07-26
+**Status:** Approved by human owner
+
+Every JSON failure repeats the actual HTTP status as `error.statusCode` and
+provides a stable code plus a safe descriptive message. Optional details may
+name an input field and safe reason, but never include submitted values,
+credentials, provider payloads, persistence details, or account records.
+
+Public signup returns distinct `AUTH_PHONE_ALREADY_REGISTERED` and
+`AUTH_EMAIL_ALREADY_REGISTERED` conflicts. This is a deliberate, limited
+signup-only existence disclosure accepted for clearer frontend validation.
+Login continues to use one generic phone/password failure, and
+forgot-password remains indistinguishable for existing and absent accounts.
+
+The shared password policy for signup, reset, and authenticated change is now:
+
+- 7–128 characters and no more than 512 UTF-8 bytes;
+- no character-class composition requirement;
+- numbers-only values are permitted; and
+- common values, one/repeated patterns, and ascending or descending numeric
+  sequences are rejected.
+
+---
+
+## DEC-021 — Aggregate validation and explicit cookie names
+
+**Date:** 2026-07-27
+**Status:** Approved by human owner
+
+Request validation returns every independently detectable body, parameter, and
+query issue in one `REQUEST_VALIDATION_FAILED` response. Independent format and
+policy checks must run at the HTTP boundary instead of failing sequentially in
+the application service. Persistence conflicts and other state-dependent
+business failures remain separate errors.
+
+Authentication uses these explicit cookie names:
+
+- `cleanora_refresh_token` for the rotating HttpOnly refresh credential; and
+- `cleanora_google_oauth_state` for short-lived Google OAuth correlation.
+
+The repository does not create `fs_refreshtoken`. Authentication responses
+expire that known stale localhost name together with the earlier
+`cleanora_refresh` and `cleanora_google_state` names. Legacy refresh cookies
+are not treated as credentials under the canonical configuration.
+
+---
+
+## DEC-022 — Aggregate safe signup identifier conflicts
+
+**Date:** 2026-07-27
+**Status:** Approved by human owner
+
+When a valid public signup contains both an already-registered phone and an
+already-registered email, Cleanora returns one
+`409 AUTH_SIGNUP_IDENTIFIERS_ALREADY_REGISTERED` response with `phone` and
+`email` entries in `error.details.issues`. Single-field conflicts retain their
+existing stable codes.
+
+This extends the human-approved signup-only disclosure from DEC-020. It returns
+only field names, stable reasons, and safe messages—never submitted values,
+account records, ownership relationships, or identity details. Passwords are
+not unique identifiers, are never compared across accounts, and must never be
+reported as duplicate.
+
+---
+
+## DEC-023 — Google phone OTP temporary email delivery
+
+**Date:** 2026-07-27
+**Status:** Approved for R1-P02 development integration
+
+While a real SMS provider is unavailable, Google Individual phone-verification
+OTPs are delivered by email to the authenticated user's linked, provider-verified
+Google email stored on `SocialAccount`. This amends DEC-017 for the Google phone
+path only:
+
+- the OTP challenge remains an SMS phone challenge bound to the submitted E.164
+  phone number;
+- the recipient is resolved exclusively server-side from the verified Google
+  identity and is never accepted from the request body;
+- a fixed `AUTH_DEV_OTP_RECIPIENT` inbox is not used for this path;
+- receiving the email does not prove phone ownership;
+- ordinary non-Google SMS development delivery may continue to use DEC-017; and
+- replacing the temporary email send with a real SMS adapter must not require
+  controller or frontend contract changes.
+
+---
+
+## DEC-024 — Account-bound OTP delivery and frontend-only Google handoff
+
+**Date:** 2026-07-27
+**Status:** Approved by human owner; supersedes DEC-019 and the fixed-inbox part of DEC-017
+
+The backend no longer renders `/api/v1/auth/google/result`. Google completes at
+the backend callback, writes the secure refresh cookie, and redirects only to
+the allowlisted frontend callback. The frontend bootstraps with `POST
+/api/v1/auth/refresh` and `credentials: "include"`.
+
+During local development without SMS:
+
+- standard Individual signup phone challenges are emailed only to that user's
+  normalized signup email;
+- Google phone challenges are emailed only to the linked provider-verified
+  Google email;
+- neither recipient is accepted from client input or a fixed environment
+  variable; and
+- the challenge remains bound to its user, phone destination, purpose, expiry,
+  attempt limit, resend policy, and single-use state.
+
+Login, refresh, password change, Google session bootstrap, and `/auth/me` share
+one frontend-safe user representation. Existing `identity` session metadata is
+retained temporarily for backward compatibility.
+
+---
+
+## DEC-025 — Google presentation claims for frontend authentication
+
+**Date:** 2026-07-28
+**Status:** Approved by human owner for the R1-P02 browser integration
+
+The authentication-owned Google social link may store the provider-asserted
+display name and HTTPS avatar URL as nullable presentation claims. The safe
+authenticated-user contract returns both fields, using `null` when unavailable.
+
+These values are not access proof, are never accepted from Cleanora clients,
+and do not satisfy phone verification or create an actor profile. They are
+updated only from a successfully verified Google OIDC response. A local
+frontend demonstration keeps the access token in memory, relies on the
+HttpOnly refresh cookie, and shows only this safe user contract.

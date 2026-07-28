@@ -58,7 +58,11 @@ describe("rate-limit middleware", () => {
     expect(response.headers["retry-after"]).toBe("30");
     expect(response.body).toMatchObject({
       success: false,
-      error: { code: "RATE_LIMIT_EXCEEDED" }
+      error: {
+        code: "RATE_LIMIT_EXCEEDED",
+        statusCode: 429,
+        message: "Too many requests. Wait before trying again."
+      }
     });
   });
 
@@ -80,7 +84,8 @@ describe("rate-limit middleware", () => {
       success: false,
       error: {
         code: "RATE_LIMITER_UNAVAILABLE",
-        message: "Rate limiter is unavailable"
+        statusCode: 503,
+        message: "Request protection is temporarily unavailable. Please try again later."
       },
       requestId: expect.any(String)
     });

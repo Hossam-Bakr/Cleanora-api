@@ -27,6 +27,22 @@ const optionalUrlSchema = z.preprocess(
   emptyStringToUndefined,
   z.url().optional()
 );
+const optionalEmailSchema = z.preprocess(
+  emptyStringToUndefined,
+  z.email().optional()
+);
+const optionalPositiveIntegerSchema = z.preprocess(
+  emptyStringToUndefined,
+  z.coerce.number().int().positive().optional()
+);
+const optionalBooleanFlagSchema = z.preprocess(
+  emptyStringToUndefined,
+  z.enum(["true", "false"]).transform((value) => value === "true").optional()
+);
+
+const booleanFlagSchema = z
+  .enum(['true', 'false'])
+  .transform((value) => value === 'true');
 
 const databaseUrlSchema = z
   .string()
@@ -42,6 +58,29 @@ const databaseUrlSchema = z
 
 const environmentSchema = z
   .object({
+    AUTH_ENABLED: booleanFlagSchema.default(false),
+    SMS_AUTH_ENABLED: booleanFlagSchema.default(false),
+    EMAIL_AUTH_ENABLED: booleanFlagSchema.default(false),
+    EMAIL_PROVIDER: z.preprocess(
+      emptyStringToUndefined,
+      z.enum(["smtp"]).optional()
+    ),
+    SMTP_HOST: optionalTextSchema,
+    SMTP_PORT: optionalPositiveIntegerSchema.pipe(
+      z.number().int().max(65_535).optional()
+    ),
+    SMTP_SECURE: optionalBooleanFlagSchema,
+    SMTP_REQUIRE_TLS: optionalBooleanFlagSchema,
+    SMTP_USER: optionalTextSchema,
+    SMTP_PASSWORD: optionalTextSchema,
+    SMTP_FROM_NAME: optionalTextSchema,
+    SMTP_FROM_EMAIL: optionalEmailSchema,
+    SMTP_CONNECTION_TIMEOUT_MS: optionalPositiveIntegerSchema,
+    SMTP_SOCKET_TIMEOUT_MS: optionalPositiveIntegerSchema,
+    AUTH_DEV_SMS_FALLBACK_TO_EMAIL: booleanFlagSchema.default(false),
+    GOOGLE_AUTH_ENABLED: booleanFlagSchema.default(false),
+    AUTH_VERIFIER_SECRET: optionalSecretSchema,
+    AUTH_PRIVACY_HASH_SECRET: optionalSecretSchema,
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -81,7 +120,7 @@ const environmentSchema = z
     AUTH_REFRESH_COOKIE_NAME: z
       .string()
       .regex(/^[a-z][a-z0-9_]*$/i)
-      .default("cleanora_refresh"),
+      .default("cleanora_refresh_token"),
     AUTH_REFRESH_COOKIE_PATH: z
       .string()
       .regex(/^\//, "AUTH_REFRESH_COOKIE_PATH must start with /")
@@ -96,6 +135,7 @@ const environmentSchema = z
     GOOGLE_CLIENT_ID: optionalTextSchema,
     GOOGLE_CLIENT_SECRET: optionalTextSchema,
     GOOGLE_REDIRECT_URI: optionalUrlSchema,
+    GOOGLE_FRONTEND_CALLBACK_URI: optionalUrlSchema,
     SHUTDOWN_TIMEOUT_MS: z.coerce
       .number()
       .int()
@@ -104,6 +144,121 @@ const environmentSchema = z
     REQUEST_BODY_LIMIT: z.string().min(1).default(DEFAULT_REQUEST_BODY_LIMIT)
   })
   .superRefine((environment, context) => {
+    if (environment.AUTH_ENABLED) {
+      const required = [
+        ['JWT_ACCESS_SECRET', environment.JWT_ACCESS_SECRET],
+        ['JWT_REFRESH_SECRET', environment.JWT_REFRESH_SECRET],
+        ['AUTH_VERIFIER_SECRET', environment.AUTH_VERIFIER_SECRET],
+        ['AUTH_PRIVACY_HASH_SECRET', environment.AUTH_PRIVACY_HASH_SECRET]
+      ] as const;
+
+      for (const [field, value] of required) {
+        if (value === undefined) {
+          context.addIssue({
+            code: 'custom',
+            path: [field],
+            message: `${field} is required when AUTH_ENABLED=true`
+          });
+        }
+      }
+
+      const distinctSecrets = required
+        .map(([, value]) => value)
+        .filter((value): value is string => value !== undefined);
+      if (new Set(distinctSecrets).size !== distinctSecrets.length) {
+        context.addIssue({
+          code: 'custom',
+          path: ['AUTH_VERIFIER_SECRET'],
+          message: 'Authentication secrets must be independent'
+        });
+      }
+    }
+
+    if (environment.EMAIL_AUTH_ENABLED && !environment.AUTH_ENABLED) {
+      context.addIssue({
+        code: "custom",
+        path: ["EMAIL_AUTH_ENABLED"],
+        message: "Email authentication requires AUTH_ENABLED=true"
+      });
+    }
+
+    if (environment.AUTH_ENABLED && environment.EMAIL_AUTH_ENABLED) {
+      const smtpRequired = [
+        ["EMAIL_PROVIDER", environment.EMAIL_PROVIDER],
+        ["SMTP_HOST", environment.SMTP_HOST],
+        ["SMTP_PORT", environment.SMTP_PORT],
+        ["SMTP_SECURE", environment.SMTP_SECURE],
+        ["SMTP_REQUIRE_TLS", environment.SMTP_REQUIRE_TLS],
+        ["SMTP_USER", environment.SMTP_USER],
+        ["SMTP_PASSWORD", environment.SMTP_PASSWORD],
+        ["SMTP_FROM_NAME", environment.SMTP_FROM_NAME],
+        ["SMTP_FROM_EMAIL", environment.SMTP_FROM_EMAIL],
+        ["SMTP_CONNECTION_TIMEOUT_MS", environment.SMTP_CONNECTION_TIMEOUT_MS],
+        ["SMTP_SOCKET_TIMEOUT_MS", environment.SMTP_SOCKET_TIMEOUT_MS]
+      ] as const;
+      for (const [field, value] of smtpRequired) {
+        if (value === undefined) {
+          context.addIssue({
+            code: "custom",
+            path: [field],
+            message: `${field} is required when email authentication is enabled`
+          });
+        }
+      }
+    }
+
+    if (environment.AUTH_DEV_SMS_FALLBACK_TO_EMAIL) {
+      if (environment.NODE_ENV !== "development") {
+        context.addIssue({
+          code: "custom",
+          path: ["AUTH_DEV_SMS_FALLBACK_TO_EMAIL"],
+          message: "SMS-to-email fallback is allowed only in development"
+        });
+      }
+      if (!environment.AUTH_ENABLED || !environment.EMAIL_AUTH_ENABLED) {
+        context.addIssue({
+          code: "custom",
+          path: ["AUTH_DEV_SMS_FALLBACK_TO_EMAIL"],
+          message: "SMS-to-email fallback requires authentication and email delivery"
+        });
+      }
+    }
+
+    if (environment.GOOGLE_AUTH_ENABLED && !environment.AUTH_ENABLED) {
+      context.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_AUTH_ENABLED'],
+        message: 'Google authentication requires AUTH_ENABLED=true'
+      });
+    }
+
+    if (environment.GOOGLE_AUTH_ENABLED) {
+      const googleRequired = [
+        environment.GOOGLE_CLIENT_ID,
+        environment.GOOGLE_CLIENT_SECRET,
+        environment.GOOGLE_REDIRECT_URI,
+        environment.GOOGLE_FRONTEND_CALLBACK_URI
+      ];
+      if (googleRequired.some((value) => value === undefined)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['GOOGLE_CLIENT_ID'],
+          message: 'Enabled Google authentication requires complete OIDC configuration'
+        });
+      }
+      if (
+        environment.GOOGLE_FRONTEND_CALLBACK_URI !== undefined &&
+        !environment.CORS_ORIGINS.includes(
+          new URL(environment.GOOGLE_FRONTEND_CALLBACK_URI).origin
+        )
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['GOOGLE_FRONTEND_CALLBACK_URI'],
+          message: 'Google frontend callback origin must be included in CORS_ORIGINS'
+        });
+      }
+    }
     if (
       environment.AUTH_COOKIE_SAME_SITE === "none" &&
       !environment.AUTH_COOKIE_SECURE
@@ -112,6 +267,13 @@ const environmentSchema = z
         code: "custom",
         path: ["AUTH_COOKIE_SECURE"],
         message: "SameSite=None requires AUTH_COOKIE_SECURE=true"
+      });
+    }
+    if (environment.NODE_ENV === 'production' && environment.AUTH_ENABLED && !environment.AUTH_COOKIE_SECURE) {
+      context.addIssue({
+        code: 'custom',
+        path: ['AUTH_COOKIE_SECURE'],
+        message: 'Production authentication requires AUTH_COOKIE_SECURE=true'
       });
     }
 
@@ -130,7 +292,8 @@ const environmentSchema = z
     const googleValues = [
       environment.GOOGLE_CLIENT_ID,
       environment.GOOGLE_CLIENT_SECRET,
-      environment.GOOGLE_REDIRECT_URI
+      environment.GOOGLE_REDIRECT_URI,
+      environment.GOOGLE_FRONTEND_CALLBACK_URI
     ];
     if (
       !googleValues.every((value) => value === undefined) &&
@@ -140,7 +303,7 @@ const environmentSchema = z
         code: "custom",
         path: ["GOOGLE_CLIENT_ID"],
         message:
-          "GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI must be provided together"
+          "GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, and GOOGLE_FRONTEND_CALLBACK_URI must be provided together"
       });
     }
   });

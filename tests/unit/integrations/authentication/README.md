@@ -1,0 +1,1 @@
+# Authentication adapter unit tests

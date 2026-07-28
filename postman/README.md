@@ -7,16 +7,50 @@ Import:
 
 Collections:
 
-- `R1-P00-foundation.postman_collection.json` — implemented system endpoints
-- `R1-P01-foundation-country-configuration.postman_collection.json` —
-  implemented health trio with envelope and `requestId` checks
-- `R1-P02-authentication.postman_collection.json` — prepared auth contract;
-  endpoints are not implemented yet
+- `R1-P00-foundation.postman_collection.json`
+- `R1-P01-foundation-country-configuration.postman_collection.json`
+- `R1-P02-authentication.postman_collection.json`
+- `Cleanora-swagger-documentation.postman_collection.json`
 
-For R1-P01, import the local environment first and then the P01 collection.
-Configuration and audit are in-process module contracts in this phase; they do
-not expose Postman CRUD requests.
+R1-P02 has one canonical Auth collection. Google appears once, in its
+`Google Authentication` folder. Negative cases such as duplicate signup,
+invalid login, weak password, and invalid OTP are Swagger response examples,
+not separate Postman requests.
 
-Postman keeps the refresh cookie in its cookie jar. Do not paste real refresh
-tokens, JWT secrets, database URLs, OTPs, or provider credentials into exported
-environment or collection files.
+Regenerate the canonical Auth collection and local environment with:
+
+```bash
+npm run postman:generate:auth
+```
+
+## Local variables
+
+Populate only:
+
+- `testEmail`, `testPhone`, and `testPassword`
+- `emailOtp` after standard signup delivery
+- `phoneOtp` after Google phone delivery
+- `passwordResetToken` from the reset email
+- `newPassword` when changing or resetting a password
+
+Requests automatically capture `challengeId` and `accessToken`. The HttpOnly
+refresh cookie stays in Postman's cookie jar; it is never exported as an
+environment value.
+
+## Google browser flow
+
+Chrome and Postman do not share HttpOnly cookies. Start the real journey by
+navigating Chrome to:
+
+`http://localhost:8000/api/v1/auth/google/browser`
+
+Google returns to the backend callback. The backend writes the refresh cookie
+and redirects to the configured frontend callback. Bassam's frontend then calls
+`POST /api/v1/auth/refresh` with `credentials: "include"`.
+
+The collection includes `/auth/google/callback` only as browser-owned contract
+documentation. Do not manually replay it or copy a Postman authorization URL
+into Chrome.
+
+Never export real OTPs, passwords, access tokens, reset credentials, provider
+credentials, database URLs, or refresh cookies.

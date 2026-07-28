@@ -1,0 +1,216 @@
+openapi: 3.1.0
+info:
+  title: Cleanora Authentication API
+  version: 1.0.0
+  description: R1-P02 identity, verification, session, recovery, and individual Google authentication.
+servers:
+  - url: /api/v1
+paths:
+  /auth/signup:
+    post: { operationId: signup, requestBody: { $ref: '#/components/requestBodies/Signup' }, responses: { '202': { $ref: '#/components/responses/VerificationAccepted' }, '400': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } } }
+  /auth/account-categories:
+    post: { operationId: enrollCategory, security: [bearerAuth: []], requestBody: { $ref: '#/components/requestBodies/Enroll' }, responses: { '202': { $ref: '#/components/responses/VerificationAccepted' }, '403': { $ref: '#/components/responses/Error' } } }
+  /auth/otp/request:
+    post: { operationId: requestOtp, requestBody: { $ref: '#/components/requestBodies/OtpRequest' }, responses: { '202': { $ref: '#/components/responses/VerificationAccepted' }, '400': { $ref: '#/components/responses/Error' } } }
+  /auth/otp/verify:
+    post: { operationId: verifyOtp, requestBody: { $ref: '#/components/requestBodies/OtpVerify' }, responses: { '200': { $ref: '#/components/responses/VerificationResult' }, '400': { $ref: '#/components/responses/Error' } } }
+  /auth/login:
+    post: { operationId: login, requestBody: { $ref: '#/components/requestBodies/Login' }, responses: { '200': { $ref: '#/components/responses/Token' }, '401': { $ref: '#/components/responses/Error' } } }
+  /auth/refresh:
+    post: { operationId: refresh, security: [refreshCookie: []], responses: { '200': { $ref: '#/components/responses/Token' }, '401': { $ref: '#/components/responses/Error' } } }
+  /auth/logout:
+    post: { operationId: logout, security: [bearerAuth: []], responses: { '200': { $ref: '#/components/responses/Ok' } } }
+  /auth/logout-all:
+    post: { operationId: logoutAll, security: [bearerAuth: []], responses: { '200': { $ref: '#/components/responses/Ok' } } }
+  /auth/me:
+    get: { operationId: currentIdentity, security: [bearerAuth: []], responses: { '200': { $ref: '#/components/responses/Ok' }, '401': { $ref: '#/components/responses/Error' } } }
+  /auth/password/forgot:
+    post: { operationId: forgotPassword, requestBody: { $ref: '#/components/requestBodies/Forgot' }, responses: { '202': { $ref: '#/components/responses/Accepted' } } }
+  /auth/password/reset:
+    post: { operationId: resetPassword, requestBody: { $ref: '#/components/requestBodies/Reset' }, responses: { '200': { $ref: '#/components/responses/PasswordResetResult' }, '400': { $ref: '#/components/responses/Error' } } }
+  /auth/password/change:
+    post: { operationId: changePassword, security: [bearerAuth: []], requestBody: { $ref: '#/components/requestBodies/Change' }, responses: { '200': { $ref: '#/components/responses/Token' }, '400': { $ref: '#/components/responses/Error' } } }
+  /auth/google:
+    get: { operationId: googleStart, responses: { '200': { $ref: '#/components/responses/Ok' }, '403': { $ref: '#/components/responses/Error' } } }
+  /auth/google/browser:
+    get: { operationId: googleBrowserStart, responses: { '303': { description: Redirect to Google authorization }, '403': { $ref: '#/components/responses/Error' } } }
+  /auth/google/callback:
+    get:
+      operationId: googleCallback
+      parameters:
+        - { name: state, in: query, required: true, schema: { type: string } }
+        - { name: code, in: query, required: false, schema: { type: string } }
+        - { name: error, in: query, required: false, schema: { type: string } }
+      responses: { '303': { description: Redirect to the allowlisted frontend callback without tokens or provider secrets } }
+  /auth/google/phone/request:
+    post: { operationId: requestGooglePhoneOtp, security: [bearerAuth: []], requestBody: { $ref: '#/components/requestBodies/GooglePhone' }, responses: { '202': { $ref: '#/components/responses/VerificationAccepted' }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' } } }
+  /auth/google/phone/verify:
+    post: { operationId: verifyGooglePhoneOtp, security: [bearerAuth: []], requestBody: { $ref: '#/components/requestBodies/OtpVerify' }, responses: { '200': { $ref: '#/components/responses/GooglePhoneVerificationResult' }, '400': { $ref: '#/components/responses/Error' }, '401': { $ref: '#/components/responses/Error' } } }
+  /auth/google/link:
+    get: { operationId: googleLinkStart, security: [bearerAuth: []], responses: { '200': { $ref: '#/components/responses/Ok' } } }
+  /auth/social/google:
+    delete: { operationId: unlinkGoogle, security: [bearerAuth: []], responses: { '200': { $ref: '#/components/responses/Ok' }, '409': { $ref: '#/components/responses/Error' } } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    refreshCookie: { type: apiKey, in: cookie, name: cleanora_refresh_token, description: Rotating HttpOnly refresh credential managed by the browser or Postman cookie jar }
+  schemas:
+    SelfSignupCategory: { type: string, enum: [INDIVIDUAL, COMPANY, ENGINEER, PROVIDER_OWNER] }
+    AccountCategory: { type: string, enum: [INDIVIDUAL, COMPANY, ENGINEER, PROVIDER_OWNER, WORKER] }
+    AuthNextAction: { type: string, enum: [VERIFY_ACCOUNT, LOGIN, CONTINUE] }
+    SignupInput:
+      type: object
+      additionalProperties: false
+      required: [accountCategory, phone, password]
+      properties: { accountCategory: { $ref: '#/components/schemas/SelfSignupCategory' }, phone: { type: string, description: International E.164 phone; spaces parentheses and hyphens are normalized }, email: { type: string, format: email }, password: { type: string, minLength: 7, maxLength: 128, description: Numbers-only is allowed; common, repeated, and sequential passwords are rejected } }
+    EnrollInput: { type: object, additionalProperties: false, required: [accountCategory], properties: { accountCategory: { $ref: '#/components/schemas/SelfSignupCategory' } } }
+    OtpRequestInput:
+      type: object
+      additionalProperties: false
+      properties:
+        challengeId: { type: string, minLength: 1, description: Preferred opaque selector after signup or a prior OTP request }
+        userId: { type: string, minLength: 1, description: Optional authenticated-path selector used with accountCategory }
+        accountCategory: { $ref: '#/components/schemas/SelfSignupCategory' }
+        purpose: { type: string, enum: [CATEGORY_VERIFICATION, OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION] }
+      description: Provide challengeId, or userId with accountCategory
+    OtpVerifyInput: { type: object, additionalProperties: false, required: [challengeId, code], properties: { challengeId: { type: string, minLength: 1 }, code: { type: string, pattern: '^[0-9]{6}$' } } }
+    LoginInput: { type: object, additionalProperties: false, required: [phone, password], properties: { phone: { type: string }, password: { type: string } } }
+    ForgotInput: { type: object, additionalProperties: false, required: [accountCategory, identifier], properties: { accountCategory: { $ref: '#/components/schemas/AccountCategory' }, identifier: { type: string } } }
+    ResetInput: { type: object, additionalProperties: false, required: [token, newPassword], properties: { token: { type: string, description: Complete composite <reset-id>.<random-secret> credential }, newPassword: { type: string, minLength: 7, maxLength: 128 } } }
+    ChangeInput: { type: object, additionalProperties: false, required: [currentPassword, newPassword], properties: { currentPassword: { type: string }, newPassword: { type: string, minLength: 7, maxLength: 128 } } }
+    GooglePhoneInput: { type: object, additionalProperties: false, required: [phone], properties: { phone: { type: string } } }
+    VerificationChallengeData:
+      type: object
+      additionalProperties: false
+      required: [accepted, challengeId, nextAction, accountCategory, purpose, channel, maskedDestination, expiresAt, resendAvailableAt]
+      properties:
+        accepted: { const: true }
+        challengeId: { type: string }
+        nextAction: { const: VERIFY_ACCOUNT }
+        accountCategory: { $ref: '#/components/schemas/SelfSignupCategory' }
+        purpose: { type: string, enum: [CATEGORY_VERIFICATION, OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION] }
+        channel: { type: string, enum: [SMS, EMAIL] }
+        maskedDestination: { type: string }
+        expiresAt: { type: string, format: date-time }
+        resendAvailableAt: { type: string, format: date-time }
+    VerificationResultData:
+      type: object
+      additionalProperties: false
+      required: [verified, nextAction]
+      properties:
+        verified: { const: true }
+        nextAction: { const: LOGIN }
+    GooglePhoneVerificationData:
+      type: object
+      additionalProperties: false
+      required: [verified, nextAction, verificationOnly]
+      properties:
+        verified: { const: true }
+        nextAction: { const: CONTINUE }
+        verificationOnly: { const: false }
+    SafeAuthenticatedUser:
+      type: object
+      additionalProperties: false
+      required: [id, displayName, avatarUrl, email, phone, emailVerified, phoneVerified, status, accountCategories, verifiedCategories, pendingCategories]
+      properties:
+        id: { type: string }
+        displayName: { type: [string, 'null'], example: Aly Oser }
+        avatarUrl: { type: [string, 'null'], format: uri, example: 'https://lh3.googleusercontent.com/a/example' }
+        email: { type: [string, 'null'], format: email }
+        phone: { type: [string, 'null'] }
+        emailVerified: { type: boolean }
+        phoneVerified: { type: boolean }
+        status: { type: string, enum: [ACTIVE, SUSPENDED, BANNED] }
+        accountCategories: { type: array, items: { $ref: '#/components/schemas/AccountCategory' } }
+        verifiedCategories: { type: array, items: { $ref: '#/components/schemas/AccountCategory' } }
+        pendingCategories: { type: array, items: { $ref: '#/components/schemas/AccountCategory' } }
+    SessionTokenData:
+      type: object
+      additionalProperties: false
+      required: [accessToken, accessExpiresAt, verificationOnly, user, identity]
+      properties:
+        accessToken: { type: string, writeOnly: true }
+        accessExpiresAt: { type: string, format: date-time }
+        verificationOnly: { type: boolean }
+        user: { $ref: '#/components/schemas/SafeAuthenticatedUser' }
+        identity: { type: object, additionalProperties: true }
+    PasswordResetData:
+      type: object
+      additionalProperties: false
+      required: [passwordReset, nextAction]
+      properties:
+        passwordReset: { const: true }
+        nextAction: { const: LOGIN }
+    SuccessEnvelope:
+      type: object
+      required: [success, data, requestId]
+      properties: { success: { const: true }, data: { type: object }, requestId: { type: string, format: uuid } }
+    ErrorEnvelope:
+      type: object
+      required: [success, error, requestId]
+      properties:
+        success: { const: false }
+        error:
+          type: object
+          required: [code, statusCode, message]
+          properties:
+            code: { type: string, description: Stable frontend error selector }
+            statusCode: { type: integer, minimum: 400, maximum: 599, description: Matches the HTTP response status }
+            message: { type: string, description: Safe descriptive public message }
+            details: { type: object, additionalProperties: true, description: Optional safe details; validation failures include every independently detectable invalid field in details.issues }
+        requestId: { type: string, format: uuid }
+  requestBodies:
+    Signup: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SignupInput' } } } }
+    Enroll: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/EnrollInput' } } } }
+    OtpRequest: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OtpRequestInput' } } } }
+    OtpVerify: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OtpVerifyInput' } } } }
+    Login: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LoginInput' } } } }
+    Forgot: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ForgotInput' } } } }
+    Reset: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ResetInput' } } } }
+    Change: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ChangeInput' } } } }
+    GooglePhone: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/GooglePhoneInput' } } } }
+  responses:
+    Ok: { description: Successful request, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessEnvelope' } } } }
+    Accepted: { description: Accepted without account enumeration, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessEnvelope' } } } }
+    VerificationAccepted:
+      description: Opaque verification challenge accepted for the frontend verification screen
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: '#/components/schemas/SuccessEnvelope' }
+              - { type: object, properties: { data: { $ref: '#/components/schemas/VerificationChallengeData' } } }
+    VerificationResult:
+      description: Public verification completed; frontend must login
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: '#/components/schemas/SuccessEnvelope' }
+              - { type: object, properties: { data: { $ref: '#/components/schemas/VerificationResultData' } } }
+    GooglePhoneVerificationResult:
+      description: Google phone verification completed and the current session was promoted
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: '#/components/schemas/SuccessEnvelope' }
+              - { type: object, properties: { data: { $ref: '#/components/schemas/GooglePhoneVerificationData' } } }
+    PasswordResetResult:
+      description: Password replaced and all sessions revoked; frontend must login
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: '#/components/schemas/SuccessEnvelope' }
+              - { type: object, properties: { data: { $ref: '#/components/schemas/PasswordResetData' } } }
+    Token:
+      description: Access token and frontend-safe user in JSON; refresh token only in the HttpOnly cookie
+      headers: { Set-Cookie: { schema: { type: string } }, Cache-Control: { schema: { type: string } } }
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: '#/components/schemas/SuccessEnvelope' }
+              - { type: object, properties: { data: { $ref: '#/components/schemas/SessionTokenData' } } }
+    Error: { description: Stable safe error envelope, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } } }

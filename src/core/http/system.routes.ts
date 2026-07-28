@@ -64,6 +64,7 @@ export function createSystemRouter(
       response.status(503).json(
         createFailureResponse(request, {
           code: "DEPENDENCY_NOT_READY",
+          statusCode: 503,
           message: "One or more required services are unavailable",
           details: { failed }
         })
@@ -96,6 +97,7 @@ export function createSystemRouter(
       response.status(503).json(
         createFailureResponse(request, {
           code: "DATABASE_UNAVAILABLE",
+          statusCode: 503,
           message: "Database is unavailable",
           details: {}
         })

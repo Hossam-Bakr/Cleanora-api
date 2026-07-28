@@ -59,7 +59,8 @@
                   "    pm.expect(body.data.status).to.eql('ready');",
                   "  } else {",
                   "    pm.expect(body.success).to.eql(false);",
-                  "    pm.expect(body.error.code).to.eql('DEPENDENCY_NOT_READY');",
+                  "    pm.expect(body.error).to.include({ code: 'DEPENDENCY_NOT_READY', statusCode: 503 });",
+                  "    pm.expect(body.error.message).to.be.a('string').and.not.empty;",
                   "    pm.expect(JSON.stringify(body)).not.to.match(/postgres(?:ql)?:\\/\\/|DATABASE_URL|SELECT\\s/i);",
                   "  }",
                   "});"
@@ -92,7 +93,8 @@
                   "    pm.expect(body.data.status).to.eql('up');",
                   "  } else {",
                   "    pm.expect(body.success).to.eql(false);",
-                  "    pm.expect(body.error.code).to.eql('DATABASE_UNAVAILABLE');",
+                  "    pm.expect(body.error).to.include({ code: 'DATABASE_UNAVAILABLE', statusCode: 503 });",
+                  "    pm.expect(body.error.message).to.be.a('string').and.not.empty;",
                   "    pm.expect(JSON.stringify(body)).not.to.match(/postgres(?:ql)?:\\/\\/|DATABASE_URL|SELECT\\s/i);",
                   "  }",
                   "});"

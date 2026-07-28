@@ -15,6 +15,7 @@ export interface ApiFailure {
   readonly success: false;
   readonly error: {
     readonly code: string;
+    readonly statusCode: number;
     readonly message: string;
     readonly details?: Readonly<Record<string, unknown>>;
   };

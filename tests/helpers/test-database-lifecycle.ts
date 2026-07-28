@@ -3,15 +3,12 @@ import {
   resetPrismaClientForTests
 } from "../../src/integrations/database/prisma-client-accessor.js";
 import { PrismaLifecycle } from "../../src/integrations/database/prisma-lifecycle.js";
+import { requireApprovedTestDatabaseUrl } from "./resolve-test-database-url.js";
 
 /** Bind one explicit lifecycle for a database-backed test composition. */
 export async function startTestDatabaseLifecycle(): Promise<PrismaLifecycle> {
-  const connectionString = process.env["DATABASE_URL"];
-  if (connectionString === undefined || connectionString.length === 0) {
-    throw new Error("DATABASE_URL is required for database-backed tests");
-  }
-
-  const lifecycle = new PrismaLifecycle(connectionString);
+  const { url } = requireApprovedTestDatabaseUrl();
+  const lifecycle = new PrismaLifecycle(url);
   await lifecycle.connect();
   bindPrismaClient(lifecycle.client);
   return lifecycle;

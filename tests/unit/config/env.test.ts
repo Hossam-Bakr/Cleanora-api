@@ -21,7 +21,7 @@ const validEnvironment: NodeJS.ProcessEnv = {
   JWT_REFRESH_TTL_SECONDS: "2592000",
   JWT_ISSUER: "cleanora-api",
   JWT_AUDIENCE: "cleanora-web",
-  AUTH_REFRESH_COOKIE_NAME: "cleanora_refresh",
+  AUTH_REFRESH_COOKIE_NAME: "cleanora_refresh_token",
   AUTH_REFRESH_COOKIE_PATH: "/api/v1/auth",
   AUTH_COOKIE_SECURE: "false",
   AUTH_COOKIE_SAME_SITE: "lax",
@@ -78,7 +78,8 @@ describe("loadEnvironment", () => {
       JWT_REFRESH_SECRET: "",
       GOOGLE_CLIENT_ID: "",
       GOOGLE_CLIENT_SECRET: "",
-      GOOGLE_REDIRECT_URI: ""
+      GOOGLE_REDIRECT_URI: "",
+      GOOGLE_FRONTEND_CALLBACK_URI: ""
     });
 
     expect(environment.JWT_ACCESS_SECRET).toBeUndefined();
@@ -86,6 +87,7 @@ describe("loadEnvironment", () => {
     expect(environment.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(environment.GOOGLE_CLIENT_SECRET).toBeUndefined();
     expect(environment.GOOGLE_REDIRECT_URI).toBeUndefined();
+    expect(environment.GOOGLE_FRONTEND_CALLBACK_URI).toBeUndefined();
   });
 
   it("rejects missing required database and CORS configuration", () => {

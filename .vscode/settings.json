@@ -1,19 +1,47 @@
 {
-    "sqltools.connections": [
-        {
-            "pgOptions": {
-                "ssl": {
-                    "rejectUnauthorized": true
-                }
-            },
-            "ssh": "Disabled",
-            "previewLimit": 50,
-            "server": "ep-wandering-pine-athw53yz.c-9.us-east-1.aws.neon.tech",
-            "port": 5432,
-            "driver": "PostgreSQL",
-            "name": "cleanora_db",
-            "database": "Cleanora",
-            "username": "neondb_owner"
+  "cSpell.words": ["Cleanora"],
+  "explorer.compactFolders": true,
+  "files.exclude": {
+    "**/.agents": true,
+    "**/.codex": true,
+    "**/.cursor": true,
+    "**/.npm-cache-local": true,
+    "**/.runtime-smoke": true,
+    "**/.specify": true,
+    "**/coverage": true,
+    "**/dist": true,
+    "**/docs/bugs": true,
+    "**/node_modules": true,
+    "**/specs/R1-P00-*": true,
+    "**/specs/R1-P01-*": true,
+    "**/src/app": true,
+    "**/src/generated": true,
+    "**/src/modules/authentication/domain/ports": true,
+    "**/*.session.sql": true
+  },
+  "search.exclude": {
+    "**/.npm-cache-local": true,
+    "**/.runtime-smoke": true,
+    "**/coverage": true,
+    "**/dist": true,
+    "**/node_modules": true,
+    "**/src/generated": true
+  },
+  "sqltools.connections": [
+    {
+      "pgOptions": {
+        "ssl": {
+          "rejectUnauthorized": true
         }
-    ]
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "ep-wandering-pine-athw53yz.c-9.us-east-1.aws.neon.tech",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "cleanora_db",
+      "database": "Cleanora",
+      "username": "neondb_owner"
+    }
+  ]
 }

@@ -38,6 +38,7 @@ Precedence:
 
 - Backend architecture: `docs/architecture/`
 - API documentation: `docs/apis/`
+- Interactive Swagger documentation: `docs/swagger/`
 - API response, comments, logging, and testing standards: `docs/standards/`
 - Importable API requests: `postman/`
 - Safe local maintenance commands: `scripts/`

@@ -56,9 +56,16 @@ describe("Pino logging", () => {
         sessions: [
           {
             refreshToken: "nested-refresh-token-must-not-log",
-            cookie: "nested-cookie-must-not-log"
+            cookie: "nested-cookie-must-not-log",
+            refreshVerifier: "nested-refresh-verifier-must-not-log"
           }
         ],
+        recovery: {
+          resetToken: "nested-reset-token-must-not-log",
+          jwt: "nested-jwt-must-not-log",
+          oauthToken: "nested-oauth-token-must-not-log",
+          authorizationHeader: "nested-authorization-must-not-log"
+        },
         payment: {
           paymentPayload: "nested-payment-payload-must-not-log"
         }
@@ -81,6 +88,11 @@ describe("Pino logging", () => {
     expect(output).not.toContain("nested-secret-must-not-log");
     expect(output).not.toContain("nested-refresh-token-must-not-log");
     expect(output).not.toContain("nested-cookie-must-not-log");
+    expect(output).not.toContain("nested-refresh-verifier-must-not-log");
+    expect(output).not.toContain("nested-reset-token-must-not-log");
+    expect(output).not.toContain("nested-jwt-must-not-log");
+    expect(output).not.toContain("nested-oauth-token-must-not-log");
+    expect(output).not.toContain("nested-authorization-must-not-log");
     expect(output).not.toContain("nested-payment-payload-must-not-log");
     expect(output).toContain("child event");
   });

@@ -22,6 +22,25 @@ function mapValidationError(error: ZodError): AppError {
   });
 }
 
+/** Extract only non-secret cause metadata for operators and test diagnosis. */
+function describeSafeCause(cause: unknown): Readonly<Record<string, string>> {
+  if (!(cause instanceof Error)) {
+    return {};
+  }
+
+  const record: Record<string, string> = { causeName: cause.name };
+  if ("code" in cause && typeof cause.code === "string") {
+    record["causeCode"] = cause.code;
+  }
+
+  // Prisma interactive-transaction maxWait exhaustion — safe fixed phrase only.
+  if (cause.message.includes("Unable to start a transaction in the given time")) {
+    record["causeSafeMessage"] = "Unable to start a transaction in the given time";
+  }
+
+  return record;
+}
+
 /**
  * @desc Convert application errors into the standard API error response.
  * @access Internal middleware
@@ -45,12 +64,14 @@ export function createErrorMiddleware(logger: Logger): ErrorRequestHandler {
       requestId: request.requestId,
       code: appError.code,
       statusCode: appError.statusCode,
-      errorName: appError.name
+      errorName: appError.name,
+      ...describeSafeCause(appError.cause)
     });
 
     response.status(appError.statusCode).json(
       createFailureResponse(request, {
         code: appError.code,
+        statusCode: appError.statusCode,
         message: appError.expose ? appError.message : "Internal server error",
         ...(appError.expose && appError.details !== undefined
           ? { details: appError.details }
