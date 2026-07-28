@@ -12,19 +12,35 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL || vars.TEST_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run test:coverage
-      - run: npm run prisma:validate
-      - run: npm run docs:check
-      - run: npm run openapi:validate
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Require isolated test database
+        if: env.TEST_DATABASE_URL == ''
+        run: |
+          echo "::error::TEST_DATABASE_URL is required for the database-backed coverage suite."
+          exit 1
+      - name: Test with coverage
+        run: npm run test:coverage
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+      - name: Validate documentation
+        run: npm run docs:check
+      - name: Validate OpenAPI
+        run: npm run openapi:validate
 
   database-validation:
     runs-on: ubuntu-latest

@@ -3,6 +3,25 @@ import { join } from "node:path";
 
 
 describe("CI database validation gate", () => {
+  it("generates Prisma Client before typecheck and binds the isolated coverage database", async () => {
+    const workflow = await readFile(
+      join(process.cwd(), ".github/workflows/ci.yml"),
+      "utf8"
+    );
+
+    const generateIndex = workflow.indexOf("npm run prisma:generate");
+    const typecheckIndex = workflow.indexOf("npm run typecheck");
+
+    expect(generateIndex).toBeGreaterThan(-1);
+    expect(typecheckIndex).toBeGreaterThan(generateIndex);
+    expect(workflow).toMatch(
+      /TEST_DATABASE_URL:\s*\$\{\{\s*secrets\.TEST_DATABASE_URL\s*\|\|\s*vars\.TEST_DATABASE_URL\s*\}\}/
+    );
+    expect(workflow).toContain(
+      "TEST_DATABASE_URL is required for the database-backed coverage suite."
+    );
+  });
+
   it("runs full DB validation conditionally from a configured URL without requiring .env", async () => {
     const [workflow, packageJson, dbValidator, prismaConfig] = await Promise.all([
       readFile(join(process.cwd(), ".github/workflows/ci.yml"), "utf8"),
