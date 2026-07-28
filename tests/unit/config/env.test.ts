@@ -174,6 +174,26 @@ describe("loadEnvironment", () => {
     expect(serialized).not.toContain("private-database-contents");
     expect(serialized).not.toContain('"input"');
   });
+
+  it("includes only a safe startup error code without exposing raw error data", () => {
+    const safeContext = createStartupFailureContext(
+      Object.assign(new Error("private database host"), { code: "P1001" })
+    );
+    const unsafeContext = createStartupFailureContext(
+      Object.assign(new Error("private database host"), {
+        code: "P1001 private-database-host"
+      })
+    );
+
+    expect(safeContext).toEqual({
+      errorName: "Error",
+      errorCode: "P1001"
+    });
+    expect(unsafeContext).toEqual({ errorName: "Error" });
+    expect(JSON.stringify([safeContext, unsafeContext])).not.toContain(
+      "private database host"
+    );
+  });
 });
 
 function captureDiagnostics(input: NodeJS.ProcessEnv) {

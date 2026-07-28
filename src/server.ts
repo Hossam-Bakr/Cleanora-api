@@ -275,9 +275,18 @@ export function createStartupFailureContext(
   error: unknown,
 ): Readonly<Record<string, unknown>> {
   const diagnostics = mapEnvironmentDiagnostics(error);
+  const errorCode =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    /^[A-Z][A-Z0-9_]{1,31}$/u.test(error.code)
+      ? error.code
+      : undefined;
 
   return {
     errorName: error instanceof Error ? error.name : "UnknownError",
+    ...(errorCode === undefined ? {} : { errorCode }),
     ...(diagnostics.length === 0
       ? {}
       : { environmentDiagnostics: diagnostics }),
