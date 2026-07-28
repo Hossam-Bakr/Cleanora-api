@@ -772,3 +772,41 @@ claims remain authentication metadata and do not create an actor profile.
   preserving the public module contract and dependency direction.
 - [x] T196 Run focused boundary/unit validation, full backend typecheck/lint/
   build, and document the final file-count reduction.
+
+---
+
+## Phase 27: Four-Digit Password Recovery UX
+
+Human-approved R1-P02 recovery-contract refinement under DEC-026. It preserves
+enumeration safety, expiry, attempt limits, single use, session revocation, and
+the existing persistence model.
+
+- [x] T197 Replace the composite reset credential with an opaque challenge ID
+  plus an out-of-band four-digit code without persisting or logging the raw
+  code.
+- [x] T198 Update the recovery email templates, HTTP schema/controller,
+  Swagger/OpenAPI contract, and default hosted Swagger server.
+- [x] T199 Regenerate Postman environments/collection and align the phase
+  contract, specification, decision log, and frontend overview.
+- [x] T200 Add focused regressions and run focused tests, typecheck, lint,
+  build, OpenAPI, docs, Postman JSON, and diff validation without coverage,
+  full CI, commit, push, deployment, or database migration.
+
+---
+
+## Phase 28: Hosted Authentication Delivery Availability
+
+Human-approved hosted-preview exception under DEC-027. It does not claim phone
+ownership and does not replace the future real SMS provider.
+
+- [x] T201 Add an explicitly enabled and acknowledged hosted SMS-to-email
+  fallback that composes through the existing delivery port and account-bound
+  email resolution.
+- [x] T202 Fail environment validation for missing SMTP capability,
+  acknowledgement, or contradictory fallback flags, and emit a safe startup
+  warning when fallback delivery is active.
+- [x] T203 Update environment and Railway guidance, active phase artifacts,
+  decision evidence, and the delivery email notice.
+- [x] T204 Add regression coverage and run focused unit, typecheck, lint, build,
+  docs, and diff checks without committing, pushing, deploying, migrating, or
+  running coverage.

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "48177777-34d0-48d1-9dad-1201571dd948",
     "name": "Cleanora Swagger Documentation",
-    "description": "Read-only checks for the professional Cleanora Swagger UI and complete OpenAPI 3.1 contract. Import Cleanora-local.postman_environment.json and select the Cleanora Local environment.",
+    "description": "# Cleanora API Documentation\n\nRead-only checks for the professional Cleanora Swagger UI and complete OpenAPI 3.1 contract. Select either the Local Development or Railway Hosted API environment before sending a request.\n\n> ⚠️ **Hey Bassam, you can visit Swagger docs here, my bro:** http://localhost:8000/api/v1/docs ⚠️\n\n**Railway Swagger:** https://cleanora-production.up.railway.app/api/v1/docs",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -10,7 +10,7 @@
   },
   "item": [
     {
-      "name": "Open Swagger UI",
+      "name": "⚠️ Open Swagger UI — Start Here",
       "event": [
         {
           "listen": "test",
@@ -30,7 +30,7 @@
       "request": {
         "method": "GET",
         "description": "Returns the interactive Swagger UI. Open the same URL in a browser for the full interactive experience.",
-        "url": "{{baseUrl}}/docs"
+        "url": "{{hostUrl}}/docs"
       }
     },
     {
@@ -60,7 +60,7 @@
       "request": {
         "method": "GET",
         "description": "Returns the machine-readable OpenAPI 3.1 document used by Swagger UI and client tooling.",
-        "url": "{{baseUrl}}/docs/openapi.json"
+        "url": "{{hostUrl}}/docs/openapi.json"
       }
     }
   ]

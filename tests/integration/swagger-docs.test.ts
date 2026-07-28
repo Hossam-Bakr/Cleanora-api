@@ -37,6 +37,12 @@ describe('Swagger API documentation', () => {
     expect(response.body).toEqual(cleanoraOpenApiDocument);
     expect(response.body.paths).toHaveProperty('/auth/signup');
     expect(response.body.paths).toHaveProperty('/auth/password/reset');
+    expect(response.body.servers[0].url).toBe(
+      'https://cleanora-production.up.railway.app/api/v1',
+    );
+    expect(
+      response.body.components.schemas.ResetPasswordRequest.required,
+    ).toEqual(['challengeId', 'code', 'newPassword']);
     expect(response.body.paths).toHaveProperty('/auth/google/callback');
     expect(response.body.paths).not.toHaveProperty('/auth/google/result');
     expect(response.body.paths).toHaveProperty('/system/health/ready');

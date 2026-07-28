@@ -4,7 +4,7 @@ import type {
 } from "../../../src/core/email/index.js";
 import { AuthenticationEmailAdapter } from "../../../src/integrations/email/authentication-email.adapter.js";
 import { renderCleanoraAuthenticationEmail } from "../../../src/integrations/email/cleanora-authentication-email.template.js";
-import { DevelopmentSmsToEmailAdapter } from "../../../src/integrations/sms/development-sms-to-email.adapter.js";
+import { SmsToEmailFallbackAdapter } from "../../../src/integrations/sms/sms-to-email-fallback.adapter.js";
 
 function captureEmail(): { port: EmailPort; messages: EmailMessage[] } {
   const messages: EmailMessage[] = [];
@@ -35,7 +35,7 @@ describe("authentication delivery templates", () => {
     await adapter.send({
       idempotencyKey: "reset-1",
       destination: "person@example.test",
-      value: "reset-1.opaque-secret",
+      value: "5486",
       accountCategory: "COMPANY",
       purpose: "PASSWORD_RESET",
       expiresAt,
@@ -56,9 +56,8 @@ describe("authentication delivery templates", () => {
     expect(verification.html).toContain("Security notice");
     expect(verification.html).not.toContain("<script");
     expect(reset.subject).toBe("Reset your Cleanora password");
-    expect(reset.text).toContain(
-      "Password reset credential: reset-1.opaque-secret",
-    );
+    expect(reset.text).toContain("Password reset code: 5486");
+    expect(reset.text).toContain("four-digit code");
     expect(reset.text).not.toContain("Verification code");
     expect(reset.text).not.toContain("Challenge ID");
     expect(reset.text).not.toContain("OTP");
@@ -66,7 +65,7 @@ describe("authentication delivery templates", () => {
 
   it("uses distinct development SMS-to-email templates for OTP and password reset", async () => {
     const inbox = captureEmail();
-    const adapter = new DevelopmentSmsToEmailAdapter(
+    const adapter = new SmsToEmailFallbackAdapter(
       "development",
       inbox.port,
     );
@@ -84,7 +83,7 @@ describe("authentication delivery templates", () => {
     await adapter.send({
       idempotencyKey: "reset-2",
       destination: "+201012345678",
-      value: "reset-2.composite-secret",
+      value: "5486",
       accountCategory: "INDIVIDUAL",
       purpose: "PASSWORD_RESET",
       expiresAt,
@@ -95,19 +94,18 @@ describe("authentication delivery templates", () => {
     const verification = inbox.messages[0]!;
     const reset = inbox.messages[1]!;
     expect(verification.subject).toBe(
-      "[Development] Temporary Cleanora phone verification code",
+      "[Cleanora preview] Temporary phone verification code",
     );
     expect(verification.to).toEqual(["first@example.test"]);
     expect(verification.text).toContain("Verification code: 654321");
     expect(verification.text).toContain("Challenge ID: challenge-2");
     expect(verification.text).not.toContain("One-time code");
     expect(verification.text).not.toContain("OTP purpose");
-    expect(reset.subject).toBe("[Development] Reset your Cleanora password");
+    expect(reset.subject).toBe("[Cleanora preview] Reset your password");
+    expect(reset.text).toContain("Password reset code: 5486");
+    expect(reset.text).toContain("four-digit code");
     expect(reset.text).toContain(
-      "Password reset credential: reset-2.composite-secret",
-    );
-    expect(reset.text).toContain(
-      "This development fallback does not prove ownership",
+      "This fallback does not prove ownership",
     );
     expect(reset.text).not.toContain("Challenge ID");
     expect(reset.text).not.toContain("Verification code");
@@ -120,7 +118,7 @@ describe("authentication delivery templates", () => {
 
   it("delivers two signup OTPs to their own server-resolved email addresses", async () => {
     const inbox = captureEmail();
-    const adapter = new DevelopmentSmsToEmailAdapter(
+    const adapter = new SmsToEmailFallbackAdapter(
       "development",
       inbox.port,
     );
@@ -156,7 +154,7 @@ describe("authentication delivery templates", () => {
 
   it("emails temporary Google phone OTPs to the verified Google address, not a fixed inbox", async () => {
     const inbox = captureEmail();
-    const adapter = new DevelopmentSmsToEmailAdapter(
+    const adapter = new SmsToEmailFallbackAdapter(
       "development",
       inbox.port,
     );
@@ -177,7 +175,7 @@ describe("authentication delivery templates", () => {
     expect(message.to).toEqual(["hossam.b2kr@gmail.com"]);
     expect(message.to).not.toContain("dev@example.test");
     expect(message.subject).toBe(
-      "[Development] Temporary Cleanora phone verification code",
+      "[Cleanora preview] Temporary phone verification code",
     );
     expect(message.text).toContain("Temporary phone verification");
     expect(message.text).toContain("Verification code: 987654");
@@ -185,6 +183,35 @@ describe("authentication delivery templates", () => {
     expect(message.text).toContain("does not prove ownership");
     expect(message.text).toContain("Ignore this email if you did not request");
     expect(message.text).toContain("DEVELOPMENT ONLY");
+  });
+
+  it("labels the hosted fallback as a preview that does not verify phone ownership", async () => {
+    const inbox = captureEmail();
+    const adapter = new SmsToEmailFallbackAdapter(
+      "hosted-preview",
+      inbox.port,
+    );
+
+    await adapter.send({
+      idempotencyKey: "hosted-signup",
+      destination: "+201012345678",
+      value: "123456",
+      accountCategory: "INDIVIDUAL",
+      purpose: "CATEGORY_VERIFICATION",
+      expiresAt: new Date("2026-07-28T12:00:00.000Z"),
+      temporaryEmailDeliveryAddress: "hosted.user@example.test",
+    });
+
+    expect(inbox.messages).toHaveLength(1);
+    const message = inbox.messages[0]!;
+    expect(message.to).toEqual(["hosted.user@example.test"]);
+    expect(message.text).toContain(
+      "HOSTED PREVIEW — PHONE OWNERSHIP NOT VERIFIED",
+    );
+    expect(message.text).toContain("does not prove ownership");
+    expect(message.html).toContain(
+      "Hosted preview — phone ownership not verified",
+    );
   });
 
   it("escapes dynamic authentication values before rendering HTML", () => {

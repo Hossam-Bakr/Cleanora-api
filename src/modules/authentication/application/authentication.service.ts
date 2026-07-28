@@ -732,6 +732,9 @@ export class AuthenticationService {
     category: AccountCategory;
     identifier: string;
   }) {
+    // Return an opaque challenge for every valid request so the public response
+    // never reveals whether the recovery identity exists.
+    const challengeId = randomUUID();
     try {
       const channel = recoveryChannel(input.category);
       const normalized =
@@ -751,17 +754,18 @@ export class AuthenticationService {
           ttlSeconds: 1800,
           maxAttempts: 5,
         };
-        const id = randomUUID();
-        const secret = this.dependencies.verifier.randomSecret();
+        // The user enters only four digits. The opaque challenge ID remains a
+        // separate correlation value held by the frontend.
+        const code = this.dependencies.verifier.randomOtp().slice(-4);
         await this.resets.create({
-          id,
+          id: challengeId,
           userId: user.id,
           channel,
           destinationHash: this.dependencies.verifier.hashDestination(
             channel,
             normalized,
           ),
-          verifier: this.dependencies.verifier.verifyReset(id, secret),
+          verifier: this.dependencies.verifier.verifyReset(challengeId, code),
           resendAt: new Date(Date.now() + 60_000),
           expiresAt: new Date(Date.now() + policy.ttlSeconds * 1000),
           maxAttempts: policy.maxAttempts,
@@ -771,9 +775,9 @@ export class AuthenticationService {
             ? await this.trustedTemporaryPhoneEmail(this.users.map(user))
             : undefined;
         const delivery = {
-          idempotencyKey: id,
+          idempotencyKey: challengeId,
           destination: normalized,
-          value: `${id}.${secret}`,
+          value: code,
           accountCategory: input.category,
           purpose: "PASSWORD_RESET" as const,
           expiresAt: new Date(Date.now() + policy.ttlSeconds * 1000),
@@ -785,24 +789,23 @@ export class AuthenticationService {
           await (channel === "SMS"
             ? this.dependencies.sms.send(delivery)
             : this.dependencies.email.send(delivery));
-          await this.resets.activate(id);
+          await this.resets.activate(challengeId);
         } catch (error) {
-          await this.resets.failDelivery(id);
+          await this.resets.failDelivery(challengeId);
           throw error;
         }
       }
     } catch {
       /* Enumeration-sensitive requests always receive the same acceptance. */
     }
-    return { accepted: true };
+    return { accepted: true, challengeId };
   }
 
-  async resetPassword(token: string, newPassword: string) {
+  async resetPassword(challengeId: string, code: string, newPassword: string) {
     assertPasswordPolicy(newPassword);
-    const [id, secret] = token.split(".", 2);
-    if (id === undefined || secret === undefined)
+    if (!/^\d{4}$/u.test(code))
       throw authenticationError("AUTH_PASSWORD_RESET_FAILED");
-    const reset = await this.resets.find(id);
+    const reset = await this.resets.find(challengeId);
     if (
       reset?.status !== "ACTIVE" ||
       reset.expiresAt <= new Date() ||
@@ -812,10 +815,10 @@ export class AuthenticationService {
     if (
       !this.dependencies.verifier.equals(
         reset.tokenVerifier,
-        this.dependencies.verifier.verifyReset(id, secret),
+        this.dependencies.verifier.verifyReset(challengeId, code),
       )
     ) {
-      await this.resets.failAttempt(id);
+      await this.resets.failAttempt(challengeId);
       throw authenticationError("AUTH_PASSWORD_RESET_FAILED");
     }
     const hash = await this.dependencies.passwordHasher.hash(newPassword);
@@ -828,7 +831,7 @@ export class AuthenticationService {
     });
     if (
       !(await this.transactions.resetPassword({
-        resetId: id,
+        resetId: challengeId,
         userId: reset.userId,
         passwordHash: hash,
       }))

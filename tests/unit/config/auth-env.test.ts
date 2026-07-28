@@ -89,4 +89,57 @@ describe('authentication environment', () => {
       }),
     ).toThrow(/EMAIL_AUTH_ENABLED|AUTH_DEV_SMS_FALLBACK/u);
   });
+
+  it("requires an explicit phone-ownership acknowledgement for hosted SMS-to-email fallback", () => {
+    const enabled = {
+      ...base,
+      NODE_ENV: "production",
+      AUTH_ENABLED: "true",
+      JWT_ACCESS_SECRET: "access-secret-at-least-thirty-two-characters",
+      JWT_REFRESH_SECRET: "refresh-secret-at-least-thirty-two-characters",
+      AUTH_VERIFIER_SECRET: "verifier-secret-at-least-thirty-two-characters",
+      AUTH_PRIVACY_HASH_SECRET: "privacy-secret-at-least-thirty-two-characters",
+      AUTH_COOKIE_SECURE: "true",
+      EMAIL_AUTH_ENABLED: "true",
+      EMAIL_PROVIDER: "smtp",
+      SMTP_HOST: "smtp.gmail.com",
+      SMTP_PORT: "587",
+      SMTP_SECURE: "false",
+      SMTP_REQUIRE_TLS: "true",
+      SMTP_USER: "mailer@example.com",
+      SMTP_PASSWORD: "app-password",
+      SMTP_FROM_NAME: "Cleanora",
+      SMTP_FROM_EMAIL: "mailer@example.com",
+      SMTP_CONNECTION_TIMEOUT_MS: "5000",
+      SMTP_SOCKET_TIMEOUT_MS: "10000",
+      AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED: "true",
+    };
+
+    expect(() => loadEnvironment(enabled)).toThrow(
+      /AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED|phone ownership/u,
+    );
+    expect(
+      loadEnvironment({
+        ...enabled,
+        AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED: "true",
+      }).AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED,
+    ).toBe(true);
+  });
+
+  it("rejects contradictory SMS-to-email fallback flags", () => {
+    expect(() =>
+      loadEnvironment({
+        ...base,
+        AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED: "true",
+      }),
+    ).toThrow(/acknowledgement/u);
+
+    expect(() =>
+      loadEnvironment({
+        ...base,
+        AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED: "true",
+        AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED: "true",
+      }),
+    ).toThrow(/production process environment/u);
+  });
 });

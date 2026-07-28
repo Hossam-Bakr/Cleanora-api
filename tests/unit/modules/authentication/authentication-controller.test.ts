@@ -417,7 +417,10 @@ describe('authentication controller failure alternatives', () => {
       verifyCode: vi.fn(async () => ({ verified: true, nextAction: 'LOGIN' })),
       enroll: vi.fn(async () => challenge),
       login: vi.fn(async () => sessionTokens()),
-      forgotPassword: vi.fn(async () => ({ accepted: true })),
+      forgotPassword: vi.fn(async () => ({
+        accepted: true,
+        challengeId: "0d301aa0-a709-48e5-a5a6-1e5bfb7f132c",
+      })),
       resetPassword: vi.fn(async () => ({ passwordReset: true, nextAction: 'LOGIN' })),
       currentUser: vi.fn(async () => ({ user: sessionTokens().user, verificationOnly: false })),
       logout: vi.fn(async () => ({ loggedOut: true })),
@@ -501,14 +504,30 @@ describe('authentication controller failure alternatives', () => {
     );
     expect(forgotResponse.status).toHaveBeenCalledWith(202);
     expect(forgotResponse.json).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { accepted: true } }),
+      expect.objectContaining({
+        data: {
+          accepted: true,
+          challengeId: "0d301aa0-a709-48e5-a5a6-1e5bfb7f132c",
+        },
+      }),
     );
 
     const resetResponse = response();
     await controller.reset(
-      request({ body: { token: 'reset-id.secret', newPassword: 'replacement-pass' } }) as never,
+      request({
+        body: {
+          challengeId: "0d301aa0-a709-48e5-a5a6-1e5bfb7f132c",
+          code: "5486",
+          newPassword: "replacement-pass",
+        },
+      }) as never,
       resetResponse as never,
       vi.fn(),
+    );
+    expect(service.resetPassword).toHaveBeenCalledWith(
+      "0d301aa0-a709-48e5-a5a6-1e5bfb7f132c",
+      "5486",
+      "replacement-pass",
     );
     expect(resetResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({

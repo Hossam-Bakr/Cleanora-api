@@ -37,7 +37,7 @@ import {
   createNodemailerEmailAdapter,
 } from "./integrations/email/nodemailer.adapter.js";
 import { UnavailableEmailAdapter } from "./integrations/email/unavailable-email.adapter.js";
-import { DevelopmentSmsToEmailAdapter } from "./integrations/sms/development-sms-to-email.adapter.js";
+import { SmsToEmailFallbackAdapter } from "./integrations/sms/sms-to-email-fallback.adapter.js";
 
 interface DatabaseLifecycle {
   readonly client: PrismaClient;
@@ -180,12 +180,21 @@ export async function startApplication(
           socketTimeoutMilliseconds: environment.SMTP_SOCKET_TIMEOUT_MS!,
         })
       : new UnavailableEmailAdapter();
-    const smsDelivery = environment.AUTH_DEV_SMS_FALLBACK_TO_EMAIL
-      ? new DevelopmentSmsToEmailAdapter(
-          environment.NODE_ENV,
-          emailPort,
-        )
-      : new UnavailableSmsAdapter();
+    const smsToEmailFallbackMode = environment.AUTH_DEV_SMS_FALLBACK_TO_EMAIL
+      ? "development"
+      : environment.AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED
+        ? "hosted-preview"
+        : undefined;
+    const smsDelivery =
+      smsToEmailFallbackMode === undefined
+        ? new UnavailableSmsAdapter()
+        : new SmsToEmailFallbackAdapter(smsToEmailFallbackMode, emailPort);
+    if (smsToEmailFallbackMode !== undefined) {
+      logger.warn("SMS intents are being redirected to account email", {
+        deliveryMode: smsToEmailFallbackMode,
+        phoneOwnershipVerifiedByDelivery: false,
+      });
+    }
     const authentication = environment.AUTH_ENABLED
       ? createAuthenticationModule({
           basePath: `${environment.API_PREFIX}/auth`,

@@ -27,14 +27,20 @@ describe('password recovery and authenticated change', () => {
       const second = await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: identity.password }).expect(200);
       const unknown = await request(context.app).post('/api/v1/auth/password/forgot').send({ accountCategory: 'INDIVIDUAL', identifier: '+201999999999' }).expect(202);
       const known = await request(context.app).post('/api/v1/auth/password/forgot').send({ accountCategory: 'INDIVIDUAL', identifier: identity.phone }).expect(202);
-      expect(unknown.body.data).toEqual(known.body.data);
+      expect(unknown.body.data).toMatchObject({ accepted: true });
+      expect(known.body.data).toMatchObject({ accepted: true });
+      expect(unknown.body.data.challengeId).toMatch(/^[0-9a-f-]{36}$/u);
+      expect(known.body.data.challengeId).toMatch(/^[0-9a-f-]{36}$/u);
+      expect(unknown.body.data.challengeId).not.toBe(known.body.data.challengeId);
 
-      const token = context.sms.latest(identity.phone)!.value;
+      const code = context.sms.latest(identity.phone)!.value;
+      expect(code).toMatch(/^\d{4}$/u);
       const nextPassword = 'Different-password-456!';
-      const reset = await request(context.app).post('/api/v1/auth/password/reset').send({ token, newPassword: nextPassword }).expect(200);
+      const resetInput = { challengeId: known.body.data.challengeId, code, newPassword: nextPassword };
+      const reset = await request(context.app).post('/api/v1/auth/password/reset').send(resetInput).expect(200);
       expect(reset.body.data).toEqual({ passwordReset: true, nextAction: 'LOGIN' });
       expect(reset.headers['set-cookie']).toBeUndefined();
-      await request(context.app).post('/api/v1/auth/password/reset').send({ token, newPassword: 'Another-password-789!' }).expect(400);
+      await request(context.app).post('/api/v1/auth/password/reset').send({ ...resetInput, newPassword: 'Another-password-789!' }).expect(400);
       await request(context.app).get('/api/v1/auth/me').set('Authorization', `Bearer ${first.body.data.accessToken}`).expect(401);
       await request(context.app).get('/api/v1/auth/me').set('Authorization', `Bearer ${second.body.data.accessToken}`).expect(401);
       await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: identity.password }).expect(401);

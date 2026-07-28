@@ -91,9 +91,31 @@ describe("authentication HTTP schemas", () => {
   it("applies the same password policy to reset and change payloads", () => {
     expect(
       resetSchema.safeParse({
-        body: { token: "reset.token", newPassword: "password" },
+        body: {
+          challengeId: "0d301aa0-a709-48e5-a5a6-1e5bfb7f132c",
+          code: "5486",
+          newPassword: "password",
+        },
       }).success,
     ).toBe(false);
+    expect(
+      resetSchema.safeParse({
+        body: {
+          challengeId: "0d301aa0-a709-48e5-a5a6-1e5bfb7f132c",
+          code: "548",
+          newPassword: "8392741",
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      resetSchema.safeParse({
+        body: {
+          challengeId: "0d301aa0-a709-48e5-a5a6-1e5bfb7f132c",
+          code: "5486",
+          newPassword: "8392741",
+        },
+      }).success,
+    ).toBe(true);
     expect(
       changeSchema.safeParse({
         body: { currentPassword: "old-pass", newPassword: "12121212" },

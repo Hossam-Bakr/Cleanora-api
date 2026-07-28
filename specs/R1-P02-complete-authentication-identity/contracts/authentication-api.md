@@ -69,7 +69,16 @@ enrolled/verified/pending categories, and status. It excludes credentials,
 hashes, session internals, token material, challenge metadata, provider claims,
 and status reasons. Clients never supply `userId` to rehydrate a session.
 
-Forgot includes category plus its authoritative identifier and always returns `{ accepted: true }` for syntactically valid input. It never returns challenge ID, reset ID, reset token, destination, or account existence. Reset accepts the complete composite `<reset-id>.<random-secret>` as `token` plus `newPassword`, then returns `{ passwordReset: true, nextAction: "LOGIN" }` with no session. Change requires bearer, current refresh cookie, current password, and a distinct compliant new password.
+Forgot includes category plus its authoritative identifier and always returns
+`{ accepted: true, challengeId }` for syntactically valid input. The
+`challengeId` is a fresh opaque UUID for both existing and absent identities,
+so it discloses no account existence. An eligible account receives a
+four-digit reset `code` out of band. Reset accepts `challengeId`, `code`, and
+`newPassword`, then returns `{ passwordReset: true, nextAction: "LOGIN" }`
+with no session. The raw code is never persisted, expires, is single-use, and
+is exhausted after the configured failed-attempt limit. Change requires
+bearer, current refresh cookie, current password, and a distinct compliant new
+password.
 
 ## Cookie contract
 

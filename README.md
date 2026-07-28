@@ -71,7 +71,8 @@ decimal-safe financial records.
 - Signup for the approved self-registration account categories.
 - Six-digit verification challenges with bounded attempts and expiration.
 - Email delivery through SMTP/Nodemailer.
-- Development-only phone OTP delivery through a controlled email fallback.
+- Controlled local and explicitly acknowledged hosted-preview phone OTP
+  delivery through account email while a real SMS provider is unavailable.
 - Phone/password login.
 - Short-lived JWT access tokens.
 - Rotating refresh sessions stored in an HTTP-only cookie.
@@ -274,6 +275,10 @@ Failures use stable machine-readable error codes:
 Automated database tests must use an isolated test database. They must never
 fall back to the ordinary development or production database.
 
+`npm run email:check` reads a local `.env` when present and otherwise uses the
+process environment injected by the hosting platform. It verifies SMTP without
+sending a message and prints no credential values.
+
 ## Testing strategy
 
 Cleanora separates tests by responsibility:
@@ -306,11 +311,17 @@ For a Railway service connected to GitHub:
 - Configure `/api/v1/system/health/live` as the health-check path.
 - Store every secret and connection string in Railway environment variables.
 - Set production CORS origins and secure-cookie settings explicitly.
+- Set `EMAIL_AUTH_ENABLED=true` and provide the complete SMTP group before
+  expecting any email-backed signup category to work.
+- A temporary hosted preview may set both
+  `AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED=true` and
+  `AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED=true`. This redirects individual
+  phone OTP intents to the account email and does not prove phone ownership.
 - Use a direct approved database connection for `prisma migrate deploy`.
 - Apply reviewed migrations as a controlled release step.
 - Do not run `prisma migrate dev`, test seeds, database reset, or test suites
   against the production database.
-- Replace the development SMS-to-email fallback with a real SMS provider before
+- Replace every SMS-to-email fallback with a real SMS provider before
   production launch.
 
 The deployed service must fail closed when required authentication, database,

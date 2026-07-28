@@ -86,12 +86,12 @@ export const cleanoraOpenApiDocument = {
   },
   servers: [
     {
-      url: "http://localhost:8000/api/v1",
-      description: "Local development server",
+      url: "https://cleanora-production.up.railway.app/api/v1",
+      description: "Railway hosted API (default)",
     },
     {
-      url: "/api/v1",
-      description: "Current host",
+      url: "http://localhost:8000/api/v1",
+      description: "Local development API",
     },
   ],
   tags: [
@@ -467,7 +467,7 @@ export const cleanoraOpenApiDocument = {
         operationId: "forgotPassword",
         summary: "Request password recovery",
         description:
-          "Accepts a recovery request without revealing whether an account exists. Individuals and workers use the registered-phone SMS channel; company, engineer, and provider-owner accounts use verified email. The reset credential is delivered out-of-band and is never returned by this endpoint.",
+          "Accepts a recovery request without revealing whether an account exists. Every valid request returns an opaque challenge ID. Existing eligible accounts receive a four-digit reset code through the authoritative channel. The same response shape is used for absent accounts.",
         requestBody: jsonRequest(
           "ForgotPasswordRequest",
           "Account category and its authoritative recovery identifier.",
@@ -475,7 +475,7 @@ export const cleanoraOpenApiDocument = {
         responses: {
           "202": successResponse(
             "The syntactically valid recovery request was accepted.",
-            "AcceptedData",
+            "PasswordRecoveryAcceptedData",
           ),
           "400": apiErrorResponse,
           "429": rateLimitResponse,
@@ -488,10 +488,10 @@ export const cleanoraOpenApiDocument = {
         operationId: "resetPassword",
         summary: "Reset a forgotten password",
         description:
-          "Consumes the complete single-use `<reset-id>.<random-secret>` credential delivered out-of-band, applies the password policy, replaces the password, and revokes every session atomically. Reset does not sign the user in; the frontend must navigate to login.",
+          "Combines the opaque challenge ID returned by forgot-password with the four-digit code delivered out-of-band. The code is single-use, expiring, and attempt-limited. A successful reset replaces the password and revokes every session atomically without signing the user in.",
         requestBody: jsonRequest(
           "ResetPasswordRequest",
-          "Complete composite reset credential and the replacement password.",
+          "Opaque recovery challenge, four-digit code, and replacement password.",
         ),
         responses: {
           "200": successResponse(
@@ -963,15 +963,24 @@ export const cleanoraOpenApiDocument = {
       ResetPasswordRequest: {
         type: "object",
         additionalProperties: false,
-        required: ["token", "newPassword"],
+        required: ["challengeId", "code", "newPassword"],
         properties: {
-          token: {
+          challengeId: {
+            type: "string",
+            format: "uuid",
+            description:
+              "Opaque recovery challenge returned by the forgot-password endpoint.",
+            example: "9d18ac10-5acd-4ca4-8a75-4ccfced44a56",
+          },
+          code: {
             type: "string",
             writeOnly: true,
             description:
-              "Complete single-use `<reset-id>.<random-secret>` credential received out-of-band.",
-            example:
-              "9d18ac10-5acd-4ca4-8a75-4ccfced44a56.<random-secret>",
+              "Four-digit single-use reset code received through the authoritative recovery channel.",
+            pattern: "^[0-9]{4}$",
+            minLength: 4,
+            maxLength: 4,
+            example: "5486",
           },
           newPassword: {
             type: "string",
@@ -1223,12 +1232,19 @@ export const cleanoraOpenApiDocument = {
           nextAction: { type: "string", const: "LOGIN" },
         },
       },
-      AcceptedData: {
+      PasswordRecoveryAcceptedData: {
         type: "object",
         additionalProperties: false,
-        required: ["accepted"],
+        required: ["accepted", "challengeId"],
         properties: {
           accepted: { type: "boolean", const: true },
+          challengeId: {
+            type: "string",
+            format: "uuid",
+            description:
+              "Opaque correlation value returned for every valid request, including absent identities.",
+            example: "9d18ac10-5acd-4ca4-8a75-4ccfced44a56",
+          },
         },
       },
       LogoutData: {

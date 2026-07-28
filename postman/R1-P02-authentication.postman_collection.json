@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "91076ea2-1262-4ee5-99ab-42a13ecb2ed5",
     "name": "Cleanora R1-P02 Authentication",
-    "description": "Canonical R1-P02 Auth API collection. It contains exactly one request per implemented method and route. Error cases such as duplicate signup identifiers, invalid credentials, weak passwords, and invalid OTPs are response examples in Swagger, not fake API requests. Refresh credentials remain in the cookie jar and secrets remain empty in exported environments.",
+    "description": "Canonical R1-P02 Auth API collection. It contains exactly one request per implemented method and route. Error cases such as duplicate signup identifiers, invalid credentials, weak passwords, and invalid OTPs are response examples in Swagger, not fake API requests. Refresh credentials remain in the cookie jar and secrets remain empty in exported environments.\n\n> ⚠️ **Hey Bassam, you can visit Swagger docs here, my bro:** http://localhost:8000/api/v1/docs ⚠️\n\nRailway Swagger: https://cleanora-production.up.railway.app/api/v1/docs",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -58,7 +58,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/signup",
+            "url": "{{hostUrl}}/auth/signup",
             "description": "Creates an account and stores challengeId. In local development, the Individual phone OTP is emailed to the normalized testEmail; the client cannot override the recipient. Possible 400/409/429/503 responses are documented in Swagger."
           },
           "response": [
@@ -81,7 +81,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/signup",
+                "url": "{{hostUrl}}/auth/signup",
                 "description": "Creates an account and stores challengeId. In local development, the Individual phone OTP is emailed to the normalized testEmail; the client cannot override the recipient. Possible 400/409/429/503 responses are documented in Swagger."
               },
               "status": "Accepted",
@@ -134,7 +134,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/otp/request",
+            "url": "{{hostUrl}}/auth/otp/request",
             "description": "Requests/resends the existing challenge. Cooldown applies. Possible invalid, expired, and rate-limit responses are in Swagger."
           },
           "response": [
@@ -157,7 +157,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/otp/request",
+                "url": "{{hostUrl}}/auth/otp/request",
                 "description": "Requests/resends the existing challenge. Cooldown applies. Possible invalid, expired, and rate-limit responses are in Swagger."
               },
               "status": "Accepted",
@@ -210,7 +210,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/otp/verify",
+            "url": "{{hostUrl}}/auth/otp/verify",
             "description": "Consumes the six-digit account verification code. Invalid, expired, used, mismatched, and exhausted challenges share the documented safe error."
           },
           "response": [
@@ -233,7 +233,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/otp/verify",
+                "url": "{{hostUrl}}/auth/otp/verify",
                 "description": "Consumes the six-digit account verification code. Invalid, expired, used, mismatched, and exhausted challenges share the documented safe error."
               },
               "status": "OK",
@@ -286,7 +286,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/login",
+            "url": "{{hostUrl}}/auth/login",
             "description": "Creates a session, stores accessToken, and returns the canonical safe user. The refresh token is only an HttpOnly cookie. Invalid credentials are documented as a 401 response in Swagger."
           },
           "response": [
@@ -309,7 +309,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/login",
+                "url": "{{hostUrl}}/auth/login",
                 "description": "Creates a session, stores accessToken, and returns the canonical safe user. The refresh token is only an HttpOnly cookie. Invalid credentials are documented as a 401 response in Swagger."
               },
               "status": "OK",
@@ -362,8 +362,8 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/password/forgot",
-            "description": "Enumeration-safe recovery request. The complete reset credential is delivered out of band and never returned by this API."
+            "url": "{{hostUrl}}/auth/password/forgot",
+            "description": "Enumeration-safe recovery request. Every valid request returns an opaque challengeId. Existing eligible accounts receive a four-digit code out of band."
           },
           "response": [
             {
@@ -385,8 +385,8 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/password/forgot",
-                "description": "Enumeration-safe recovery request. The complete reset credential is delivered out of band and never returned by this API."
+                "url": "{{hostUrl}}/auth/password/forgot",
+                "description": "Enumeration-safe recovery request. Every valid request returns an opaque challengeId. Existing eligible accounts receive a four-digit code out of band."
               },
               "status": "Accepted",
               "code": 202,
@@ -398,7 +398,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<reset-challenge-id>\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
             }
           ]
         },
@@ -431,15 +431,15 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"{{passwordResetToken}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+              "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{passwordResetCode}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/password/reset",
-            "description": "Consumes passwordResetToken in <reset-id>.<random-secret> form. It is not a six-digit OTP."
+            "url": "{{hostUrl}}/auth/password/reset",
+            "description": "Combines the opaque challengeId returned by forgot-password with the four-digit passwordResetCode delivered to the user."
           },
           "response": [
             {
@@ -454,15 +454,15 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"token\": \"{{passwordResetToken}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                  "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{passwordResetCode}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/password/reset",
-                "description": "Consumes passwordResetToken in <reset-id>.<random-secret> form. It is not a six-digit OTP."
+                "url": "{{hostUrl}}/auth/password/reset",
+                "description": "Combines the opaque challengeId returned by forgot-password with the four-digit passwordResetCode delivered to the user."
               },
               "status": "OK",
               "code": 200,
@@ -508,7 +508,7 @@
               "type": "noauth"
             },
             "header": [],
-            "url": "{{baseUrl}}/auth/google",
+            "url": "{{hostUrl}}/auth/google",
             "description": "JSON inspection endpoint. For a real Chrome flow use Start Google Browser Sign-In so the same browser owns the correlation cookie."
           },
           "response": [
@@ -520,7 +520,7 @@
                   "type": "noauth"
                 },
                 "header": [],
-                "url": "{{baseUrl}}/auth/google",
+                "url": "{{hostUrl}}/auth/google",
                 "description": "JSON inspection endpoint. For a real Chrome flow use Start Google Browser Sign-In so the same browser owns the correlation cookie."
               },
               "status": "OK",
@@ -558,7 +558,7 @@
               "type": "noauth"
             },
             "header": [],
-            "url": "{{baseUrl}}/auth/google/browser",
+            "url": "{{hostUrl}}/auth/google/browser",
             "description": "Open this URL as top-level browser navigation. It redirects to Google and must not be started in Postman then continued in Chrome."
           },
           "response": []
@@ -584,7 +584,7 @@
               "type": "noauth"
             },
             "header": [],
-            "url": "{{baseUrl}}/auth/google/callback",
+            "url": "{{hostUrl}}/auth/google/callback",
             "description": "Provider-owned browser callback. Google supplies state/code. On success the backend writes the refresh cookie and redirects to frontendUrl/auth/google/callback with safe markers only. Do not manually send it in normal Postman testing."
           },
           "response": []
@@ -625,7 +625,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/google/phone/request",
+            "url": "{{hostUrl}}/auth/google/phone/request",
             "description": "Requires a verification-only Google Bearer session. The temporary phone OTP recipient is derived only from the linked verified Google email; no email field is accepted."
           },
           "response": [
@@ -648,7 +648,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/google/phone/request",
+                "url": "{{hostUrl}}/auth/google/phone/request",
                 "description": "Requires a verification-only Google Bearer session. The temporary phone OTP recipient is derived only from the linked verified Google email; no email field is accepted."
               },
               "status": "Accepted",
@@ -701,7 +701,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/google/phone/verify",
+            "url": "{{hostUrl}}/auth/google/phone/verify",
             "description": "Verifies the same-user phone challenge and promotes the verification-only session."
           },
           "response": [
@@ -724,7 +724,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/google/phone/verify",
+                "url": "{{hostUrl}}/auth/google/phone/verify",
                 "description": "Verifies the same-user phone challenge and promotes the verification-only session."
               },
               "status": "OK",
@@ -763,7 +763,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/auth/google/link",
+            "url": "{{hostUrl}}/auth/google/link",
             "description": "Creates a deliberate LINK transaction for the current fully verified Individual. Navigate to the returned URL in the same browser."
           },
           "response": [
@@ -772,7 +772,7 @@
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{baseUrl}}/auth/google/link",
+                "url": "{{hostUrl}}/auth/google/link",
                 "description": "Creates a deliberate LINK transaction for the current fully verified Individual. Navigate to the returned URL in the same browser."
               },
               "status": "OK",
@@ -811,7 +811,7 @@
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": "{{baseUrl}}/auth/social/google",
+            "url": "{{hostUrl}}/auth/social/google",
             "description": "Unlinks Google only when another recoverable password credential remains."
           },
           "response": [
@@ -820,7 +820,7 @@
               "originalRequest": {
                 "method": "DELETE",
                 "header": [],
-                "url": "{{baseUrl}}/auth/social/google",
+                "url": "{{hostUrl}}/auth/social/google",
                 "description": "Unlinks Google only when another recoverable password credential remains."
               },
               "status": "OK",
@@ -872,7 +872,7 @@
                 "value": "{{origin}}"
               }
             ],
-            "url": "{{baseUrl}}/auth/refresh",
+            "url": "{{hostUrl}}/auth/refresh",
             "description": "Uses the HttpOnly refresh cookie in the Postman/browser cookie jar, stores the new accessToken, and returns the canonical safe user. Browser code must use credentials: include."
           },
           "response": [
@@ -889,7 +889,7 @@
                     "value": "{{origin}}"
                   }
                 ],
-                "url": "{{baseUrl}}/auth/refresh",
+                "url": "{{hostUrl}}/auth/refresh",
                 "description": "Uses the HttpOnly refresh cookie in the Postman/browser cookie jar, stores the new accessToken, and returns the canonical safe user. Browser code must use credentials: include."
               },
               "status": "OK",
@@ -928,7 +928,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/auth/me",
+            "url": "{{hostUrl}}/auth/me",
             "description": "Canonical session bootstrap/read endpoint using the Bearer token."
           },
           "response": [
@@ -937,7 +937,7 @@
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{baseUrl}}/auth/me",
+                "url": "{{hostUrl}}/auth/me",
                 "description": "Canonical session bootstrap/read endpoint using the Bearer token."
               },
               "status": "OK",
@@ -990,7 +990,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/account-categories",
+            "url": "{{hostUrl}}/auth/account-categories",
             "description": "Adds one supported category to the current fully authenticated identity."
           },
           "response": [
@@ -1013,7 +1013,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/account-categories",
+                "url": "{{hostUrl}}/auth/account-categories",
                 "description": "Adds one supported category to the current fully authenticated identity."
               },
               "status": "Accepted",
@@ -1070,7 +1070,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/password/change",
+            "url": "{{hostUrl}}/auth/password/change",
             "description": "Requires Bearer access, the refresh cookie, and trusted Origin. Rotates the current session and returns the same safe user shape."
           },
           "response": [
@@ -1097,7 +1097,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/auth/password/change",
+                "url": "{{hostUrl}}/auth/password/change",
                 "description": "Requires Bearer access, the refresh cookie, and trusted Origin. Rotates the current session and returns the same safe user shape."
               },
               "status": "OK",
@@ -1141,7 +1141,7 @@
                 "value": "{{origin}}"
               }
             ],
-            "url": "{{baseUrl}}/auth/logout",
+            "url": "{{hostUrl}}/auth/logout",
             "description": "Revokes the current Bearer/cookie session and clears the refresh cookie."
           },
           "response": [
@@ -1155,7 +1155,7 @@
                     "value": "{{origin}}"
                   }
                 ],
-                "url": "{{baseUrl}}/auth/logout",
+                "url": "{{hostUrl}}/auth/logout",
                 "description": "Revokes the current Bearer/cookie session and clears the refresh cookie."
               },
               "status": "OK",
@@ -1194,7 +1194,7 @@
           "request": {
             "method": "POST",
             "header": [],
-            "url": "{{baseUrl}}/auth/logout-all",
+            "url": "{{hostUrl}}/auth/logout-all",
             "description": "Revokes every session owned by the current user."
           },
           "response": [
@@ -1203,7 +1203,7 @@
               "originalRequest": {
                 "method": "POST",
                 "header": [],
-                "url": "{{baseUrl}}/auth/logout-all",
+                "url": "{{hostUrl}}/auth/logout-all",
                 "description": "Revokes every session owned by the current user."
               },
               "status": "OK",
