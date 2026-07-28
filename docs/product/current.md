@@ -66,6 +66,13 @@ claims to that safe contract and a local `frontend/` integration demonstration.
 Static validation passes; applying the additive development migration and one
 real-provider Chrome journey remain open as T192.
 
+DEC-027 permits an explicitly enabled and separately acknowledged hosted-preview
+SMS-to-email fallback while the real SMS provider remains unavailable. It uses
+the account-bound email only, emits a startup warning, and states that the
+delivery does not prove phone ownership. Direct email categories and the
+fallback both require a valid SMTP configuration. This preview exception must
+be replaced by real SMS before production readiness.
+
 ## Completed phase — R1-P01
 
 R1-P01 (`Project Foundation & Country Configuration`) is **Complete** as of `2026-07-24` by human-owner approval. Evidence:

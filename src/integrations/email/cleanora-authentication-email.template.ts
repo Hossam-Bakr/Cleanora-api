@@ -13,7 +13,7 @@ export interface CleanoraAuthenticationEmailTemplateInput {
   readonly instruction: string;
   readonly securityNotice: string;
   readonly referenceId?: string;
-  readonly developmentOnly?: boolean;
+  readonly deliveryNotice?: string;
 }
 
 export interface RenderedAuthenticationEmail {
@@ -77,14 +77,16 @@ export function renderCleanoraAuthenticationEmail(
   ].join("");
   const letterSpacing =
     input.credentialLabel === "Verification code" ? "8px" : "0";
-  const developmentBanner =
-    input.developmentOnly === true
-      ? `<tr><td style="padding:0 38px 18px;"><span style="display:inline-block;padding:7px 12px;border-radius:999px;background:${colors.yellow};color:${colors.forest};font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">Development only</span></td></tr>`
+  const deliveryNoticeBanner =
+    input.deliveryNotice !== undefined
+      ? `<tr><td style="padding:0 38px 18px;"><span style="display:inline-block;padding:7px 12px;border-radius:999px;background:${colors.yellow};color:${colors.forest};font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">${escapeHtml(input.deliveryNotice)}</span></td></tr>`
       : "";
 
   const text = [
     "CLEANORA",
-    ...(input.developmentOnly === true ? ["DEVELOPMENT ONLY"] : []),
+    ...(input.deliveryNotice === undefined
+      ? []
+      : [input.deliveryNotice.toUpperCase()]),
     input.heading,
     "",
     input.introduction,
@@ -140,7 +142,7 @@ export function renderCleanoraAuthenticationEmail(
                 <p style="margin:0;color:${colors.body};font-size:15px;line-height:24px;">${escapeHtml(input.introduction)}</p>
               </td>
             </tr>
-            ${developmentBanner}
+            ${deliveryNoticeBanner}
             <tr>
               <td style="padding:18px 38px;">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:${colors.mint};border:1px solid #CBE5DC;border-radius:14px;">

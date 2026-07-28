@@ -9,21 +9,20 @@ import {
 } from "#modules/authentication";
 import { renderCleanoraAuthenticationEmail } from "../email/cleanora-authentication-email.template.js";
 
+export type SmsToEmailFallbackMode = "development" | "hosted-preview";
+
 /**
- * Local-only bridge used while the real SMS provider is unavailable. It keeps
- * SMS as the authoritative channel and redirects only the delivery surface.
+ * Explicit temporary bridge used while a real SMS provider is unavailable.
+ * It preserves the SMS intent but redirects delivery to a server-resolved
+ * account email and clearly states that phone ownership was not proven.
  */
-export class DevelopmentSmsToEmailAdapter
+export class SmsToEmailFallbackAdapter
   implements SmsAuthenticationDeliveryPort
 {
   constructor(
-    nodeEnvironment: "development" | "test" | "production",
+    private readonly mode: SmsToEmailFallbackMode,
     private readonly email: EmailPort,
-  ) {
-    if (nodeEnvironment !== "development") {
-      throw new Error("DEVELOPMENT_SMS_EMAIL_FALLBACK_FORBIDDEN");
-    }
-  }
+  ) {}
 
   async send(message: AuthenticationDelivery): Promise<void> {
     if (
@@ -32,21 +31,29 @@ export class DevelopmentSmsToEmailAdapter
       message.expiresAt === undefined ||
       message.temporaryEmailDeliveryAddress === undefined
     ) {
-      throw new Error("DEVELOPMENT_SMS_EMAIL_DELIVERY_INVALID");
+      throw new Error("SMS_EMAIL_FALLBACK_DELIVERY_INVALID");
     }
 
     const maskedPhone = maskPhoneDestination(message.destination);
     const expiry = formatDeliveryExpiry(message.expiresAt);
+    const deliveryNotice =
+      this.mode === "development"
+        ? "Development only"
+        : "Hosted preview — phone ownership not verified";
+    const fallbackContext =
+      this.mode === "development"
+        ? "The SMS provider is not connected in development"
+        : "The hosted preview does not have a real SMS provider connected";
     const rendered =
       message.purpose === "PASSWORD_RESET"
         ? renderCleanoraAuthenticationEmail({
             preheader:
-              "Development delivery of your Cleanora SMS password-reset credential.",
-            eyebrow: "Development SMS fallback",
+              "Temporary email delivery of your four-digit Cleanora password-reset code.",
+            eyebrow: "SMS-to-email fallback",
             heading: "Reset your password",
             introduction:
-              "The SMS provider is not connected in development, so Cleanora delivered this phone recovery credential to the email associated with this account.",
-            credentialLabel: "Password reset credential",
+              `${fallbackContext}, so Cleanora delivered this phone recovery code to the email associated with this account.`,
+            credentialLabel: "Password reset code",
             credentialValue: message.value,
             accountCategory: message.accountCategory,
             purpose: "Password reset through SMS",
@@ -54,18 +61,18 @@ export class DevelopmentSmsToEmailAdapter
             destination: maskedPhone,
             expiresAt: expiry,
             instruction:
-              "Copy the complete credential into the password-reset form. It is not a six-digit verification code.",
+              "Return to Cleanora and enter this four-digit code before it expires.",
             securityNotice:
-              "This development fallback does not prove ownership of the intended phone. The credential is single-use.",
-            developmentOnly: true,
+              "This fallback does not prove ownership of the intended phone. The code is single-use and attempt-limited.",
+            deliveryNotice,
           })
         : renderCleanoraAuthenticationEmail({
             preheader:
-              "Development delivery of your Cleanora phone verification code.",
-            eyebrow: "Development SMS fallback",
+              "Temporary email delivery of your Cleanora phone verification code.",
+            eyebrow: "SMS-to-email fallback",
             heading: "Temporary phone verification code",
             introduction:
-              "SMS delivery is not enabled yet, so Cleanora delivered this temporary phone-verification code to the server-verified email associated with this account. Receiving this email does not prove ownership of the phone number.",
+              `${fallbackContext}, so Cleanora delivered this temporary phone-verification code to the account email. Receiving this email does not prove ownership of the phone number.`,
             credentialLabel: "Verification code",
             credentialValue: message.value,
             accountCategory: message.accountCategory,
@@ -77,14 +84,14 @@ export class DevelopmentSmsToEmailAdapter
             instruction:
               "Return to Cleanora and enter this six-digit code before it expires. Ignore this email if you did not request phone verification.",
             securityNotice:
-              "This development fallback does not prove ownership of the intended phone. The code is single-use.",
-            developmentOnly: true,
+              "This fallback does not prove ownership of the intended phone. The code is single-use.",
+            deliveryNotice,
           });
 
     const subject =
       message.purpose === "PASSWORD_RESET"
-        ? "[Development] Reset your Cleanora password"
-        : "[Development] Temporary Cleanora phone verification code";
+        ? "[Cleanora preview] Reset your password"
+        : "[Cleanora preview] Temporary phone verification code";
 
     await this.email.send({
       to: [message.temporaryEmailDeliveryAddress],

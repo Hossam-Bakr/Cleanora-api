@@ -24,6 +24,9 @@
 - DEC-017 preserves every production verification rule while allowing unavailable local-development SMS delivery intents to be redirected to one configured developer email inbox for manual runtime acceptance only. The redirect is forbidden in test/production, does not prove phone ownership, exposes no secret through logs/events/errors/API responses, and must be removed before production readiness.
 - DEC-018 requires a browser-safe Google flow: one provider-registered backend callback derives SIGN_IN versus LINK from a server-held one-time transaction, redirects only to an allowlisted frontend URI without tokens or provider secrets, and uses authenticated phone request/verification to promote the exact verification-only session.
 - DEC-024 supersedes DEC-019: the backend never renders a Google result page and always redirects to the allowlisted frontend callback.
+- DEC-027 permits a separately enabled and acknowledged hosted-preview
+  SMS-to-email fallback while a real SMS provider is unavailable. It does not
+  prove phone ownership and must be replaced before production readiness.
 - DEC-020 standardizes descriptive API failures, permits field-specific
   phone/email conflict disclosure only during public signup, and replaces the
   former 12-character password minimum with a 7–128 character
@@ -87,6 +90,22 @@
   both safe fields in `error.details.issues`. Never compare or report a
   password as duplicated.
 
+### Session 2026-07-28
+
+- Q: How can every signup category be exercised on the hosted preview before a
+  real SMS provider is connected? → A: Direct email categories use the
+  configured SMTP provider. Individual SMS intents may be redirected to the
+  server-resolved account email only when both hosted fallback flags are
+  enabled, with an explicit acknowledgement that this does not verify phone
+  ownership.
+
+- Q: What should a user enter to complete forgotten-password recovery? →
+  A: A four-digit numeric reset code. Forgot-password returns a fresh opaque
+  `challengeId` for every valid request, including absent identities, while
+  only eligible accounts receive the code out of band. Reset combines
+  `challengeId`, `code`, and `newPassword`; the raw code is never persisted,
+  remains expiring, single-use, and attempt-limited.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Register and Complete the Correct Verification Journey (Priority: P1)
@@ -145,10 +164,10 @@ As an account holder, I need to recover a forgotten password without account enu
 **Acceptance Scenarios**:
 
 1. **Given** any syntactically valid recovery identifier, **When** password recovery is requested, **Then** the response is indistinguishable whether or not an account exists.
-2. **Given** an individual or worker account exists, **When** recovery is requested, **Then** a single-use expiring recovery credential is delivered by SMS to its registered phone without persisting the raw credential.
-3. **Given** a company, engineer, or provider-owner account with verified email exists, **When** recovery is requested, **Then** a single-use expiring recovery credential is delivered through that verified email without persisting the raw credential.
-4. **Given** a valid unused recovery credential, **When** a compliant new password is submitted, **Then** the password changes, the credential is consumed, every session is revoked, no new session is issued, a security event is recorded, and the user must log in with the new password.
-5. **Given** an expired, already-used, invalid, or attempt-exhausted recovery credential, **When** reset is attempted, **Then** the password remains unchanged and the response reveals no secret or account details.
+2. **Given** an individual or worker account exists, **When** recovery is requested, **Then** a single-use expiring four-digit reset code is delivered by SMS to its registered phone without persisting the raw code.
+3. **Given** a company, engineer, or provider-owner account with verified email exists, **When** recovery is requested, **Then** a single-use expiring four-digit reset code is delivered through that verified email without persisting the raw code.
+4. **Given** a valid challenge ID and unused four-digit reset code, **When** a compliant new password is submitted, **Then** the password changes, the proof is consumed, every session is revoked, no new session is issued, a security event is recorded, and the user must log in with the new password.
+5. **Given** an expired, already-used, invalid, or attempt-exhausted recovery challenge/code pair, **When** reset is attempted, **Then** the password remains unchanged and the response reveals no secret or account details.
 6. **Given** an authenticated user supplies the correct current password and a compliant new password, **When** change-password succeeds, **Then** the new password replaces the old one, every other session is revoked, and the current session is immediately rotated.
 
 ---
@@ -279,9 +298,9 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 #### Password recovery and change
 
 - **FR-031**: Forgot-password MUST use SMS to the registered phone for individual and worker accounts and verified email for company, engineer, and provider-owner accounts; public responses MUST remain indistinguishable for existing and non-existing accounts when the request is syntactically valid.
-- **FR-032**: Raw password-reset tokens MUST never be persisted or logged.
-- **FR-033**: Password-reset tokens MUST expire, be single-use, have deterministic attempt limits, and be bound to one identity and purpose.
-- **FR-034**: Successful password reset MUST atomically consume the reset token, replace the password, revoke every session, issue no new session, require a fresh login with the new password, and record a security event; partial success MUST fail closed.
+- **FR-032**: Raw four-digit password-reset codes MUST never be persisted or logged.
+- **FR-033**: Password-reset challenges and codes MUST expire, be single-use, have deterministic attempt limits, and be bound to one identity and purpose. Forgot-password MUST return an opaque challenge ID for every valid request so the response remains enumeration-safe.
+- **FR-034**: Successful password reset MUST atomically consume the matching challenge/code proof, replace the password, revoke every session, issue no new session, require a fresh login with the new password, and record a security event; partial success MUST fail closed.
 - **FR-035**: Change-password MUST require an authenticated eligible account, correct current password, and a compliant distinct new password.
 - **FR-036**: Successful password change MUST atomically replace the password, revoke every other session, rotate the current session, and record a security event; partial success MUST fail closed.
 
@@ -330,7 +349,7 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 - **User credential (`user_credentials`)**: Password authentication material and credential lifecycle metadata, never plaintext or reversible password data.
 - **User session (`user_sessions`)**: One refresh-backed login session and its rotation family, expiry, revocation, reuse-detection, client context, and last-use evidence without raw refresh tokens.
 - **One-time code (`otp_codes`)**: A time-bound, single-use, attempt-limited verification challenge for an approved identity and purpose without storing the raw code.
-- **Password reset token (`password_reset_tokens`)**: A time-bound, single-use, attempt-limited recovery challenge bound to one identity without storing the raw token.
+- **Password reset token (`password_reset_tokens`)**: A time-bound, single-use, attempt-limited recovery challenge bound to one identity without storing the raw four-digit code.
 - **Social account (`social_accounts`)**: A verified external identity link; Release 1 enables Google only for individuals while retaining an extensible provider/audience model.
 - **Authentication event (`auth_events`)**: Append-oriented, redacted security evidence for authentication actions, outcomes, request trace, and safe context.
 - **Session family (derived)**: The related sequence of rotated refresh credentials whose reuse or compromise can be revoked together.

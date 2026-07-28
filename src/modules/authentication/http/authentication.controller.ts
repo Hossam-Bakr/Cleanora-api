@@ -290,7 +290,8 @@ export function createAuthenticationController(
         response,
         200,
         await service.resetPassword(
-          request.body.token,
+          request.body.challengeId,
+          request.body.code,
           request.body.newPassword,
         ),
       );

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Cleanora R1-P01 Foundation & Country Configuration",
-    "description": "Implemented public system-health checks. Configuration and audit are in-process module contracts in R1-P01 and have no public CRUD endpoints.",
+    "description": "Implemented public system-health checks. Configuration and audit are in-process module contracts in R1-P01 and have no public CRUD endpoints.\n\n> ⚠️ **Hey Bassam, you can visit Swagger docs here, my bro:** http://localhost:8000/api/v1/docs ⚠️",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -13,7 +13,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/system/health/live"
+            "url": "{{hostUrl}}/system/health/live"
           },
           "event": [
             {
@@ -40,7 +40,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/system/health/ready"
+            "url": "{{hostUrl}}/system/health/ready"
           },
           "event": [
             {
@@ -74,7 +74,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/system/health/database"
+            "url": "{{hostUrl}}/system/health/database"
           },
           "event": [
             {

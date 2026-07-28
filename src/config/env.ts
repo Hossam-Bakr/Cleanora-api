@@ -78,6 +78,8 @@ const environmentSchema = z
     SMTP_CONNECTION_TIMEOUT_MS: optionalPositiveIntegerSchema,
     SMTP_SOCKET_TIMEOUT_MS: optionalPositiveIntegerSchema,
     AUTH_DEV_SMS_FALLBACK_TO_EMAIL: booleanFlagSchema.default(false),
+    AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED: booleanFlagSchema.default(false),
+    AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED: booleanFlagSchema.default(false),
     GOOGLE_AUTH_ENABLED: booleanFlagSchema.default(false),
     AUTH_VERIFIER_SECRET: optionalSecretSchema,
     AUTH_PRIVACY_HASH_SECRET: optionalSecretSchema,
@@ -222,6 +224,57 @@ const environmentSchema = z
           message: "SMS-to-email fallback requires authentication and email delivery"
         });
       }
+    }
+
+    if (environment.AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED) {
+      if (environment.NODE_ENV !== "production") {
+        context.addIssue({
+          code: "custom",
+          path: ["AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED"],
+          message:
+            "Hosted SMS-to-email fallback is valid only in the production process environment; use the development flag locally",
+        });
+      }
+      if (!environment.AUTH_ENABLED || !environment.EMAIL_AUTH_ENABLED) {
+        context.addIssue({
+          code: "custom",
+          path: ["AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED"],
+          message:
+            "Hosted SMS-to-email fallback requires authentication and email delivery",
+        });
+      }
+      if (!environment.AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED) {
+        context.addIssue({
+          code: "custom",
+          path: ["AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED"],
+          message:
+            "Hosted SMS-to-email fallback requires explicit acknowledgement that it does not verify phone ownership",
+        });
+      }
+    }
+
+    if (
+      environment.AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED &&
+      !environment.AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED"],
+        message:
+          "SMS-to-email fallback acknowledgement is valid only when the fallback is enabled",
+      });
+    }
+
+    if (
+      environment.AUTH_DEV_SMS_FALLBACK_TO_EMAIL &&
+      environment.AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED"],
+        message:
+          "Use either the development fallback or the acknowledged hosted fallback, not both",
+      });
     }
 
     if (environment.GOOGLE_AUTH_ENABLED && !environment.AUTH_ENABLED) {

@@ -316,3 +316,49 @@ Routes, methods, schemas, status codes, success/error envelopes, cookies, JWT ru
 - `npm run ci` not run
 - Manual runtime / T192 development-DB apply / final task checkboxes remain human-owned
 - T099/T118 still require human confirmation that the recorded gate set is accepted as the final once-pass evidence
+
+## DEC-026 recovery-contract refinement — 2026-07-28
+
+The earlier review evidence describing a single composite password-reset token
+is historical and is superseded by the human-approved DEC-026 contract.
+
+The implemented public flow now separates:
+
+1. an opaque `challengeId`, returned by the enumeration-safe forgot-password
+   endpoint for every valid request; and
+2. a four-digit `code`, delivered only out of band for an eligible identity.
+
+Reset confirmation requires both values plus the new password. The server
+stores only the existing HMAC verifier and retains expiration, configured
+attempt limits, single use, and all-session revocation. No raw code is returned,
+persisted, or logged.
+
+Contract and tooling alignment passed across the controller/schema, delivery
+templates, runtime Swagger, static OpenAPI, Postman, unit tests, integration
+tests, and focused E2E recovery journey. The Swagger default server is the
+Railway hosted API; localhost remains available as the development server.
+
+No migration, coverage run, full CI, commit, push, or deployment was performed.
+
+## Hosted provider-unavailable remediation — 2026-07-28
+
+The observed `503` responses were not route, database, or health failures.
+Individual signup reached the unavailable SMS adapter; Company signup reached
+unavailable or failing SMTP delivery.
+
+DEC-027 resolves hosted preview acceptance without changing route, body, or
+success-response contracts:
+
+- direct email categories continue through Nodemailer;
+- SMS intents may use the account-bound email only under two explicit hosted
+  fallback flags;
+- environment validation rejects missing acknowledgement, missing email
+  capability, and simultaneous local/hosted fallback modes;
+- startup and email presentation state that phone ownership is not verified;
+  and
+- the stable `503 AUTH_PROVIDER_UNAVAILABLE` response exposes only its safe
+  retry message.
+
+Unit, focused database-backed all-category signup, typecheck, lint, production
+build, documentation, and diff checks pass. Operational SMTP acceptance on
+Railway remains required after the human deploys the code and variables.

@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 type Header = { key: string; value: string };
 
-const baseUrl = "{{baseUrl}}";
+const hostUrl = "{{hostUrl}}";
 const jsonHeader: Header = { key: "Content-Type", value: "application/json" };
 const originHeader: Header = { key: "Origin", value: "{{origin}}" };
 
@@ -79,7 +79,7 @@ function requestItem(input: {
             options: { raw: { language: "json" } },
           },
         }),
-    url: `${baseUrl}${input.route}`,
+    url: `${hostUrl}${input.route}`,
     description: input.description,
   };
   return {
@@ -114,7 +114,7 @@ const collection = {
     _postman_id: "91076ea2-1262-4ee5-99ab-42a13ecb2ed5",
     name: "Cleanora R1-P02 Authentication",
     description:
-      "Canonical R1-P02 Auth API collection. It contains exactly one request per implemented method and route. Error cases such as duplicate signup identifiers, invalid credentials, weak passwords, and invalid OTPs are response examples in Swagger, not fake API requests. Refresh credentials remain in the cookie jar and secrets remain empty in exported environments.",
+      "Canonical R1-P02 Auth API collection. It contains exactly one request per implemented method and route. Error cases such as duplicate signup identifiers, invalid credentials, weak passwords, and invalid OTPs are response examples in Swagger, not fake API requests. Refresh credentials remain in the cookie jar and secrets remain empty in exported environments.\n\n> ⚠️ **Hey Bassam, you can visit Swagger docs here, my bro:** http://localhost:8000/api/v1/docs ⚠️\n\nRailway Swagger: https://cleanora-production.up.railway.app/api/v1/docs",
     schema:
       "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
   },
@@ -209,22 +209,26 @@ const collection = {
           method: "POST",
           route: "/auth/password/forgot",
           description:
-            "Enumeration-safe recovery request. The complete reset credential is delivered out of band and never returned by this API.",
+            "Enumeration-safe recovery request. Every valid request returns an opaque challengeId. Existing eligible accounts receive a four-digit code out of band.",
           body: {
             accountCategory: "INDIVIDUAL",
             identifier: "{{testPhone}}",
           },
           status: 202,
-          example: { accepted: true },
+          example: {
+            accepted: true,
+            challengeId: "<reset-challenge-id>",
+          },
         }),
         requestItem({
           name: "Reset Password",
           method: "POST",
           route: "/auth/password/reset",
           description:
-            "Consumes passwordResetToken in <reset-id>.<random-secret> form. It is not a six-digit OTP.",
+            "Combines the opaque challengeId returned by forgot-password with the four-digit passwordResetCode delivered to the user.",
           body: {
-            token: "{{passwordResetToken}}",
+            challengeId: "{{challengeId}}",
+            code: "{{passwordResetCode}}",
             newPassword: "{{newPassword}}",
           },
           example: { passwordReset: true, nextAction: "LOGIN" },
@@ -392,34 +396,84 @@ const collection = {
   ],
 };
 
-const environment = {
+const secretEnvironmentValues = [
+  ["testEmail", "", "Test account email; provide only in your private workspace"],
+  ["testPhone", "", "Test account phone in E.164 format"],
+  ["testPassword", "", "Current test password"],
+  ["newPassword", "", "Replacement test password"],
+  ["emailOtp", "", "Signup/account six-digit OTP; never export a real value"],
+  ["phoneOtp", "", "Google phone six-digit OTP; never export a real value"],
+  ["challengeId", "", "Latest opaque verification challenge; captured automatically"],
+  [
+    "passwordResetCode",
+    "",
+    "Four-digit password-reset code received through the recovery channel",
+  ],
+  ["accessToken", "", "Short-lived Bearer access token; captured automatically"],
+] as const;
+
+function createEnvironment(input: {
+  id: string;
+  name: string;
+  hostUrl: string;
+  swaggerUrl: string;
+}) {
+  return {
+    id: input.id,
+    name: input.name,
+    values: [
+      {
+        key: "hostUrl",
+        value: input.hostUrl,
+        enabled: true,
+        description:
+          "Selected Cleanora API root. Every collection request resolves from this variable.",
+      },
+      {
+        key: "swaggerUrl",
+        value: input.swaggerUrl,
+        enabled: true,
+        description: "Interactive Swagger documentation for the selected API.",
+      },
+      {
+        key: "frontendUrl",
+        value: "http://localhost:5173",
+        enabled: true,
+        description: "Frontend callback origin used by local browser flows.",
+      },
+      {
+        key: "origin",
+        value: "http://localhost:5173",
+        enabled: true,
+        description:
+          "Trusted Origin header for cookie-mutating requests; must be allowed by the backend.",
+      },
+      ...secretEnvironmentValues.map(([key, value, description]) => ({
+        key,
+        value,
+        enabled: true,
+        type: "secret",
+        description,
+      })),
+    ],
+    _postman_variable_scope: "environment",
+    _postman_exported_using: "Cleanora repository generator",
+  };
+}
+
+const localEnvironment = createEnvironment({
   id: "5f8d65d4-799d-4f07-8c3e-e29c10119e32",
-  name: "Cleanora Local",
-  values: [
-    ["baseUrl", "http://localhost:8000/api/v1", "Local API base path"],
-    ["frontendUrl", "http://localhost:5173", "Local frontend origin"],
-    ["origin", "http://localhost:5173", "Trusted Origin for cookie mutations"],
-    ["testEmail", "", "Test account email"],
-    ["testPhone", "", "Test account E.164 phone"],
-    ["testPassword", "", "Current test password"],
-    ["newPassword", "", "Replacement test password"],
-    ["emailOtp", "", "Signup/account six-digit OTP"],
-    ["phoneOtp", "", "Google phone six-digit OTP"],
-    ["challengeId", "", "Latest opaque verification challenge"],
-    ["passwordResetToken", "", "Complete <reset-id>.<random-secret> credential"],
-    ["accessToken", "", "Short-lived Bearer access token"],
-  ].map(([key, value, description]) => ({
-    key,
-    value,
-    enabled: true,
-    ...(key === "baseUrl" || key === "frontendUrl" || key === "origin"
-      ? {}
-      : { type: "secret" }),
-    description,
-  })),
-  _postman_variable_scope: "environment",
-  _postman_exported_using: "Cleanora repository generator",
-};
+  name: "Cleanora — Local Development",
+  hostUrl: "http://localhost:8000/api/v1",
+  swaggerUrl: "http://localhost:8000/api/v1/docs",
+});
+
+const railwayEnvironment = createEnvironment({
+  id: "9cc3e75d-b038-4568-8aa7-ebc5a4e41f40",
+  name: "Cleanora — Railway Hosted API",
+  hostUrl: "https://cleanora-production.up.railway.app/api/v1",
+  swaggerUrl: "https://cleanora-production.up.railway.app/api/v1/docs",
+});
 
 async function main(): Promise<void> {
   await Promise.all([
@@ -430,7 +484,12 @@ async function main(): Promise<void> {
     ),
     writeFile(
       resolve("postman/Cleanora-local.postman_environment.json"),
-      `${JSON.stringify(environment, null, 2)}\n`,
+      `${JSON.stringify(localEnvironment, null, 2)}\n`,
+      "utf8",
+    ),
+    writeFile(
+      resolve("postman/Cleanora-railway.postman_environment.json"),
+      `${JSON.stringify(railwayEnvironment, null, 2)}\n`,
       "utf8",
     ),
   ]);

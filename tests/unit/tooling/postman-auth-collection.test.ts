@@ -34,7 +34,7 @@ function walk(
               folder: parents.join(" / "),
               method: item.request.method.toUpperCase(),
               route: raw
-                .replace("{{baseUrl}}", "")
+                .replace("{{hostUrl}}", "")
                 .split("?")[0]!
                 .replace(/\/+$/u, ""),
             },
@@ -113,7 +113,8 @@ describe("canonical Auth Postman artifacts", () => {
       await readFile(environmentPath, "utf8"),
     ) as PostmanDocument;
     expect(environment.values?.map((value) => value.key)).toEqual([
-      "baseUrl",
+      "hostUrl",
+      "swaggerUrl",
       "frontendUrl",
       "origin",
       "testEmail",
@@ -123,11 +124,21 @@ describe("canonical Auth Postman artifacts", () => {
       "emailOtp",
       "phoneOtp",
       "challengeId",
-      "passwordResetToken",
+      "passwordResetCode",
       "accessToken",
     ]);
     expect(basename(environmentPath)).toBe(
       "Cleanora-local.postman_environment.json",
+    );
+
+    const railwayEnvironment = JSON.parse(
+      await readFile(
+        resolve("postman/Cleanora-railway.postman_environment.json"),
+        "utf8",
+      ),
+    ) as PostmanDocument;
+    expect(railwayEnvironment.values?.map((value) => value.key)).toEqual(
+      environment.values?.map((value) => value.key),
     );
   });
 });

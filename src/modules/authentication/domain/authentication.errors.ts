@@ -172,6 +172,7 @@ const definitions: Record<
   AUTH_PROVIDER_UNAVAILABLE: {
     statusCode: 503,
     message: "The verification provider is temporarily unavailable. Please try again later.",
+    expose: true,
   },
   AUTH_EVENT_WRITE_FAILED: {
     statusCode: 500,

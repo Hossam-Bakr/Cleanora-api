@@ -28,12 +28,12 @@ export class AuthenticationEmailAdapter
       const subject = "Reset your Cleanora password";
       const { text, html } = renderCleanoraAuthenticationEmail({
         preheader:
-          "Use this secure, single-use credential to reset your Cleanora password.",
+          "Use this four-digit, single-use code to reset your Cleanora password.",
         eyebrow: "Account security",
         heading: "Reset your password",
         introduction:
           "We received a request to reset the password for your Cleanora account.",
-        credentialLabel: "Password reset credential",
+        credentialLabel: "Password reset code",
         credentialValue: message.value,
         accountCategory: category,
         purpose: "Password reset",
@@ -41,9 +41,9 @@ export class AuthenticationEmailAdapter
         destination: maskedDestination,
         expiresAt: expiry,
         instruction:
-          "Copy the complete credential into the password-reset form. It is not a six-digit verification code.",
+          "Return to Cleanora and enter this four-digit code before it expires.",
         securityNotice:
-          "This credential is single-use and expires at the time shown above.",
+          "This code is single-use, attempt-limited, and expires at the time shown above.",
       });
       await this.email.send({
         to: [message.destination],

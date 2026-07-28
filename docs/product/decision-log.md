@@ -537,3 +537,51 @@ and do not satisfy phone verification or create an actor profile. They are
 updated only from a successfully verified Google OIDC response. A local
 frontend demonstration keeps the access token in memory, relies on the
 HttpOnly refresh cookie, and shows only this safe user contract.
+
+---
+
+## DEC-026 — Four-digit password-reset code with opaque correlation
+
+**Date:** 2026-07-28
+**Status:** Approved by human owner
+
+Password recovery uses a four-digit numeric code that a user can type into one
+simple input. The code never acts as a global credential by itself:
+
+- every syntactically valid forgot-password request returns a fresh opaque
+  `challengeId`, whether or not the account exists;
+- eligible accounts receive only the four-digit code through their
+  authoritative recovery channel;
+- reset requires the matching `challengeId`, `code`, and `newPassword`;
+- the raw code is never persisted or logged and remains expiring, single-use,
+  and attempt-limited; and
+- successful reset revokes every session and requires a fresh login.
+
+This replaces the user-facing composite `<reset-id>.<random-secret>` contract
+without adding a table or migration. Swagger defaults to the Railway hosted API
+and retains local development as an explicit secondary server.
+
+---
+
+## DEC-027 — Explicit hosted-preview SMS-to-email fallback
+
+**Date:** 2026-07-28
+**Status:** Approved by human owner for hosted authentication acceptance
+
+Until a real SMS provider is connected, the Railway-hosted preview may redirect
+SMS authentication intents to the server-resolved account email. This mode:
+
+- requires `AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED=true`;
+- separately requires
+  `AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED=true`;
+- requires authentication, email authentication, and a complete valid SMTP
+  configuration;
+- never accepts the fallback recipient from the OTP request body;
+- displays and logs safe warnings that phone ownership is not proven;
+- preserves challenge binding, HMAC-only code storage, expiry, resend,
+  attempt-limit, and single-use behavior; and
+- must be disabled and replaced by a real SMS provider before production
+  readiness.
+
+The local-only `AUTH_DEV_SMS_FALLBACK_TO_EMAIL` mode remains available for
+development and cannot be enabled together with the hosted-preview mode.

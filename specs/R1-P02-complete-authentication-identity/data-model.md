@@ -193,8 +193,11 @@ Indexes:
 - reviewed partial unique index on `(user_id, purpose)` for
   `PENDING_DELIVERY` or `ACTIVE`.
 
-The raw delivered value is `<id>.<random-secret>`. Only the selector is used to
-load the row; the secret is HMAC-verified and never stored.
+The API returns `id` as an opaque `challengeId` for every valid forgot-password
+request, including absent identities. Eligible identities receive a separate
+four-digit code out of band. The selector loads the row and the code is
+HMAC-verified with the selector; the raw code is never stored. This changes no
+column or index.
 
 ## `social_accounts`
 
@@ -306,4 +309,3 @@ Apply the full history only to an explicit empty, non-production
 After the migration has been applied anywhere shared, it is immutable. Any
 defect uses a separately named forward migration with compatibility impact,
 backfill if required, and clean/full-history tests.
-

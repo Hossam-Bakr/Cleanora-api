@@ -18,7 +18,7 @@
     "test:coverage": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --coverage",
     "db:check": "node --env-file=.env --conditions=development --import tsx scripts/check-database.ts",
     "auth:inspect": "node --env-file=.env --conditions=development --import tsx scripts/inspect-auth.ts",
-    "email:check": "node --env-file=.env --conditions=development --import tsx scripts/email-check.ts",
+    "email:check": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/email-check.ts",
     "seed": "node --env-file=.env --conditions=development --import tsx scripts/seed.ts",
     "docs:check": "node --conditions=development --import tsx scripts/docs-check.ts",
     "openapi:validate": "node --conditions=development --import tsx scripts/openapi-validate.ts",

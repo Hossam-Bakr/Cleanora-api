@@ -775,3 +775,86 @@ Post-migrate suites:
 
 No production API/contract changes. F2–F4 remain architectural follow-up.
 Phase remains In Progress; no commit/push/deploy; T099/T118 not auto-checked.
+
+## Four-digit password recovery UX — 2026-07-28
+
+DEC-026 replaces the historical composite reset credential with an opaque
+correlation challenge and a separate four-digit code:
+
+- `POST /auth/password/forgot` returns `{ accepted, challengeId }` for every
+  schema-valid request, including unknown identities, to preserve enumeration
+  safety.
+- Eligible identities receive only the four-digit code through the configured
+  out-of-band delivery channel.
+- `POST /auth/password/reset` now accepts
+  `{ challengeId, code, newPassword }`.
+- The raw code is never persisted or logged. The existing HMAC verifier,
+  expiration, attempt exhaustion, single-use consumption, and session
+  revocation behavior remain intact.
+- The existing persistence model supports this correlation flow, so no Prisma
+  schema change or migration was required.
+- Swagger now lists the Railway hosted API as its default server and localhost
+  as the secondary development server.
+- Static OpenAPI, generated Swagger, Postman collection/environments, recovery
+  email templates, and the active phase artifacts use the same contract.
+
+Validation:
+
+| Check | Result |
+|---|---|
+| Focused unit tests | **4 files / 34 tests PASS** |
+| Password-reset attempt integration | **1 file / 6 tests PASS** |
+| Database-backed recovery integration | **1 file / 2 tests PASS** |
+| Focused recovery E2E | **1 passed / 5 skipped; PASS** |
+| Swagger integration | **1 file / 2 tests PASS** |
+| Typecheck / lint / build | **PASS** |
+| OpenAPI validation / docs check | **PASS** |
+| Postman JSON and recovery-contract validation | **6 JSON artifacts / 19 requests; PASS** |
+| `git diff --check` | **PASS** |
+
+Coverage and full CI were not run. No commit, push, deployment, or database
+migration was performed. R1-P02 remains In Progress.
+
+## Hosted authentication delivery availability — 2026-07-28
+
+Railway liveness was healthy while Individual and Company signup both returned
+`503 AUTH_PROVIDER_UNAVAILABLE`. The causes were delivery-specific:
+
+- Individual signup selected SMS, but production composed
+  `UnavailableSmsAdapter`.
+- Company signup selected email, but Railway email delivery was disabled,
+  incomplete, rejected, or unreachable.
+- `SMS_AUTH_ENABLED` did not instantiate a real provider.
+
+DEC-027 adds an explicit hosted-preview bridge through the existing SMS port.
+It is enabled only when both
+`AUTH_SMS_TO_EMAIL_FALLBACK_ENABLED=true` and
+`AUTH_SMS_TO_EMAIL_FALLBACK_ACKNOWLEDGED=true` are present with complete email
+capability. Contradictory or unacknowledged configuration fails before startup.
+Local development retains its separate flag.
+
+The adapter resolves the recipient from account state, never from the OTP
+request, and renders a visible notice that phone ownership was not verified.
+Startup emits the same fact without logging recipients, codes, or secrets.
+Provider-unavailable responses now expose the already-safe retry message rather
+than the generic internal-server message.
+
+Validation:
+
+| Check | Result |
+|---|---|
+| Unit suite | **52 files / 208 tests PASS** |
+| All-category signup integration | **2 files / 10 tests PASS** |
+| Typecheck / lint | **PASS** |
+| Prisma generation / production build | **PASS** |
+| Documentation check / `git diff --check` | **PASS** |
+
+No coverage, full CI, commit, push, deployment, or database migration was
+performed. Railway still requires valid SMTP variables and a redeploy before
+the hosted journeys can pass. The fallback is preview-only and must be replaced
+by real SMS before production readiness.
+
+The local `email:check` attempt did not complete within the restricted
+environment's 60-second limit, so SMTP is not claimed operational. The command
+now tolerates a missing `.env` file and can be run inside the deployed Railway
+container using its injected variables.

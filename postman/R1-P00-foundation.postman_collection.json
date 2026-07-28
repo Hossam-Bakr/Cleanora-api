@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "534205cd-61cf-4f16-95b5-4966f792cba3",
     "name": "Cleanora R1-P00 Foundation",
-    "description": "Implemented system health and readiness APIs.",
+    "description": "Implemented system health and readiness APIs.\n\n> ⚠️ **Hey Bassam, you can visit Swagger docs here, my bro:** http://localhost:8000/api/v1/docs ⚠️",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -14,8 +14,8 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/system/health/live",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{hostUrl}}/system/health/live",
+              "host": ["{{hostUrl}}"],
               "path": ["system", "health", "live"]
             }
           }
@@ -25,8 +25,8 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/system/health/ready",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{hostUrl}}/system/health/ready",
+              "host": ["{{hostUrl}}"],
               "path": ["system", "health", "ready"]
             }
           }
