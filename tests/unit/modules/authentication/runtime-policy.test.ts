@@ -1,4 +1,4 @@
-import { AuthenticationService } from '../../../../src/modules/authentication/application/authentication.service.js';
+import { AuthenticationService } from '../../../../src/modules/authentication/auth.service.js';
 
 describe('runtime authentication configuration', () => {
   it('reads endpoint limits from the injected typed configuration port', async () => {

@@ -3,7 +3,9 @@
 1. Confirm exactly one active phase and complete phase artifacts.
 2. Read only applicable rules and tasks.
 3. Implement tasks in dependency order, staying inside scope.
-4. Keep controllers thin, workflows in application services/use cases, and persistence in owning repositories.
+4. Keep controllers thin and workflows in owning services/use cases. Use
+   direct Prisma only for simple owning-module persistence; use repositories
+   for reusable, complex, or transactional queries.
 5. Expose cross-module behavior through public contracts.
 6. For database changes, use `prisma-phase-migration`.
 7. Add unit, integration, authorization, idempotency, and migration tests as applicable.

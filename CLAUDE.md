@@ -22,9 +22,10 @@ Check the diff against the specification, modular-monolith boundaries, public mo
 Look specifically for:
 
 - Wrong module ownership or forbidden cross-module imports
-- Imports that bypass another module's public `index.ts` or approved contract
+- Imports that bypass another module's approved named service or composition
+  contract
 - Direct access to another module's repository or Prisma implementation
-- Prisma access outside the owning repository/infrastructure layer
+- Prisma access outside the owning module
 - Business workflows in routes/controllers
 - Repositories orchestrating business workflows
 - Circular dependencies or a global God service

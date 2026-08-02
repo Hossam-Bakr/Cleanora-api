@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { createApp } from '../../../src/app.js';
-import { createAuthenticationModule } from '../../../src/modules/authentication/index.js';
+import { createAuthenticationModule } from "../../../src/modules/authentication/auth.module.js";
 import { Argon2PasswordHasherAdapter } from '../../../src/integrations/authentication/argon2-password-hasher.adapter.js';
 import { CryptoVerifierAdapter } from '../../../src/integrations/authentication/crypto-verifier.adapter.js';
 import { JwtTokenServiceAdapter } from '../../../src/integrations/authentication/jwt-token-service.adapter.js';
@@ -20,7 +20,6 @@ export async function startAuthenticationTestApp() {
   const environment = createTestEnvironment({ AUTH_ENABLED: true, GOOGLE_AUTH_ENABLED: true, DATABASE_URL: testDatabaseUrl });
   const rateLimiter = { consume: async () => ({ allowed: true, remaining: 1_000 }) };
   const authentication = createAuthenticationModule({
-    basePath: '/api/v1/auth',
     trustedOrigins: environment.CORS_ORIGINS,
     cookie: { name: environment.AUTH_REFRESH_COOKIE_NAME, path: environment.AUTH_REFRESH_COOKIE_PATH, secure: false, sameSite: 'lax' },
     passwordHasher: new Argon2PasswordHasherAdapter(),
@@ -37,7 +36,12 @@ export async function startAuthenticationTestApp() {
     googleFrontendCallbackUri: environment.GOOGLE_FRONTEND_CALLBACK_URI!
   });
   const logger = new TestLogger();
-  const app = createApp({ environment, logger, rateLimiter, modules: [authentication.moduleRegistrar] });
+  const app = createApp({
+    environment,
+    logger,
+    rateLimiter,
+    authenticationRouter: authentication.router,
+  });
   return {
     app,
     database,

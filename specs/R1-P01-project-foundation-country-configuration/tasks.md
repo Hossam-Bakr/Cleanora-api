@@ -1,5 +1,8 @@
 # Tasks: Project Foundation & Country Configuration
 
+> Completed historical task ledger. Do not recreate the implementation-time
+> folders named below; use `docs/architecture/source-layout.md`.
+
 **Input**: Design documents from `/specs/R1-P01-project-foundation-country-configuration/`
 
 **Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `.specify/memory/constitution.md`

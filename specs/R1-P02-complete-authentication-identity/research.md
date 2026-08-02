@@ -1,9 +1,13 @@
 # R1-P02 Technical Research
 
+> Historical R1-P02 research. Pino and implementation-time folder references
+> were superseded by R1-P02A; use current architecture documents for new work.
+
 **Phase**: `R1-P02 — Complete Authentication & Identity`  
 **Date**: 2026-07-24  
 **Authority**: approved `spec.md`, DEC-011, DEC-012, DEC-014, DEC-015,
-ADR-0010, and ADR-0013
+DEC-028, ADR-0010, and ADR-0013. DEC-028 supersedes the earlier R1-P02
+SMS/phone-gate research conclusions below wherever they differed.
 
 ## Repository Evidence
 
@@ -68,16 +72,17 @@ approved hash.
 
 ## Decision 3 — One-Time and Refresh Verifiers
 
-**Decision**: Use Node `crypto` only. Generate six-digit OTPs with
-`crypto.randomInt`; generate password-reset secrets and refresh JWT identifiers
-with cryptographic randomness. Store domain-separated HMAC-SHA-256 verifiers
-under a dedicated `AUTH_VERIFIER_SECRET`, never raw values.
+**Decision**: Use Node `crypto` only. Generate six-digit verification OTPs and
+four-digit password-reset codes with `crypto.randomInt`; generate refresh JWT
+identifiers with cryptographic randomness. Store domain-separated
+HMAC-SHA-256 verifiers under a dedicated `AUTH_VERIFIER_SECRET`, never raw
+values.
 
 Domains include the record selector and purpose:
 
 ```text
 otp:<challenge-id>:<purpose>:<code>
-reset:<challenge-id>:<secret>
+reset:<challenge-id>:<code>
 refresh:<session-id>:<raw-refresh-jwt>
 destination:<channel>:<normalized-destination>
 ```
@@ -185,9 +190,8 @@ superseded row.
 
 - TTL: 30 minutes.
 - Maximum attempts: 5.
-- Token: opaque public selector plus 256-bit random secret.
-- Individual and worker recovery uses registered-phone SMS.
-- Company, engineer, and provider-owner recovery uses verified email.
+- Proof: opaque public challenge selector plus a four-digit random code.
+- Every eligible category uses its verified normalized email.
 - No alternate channel is selected.
 - Syntactically valid forgot requests always return the same accepted envelope,
   whether the identity exists, lacks a valid destination, or provider delivery
@@ -207,8 +211,8 @@ does not create a session.
 | Pre-provisioned verified worker + valid phone/password | Full normal session |
 | Missing worker, identity, or password credential | Generic authentication failure |
 | `SUSPENDED` or `BANNED` | Generic login denial; existing sessions fail at request authentication |
-| Linked Google individual + phone verified | Full Google session |
-| New/linked Google individual + phone unverified | Verification-only Google session |
+| Linked/new Google individual + provider-verified email | Full Google session |
+| Google identity without provider-verified email | Fail closed; no identity/session |
 | Non-individual Google audience | Reject before creating/linking/session issuance |
 
 Credential lockout uses normalized phone. Five consecutive failures in a
@@ -258,8 +262,9 @@ current deployment is one process. Callback atomically consumes it and also
 requires the matching short-lived `HttpOnly`, `SameSite=Lax` correlation
 cookie. Restart or missing state fails closed.
 
-- New Google identity: create only an `INDIVIDUAL`; issue a
-  verification-only session until its phone is bound and verified.
+- New Google identity: create only an `INDIVIDUAL`, require a
+  provider-verified email, and issue a full session without claiming phone
+  ownership.
 - Existing provider subject: sign in only the already-linked individual.
 - Matching email alone: never merge or link; return a generic social-auth
   failure or require deliberate authenticated linking.
@@ -289,7 +294,6 @@ Module-owned ports:
 - `OneTimeVerifierPort`
 - `ClockPort`
 - `AuthenticationTransactionPort`
-- `SmsAuthenticationDeliveryPort`
 - `EmailAuthenticationDeliveryPort`
 - `GoogleIdentityPort`
 - `GoogleTransactionStorePort`
@@ -304,9 +308,9 @@ Fakes use injected clocks/randomness, retain delivery values only in a
 test-only inbox, expose programmable failures/delays, and reset per test. They
 never become production fallbacks.
 
-Nodemailer remains the approved email transport. SMS remains provider-neutral
-under ADR-0007 until the human owner selects an Egypt-appropriate provider and
-supplies credentials. Missing enabled-provider configuration fails startup;
+Nodemailer remains the approved R1-P02 delivery transport. SMS and phone
+ownership verification are deferred to R1-P26; no SMS adapter or fallback is
+composed in R1-P02. Missing enabled email-provider configuration fails startup;
 tests and planning do not invent production credentials.
 
 ## Decision 12 — Events, Audit, and Logging
@@ -336,17 +340,16 @@ objects to the logger.
   privacy-hash secret, and all required non-secret policy values are mandatory.
 - `GOOGLE_AUTH_ENABLED=true` additionally requires the complete Google client
   ID/secret/redirect set and the Google adapter.
-- SMS/email capability flags require their complete approved provider
-  configuration and adapters.
+- Email authentication requires its complete approved provider configuration
+  and adapter. No R1-P02 SMS capability flag exists.
 - Validation completes before database connection or listening.
 - Access/refresh secrets remain independent; verifier and privacy keys are not
   reused as JWT secrets.
 
 ## Remaining Risks and Implementation Gates
 
-1. The Egypt SMS provider and credentials are not approved. The provider port
-   and deterministic tests can be implemented, but production SMS capability
-   must remain disabled and fail closed until the human owner supplies them.
+1. Phone verification, an Egypt-appropriate SMS provider, credentials,
+   migration/backfill, and launch acceptance are explicit R1-P26 work.
 2. Argon2id benchmark results can only be recorded on the implementation
    runtime. The baseline above is mandatory until measured evidence supports a
    stronger setting.

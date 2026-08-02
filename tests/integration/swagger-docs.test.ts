@@ -1,5 +1,5 @@
 import { createApp } from '../../src/app.js';
-import { cleanoraOpenApiDocument } from '../../src/swagger/index.js';
+import { cleanoraOpenApiDocument } from '../../src/swagger/openapi.document.js';
 import { createTestEnvironment } from '../helpers/test-environment.js';
 import { TestLogger } from '../helpers/test-logger.js';
 

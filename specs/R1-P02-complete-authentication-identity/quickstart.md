@@ -1,5 +1,9 @@
 # R1-P02 Implementation Quickstart
 
+> R1-P02 is Complete. Commands and paths in this file originated before the
+> R1-P02A structure simplification. Use current `package.json` scripts and
+> `docs/standards/testing.md`; there is no separate E2E command.
+
 This is the implementation handoff sequence. It does not authorize dependency installation, database application, production migration, deployment, commit, or push by itself.
 
 ## 1. Confirm scope
@@ -19,13 +23,20 @@ This is the implementation handoff sequence. It does not authorize dependency in
 
 ## 3. Migration workflow
 
-Use an explicit isolated non-production database for create-only generation:
+The initial R1-P02 migration was generated on an explicit isolated
+non-production database with:
 
 ```text
 npx prisma migrate dev --create-only --name r1_p02_complete_authentication
 ```
 
-Review the generated SQL before any apply. Confirm exact tables/enums/FKs/unique/check/partial indexes and reject destructive or R1-P01-altering statements. Then validate and generate:
+The current chronological history also includes
+`r1_p02_fix_phone_e164_constraint`,
+`r1_p02_google_provider_profile_claims`, and
+`r1_p02_email_verification_for_individuals`. Review every forward migration
+before apply. Confirm exact tables/enums/FKs/unique/check/partial indexes and
+reject unrelated destructive or R1-P01-altering statements. Then validate and
+generate:
 
 ```text
 npm run prisma:validate
@@ -46,12 +57,16 @@ Missing `CI_DATABASE_URL` is a skipped unavailable proof, never a fabricated pas
 - refresh compare-and-swap and reuse-family revocation;
 - OTP/reset exact attempt, expiry, resend, consumption, and races;
 - status enforcement at login and protected requests;
-- Google state/nonce/PKCE/linking/phone-gate security;
+- Google state/nonce/PKCE/linking/provider-email assurance;
 - generic enumeration responses and bounded timing;
 - nested secret redaction across response/log/error/event/audit;
 - every auth repository uses the already-bound process-wide Prisma client.
 
-Expected outcomes include one usable successor after normal refresh, full family revocation after replay, no usable session after reset, only the current rotated session after password change, and no protected access for an unverified Google phone or a suspended/banned identity.
+Expected outcomes include one usable successor after normal refresh, full
+family revocation after replay, no usable session after reset, only the current
+rotated session after password change, and no Google session without a
+provider-verified email or for a suspended/banned identity. No R1-P02 outcome
+may claim phone ownership.
 
 ## 5. Final validation
 
@@ -62,16 +77,19 @@ npm run typecheck
 npm run lint
 npm run test:unit
 npm run test:integration
-npm run test:e2e
 npm run test:coverage
 npm run prisma:validate
+npm run prisma:generate
 npm run openapi:validate
 npm run docs:check
 npm run build
+npm audit --omit=dev --audit-level=high
 npm audit --audit-level=high
 ```
 
-Record actual suite/test counts, coverage, migration rows/table inventory, Argon2 benchmark, package compatibility, and unavailable external-provider proof.
+Record actual suite/test counts, coverage, migration rows/table inventory,
+Argon2 benchmark, package compatibility, and email/Google provider evidence or
+explicit human-owned operational blockers.
 
 ## 6. Documentation
 

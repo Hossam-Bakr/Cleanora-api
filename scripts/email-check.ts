@@ -1,4 +1,4 @@
-import { loadEnvironment } from "#config/index";
+import { loadEnvironment } from "#config/env";
 import {
   EmailDeliveryError,
   createNodemailerEmailAdapter,

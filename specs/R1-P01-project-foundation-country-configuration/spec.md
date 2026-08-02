@@ -1,5 +1,9 @@
 # Feature Specification: Project Foundation & Country Configuration
 
+> Completed-phase record. R1-P02A later simplified source paths, logging,
+> routing composition, and testing. Use current architecture/standards rather
+> than implementation paths preserved below.
+
 **Feature Branch**: `Not created (no before_specify hook configured)`
 
 **Created**: 2026-07-24

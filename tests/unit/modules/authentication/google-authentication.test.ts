@@ -1,5 +1,5 @@
 import { MemoryGoogleTransactionStoreAdapter } from '../../../../src/integrations/authentication/memory-google-transaction-store.adapter.js';
-import { GoogleAuthenticationService } from '../../../../src/modules/authentication/application/google-authentication.js';
+import { GoogleAuthenticationService } from '../../../../src/modules/authentication/google-auth.service.js';
 
 describe('Google authentication policy', () => {
   it('creates bounded one-time state, nonce, and PKCE transactions', async () => {

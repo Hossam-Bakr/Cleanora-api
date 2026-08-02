@@ -1,6 +1,7 @@
 # Cleanora Swagger Documentation
 
-Status: Implemented for the active R1-P02 phase; R1-P02 remains In Progress.
+Status: Implemented in completed R1-P02. R1-P02A preserved the runtime
+documentation contract while simplifying the source structure.
 
 ## Runtime endpoints
 

@@ -1,6 +1,6 @@
 
-import { getPrismaClient } from "../../src/integrations/database/prisma-client-accessor.js";
-import type { PrismaLifecycle } from "../../src/integrations/database/prisma-lifecycle.js";
+import { getPrismaClient } from "../../src/database/prisma.js";
+import type { PrismaLifecycle } from "../../src/database/prisma-lifecycle.js";
 import { seed } from "../../prisma/seed.js";
 import {
   startTestDatabaseLifecycle,

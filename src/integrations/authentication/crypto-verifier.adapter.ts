@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 
-import type { OneTimeVerifierPort } from '#modules/authentication';
+import type { OneTimeVerifierPort } from "../../modules/authentication/domain/authentication.ports.js";
 
 export class CryptoVerifierAdapter implements OneTimeVerifierPort {
   constructor(private readonly secret: string) {}

@@ -42,9 +42,13 @@ describe("business module dependency boundaries", () => {
         files.map(async (file) => {
           const source = await readFile(file, "utf8");
           const usesPersistence =
-            /#generated\/|prisma-client-accessor|\bPrismaClient\b/.test(source);
+            /#generated\/|#database\/prisma|\bPrismaClient\b/.test(source);
           const normalized = relative(modulesRoot, file).split(sep).join("/");
-          return usesPersistence && !normalized.includes("/infrastructure/")
+          const allowedPersistenceLocation =
+            normalized.includes("/infrastructure/") ||
+            normalized.endsWith(".repository.ts") ||
+            normalized === "admin/audit.service.ts";
+          return usesPersistence && !allowedPersistenceLocation
             ? [normalized]
             : [];
         })

@@ -380,3 +380,65 @@ Static gates and unit tests pass. Database-backed acceptance, SMTP provider
 acceptance, and Railway acceptance remain operational gates because this
 execution environment cannot reach the configured Neon/SMTP services. R1-P02
 remains In Progress and no phase-completion claim is made.
+
+## Final convergence review — 2026-07-29
+
+### Artifact and boundary findings
+
+| Finding | Resolution | Evidence |
+|---|---|---|
+| DEC-028 conflicted with older normative phone/SMS requirements | **Accepted and fixed** | `spec.md`, `plan.md`, `research.md`, `data-model.md`, and `quickstart.md` now require email-only verification/recovery, Google provider-email assurance, and defer phone ownership to R1-P26. |
+| Cross-module audit write precedes authentication mutation | **Rejected as a defect** | `research.md` Decision 12 deliberately requires fail-closed `*_ATTEMPTED` audit through `#modules/admin` before the auth-owned transaction. No transaction or repository crosses the module boundary. |
+| Prisma `User` values appear inside authentication application code | **Rejected as a public-boundary violation** | Values remain inside the authentication module, are mapped before domain-policy use, and never cross `src/modules/authentication/index.ts`. The plan records this internal mapping tradeoff. |
+| Atomic workflows live in `AuthenticationTransactionRepository` | **Rejected as a boundary defect** | The application service owns provider/audit/use-case sequencing; the module-private repository owns the Prisma unit of work so no Prisma transaction context leaks upward. The complexity rationale is now explicit in `plan.md`. |
+| Current Railway listener relied on implicit host binding | **Accepted and fixed** | `src/server.ts` binds the environment port on `0.0.0.0`; `tests/unit/server/http-binding.test.ts` proves the exact host/port call. |
+
+### Current validation evidence
+
+| Check | Result |
+|---|---|
+| Typecheck | **PASS** |
+| ESLint | **PASS** |
+| Unit | **52 files / 200 tests PASS** |
+| Focused migration SQL test | **1 file / 4 tests PASS** |
+| Prisma schema validation | **PASS** |
+| Prisma Client generation / production build | **PASS** |
+| Documentation | **11 paths PASS** |
+| Static/runtime OpenAPI | **PASS** |
+| Postman generation and all six JSON artifacts | **PASS** |
+| Production dependency audit | **PASS — 0 vulnerabilities** |
+| Full dependency audit | **FAIL — 5 high and 3 moderate transitive development-tool advisories; fixes require breaking ESLint/Prisma upgrades** |
+| Diff whitespace check | **PASS** |
+
+### Remaining blockers
+
+- `TEST_MIGRATION_DATABASE_URL` is present, direct, matches the isolated pooled
+  test endpoint/database, and differs from ordinary `DATABASE_URL`. Prisma
+  status and a value-free direct probe were blocked by this Codex sandbox with
+  `EACCES`/`ENETUNREACH`; no database mutation occurred.
+- The owner's network-enabled terminal reached PostgreSQL with that direct URL
+  but received SQLSTATE `28000` twice. The direct Neon role/password must be
+  corrected before T212 can apply the migration.
+- A read-only pooled inspection failed with sandbox `EACCES`; no database was
+  mutated.
+- Integration, E2E, and coverage cannot become final evidence until the
+  forward migration is applied to that isolated target.
+- T099/T118/T138/T145/T192/T210/T212/T213 remain open. R1-P02 remains In
+  Progress pending final validation, independent review, and human approval.
+
+## Completion resolution — 2026-07-29
+
+| Item | Disposition | Evidence |
+|---|---|---|
+| T212 isolated migration | **Accepted and closed** | Direct `TEST_MIGRATION_DATABASE_URL` deploy; status up to date; constraint `users_verified_individual_contact_check` proven |
+| T138 branch coverage | **Accepted and closed** | Branches **75.57% (662/876)**; thresholds unchanged |
+| T145 / T192 runtime | **Accepted and closed** | Live smoke table + development migration inventory + DEC-028 Google browser redirect; owner Google confirmation reused |
+| T099 / T118 / T210 / T213 | **Accepted and closed** | Final sequence recorded in `implementation-summary.md` |
+| Full npm audit FAIL | **Accepted residual risk** | Production audit 0 vulns; full audit 5 high / 3 moderate transitive tooling; no `--force` |
+| Speckit converge | **Clean** | Zero actionable buildable gaps |
+| Independent review | **APPROVED** | See `review-report.md` |
+| Phase status | **Complete** | `docs/product/current.md` Completed At `2026-07-29`; R1-P03 not activated |
+
+No CRITICAL or HIGH findings remain open. API contracts unchanged. No SMS or
+phone-verification behavior restored. No commit/push/deploy/production
+migration performed during completion.

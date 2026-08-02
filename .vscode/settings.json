@@ -42,6 +42,16 @@
       "name": "cleanora_db",
       "database": "Cleanora",
       "username": "neondb_owner"
+    },
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "ep-wandering-pine-athw53yz.c-9.us-east-1.aws.neon.tech",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "cleanora2",
+      "database": "Cleanora",
+      "username": "neondb_owner"
     }
   ]
 }

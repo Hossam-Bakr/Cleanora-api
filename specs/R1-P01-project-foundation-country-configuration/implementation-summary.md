@@ -1,5 +1,8 @@
 # Implementation Summary — R1-P01 Project Foundation & Country Configuration
 
+> Historical R1-P01 evidence. Old paths, Pino, ModuleRegistrar, and E2E entries
+> describe the repository at that phase and were superseded by R1-P02A.
+
 **Date**: 2026-07-24  
 **Phase**: R1-P01  
 **Status of phase pointer**: `Complete` by human-owner approval

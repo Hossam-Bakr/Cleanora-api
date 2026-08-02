@@ -2,8 +2,8 @@ import { cpus, platform } from 'node:os';
 import { performance } from 'node:perf_hooks';
 import type { RequestHandler } from 'express';
 import { createApp } from '../../../src/app.js';
-import { createAuthenticationRouter } from '../../../src/modules/authentication/http/authentication.routes.js';
-import type { AuthenticationService } from '../../../src/modules/authentication/application/authentication.service.js';
+import { createAuthenticationRouter } from '../../../src/modules/authentication/auth.routes.js';
+import type { AuthenticationService } from '../../../src/modules/authentication/auth.service.js';
 import { createTestEnvironment } from '../../helpers/test-environment.js';
 import { TestLogger } from '../../helpers/test-logger.js';
 
@@ -35,7 +35,12 @@ describe('deterministic session endpoint latency', () => {
       googleProviderCallbackUri: undefined,
       googleFrontendCallbackUri: undefined,
     });
-    const app = createApp({ environment: createTestEnvironment(), logger: new TestLogger(), rateLimiter: limiter, modules: [{ name: 'authentication-latency', register: (target) => target.use('/api/v1/auth', router) }] });
+    const app = createApp({
+      environment: createTestEnvironment(),
+      logger: new TestLogger(),
+      rateLimiter: limiter,
+      authenticationRouter: router,
+    });
     const samples: Array<{ operation: string; milliseconds: number }> = [];
     const measure = async (operation: string, action: () => Promise<unknown>) => { const started = performance.now(); await action(); samples.push({ operation, milliseconds: performance.now() - started }); };
 

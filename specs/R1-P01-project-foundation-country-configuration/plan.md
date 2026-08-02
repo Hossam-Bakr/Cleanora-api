@@ -1,5 +1,8 @@
 # Implementation Plan: Project Foundation & Country Configuration
 
+> Completed-phase implementation history. Pino, registrar, `src/core`, old
+> Prisma-lifecycle paths, and E2E references are superseded by R1-P02A.
+
 **Branch**: `R1-P01-project-foundation-country-configuration` | **Date**: 2026-07-24 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `specs/R1-P01-project-foundation-country-configuration/spec.md`

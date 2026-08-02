@@ -1,10 +1,10 @@
 
-import { resolveEffectiveConfig } from "../../../../src/modules/configuration/application/resolve-effective-config.js";
+import { resolveEffectiveConfigWith as resolveEffectiveConfig } from "../../../../src/modules/configuration/configuration.service.js";
 import type {
   AppConfigRecord,
   ConfigurationRepositories,
   CountryConfigRecord
-} from "../../../../src/modules/configuration/domain/configuration.types.js";
+} from "../../../../src/modules/configuration/configuration.repository.js";
 
 function createRepositories(
   appConfig: AppConfigRecord,

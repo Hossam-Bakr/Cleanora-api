@@ -1,4 +1,4 @@
-import { validateRequest } from "../../../src/core/http/validate-request.js";
+import { validateRequest } from "../../../src/middlewares/validate-request.js";
 import { z } from "zod";
 
 describe("validateRequest", () => {

@@ -1,4 +1,7 @@
-import type { GoogleTransaction, GoogleTransactionStorePort } from '#modules/authentication';
+import type {
+  GoogleTransaction,
+  GoogleTransactionStorePort,
+} from "../../modules/authentication/domain/authentication.ports.js";
 
 export class MemoryGoogleTransactionStoreAdapter implements GoogleTransactionStorePort {
   private readonly values = new Map<string, GoogleTransaction>();

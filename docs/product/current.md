@@ -3,20 +3,43 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `R1-P02 — Complete Authentication & Identity` |
-| Status | `In Progress` |
+| Current Phase | `R1-P02A — Backend Structure Simplification` |
+| Status | `Complete` |
 | Backend Branch | `TBD` |
 | Frontend Branch | `TBD` |
 | Backend Owner | `TBD` |
 | Frontend Owner | `TBD` |
-| Started At | `2026-07-24` |
-| Completed At | `—` |
-| Last Updated | `2026-07-28` |
+| Started At | `2026-07-30` |
+| Completed At | `2026-08-01` |
+| Last Updated | `2026-08-01` |
 
-## Active phase — R1-P02
+No phase is currently In Progress. **R1-P03 is not activated.**
 
-R1-P02 (`Complete Authentication & Identity`) is **In Progress** as of
-`2026-07-24`, activated by human-owner authorization after all transition gates
+## Completed phase — R1-P02A
+
+R1-P02A (`Backend Structure Simplification`) is **Complete** as of
+`2026-08-01`, by explicit human-owner completion approval. It was a
+behavior-preserving maintenance phase authorized on `2026-07-30`. It simplified
+the backend structure, replaced Pino HTTP logging with Morgan, removed
+confirmed placeholders and E2E duplication, and kept R1-P02 contracts frozen.
+Final completion gates passed after a trailing-whitespace fix in `src/app.ts`.
+This approval does not authorize commit, push, merge, deployment, or production
+migration. **R1-P03 is not activated.**
+
+## Completed phase — R1-P02
+
+R1-P02 (`Complete Authentication & Identity`) is **Complete** as of
+`2026-07-29`, by human-owner authorization in the phase completion prompt.
+The one-active-phase rule remains: **R1-P03 is not activated**.
+
+Completed with DEC-028 email-only verification/recovery, Google
+provider-email Individual activation, isolated test-database migration
+`r1_p02_email_verification_for_individuals` applied, final validation
+evidence recorded, and independent review verdict `APPROVED`.
+
+Historical activation context (preserved):
+
+R1-P02 was activated as of `2026-07-24` after all transition gates
 passed:
 
 - R1-P01 is Complete by human-owner approval
@@ -29,23 +52,17 @@ passed:
 - DEC-014 requires R1-P02 to own any later schema/migration changes incrementally
 - DEC-015 resolves OQ-014: Release 1 Google sign-in is enabled for individual accounts only and never bypasses required verification
 
-R1-P02 implementation is underway. Authentication code, its additive migration,
-and focused tests exist. Coverage-only remediation is paused under DEC-016
-(branches 73.8% vs 75% accepted as temporary debt; thresholds unchanged;
-T099/T118 unchecked). DEC-017 authorizes a development-only SMS-to-email
-delivery redirect without changing production verification rules. Development
-migration/seed, SMTP delivery, health, signup, and representative auth error
-paths have since been exercised successfully.
+R1-P02 implementation is complete under DEC-028. Authentication code, additive
+migrations, focused and full test suites, coverage thresholds, runtime smoke,
+and independent review evidence are recorded in the active phase artifacts.
+Historical interim notes below are retained for traceability and do not reopen
+the phase.
 
 DEC-018 corrects Google for browser use: one provider-registered backend
 callback handles sign-in/link intent, redirects safely to the allowlisted
-frontend without tokens in the URL, and uses authenticated phone OTP request
-and verification to promote the exact restricted session. Focused unit,
-database integration, E2E, typecheck, lint, build, OpenAPI, docs, and Postman
-contract checks pass. Full real-provider Chrome acceptance, remaining manual
-auth journeys, T099/T118, and final review remain open. No coverage, full CI,
-converge, commit, push, deployment, or production migration was performed for
-DEC-018.
+frontend without tokens in the URL, and historically used authenticated phone
+OTP before DEC-028 removed that gate. Focused unit, database integration, E2E,
+typecheck, lint, build, OpenAPI, docs, and Postman contract checks pass.
 
 Professional runtime API documentation is now available at `/api/v1/docs`,
 with the machine-readable OpenAPI 3.1 document at
@@ -62,9 +79,10 @@ and Google phone OTPs go to the linked verified Google email. Login, refresh,
 password change, and `/auth/me` share one safe frontend user contract.
 
 DEC-025 adds nullable, provider-asserted Google display-name and HTTPS avatar
-claims to that safe contract and a local `frontend/` integration demonstration.
-Static validation passes; applying the additive development migration and one
-real-provider Chrome journey remain open as T192.
+claims to that safe contract and a local `frontend/` integration
+demonstration. The DEC-028 flow has no phone-restricted Google state.
+Development-target migration presence and Google browser redirect evidence are
+recorded under T192.
 
 DEC-027 permits an explicitly enabled and separately acknowledged hosted-preview
 SMS-to-email fallback while the real SMS provider remains unavailable. It uses
@@ -79,6 +97,14 @@ supported self-signup category in both local and hosted environments. Phone
 values remain unverified, Google verified-email sign-in creates a fully active
 Individual identity, and real phone ownership verification is deferred to
 R1-P26. Obsolete SMS adapters and flags are no longer part of startup.
+
+Final convergence has reconciled the active specification, plan, research,
+data model, quickstart, OpenAPI, and Postman direction with DEC-028. The
+isolated pooled test target received
+`r1_p02_email_verification_for_individuals` through matching direct
+`TEST_MIGRATION_DATABASE_URL`. Final validation, coverage thresholds,
+runtime acceptance, independent review `APPROVED`, and human-owner completion
+approval are recorded. **R1-P03 is not activated.**
 
 ## Completed phase — R1-P01
 

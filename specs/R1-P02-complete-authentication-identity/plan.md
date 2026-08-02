@@ -1,13 +1,26 @@
 # Implementation Plan: Complete Authentication & Identity
 
+> Completed-phase implementation history. References to old source paths,
+> Pino, module registrars, and E2E folders describe the repository during
+> R1-P02 and are superseded by R1-P02A. They are not current architecture
+> instructions.
+
 **Branch**: `R1-P02-complete-authentication-identity`  
 **Date**: 2026-07-24  
 **Spec**: [spec.md](spec.md)  
-**Status**: Planning complete; implementation not started
+**Status**: Complete
+
+Phase completion was human-owner approved by the R1-P02 completion prompt
+(2026-07-29). R1-P03 was not activated.
 
 ## Summary
 
-R1-P02 adds one authentication module to the existing Cleanora modular monolith. It supports the approved signup, verification, phone/password login, Google individual-only authentication, recovery, session, abuse-control, and status-enforcement journeys while preserving the R1-P01 composition and database lifecycle.
+R1-P02 adds one authentication module to the existing Cleanora modular
+monolith. It supports email-verified signup for every supported self-signup
+category, phone/password login, Google individual-only authentication from a
+provider-verified email, email recovery, session lifecycle, abuse control, and
+status enforcement while preserving the R1-P01 composition and database
+lifecycle. Phone ownership verification is deferred to R1-P26.
 
 The design uses one user identity with independently enrolled and verified account-category arrays; Argon2id passwords; short-lived HS256 access JWTs; one stable server-side row per rotating refresh-token family; HMAC-only OTP, reset, and refresh verifiers; mandatory append-only auth events; and provider ports with deterministic test adapters. R1-P02 owns one additive migration, `r1_p02_complete_authentication`, containing exactly seven authentication tables.
 
@@ -26,15 +39,20 @@ The design uses one user identity with independently enrolled and verified accou
 ## Canonical Decisions
 
 - Login is phone/password only. The older preparation note mentioning email login is superseded by the approved specification.
-- Google authentication is enabled only for `INDIVIDUAL` in Release 1 and never satisfies phone verification.
+- Google authentication is enabled only for `INDIVIDUAL` in Release 1. Under
+  DEC-028, provider-verified email activates a new Individual and never proves
+  phone ownership.
 - Google uses one provider-registered backend callback for both sign-in and deliberate linking. The server-held transaction owns the intent, and the frontend redirect contains no tokens or raw provider parameters.
 - The backend does not render a Google result page. The common backend callback always hands off to the allowlisted frontend callback, which bootstraps through refresh with credentials included.
 - One authenticated identity may enroll another approved self-signup category; worker enrollment remains prohibited.
 - Existing verified categories remain usable when another category is pending.
-- Individual/worker recovery is SMS; company/engineer/provider-owner recovery is verified email, with no silent fallback.
+- Recovery uses verified email for every eligible category, with no silent
+  fallback.
 - Password reset revokes all sessions and creates no session.
 - Password change revokes other sessions and rotates the current family.
-- DEC-024 narrows the development-only SMS-to-email adapter to server-resolved account recipients: standard signup uses the normalized signup email and Google phone verification uses the linked provider-verified Google email. No fixed inbox or client-selected recipient is accepted.
+- DEC-028 removes SMS and SMS-to-email adapters from R1-P02. Signup
+  verification and recovery use only the normalized account email; phone
+  ownership remains deferred to R1-P26.
 
 ## Constitution Check
 
@@ -43,10 +61,10 @@ The design uses one user identity with independently enrolled and verified accou
 | Principle | Result | Evidence |
 |---|---|---|
 | I. Standalone greenfield | PASS | All dependencies, providers, schema, migration history, and docs are repository-local or explicit external ports. |
-| II. One active phase/traceability | PASS | `docs/product/current.md` names only R1-P02 In Progress; this plan derives from its approved spec. |
+| II. One active phase/traceability | PASS | `docs/product/current.md` names R1-P02 Complete; R1-P03 is not activated; this plan derives from the approved spec. |
 | III. Modular-monolith ownership | PASS | Authentication owns workflows/repositories; only a narrow `index.ts` is public; Prisma never crosses it. |
 | IV. Global design/local migration | PASS | Only the seven R1-P02 models are planned. |
-| V. Canonical product truth | PASS | DEC-015 and all five clarification answers are preserved; stale preparation metadata is not authority. |
+| V. Canonical product truth | PASS | Approved decisions through DEC-028 are preserved; superseded SMS/phone-gate preparation text is not authority. |
 | VI. Backend integrity/security | PASS | Server-side state checks, atomic transitions, token rotation/reuse, redaction, and mandatory evidence are designed. |
 | VII. Risk-proportional testing | PASS | Unit, integration, E2E, database, security, replay, and concurrency evidence are specified. |
 | VIII. Human-controlled operations | PASS | No install, migration, apply, commit, push, deployment, credential, or production action occurs in planning. |
@@ -55,7 +73,10 @@ The design uses one user identity with independently enrolled and verified accou
 
 ### Post-design gate
 
-PASS with no constitutional exception. The unresolved Egypt SMS vendor/credentials, Argon2 benchmark result, and final CommonJS-compatible `openid-client` version are explicit implementation/operations gates; none is silently invented.
+PASS with no constitutional exception. The Argon2 benchmark and
+CommonJS-compatible `openid-client` version are implementation evidence. SMS
+provider selection is no longer an R1-P02 gate because DEC-028 defers real
+phone verification to R1-P26.
 
 ## Project Structure
 
@@ -195,7 +216,9 @@ Seven repositories map domain records to the seven approved tables. Prisma and i
 
 ### Integrations
 
-Adapters isolate Argon2id, jsonwebtoken, Node crypto, Google OIDC, Nodemailer, SMS delivery, and Google transaction state. Provider payloads/errors map to safe internal categories and never escape module contracts.
+Adapters isolate Argon2id, jsonwebtoken, Node crypto, Google OIDC, Nodemailer,
+and Google transaction state. Provider payloads/errors map to safe internal
+categories and never escape module contracts.
 
 ## State Machines
 
@@ -215,12 +238,12 @@ NOT_ENROLLED
 
 | Category | Required at creation | Blocking gate | Optional/non-blocking |
 |---|---|---|---|
-| Individual | Phone, password | Six-digit SMS phone OTP | Email verification |
-| Company | Phone, email, password | Email OTP | None |
-| Engineer | Phone, email, password | Email OTP | None |
-| Provider owner | Phone, email, password | Email OTP | None |
+| Individual | Phone, email, password | Six-digit email OTP | Phone ownership deferred to R1-P26 |
+| Company | Phone, email, password | Six-digit email OTP | Phone ownership deferred to R1-P26 |
+| Engineer | Phone, email, password | Six-digit email OTP | Phone ownership deferred to R1-P26 |
+| Provider owner | Phone, email, password | Six-digit email OTP | Phone ownership deferred to R1-P26 |
 | Worker | Pre-provisioned phone/password | Precondition outside public R1-P02 APIs | None |
-| Google individual | Verified Google subject; phone may initially be absent | Bind unique phone and complete SMS OTP | Provider email does not replace phone gate |
+| Google individual | Verified Google subject and provider-verified email | Provider-email assurance | Phone ownership deferred to R1-P26 |
 
 ### Login eligibility
 
@@ -232,8 +255,8 @@ NOT_ENROLLED
 | Pre-provisioned verified worker | Full phone/password session |
 | Missing identity/worker/credential or wrong password | Generic login failure |
 | `SUSPENDED` or `BANNED` | Generic login denial; reject/revoke sessions at request authentication |
-| Linked Google individual with verified phone | Full Google session |
-| New/linked Google individual with unverified phone | Verification-only Google session |
+| Linked/new Google individual with provider-verified email | Full Google session |
+| Google identity without provider-verified email | Fail closed; no identity/session |
 | Non-individual Google audience | Reject before provider interaction |
 
 R1-P02 implements no status-changing endpoint. It only reads and enforces `SUSPENDED` and `BANNED` at login and every authenticated request.
@@ -279,7 +302,8 @@ ACTIVE generation N
 - Access JWT: HS256, 900-second default, pinned issuer/audience/type/version/`sub`/`sid`/UUID `jti`.
 - Refresh family: 30-day default fixed absolute expiry; rotate on every refresh; no grace window.
 - OTP: six digits, 10-minute TTL, five attempts, 60-second resend cooldown, three sends/15 minutes and five/24 hours per scope.
-- Reset: 256-bit secret, 30-minute TTL, five attempts, single-use.
+- Reset: opaque challenge ID plus a four-digit random code, 30-minute TTL,
+  five attempts, and single use; only the HMAC verifier is persisted.
 - Login lockout: five failures in 15 minutes, then 15-minute lock; success resets.
 - Endpoint limits and HMAC-normalized subject rules are fixed in `research.md` and injected as typed policy values.
 
@@ -347,13 +371,12 @@ R1-P02 may seed typed non-secret policy values through the existing configuratio
 
 ### E2E
 
-- individual signup → SMS verify → login → refresh → logout;
-- company, engineer, provider-owner signup → email verify → login;
+- every supported signup category → email verify → login → refresh → logout;
 - multi-category enrollment preserving verified access;
 - pre-provisioned worker login and every worker-creation rejection;
-- category-specific forgot/reset with no auto-login;
+- email-only forgot/reset with no auto-login;
 - password change rotating current and revoking others;
-- Google new/link/unlink with blocking phone gate;
+- Google new/link/unlink with provider-email assurance and no phone claim;
 - suspended/banned denial at login and protected requests.
 
 ### Security and database
@@ -379,18 +402,34 @@ Coverage keeps the current thresholds (80% statements/lines/functions, 75% branc
 7. Implement signup/verification/category enrollment.
 8. Implement login/access/refresh/logout/logout-all.
 9. Implement recovery/change-password and session consequences.
-10. Implement Google individual-only start/callback/link/unlink/phone gate.
+10. Implement Google individual-only start/callback/link/unlink with
+    provider-email assurance.
 11. Register through composition with the shared lifecycle and process-wide limiter.
 12. Complete OpenAPI, Postman, docs, security tests, clean migration proof, and full gates once.
 
 ## Complexity Tracking
 
-No constitutional violation requires an exception. The deeper module layout is the approved pattern for multiple workflows/repositories. Process-memory limiter and Google-state adapters are explicit single-process boundaries, not hidden distributed guarantees.
+No constitutional violation requires an exception. The deeper module layout is
+the approved pattern for multiple workflows/repositories. Process-memory
+limiter and Google-state adapters are explicit single-process boundaries, not
+hidden distributed guarantees.
+
+The application service owns external-provider sequencing, proof checks,
+cross-module audit calls, and use-case decisions. A module-private
+`AuthenticationTransactionRepository` owns the Prisma unit of work for atomic
+multi-row mutations and returns only values consumed inside the authentication
+module. Passing a Prisma transaction context through the application layer was
+rejected because it would leak infrastructure upward; adding a generic unit of
+work abstraction would add indirection without changing a public boundary.
+Prisma `User` values are mapped before domain-policy use and never cross
+`src/modules/authentication/index.ts`. This is an internal mapping refinement,
+not a cross-module persistence contract.
 
 ## Out of Scope
 
 - Roles, permissions, profiles, provider/team/worker management, worker signup, addresses, wallets, payments, Docker, cloud, deployment, production migration, or later-phase models.
 - Ban/suspension administration or reinstatement.
 - Redis, a distributed limiter, shared OIDC state, or multi-process deployment design.
-- Selecting/provisioning production SMS credentials without human approval.
+- R1-P26 phone-verification endpoints, migration/backfill, provider selection,
+  credentials, and launch acceptance.
 - Commit, push, merge, or phase completion.

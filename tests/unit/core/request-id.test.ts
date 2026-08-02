@@ -1,5 +1,5 @@
 
-import { requestIdMiddleware } from "../../../src/core/http/request-id.middleware.js";
+import { requestIdMiddleware } from "../../../src/middlewares/request-id.middleware.js";
 
 function invokeRequestIdMiddleware(headerValue?: string): {
   readonly request: { requestId?: string; header(name: string): string | undefined };

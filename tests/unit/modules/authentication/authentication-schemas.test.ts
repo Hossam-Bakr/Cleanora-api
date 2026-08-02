@@ -6,7 +6,7 @@ import {
   otpVerifySchema,
   resetSchema,
   signupSchema,
-} from "../../../../src/modules/authentication/http/authentication.schemas.js";
+} from "../../../../src/modules/authentication/auth.schema.js";
 
 describe("authentication HTTP schemas", () => {
   it("requires email for every self-signup category", () => {

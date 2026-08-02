@@ -432,6 +432,32 @@ Implement the complete Release 1 identity journey in one phase.
 
 ---
 
+## R1-P02A — Backend Structure Simplification
+
+### Goal
+
+Simplify the completed R1-P02 backend structure without changing product,
+security, API, provider, or database behavior.
+
+### Scope
+
+- Explicit central route map
+- Small Express app and HTTP-server composition roots
+- Morgan HTTP access logging
+- Clear database and middleware locations
+- Removal of confirmed structural placeholders and duplicate E2E coverage
+- Import, documentation, and boundary cleanup
+
+### Done When
+
+- Existing APIs and R1-P02 behavior remain unchanged.
+- Unit and integration evidence passes.
+- The source tree contains no module registrar, Pino HTTP logger, E2E suite, or
+  empty future feature folders.
+- R1-P03 remains inactive until separate human authorization.
+
+---
+
 ## R1-P03 — Roles, Permissions & Privileged Audit
 
 ### Goal

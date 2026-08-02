@@ -1,5 +1,5 @@
 
-import { writeAudit } from "../../../../src/modules/admin/application/write-audit.js";
+import { writeAuditWith as writeAudit } from "../../../../src/modules/admin/audit.service.js";
 
 describe("writeAudit", () => {
   it("passes the complete append-only audit input to its writer", async () => {

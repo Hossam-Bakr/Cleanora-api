@@ -1,6 +1,11 @@
 import type { SignOptions } from 'jsonwebtoken';
-import type { AccessTokenClaims, IssuedToken, RefreshTokenClaims, TokenServicePort } from '#modules/authentication';
-import { authenticationTokenInvalidError } from '#modules/authentication';
+import type {
+  AccessTokenClaims,
+  IssuedToken,
+  RefreshTokenClaims,
+  TokenServicePort,
+} from "../../modules/authentication/domain/authentication.ports.js";
+import { authenticationError } from "../../modules/authentication/domain/authentication.errors.js";
 
 const jwt = require('jsonwebtoken') as typeof import('jsonwebtoken');
 
@@ -49,7 +54,11 @@ export class JwtTokenServiceAdapter implements TokenServicePort {
       if (typeof value === 'string' || value['typ'] !== type || value['ver'] !== 1) throw new Error('claims');
       return value;
     } catch {
-      throw authenticationTokenInvalidError(type);
+      throw authenticationError(
+        type === "access"
+          ? "AUTH_ACCESS_TOKEN_INVALID"
+          : "AUTH_REFRESH_TOKEN_INVALID",
+      );
     }
   }
 }

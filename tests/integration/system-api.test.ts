@@ -135,16 +135,11 @@ describe("system API", () => {
     const app = createApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
-      modules: [
-        {
-          name: "validation-test",
-          register(expressApp) {
-            expressApp.get("/api/v1/test/validation", () => {
-              z.object({ email: z.email() }).parse({ email: "invalid" });
-            });
-          }
-        }
-      ]
+      mountTestRoutes(expressApp) {
+        expressApp.get("/api/v1/test/validation", () => {
+          z.object({ email: z.email() }).parse({ email: "invalid" });
+        });
+      },
     });
 
     const response = await request(app)
@@ -170,16 +165,11 @@ describe("system API", () => {
     const app = createApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
-      modules: [
-        {
-          name: "internal-error-test",
-          register(expressApp) {
-            expressApp.get("/api/v1/test/error", () => {
-              throw new Error("private internal detail");
-            });
-          }
-        }
-      ]
+      mountTestRoutes(expressApp) {
+        expressApp.get("/api/v1/test/error", () => {
+          throw new Error("private internal detail");
+        });
+      },
     });
 
     const response = await request(app)

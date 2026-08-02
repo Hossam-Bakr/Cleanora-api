@@ -1,4 +1,4 @@
-import { AuthenticationService } from "../../../../src/modules/authentication/application/authentication.service.js";
+import { AuthenticationService } from "../../../../src/modules/authentication/auth.service.js";
 import { authenticationError } from "../../../../src/modules/authentication/domain/authentication.errors.js";
 
 function createService(): AuthenticationService {
@@ -136,5 +136,224 @@ describe("descriptive signup errors", () => {
       message: "The phone number or password is incorrect.",
     });
     expect(error.message).not.toContain("registered");
+  });
+
+  it("rejects Google sign-in without a provider-verified email", async () => {
+    const service = createService();
+    await expect(
+      service.googleSignIn({
+        subject: "google-subject",
+        emailVerified: false,
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_AUTHENTICATION_FAILED" });
+    await expect(
+      service.googleSignIn({
+        subject: "google-subject",
+        emailVerified: true,
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_AUTHENTICATION_FAILED" });
+  });
+
+  it("rejects Google sign-in when the provider email already belongs to another identity", async () => {
+    const service = createService();
+    Object.defineProperty(service, "social", {
+      value: { findGoogle: vi.fn(async () => null) },
+    });
+    Object.defineProperty(service, "users", {
+      value: {
+        findByEmail: vi.fn(async () => ({ id: "existing" })),
+        findById: vi.fn(),
+        map: vi.fn(),
+      },
+    });
+
+    await expect(
+      service.googleSignIn({
+        subject: "google-subject",
+        email: "owner@example.com",
+        emailVerified: true,
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_AUTHENTICATION_FAILED" });
+  });
+
+  it("rejects Google sign-in for a linked non-Individual account category", async () => {
+    const service = createService();
+    Object.defineProperty(service, "social", {
+      value: {
+        findGoogle: vi.fn(async () => ({ userId: "user-1" })),
+        updateGoogleProfile: vi.fn(async () => undefined),
+      },
+    });
+    Object.defineProperty(service, "users", {
+      value: {
+        findById: vi.fn(async () => ({
+          id: "user-1",
+          accountCategories: ["COMPANY"],
+          verifiedCategories: ["COMPANY"],
+        })),
+        findByEmail: vi.fn(),
+        map: vi.fn(),
+      },
+    });
+
+    await expect(
+      service.googleSignIn({
+        subject: "google-subject",
+        email: "owner@example.com",
+        emailVerified: true,
+        displayName: "Owner",
+        avatarUrl: "https://lh3.googleusercontent.com/a/avatar",
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_AUTHENTICATION_FAILED" });
+  });
+
+  it("rejects Google link and unlink when DEC-028 safety gates fail", async () => {
+    const service = createService();
+    const principal = {
+      userId: "user-1",
+      sessionId: "session-1",
+      accountCategories: ["INDIVIDUAL"] as const,
+      verifiedCategories: ["INDIVIDUAL"] as const,
+      pendingCategories: [],
+      status: "ACTIVE" as const,
+      verificationOnly: false,
+    };
+
+    await expect(
+      service.linkGoogle(
+        { ...principal, verificationOnly: true },
+        { subject: "g", email: "a@example.com", emailVerified: true },
+      ),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_LINK_FAILED" });
+    await expect(
+      service.linkGoogle(principal, {
+        subject: "g",
+        emailVerified: true,
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_LINK_FAILED" });
+    await expect(
+      service.linkGoogle(principal, {
+        subject: "g",
+        email: "a@example.com",
+        emailVerified: false,
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_LINK_FAILED" });
+
+    Object.defineProperty(service, "social", {
+      value: { findGoogle: vi.fn(async () => ({ userId: "other" })) },
+    });
+    await expect(
+      service.linkGoogle(principal, {
+        subject: "g",
+        email: "a@example.com",
+        emailVerified: true,
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_LINK_FAILED" });
+
+    Object.defineProperty(service, "credentials", {
+      value: { findByUserId: vi.fn(async () => null) },
+    });
+    await expect(service.unlinkGoogle(principal)).rejects.toMatchObject({
+      code: "AUTH_SOCIAL_UNLINK_UNSAFE",
+    });
+  });
+
+  it("rejects Google sign-in when identity creation or activation fails closed", async () => {
+    const service = createService();
+    Object.defineProperty(service, "social", {
+      value: { findGoogle: vi.fn(async () => null) },
+    });
+    Object.defineProperty(service, "users", {
+      value: {
+        findByEmail: vi.fn(async () => null),
+        findById: vi.fn(),
+        map: vi.fn(),
+      },
+    });
+    Object.defineProperty(service, "transactions", {
+      value: {
+        createGoogleIdentity: vi.fn(async () => null),
+        activateGoogleIndividual: vi.fn(),
+      },
+    });
+
+    await expect(
+      service.googleSignIn({
+        subject: "google-subject",
+        email: "new@example.com",
+        emailVerified: true,
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_AUTHENTICATION_FAILED" });
+
+    Object.defineProperty(service, "social", {
+      value: {
+        findGoogle: vi.fn(async () => ({ userId: "user-1" })),
+        updateGoogleProfile: vi.fn(async () => undefined),
+      },
+    });
+    Object.defineProperty(service, "users", {
+      value: {
+        findById: vi.fn(async () => ({
+          id: "user-1",
+          accountCategories: ["INDIVIDUAL"],
+          verifiedCategories: [],
+        })),
+        findByEmail: vi.fn(),
+        map: vi.fn(),
+      },
+    });
+    Object.defineProperty(service, "transactions", {
+      value: {
+        createGoogleIdentity: vi.fn(),
+        activateGoogleIndividual: vi.fn(async () => null),
+      },
+    });
+
+    await expect(
+      service.googleSignIn({
+        subject: "google-subject",
+        email: "new@example.com",
+        emailVerified: true,
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_AUTHENTICATION_FAILED" });
+  });
+
+  it("rejects Google link principal when credential versions diverge", async () => {
+    const service = createService();
+    Object.defineProperty(service, "users", {
+      value: {
+        findById: vi.fn(async () => ({
+          id: "user-1",
+          phoneE164: "+201000000000",
+          emailNormalized: "a@example.com",
+          accountCategories: ["INDIVIDUAL"],
+          verifiedCategories: ["INDIVIDUAL"],
+          status: "ACTIVE",
+          suspendedUntil: null,
+          phoneVerifiedAt: null,
+          emailVerifiedAt: new Date(),
+        })),
+        map: (user: unknown) => user,
+      },
+    });
+    Object.defineProperty(service, "sessions", {
+      value: {
+        find: vi.fn(async () => ({
+          id: "session-1",
+          userId: "user-1",
+          revokedAt: null,
+          expiresAt: new Date(Date.now() + 60_000),
+          capability: "FULL",
+          credentialVersion: 1,
+        })),
+      },
+    });
+    Object.defineProperty(service, "credentials", {
+      value: { findByUserId: vi.fn(async () => ({ credentialVersion: 2 })) },
+    });
+
+    await expect(
+      service.resolveGoogleLinkPrincipal("user-1", "session-1"),
+    ).rejects.toMatchObject({ code: "AUTH_SOCIAL_LINK_FAILED" });
   });
 });

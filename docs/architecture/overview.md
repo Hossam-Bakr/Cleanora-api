@@ -7,9 +7,9 @@ Business capabilities become isolated modules only when their owning roadmap
 phase begins. Modules own behavior and persistence access and communicate
 through public contracts.
 
-`core` supplies business-neutral ports and cross-cutting contracts.
-`integrations` supplies controlled adapters for PostgreSQL, cache, queues,
-notifications, email, payments, object storage, security tooling, and logging.
+`shared` and `middlewares` contain only current business-neutral behavior.
+`integrations` contains current email, Google, authentication, and rate-limit
+adapters. Future providers are not scaffolded before their phase.
 
 `R1-P00` contains architecture and system health/readiness behavior only. It
 contains no product module, product table, migration, Docker, cloud deployment,

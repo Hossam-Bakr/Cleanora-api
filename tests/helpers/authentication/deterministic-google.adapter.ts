@@ -1,4 +1,8 @@
-import type { GoogleIdentity, GoogleIdentityPort, GoogleTransaction } from '../../../src/modules/authentication/index.js';
+import type {
+  GoogleIdentity,
+  GoogleIdentityPort,
+  GoogleTransaction,
+} from "../../../src/modules/authentication/domain/authentication.ports.js";
 
 export class DeterministicGoogleAdapter implements GoogleIdentityPort {
   private result: GoogleIdentity = { subject: 'google-test-subject', email: 'individual@example.test', emailVerified: true };

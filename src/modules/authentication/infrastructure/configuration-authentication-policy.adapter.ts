@@ -1,4 +1,4 @@
-import { resolveEffectiveConfig } from "#modules/configuration";
+import { resolveEffectiveConfig } from "#modules/configuration/configuration.service";
 import type {
   AuthenticationPolicyPort,
   EndpointLimitPolicy,

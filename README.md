@@ -1,232 +1,104 @@
-# Cleanora
+# Cleanora Backend
 
-> A trusted, operations-controlled marketplace for professional home cleaning
-> and housekeeping services.
+Cleanora is a standalone marketplace for professional home cleaning and
+housekeeping services. This repository contains its TypeScript API, PostgreSQL
+schema, Prisma migrations, authentication system, tests, and API documentation.
 
-Cleanora connects customers with verified cleaning providers while giving
-providers, workers, marketers, and Cleanora staff the tools required to manage
-the complete service journey safely.
+The backend is one deployable modular monolith: straightforward to run today,
+while preserving clear module ownership for later booking, provider,
+notification, payment, and operations capabilities.
 
-The platform is launching in Egypt with a country-aware foundation designed to
-support additional markets later. Cleanora is a standalone greenfield product:
-its application, database, migrations, APIs, tests, and operational rules are
-owned entirely by this repository.
+## Current capabilities
 
-## Project status
+- Versioned Express REST API under `/api/v1`
+- PostgreSQL with Prisma 7 and additive migrations
+- Country, currency, and effective-configuration foundations
+- Email-based signup verification for all self-signup categories
+- Password login, rotating refresh sessions, logout, and logout-all
+- Current-user bootstrap through `GET /auth/me`
+- Password recovery, reset, and authenticated password change
+- Google OpenID Connect sign-in, linking, and unlinking
+- Suspended and banned identity enforcement
+- Request IDs, secure headers, CORS, validation, and rate limiting
+- Morgan HTTP access logs and secret-redacting application logs
+- OpenAPI 3.1 and interactive Swagger documentation
 
-| Area | Status |
-|---|---|
-| Product and database architecture | Complete |
-| Project foundation and country configuration | Complete |
-| Authentication and identity | In progress |
-| Initial market | Egypt (`EG`) |
-| Client strategy | Responsive web first |
-| Backend architecture | TypeScript modular monolith |
-
-The current implementation provides the platform foundation and the Release 1
-authentication system. Booking, provider operations, payments, reviews,
-support, marketer features, and other marketplace capabilities are delivered
-incrementally through later roadmap phases.
-
-## Product vision
-
-Cleanora is designed as a controlled multi-sided marketplace for:
-
-- Customers: individuals, companies, compounds, and engineers.
-- Service providers: provider owners, teams, workers, supervisors, and provider
-  administrators.
-- Marketers: approved affiliates who refer eligible customers.
-- Cleanora staff: administration, operations, support, and finance.
-
-The backend remains authoritative for identity, eligibility, pricing, payment
-state, order transitions, and financial records. Sensitive actions are
-permission-controlled and auditable.
-
-The broader product supports two service-discovery journeys:
-
-- **Browse:** customers select an eligible service provider and schedule.
-- **Recommended:** eligible providers can accept, reject, or counter a customer
-  request before the customer confirms an offer.
-
-Cleanora deliberately does not provide stored-value user wallets. Payments and
-payouts use approved external rails, while the platform maintains auditable,
-decimal-safe financial records.
-
-## Implemented capabilities
-
-### Foundation
-
-- Versioned REST API under `/api/v1`.
-- PostgreSQL database managed through incremental Prisma migrations.
-- Country and currency configuration with deterministic global/country
-  resolution.
-- Structured success and error envelopes with request IDs.
-- Readiness, liveness, and database health endpoints.
-- Structured Pino request and application logging.
-- Secure headers, credential-aware CORS, input limits, and rate limiting.
-- Interactive Swagger UI and an OpenAPI 3.1 document.
-
-### Authentication and identity
-
-- Signup for the approved self-registration account categories.
-- Six-digit verification challenges with bounded attempts and expiration.
-- Email delivery through SMTP/Nodemailer.
-- Controlled local and explicitly acknowledged hosted-preview phone OTP
-  delivery through account email while a real SMS provider is unavailable.
-- Phone/password login.
-- Short-lived JWT access tokens.
-- Rotating refresh sessions stored in an HTTP-only cookie.
-- Current-user session bootstrap through `/auth/me`.
-- Refresh, logout, and logout-all flows.
-- Forgot-password, reset-password, and authenticated password change.
-- Account-category enrollment with category-specific verification.
-- Google browser sign-in for individual accounts.
-- Secure OAuth state validation and allowlisted frontend handoff.
-- Google account linking and unlinking.
-- Required phone verification after Google sign-in.
-- Suspended and banned identity enforcement.
-- Enumeration-safe recovery behavior and privacy-aware error handling.
-
-## Authentication overview
-
-```text
-Email/phone signup
-    -> verification challenge
-    -> OTP verification
-    -> login
-    -> access token + HTTP-only refresh cookie
-    -> /auth/me
-
-Google sign-in
-    -> Google authorization
-    -> backend callback
-    -> allowlisted frontend callback
-    -> refresh-cookie bootstrap
-    -> required phone verification when incomplete
-    -> full authenticated session
-```
-
-The browser never receives OAuth provider tokens in a redirect URL. Refresh
-credentials remain in an HTTP-only cookie, and the frontend retrieves the safe
-user representation through authenticated API calls.
+Phone ownership verification and a real SMS provider are intentionally deferred
+to R1-P26. Google identities with a Google-verified email do not enter a phone
+verification gate in the current approved contract.
 
 ## Architecture
 
-Cleanora is one deployable modular monolith. Each business module owns its
-behavior and persistence access and exposes an explicit public contract.
+The normal request path is intentionally short:
+
+```text
+src/routes/index.ts
+  -> module route
+  -> controller
+  -> service
+  -> Prisma repository
+```
 
 ```text
 src/
-|-- config/          Environment validation and application configuration
-|-- core/            Shared HTTP, logging, health, error, and security contracts
-|-- integrations/    PostgreSQL, email, Google, SMS, logging, and security adapters
-|-- modules/         Business modules and their public boundaries
-|-- routes/          Approved module registration
-|-- swagger/         Runtime OpenAPI and Swagger documentation
-|-- app.ts           Express application composition
-`-- server.ts        Process, database, and graceful-shutdown lifecycle
+├── app.ts                 Express middleware and route composition
+├── server.ts              Environment, database, HTTP server, shutdown
+├── config/                Environment validation and constants
+├── database/              One Prisma client and lifecycle
+├── middlewares/           Global HTTP middleware
+├── modules/
+│   ├── admin/             Audit behavior
+│   ├── authentication/    Authentication HTTP and business logic
+│   └── configuration/     Country/configuration behavior
+├── integrations/          Current email, Google, crypto, JWT, rate-limit adapters
+├── routes/                The complete visible route map and system routes
+├── shared/                Small business-neutral errors, responses, utilities
+└── swagger/               OpenAPI document and Swagger router
 ```
 
-The current authentication module follows this dependency direction:
+`app.ts` exports an Express application and never opens a port. `server.ts`
+creates a Node HTTP server with `createServer(app)`, which is the future
+attachment point for Socket.IO without redesigning Express.
 
-```text
-HTTP -> Application -> Domain
-                    -> Infrastructure adapters
-```
+See [docs/architecture/modular-monolith.md](docs/architecture/modular-monolith.md)
+for the concise architecture and extension guide.
 
-Infrastructure details are not exported through the module's public API.
-Cross-module behavior uses explicit contracts rather than importing another
-module's internal files.
+## API surface
 
-## Technology
+### System and documentation
 
-| Concern | Technology |
+| Method | Path |
 |---|---|
-| Runtime | Node.js 24+ |
-| Language | TypeScript |
-| HTTP framework | Express 5 |
-| Database | PostgreSQL |
-| ORM and migrations | Prisma 7 |
-| Validation | Zod |
-| Authentication | JWT, Argon2, HTTP-only cookies |
-| Google authentication | OpenID Connect |
-| Email | Nodemailer with SMTP |
-| Logging | Pino |
-| Testing | Vitest, Supertest, V8 coverage |
-| API documentation | OpenAPI 3.1 and Swagger UI |
+| GET | `/api/v1/system/health/live` |
+| GET | `/api/v1/system/health/ready` |
+| GET | `/api/v1/system/health/database` |
+| GET | `/api/v1/docs` |
+| GET | `/api/v1/docs/openapi.json` |
 
-## Getting started
+### Authentication
 
-### Prerequisites
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/v1/auth/signup` | Create a self-signup identity |
+| POST | `/api/v1/auth/account-categories` | Enroll an authenticated category |
+| POST | `/api/v1/auth/otp/request` | Request or resend verification |
+| POST | `/api/v1/auth/otp/verify` | Verify the submitted code |
+| POST | `/api/v1/auth/login` | Create a password session |
+| POST | `/api/v1/auth/refresh` | Rotate the refresh session |
+| POST | `/api/v1/auth/logout` | Revoke the current session |
+| POST | `/api/v1/auth/logout-all` | Revoke all user sessions |
+| GET | `/api/v1/auth/me` | Return the safe current user |
+| POST | `/api/v1/auth/password/forgot` | Start recovery safely |
+| POST | `/api/v1/auth/password/reset` | Complete password reset |
+| POST | `/api/v1/auth/password/change` | Change an authenticated password |
+| GET | `/api/v1/auth/google` | Return Google authorization information |
+| GET | `/api/v1/auth/google/browser` | Start the browser OAuth flow |
+| GET | `/api/v1/auth/google/callback` | Handle the provider callback |
+| GET | `/api/v1/auth/google/link` | Start authenticated Google linking |
+| DELETE | `/api/v1/auth/social/google` | Unlink Google safely |
 
-- Node.js `24` or later
-- npm
-- PostgreSQL or a Neon PostgreSQL database
-- SMTP credentials when testing email delivery
-- Google OAuth credentials when testing Google sign-in
-
-### 1. Install dependencies
-
-```bash
-npm install
-```
-
-### 2. Create the local environment
-
-Copy `.env.example` to `.env`.
-
-PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Git Bash:
-
-```bash
-cp .env.example .env
-```
-
-Provide real local values for the required database, JWT, authentication,
-SMTP, CORS, and optional Google variables. Never commit `.env`, database URLs,
-provider credentials, JWT secrets, passwords, OTPs, or access tokens.
-
-### 3. Prepare the database
-
-```bash
-npm run prisma:generate
-npm run prisma:migrate:deploy
-npm run seed
-```
-
-Use only an approved non-production database during local development. Review
-every migration before applying it. Never edit an already-applied migration.
-
-### 4. Start the server
-
-```bash
-npm run dev
-```
-
-The default local API address is:
-
-```text
-http://localhost:8000/api/v1
-```
-
-## API documentation
-
-With the server running:
-
-| Resource | URL |
-|---|---|
-| Interactive Swagger UI | `http://localhost:8000/api/v1/docs` |
-| OpenAPI 3.1 JSON | `http://localhost:8000/api/v1/docs/openapi.json` |
-| Liveness | `http://localhost:8000/api/v1/system/health/live` |
-| Readiness | `http://localhost:8000/api/v1/system/health/ready` |
-| Database health | `http://localhost:8000/api/v1/system/health/database` |
-
-The API uses a consistent success envelope:
+The OpenAPI document is the authoritative request/response reference. API
+responses preserve the common envelopes:
 
 ```json
 {
@@ -236,146 +108,126 @@ The API uses a consistent success envelope:
 }
 ```
 
-Failures use stable machine-readable error codes:
-
 ```json
 {
   "success": false,
   "error": {
-    "code": "ERROR_CODE",
+    "code": "STABLE_ERROR_CODE",
     "statusCode": 400,
-    "message": "Safe description",
-    "details": {}
+    "message": "Safe description"
   },
   "requestId": "request-identifier"
 }
 ```
 
-## Useful commands
+## Local setup
+
+Requirements: Node.js 24+, npm, PostgreSQL/Neon, SMTP credentials for email
+flows, and Google OAuth credentials when Google sign-in is enabled.
+
+```bash
+npm ci
+cp .env.example .env
+npm run prisma:generate
+npm run prisma:migrate:deploy
+npm run seed
+npm run dev
+```
+
+On Windows PowerShell, use `Copy-Item .env.example .env` instead of `cp`.
+Never commit `.env` or print database URLs, JWT secrets, SMTP credentials,
+passwords, OTPs, cookies, or tokens.
+
+Local resources:
+
+```text
+API:      http://localhost:8000/api/v1
+Swagger:  http://localhost:8000/api/v1/docs
+OpenAPI:  http://localhost:8000/api/v1/docs/openapi.json
+Health:   http://localhost:8000/api/v1/system/health/live
+```
+
+## Commands
 
 | Command | Purpose |
 |---|---|
-| `npm run dev` | Start the development server |
-| `npm run build` | Compile the production application |
-| `npm run start` | Start the compiled application |
-| `npm run typecheck` | Validate TypeScript types |
+| `npm run dev` | Run TypeScript locally |
+| `npm run build` | Generate Prisma Client and compile production code |
+| `npm run start` | Start `dist/server.js` |
+| `npm run typecheck` | Check strict TypeScript |
 | `npm run lint` | Run ESLint |
-| `npm run test:unit` | Run unit tests |
-| `npm run test:integration` | Run integration tests |
-| `npm run test:e2e` | Run end-to-end tests |
-| `npm run test:coverage` | Run the complete coverage gate |
+| `npm run test:unit` | Run fast unit tests |
+| `npm run test:integration` | Run Express/PostgreSQL integration tests |
+| `npm run test:coverage` | Run coverage thresholds |
 | `npm run prisma:validate` | Validate the Prisma schema |
 | `npm run prisma:generate` | Generate Prisma Client |
-| `npm run prisma:migrate:status` | Inspect migration status |
 | `npm run docs:check` | Validate documentation references |
-| `npm run openapi:validate` | Validate the OpenAPI document |
-| `npm run email:check` | Safely verify SMTP configuration |
-| `npm run db:check` | Check development database connectivity |
+| `npm run openapi:validate` | Validate OpenAPI |
+| `npm run email:check` | Verify SMTP configuration without sending |
 
-Automated database tests must use an isolated test database. They must never
-fall back to the ordinary development or production database.
+Automated database tests require an isolated approved test database and never
+fall back to the normal `DATABASE_URL`.
 
-`npm run email:check` reads a local `.env` when present and otherwise uses the
-process environment injected by the hosting platform. It verifies SMTP without
-sending a message and prints no credential values.
+## Deployment
 
-## Testing strategy
+For Railway:
 
-Cleanora separates tests by responsibility:
+- Build with `npm ci --include=dev && npm run build`.
+- Start with `node dist/server.js`.
+- Set the health check to `/api/v1/system/health/live`.
+- Let Railway provide `PORT`; the server binds to `0.0.0.0`.
+- Configure production CORS origins and secure cookies.
+- Provide the complete database, authentication, SMTP, and optional Google
+  environment groups shown in `.env.example`.
+- Apply reviewed migrations as a controlled pre-deploy step.
+- Never run development migrations, test seeds, or tests against production.
+
+## Extending the monolith
+
+### Add a normal module
+
+Create only the files the capability needs:
 
 ```text
-tests/
-|-- unit/          Domain policies, controllers, middleware, and adapters
-|-- integration/   Database behavior, API contracts, and module composition
-|-- e2e/           Critical user journeys
-`-- helpers/       Test-only environment and application composition
+src/modules/example/
+├── example.routes.ts
+├── example.controller.ts
+├── example.service.ts
+├── example.repository.ts
+└── example.schema.ts
 ```
 
-Coverage thresholds are enforced globally:
+Then mount its router explicitly in `src/routes/index.ts`. Do not add dynamic
+discovery, a DI container, or placeholder files.
 
-- Statements: 80%
-- Branches: 75%
-- Functions: 80%
-- Lines: 80%
+### Add Socket.IO later
 
-Tests must not weaken public contracts, hide uncovered code with exclusions, or
-use the development database as an automated test target.
+Attach it to the `httpServer` created in `server.ts`. A single instance needs
+no Redis. Horizontal Socket.IO scaling may later add a Redis adapter; socket
+presence and critical notification state must not live only in memory.
 
-## Railway deployment
+### Add notifications later
 
-For a Railway service connected to GitHub:
+Create `src/modules/notifications` only when its phase begins. Non-critical
+notification delivery can react to committed domain events; authentication
+must not contain notification business logic.
 
-- Use `npm ci && npm run build` as the build process. The npm `prebuild`
-  lifecycle generates Prisma Client automatically before TypeScript compiles.
-- Use `npm run start` as the start command.
-- Configure `/api/v1/system/health/live` as the health-check path.
-- Store every secret and connection string in Railway environment variables.
-- Set production CORS origins and secure-cookie settings explicitly.
-- Set `EMAIL_AUTH_ENABLED=true` and provide the complete SMTP group before
-  expecting any email-backed signup category to work.
-- R1-P02 uses email for every supported signup verification and recovery
-  journey. Do not configure SMS, Twilio, or SMS-to-email fallback flags.
-- Phone ownership verification and a real SMS provider are deferred to R1-P26.
-- Use a direct approved database connection for `prisma migrate deploy`.
-- Apply reviewed migrations as a controlled release step.
-- Do not run `prisma migrate dev`, test seeds, database reset, or test suites
-  against the production database.
-- Ensure the DEC-028 forward migration is deployed before accepting an
-  Individual email-verification challenge.
+### Add Paymob later
 
-The deployed service must fail closed when required authentication, database,
-email, or Google configuration is incomplete.
+Create `src/modules/payments` only in its owning phase. Paymob webhook handling
+must verify HMAC signatures, be idempotent, tolerate duplicate delivery, use
+database transactions, model explicit payment states, and trust webhooks
+instead of frontend redirects.
 
-## Security principles
+## Security and ownership
 
-- Secrets and authentication credentials are never logged.
-- Passwords are hashed with Argon2.
-- Refresh sessions are revocable and rotate securely.
-- OAuth state is validated before accepting callbacks.
-- Google provider tokens are not exposed to the frontend.
-- Input validation is performed at the HTTP boundary.
-- Sensitive endpoints are rate-limited.
-- Database errors are mapped to safe API errors.
-- Privileged and authentication events are auditable.
-- Production cookies require secure transport.
+- Passwords use Argon2.
+- Refresh sessions rotate and are revocable.
+- OAuth state is validated; provider tokens are never put in frontend URLs.
+- Morgan never logs bodies, query strings, authorization headers, or cookies.
+- Application log context recursively redacts authentication and personal data.
+- PostgreSQL remains authoritative for identity and session state.
+- No stored-value user wallet exists.
 
-## Repository guide
-
-| Area | Start here |
-|---|---|
-| Application startup | `src/server.ts` and `src/app.ts` |
-| Authentication public API | `src/modules/authentication/index.ts` |
-| Authentication structure | `src/modules/authentication/README.md` |
-| Database | `prisma/schema.prisma` and `prisma/migrations/` |
-| Current delivery status | `docs/product/current.md` |
-| Product vision | `docs/product/vision.md` |
-| Roadmap | `docs/product/roadmap.md` |
-| API documentation | `docs/apis/` and `docs/swagger/` |
-| Active phase evidence | `specs/R1-P02-complete-authentication-identity/` |
-
-Generated output such as `node_modules`, `dist`, coverage reports, generated
-Prisma Client files, local caches, and runtime-smoke data does not belong in
-version control.
-
-## Development governance
-
-Cleanora is delivered phase by phase. Only one roadmap phase may be active at a
-time, and every database-changing phase owns an incremental migration.
-
-Phase completion requires:
-
-- Implemented acceptance criteria
-- Reviewed migration SQL
-- Passing type, lint, build, API, and documentation gates
-- Required unit, integration, and end-to-end evidence
-- Independent review
-- Explicit human-owner approval
-
-Commits, deployments, production migrations, and phase completion remain
-human-controlled actions.
-
-## Ownership
-
-Cleanora is currently a private, actively developed product. No open-source
-license is granted by this repository unless a license file is added
-explicitly.
+Cleanora is private software. No open-source license is granted unless a
+license file is added explicitly.

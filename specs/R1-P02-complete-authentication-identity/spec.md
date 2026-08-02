@@ -1,16 +1,25 @@
 # Feature Specification: Complete Authentication & Identity
 
+> Completed-phase record. R1-P02A later replaced the implementation-time
+> folder paths, Pino HTTP logging, registrar composition, and separate E2E
+> suite. Use `src/routes/index.ts`, current architecture documentation, and
+> unit/integration testing rules for new work.
+
 **Feature Branch**: `Not created (no before_specify hook configured)`
 
 **Created**: 2026-07-24
 
-**Status**: Draft
+**Status**: Complete
+
+Phase completion was human-owner approved by the R1-P02 completion prompt
+(2026-07-29). R1-P03 was not activated.
 
 **Input**: R1-P02 complete Release 1 authentication and identity journeys, including the human-approved individual-only Google sign-in decision.
 
 ## Canonical Sources & Phase Boundary
 
-**Active phase**: `R1-P02 — Complete Authentication & Identity`, confirmed as the only `In Progress` phase by `docs/product/current.md`.
+**Phase at specification time**: `R1-P02 — Complete Authentication & Identity`.
+The live phase pointer is maintained only in `docs/product/current.md`.
 
 **Goal and Definition of Done**: `docs/product/roadmap.md`, section `R1-P02 — Complete Authentication & Identity`.
 
@@ -20,7 +29,10 @@
 - DEC-011 includes Google sign-in without replacing actor-specific verification.
 - DEC-012 requires a standalone repository-local product.
 - DEC-014 requires incremental, phase-owned persistence changes.
-- DEC-015 resolves OQ-014: Google sign-in is enabled for `INDIVIDUAL` accounts only in Release 1. Other account types remain architecturally extensible but disabled. Google authentication never bypasses phone verification or another required verification gate.
+- DEC-015 resolves OQ-014: Google sign-in is enabled for `INDIVIDUAL`
+  accounts only in Release 1. Other account types remain architecturally
+  extensible but disabled. DEC-028 supersedes its former phone-gate wording:
+  a provider-verified Google email is the R1-P02 verification proof.
 - DEC-017 preserves every production verification rule while allowing unavailable local-development SMS delivery intents to be redirected to one configured developer email inbox for manual runtime acceptance only. The redirect is forbidden in test/production, does not prove phone ownership, exposes no secret through logs/events/errors/API responses, and must be removed before production readiness.
 - DEC-018 requires a browser-safe Google flow: one provider-registered backend callback derives SIGN_IN versus LINK from a server-held one-time transaction, redirects only to an allowlisted frontend URI without tokens or provider secrets, and uses authenticated phone request/verification to promote the exact verification-only session.
 - DEC-024 supersedes DEC-019: the backend never renders a Google result page and always redirects to the allowlisted frontend callback.
@@ -62,7 +74,9 @@
 ### Session 2026-07-24
 
 - Q: When a normalized phone or email already belongs to an identity, may that identity add another R1-P02 account category? → A: Yes. An authenticated identity may add another supported self-signup account category in R1-P02, reusing the same user record and completing the new category’s verification gate; worker enrollment remains prohibited.
-- Q: Which recovery channel is authoritative for forgot-password? → A: Individuals and workers recover by SMS to their registered phone; company, engineer, and provider-owner accounts recover through verified email.
+- Q: Which recovery channel is authoritative for forgot-password? → A:
+  Superseded by DEC-028. Every eligible account category recovers through its
+  normalized verified email in R1-P02.
 - Q: What happens to sessions after an authenticated password change? → A: Revoke all other sessions and immediately rotate the current session.
 - Q: Does a newly added pending account category block an identity’s already verified categories? → A: No. Existing verified categories remain usable; only the newly added category is blocked until its verification gate completes.
 - Q: What happens to sessions and sign-in state after a successful password reset? → A: Revoke all sessions and require a fresh login with the new password; password reset does not automatically sign in.
@@ -107,7 +121,9 @@
   configured SMTP provider. Individual SMS intents may be redirected to the
   server-resolved account email only when both hosted fallback flags are
   enabled, with an explicit acknowledgement that this does not verify phone
-  ownership.
+  ownership. This answer is historical and superseded by the later DEC-028
+  email-only decision; those fallback flags and SMS intents are no longer part
+  of R1-P02.
 
 - Q: What should a user enter to complete forgotten-password recovery? →
   A: A four-digit numeric reset code. Forgot-password returns a fresh opaque
@@ -184,21 +200,33 @@ As an account holder, I need to recover a forgotten password without account enu
 
 ### User Story 4 - Use Google Sign-In as an Individual Only (Priority: P1)
 
-As an individual customer, I need to sign in or link my account with Google while still completing Cleanora’s required phone verification.
+As an individual customer, I need to sign in or link my account with Google
+using a provider-verified email without silently merging another Cleanora
+identity.
 
 **Why this priority**: Google sign-in is approved Release 1 scope, but unsafe linking or verification bypass would compromise identity integrity.
 
-**Independent Test**: Exercise new and existing individual Google journeys, authenticated linking, conflicting identifiers, unverified provider identity, non-individual attempts, unlink safety, and the blocking phone-verification gate.
+**Independent Test**: Exercise new and existing individual Google journeys,
+authenticated linking, conflicting identifiers, unverified provider email,
+non-individual attempts, unlink safety, and immediate activation only after
+the approved provider-email assurance succeeds.
 
 **Acceptance Scenarios**:
 
-1. **Given** a valid Google identity for a new individual, **When** Google authentication succeeds, **Then** an individual identity may be established but remains restricted until required phone verification completes.
+1. **Given** a valid Google identity with a provider-verified email for a new
+   individual, **When** Google authentication succeeds, **Then** an active
+   individual identity may be established without claiming phone ownership.
 2. **Given** an existing verified individual deliberately links Google while authenticated, **When** provider ownership is confirmed, **Then** the social identity is linked without changing required verification state.
 3. **Given** an unauthenticated Google identity shares an email with an existing account, **When** safe ownership cannot be established, **Then** the system does not silently merge or link the identities.
 4. **Given** a company, engineer, provider owner, or worker attempts Google authentication, **When** the account type is evaluated, **Then** Google authentication is rejected without enabling that audience.
-5. **Given** Google authentication succeeds but the individual phone remains unverified, **When** protected functionality is requested, **Then** access remains blocked until phone verification completes.
+5. **Given** Google authentication succeeds with a provider-verified email,
+   **When** protected functionality is requested, **Then** the full session is
+   eligible subject to normal status/session controls while the stored phone,
+   if any, remains unverified.
 6. **Given** Google redirects to the backend callback, **When** state, nonce, PKCE, and the one-time transaction are valid, **Then** the backend completes the stored sign-in/link intent and redirects to the allowlisted frontend without placing tokens, authorization codes, state, or provider errors in the URL.
-7. **Given** a new Google individual has a verification-only session, **When** that principal requests and correctly verifies a phone OTP, **Then** the challenge must belong to the same user and the exact session is atomically promoted to full access without a second Google sign-in.
+7. **Given** Google does not provide a verified email, **When** callback
+   assurance is evaluated, **Then** authentication fails closed and no
+   identity or session is created.
 
 ---
 
@@ -248,7 +276,9 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 - Password reset races with an active refresh attempt.
 - Password reset changes the password but session revocation cannot complete; the operation must not leave any old session usable or create an automatic recovery session.
 - Password change succeeds but current-session rotation or other-session revocation cannot complete; the operation must not leave a partially applied security state.
-- An identity lacks its category’s authoritative recovery destination or the destination becomes unavailable; the public response remains generic and no alternate channel is silently substituted.
+- An identity lacks its verified email recovery destination or delivery becomes
+  unavailable; the public response remains generic and no alternate channel is
+  silently substituted.
 - Account status changes between access issuance and a protected request.
 - A category becomes verified, pending, suspended, or otherwise unavailable while another category on the same identity remains verified.
 - A suspended or banned identity has sessions on multiple devices.
@@ -280,11 +310,19 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 
 #### Verification and one-time codes
 
-- **FR-010**: Individual signup MUST require phone and blocking six-digit SMS verification before protected access.
-- **FR-011**: Individual email MUST be optional; when supplied, email verification MUST be non-blocking for Release 1.
-- **FR-012**: Company and engineer signup MUST require phone and email, with blocking email one-time-code verification and no blocking SMS verification.
-- **FR-013**: Provider-owner signup MUST require phone and email, with blocking email one-time-code verification and no blocking SMS verification.
-- **FR-014**: Google authentication MUST NOT satisfy or bypass an individual’s required phone verification.
+- **FR-010**: Individual signup MUST require phone, email, and blocking
+  six-digit email verification before protected access; R1-P02 MUST NOT mark
+  the phone as verified.
+- **FR-011**: Individual email MUST be required and MUST be the authoritative
+  R1-P02 verification and recovery destination.
+- **FR-012**: Company and engineer signup MUST require phone and email, with
+  blocking email one-time-code verification and no R1-P02 phone-verification
+  claim.
+- **FR-013**: Provider-owner signup MUST require phone and email, with blocking
+  email one-time-code verification and no R1-P02 phone-verification claim.
+- **FR-014**: Google authentication for a new Individual MUST require a
+  provider-verified email, MAY activate the Individual from that assurance,
+  and MUST NOT claim phone ownership.
 - **FR-015**: One-time codes MUST expire, be single-use, have deterministic attempt limits, and become unusable after successful consumption or supersession.
 - **FR-016**: Raw one-time codes MUST never be persisted or written to logs, errors, events, or audit context.
 - **FR-017**: Resend behavior MUST be deterministic, rate-limited, and prevent multiple ambiguous active codes for the same purpose and identity.
@@ -307,7 +345,10 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 
 #### Password recovery and change
 
-- **FR-031**: Forgot-password MUST use SMS to the registered phone for individual and worker accounts and verified email for company, engineer, and provider-owner accounts; public responses MUST remain indistinguishable for existing and non-existing accounts when the request is syntactically valid.
+- **FR-031**: Forgot-password MUST use the account's verified normalized email
+  for every eligible category; public responses MUST remain indistinguishable
+  for existing and non-existing accounts when the request is syntactically
+  valid.
 - **FR-032**: Raw four-digit password-reset codes MUST never be persisted or logged.
 - **FR-033**: Password-reset challenges and codes MUST expire, be single-use, have deterministic attempt limits, and be bound to one identity and purpose. Forgot-password MUST return an opaque challenge ID for every valid request so the response remains enumeration-safe.
 - **FR-034**: Successful password reset MUST atomically consume the matching challenge/code proof, replace the password, revoke every session, issue no new session, require a fresh login with the new password, and record a security event; partial success MUST fail closed.
@@ -318,7 +359,9 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 
 - **FR-037**: Google sign-in and linking MUST be enabled only for `INDIVIDUAL` accounts in Release 1.
 - **FR-038**: Company, engineer, provider-owner, worker, and other account categories MUST remain disabled for Google authentication even though the architecture may support future audiences.
-- **FR-039**: A new individual authenticated by Google MUST remain pending until blocking phone verification completes.
+- **FR-039**: A new individual authenticated by Google MUST become verified
+  only when Google supplies the required provider-verified email; no R1-P02
+  phone-verification session or endpoint may be required.
 - **FR-040**: Linking Google to an existing individual MUST require reliable proof of control of both the Cleanora identity and Google identity.
 - **FR-041**: The system MUST NOT automatically merge or link accounts solely because email strings match.
 - **FR-042**: Google identities lacking required provider assurance, containing conflicting ownership, or already linked elsewhere MUST fail safely without disclosing another account.
@@ -369,7 +412,9 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 
 ### Measurable Outcomes
 
-- **SC-001**: 100% of supported signup tests apply the correct verification rule: blocking phone verification for individuals and blocking email verification for company, engineer, and provider-owner accounts.
+- **SC-001**: 100% of supported signup tests require blocking email
+  verification and leave phone ownership unverified for every self-signup
+  category.
 - **SC-002**: 100% of worker self-signup attempts are rejected before creating an identity, while eligible pre-provisioned worker login cases succeed.
 - **SC-003**: Across login and recovery enumeration tests, existing and absent
   accounts produce equivalent public response semantics with zero
@@ -381,16 +426,23 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 - **SC-007**: Logout invalidates the selected session and logout-all invalidates all prior sessions in 100% of exercised cases.
 - **SC-008**: Current-user responses contain the correct identity, account category, status, and verification state with zero password, code, token, cookie, or secret fields.
 - **SC-009**: Google authentication succeeds only for individual accounts in 100% of audience tests; all other account categories remain disabled.
-- **SC-010**: Google-authenticated individuals with unverified phones are denied protected access in 100% of verification-bypass tests.
+- **SC-010**: Google-authenticated individuals receive full access only when
+  provider-email assurance succeeds, and zero tests infer phone ownership from
+  that success.
 - **SC-011**: Suspended and banned accounts are denied at both login and authenticated-request checks in 100% of exercised status cases.
 - **SC-012**: Repeating the same rate-limit or lockout sequence against the same policy state produces the same decision, cooldown, and retry outcome in 100% of policy tests.
 - **SC-013**: Logs, errors, authentication events, and audit evidence contain zero clear-text passwords, one-time codes, JWTs, refresh tokens, reset tokens, cookies, provider credentials, or configured secrets across the complete redaction fixture set.
 - **SC-014**: Under normal service conditions, at least 95% of valid login, refresh, logout, and current-user actions complete within two seconds, excluding user time and external message delivery.
 - **SC-015**: A clean database can apply migrations through R1-P02 with exactly the approved R1-P01 foundations plus the seven approved R1-P02 authentication models and no future-phase tables.
-- **SC-016**: Every R1-P02 acceptance journey has reproducible unit or integration evidence, with end-to-end evidence for signup verification, login/session rotation, password recovery, Google verification gating, and status enforcement.
+- **SC-016**: Every R1-P02 acceptance journey has reproducible unit or
+  integration evidence, with end-to-end evidence for signup email
+  verification, login/session rotation, password recovery, Google assurance,
+  and status enforcement.
 - **SC-017**: Review finds zero implemented roles, permissions, profiles, worker-management actions, addresses, wallets, Docker/cloud work, deployment behavior, or production migration actions.
 - **SC-018**: In 100% of account-category enrollment tests, an authenticated identity reuses its existing user record, receives no role/profile records, completes the new category’s verification gate, and cannot add the worker category.
-- **SC-019**: In 100% of password-recovery channel tests, individuals and workers use registered-phone SMS, company/engineer/provider-owner accounts use verified email, unavailable accounts remain undisclosed, and no alternate channel is silently selected.
+- **SC-019**: In 100% of password-recovery channel tests, every eligible
+  category uses verified email, unavailable accounts remain undisclosed, and
+  no alternate channel is silently selected.
 - **SC-020**: In 100% of successful password-change tests, every other session is rejected, the current session receives rotated credentials, and no old current-session refresh credential remains usable.
 - **SC-021**: In 100% of multi-category verification tests, adding a pending category leaves existing verified categories usable and blocks only the pending category until its gate completes.
 - **SC-022**: In 100% of successful password-reset tests, every prior session is rejected, no session is created by reset, and protected access requires a fresh login with the new password.
@@ -400,9 +452,12 @@ As a user and operator, I need deterministic abuse controls, status enforcement,
 - One Cleanora identity may add multiple supported self-signup account categories during R1-P02 after authenticating, while R1-P02 stores only authentication identity/category state and does not grant permissions or create profiles.
 - Phone and email normalization rules, password policy values, credential lifetimes, attempt thresholds, rate-limit windows, and cooldown durations are centrally configurable and will be made explicit during planning; behavior is fail-closed when required configuration is invalid.
 - SMS, email, and Google are explicitly documented external capabilities. Provider selection, credentials, and production configuration belong to planning/operations and are not invented in this specification.
-- Individuals must complete phone verification even when Google authenticates the external identity; optional individual email verification remains non-blocking.
-- Company, engineer, and provider-owner phone numbers are required identifiers but are not SMS-verified in R1-P02.
-- Forgot-password uses the account category’s authoritative recovery channel: registered-phone SMS for individuals and workers, and verified email for company, engineer, and provider-owner accounts.
+- Every supported self-signup category requires blocking email verification;
+  phone values remain unverified until the R1-P26 phone-ownership phase.
+- Google may activate a new Individual only from a provider-verified email and
+  never marks a phone as verified.
+- Forgot-password uses verified email for every eligible category; no SMS or
+  SMS-to-email fallback is part of the R1-P02 runtime.
 - Authenticated password change keeps the user signed in only through an immediately rotated current session and revokes every other session.
 - Verification eligibility is category-specific: a pending newly enrolled category does not downgrade or block another verified category on the same identity.
 - Password reset is not a sign-in action: it revokes all sessions and requires a fresh login with the new password.

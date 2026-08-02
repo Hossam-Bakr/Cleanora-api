@@ -1,16 +1,16 @@
-# ADR-0004 — Public module API through index.ts
+# ADR-0004 — Direct named module contracts
 
-- Status: Accepted
+- Status: Amended by R1-P02A
 - Date: 2026-07-23
-
-## Context
-
-Unrestricted internal imports make module boundaries unenforceable.
+- Amended: 2026-07-30
 
 ## Decision
 
-Every business module exposes approved contracts through its root `index.ts`. Other modules import only `#modules/<module-name>`, a native package-import mapping to that index.
+Modules expose named service or composition files. One-line `index.ts` barrels
+are not required. Other modules may import one explicit public service but not
+repositories or private HTTP code.
 
 ## Consequences
 
-Repositories, controllers, routes, private schemas/types, tests, and Prisma records remain internal.
+Routes, repositories, schemas, tests, and raw Prisma records stay owned by
+their module. Import paths state the actual file being used.

@@ -9,19 +9,32 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe('authentication module boundary', () => {
-  it('forbids deep authentication imports outside the owned module', () => {
+  it('forbids deep authentication imports from other business modules', () => {
     const sourceRoot = join(process.cwd(), 'src');
     const moduleRoot = join(sourceRoot, 'modules', 'authentication');
-    const violations = sourceFiles(sourceRoot)
+    const businessModulesRoot = join(sourceRoot, "modules");
+    const violations = sourceFiles(businessModulesRoot)
       .filter((path) => !path.startsWith(moduleRoot))
-      .filter((path) => /modules[\\/]authentication[\\/](domain|application|infrastructure|http)/u.test(readFileSync(path, 'utf8')))
+      .filter((path) =>
+        /modules[\\/]authentication[\\/](domain|infrastructure)/u.test(
+          readFileSync(path, "utf8"),
+        ),
+      )
       .map((path) => relative(process.cwd(), path));
     expect(violations).toEqual([]);
   });
 
   it('keeps Prisma and repositories out of the public authentication contract', () => {
-    const publicEntry = readFileSync(join(process.cwd(), 'src', 'modules', 'authentication', 'index.ts'), 'utf8');
+    const publicEntry = readFileSync(
+      join(
+        process.cwd(),
+        "src",
+        "modules",
+        "authentication",
+        "auth.module.ts",
+      ),
+      "utf8",
+    );
     expect(publicEntry).not.toMatch(/export[^\n]*(Prisma|Repository)/u);
-    expect(publicEntry).not.toMatch(/export\s*\{[^}]*AuthenticationService/u);
   });
 });

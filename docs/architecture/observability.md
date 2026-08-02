@@ -6,5 +6,8 @@ Structured logs include timestamp, level, application, environment, request/job 
 
 Metrics and traces should cover request latency/errors, database readiness, queue depth/failures, webhook replays, notification delivery, and shutdown behavior when the relevant adapters are implemented.
 
-Pino and `pino-http` are approved in ADR-0008. Later log transports, metrics,
-and traces remain phase- and deployment-owned decisions.
+Morgan is the only HTTP access logger. Development uses a concise format;
+production uses a combined-style format; tests are silent. Query strings,
+bodies, authorization headers, and cookies are excluded. A small JSON
+application logger handles startup, shutdown, and provider failures with
+recursive secret redaction.

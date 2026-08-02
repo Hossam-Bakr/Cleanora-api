@@ -14,7 +14,6 @@
     "test": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run",
     "test:unit": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run tests/unit",
     "test:integration": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run tests/integration",
-    "test:e2e": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run tests/e2e",
     "test:coverage": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --coverage",
     "db:check": "node --env-file=.env --conditions=development --import tsx scripts/check-database.ts",
     "auth:inspect": "node --env-file=.env --conditions=development --import tsx scripts/inspect-auth.ts",
@@ -38,9 +37,9 @@
       "development": "./src/config/*.ts",
       "default": "./dist/config/*.js"
     },
-    "#core/*": {
-      "development": "./src/core/*.ts",
-      "default": "./dist/core/*.js"
+    "#database/*": {
+      "development": "./src/database/*.ts",
+      "default": "./dist/database/*.js"
     },
     "#generated/*": {
       "development": "./src/generated/*.ts",
@@ -51,8 +50,12 @@
       "default": "./dist/integrations/*.js"
     },
     "#modules/*": {
-      "development": "./src/modules/*/index.ts",
-      "default": "./dist/modules/*/index.js"
+      "development": "./src/modules/*.ts",
+      "default": "./dist/modules/*.js"
+    },
+    "#middlewares/*": {
+      "development": "./src/middlewares/*.ts",
+      "default": "./dist/middlewares/*.js"
     },
     "#routes/*": {
       "development": "./src/routes/*.ts",
@@ -76,11 +79,10 @@
     "express": "^5.2.1",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
     "nodemailer": "^9.0.3",
     "openid-client": "^6.8.4",
     "pg": "^8.16.3",
-    "pino": "^10.3.1",
-    "pino-http": "^11.0.0",
     "rate-limiter-flexible": "^7.1.1",
     "zod": "^4.4.3"
   },
@@ -90,6 +92,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^24.0.0",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.15.0",

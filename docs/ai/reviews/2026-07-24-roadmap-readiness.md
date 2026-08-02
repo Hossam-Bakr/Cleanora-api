@@ -1,5 +1,10 @@
 # Cleanora Roadmap and Implementation Readiness Review
 
+> Historical snapshot from 2026-07-24. Its Pino and E2E observations describe
+> the repository at review time and were superseded by R1-P02A. Current
+> architecture and testing rules live under `docs/architecture/` and
+> `docs/standards/`.
+
 | Field | Value |
 |---|---|
 | Date | 2026-07-24 |

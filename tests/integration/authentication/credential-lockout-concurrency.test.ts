@@ -1,6 +1,6 @@
 import type { PrismaClient } from '../../../src/generated/prisma/client.js';
-import { bindPrismaClient, resetPrismaClientForTests } from '../../../src/integrations/database/index.js';
-import { CredentialRepository } from '../../../src/modules/authentication/infrastructure/credential.repository.js';
+import { bindPrismaClient, resetPrismaClientForTests } from '../../../src/database/prisma.js';
+import { CredentialRepository } from '../../../src/modules/authentication/infrastructure/auth.repository.js';
 
 describe('credential lockout concurrency', () => {
   afterEach(() => resetPrismaClientForTests('test'));

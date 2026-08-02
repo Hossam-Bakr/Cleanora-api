@@ -1,8 +1,8 @@
-import { assertSelfSignupCategory, pendingCategories } from '../../../../src/modules/authentication/domain/account-category.policy.js';
-import { loginCapability } from '../../../../src/modules/authentication/domain/login-eligibility.policy.js';
-import { assertPasswordPolicy, normalizeEmail, normalizePhone } from '../../../../src/modules/authentication/domain/password.policy.js';
-import { recoveryChannel } from '../../../../src/modules/authentication/domain/recovery-channel.policy.js';
-import { blockingVerificationChannel } from '../../../../src/modules/authentication/domain/verification.policy.js';
+import { assertSelfSignupCategory, pendingCategories } from '../../../../src/modules/authentication/domain/auth.policy.js';
+import { loginCapability } from '../../../../src/modules/authentication/domain/auth.policy.js';
+import { assertPasswordPolicy, normalizeEmail, normalizePhone } from '../../../../src/modules/authentication/domain/auth.policy.js';
+import { recoveryChannel } from '../../../../src/modules/authentication/domain/auth.policy.js';
+import { blockingVerificationChannel } from '../../../../src/modules/authentication/domain/auth.policy.js';
 
 describe('authentication domain policies', () => {
   it('normalizes identifiers and enforces bounded passwords', () => {

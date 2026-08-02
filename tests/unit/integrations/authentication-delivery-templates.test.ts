@@ -1,7 +1,7 @@
 import type {
   EmailMessage,
   EmailPort,
-} from "../../../src/core/email/index.js";
+} from "../../../src/integrations/email/email.types.js";
 import { AuthenticationEmailAdapter } from "../../../src/integrations/email/authentication-email.adapter.js";
 import { renderCleanoraAuthenticationEmail } from "../../../src/integrations/email/cleanora-authentication-email.template.js";
 

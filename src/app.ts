@@ -1,31 +1,24 @@
-import type { Express, RequestHandler } from "express";
 import type { CorsOptions } from "cors";
+import type { Express } from "express";
 
-import { SYSTEM_ROUTE_SUFFIX, type AppEnvironment } from "#config/index";
-import { AppError } from "#core/errors/app-error";
-
-
-import {
-  createErrorMiddleware,
-  createSystemRouter,
-  notFoundMiddleware,
-  requestIdMiddleware,
-} from "#core/http/index";
-
-
-import type { DatabaseProbe } from "#core/health/database-probe";
-import type { ReadinessProbe } from "#core/health/readiness";
-import type { Logger } from "#core/logging/logger";
-import type { RateLimiterPort } from "#core/security/rate-limit.port";
-import { createRateLimitMiddleware } from "#core/security/rate-limit.middleware";
+import type { AppEnvironment } from "#config/env";
+import type {
+  DatabaseProbe,
+  ReadinessProbe,
+} from "#database/prisma-lifecycle";
 import { MemoryRateLimiterAdapter } from "#integrations/security/memory-rate-limiter.adapter";
-import { createSwaggerRouter } from "./swagger/index.js";
-
+import { createErrorMiddleware } from "#middlewares/error.middleware";
 import {
-  foundationModuleRegistrars,
-  registerModules,
-  type ModuleRegistrar,
-} from "#routes/index";
+  createHttpLogger,
+  type HttpLogStream,
+} from "#middlewares/http-logger";
+import { notFoundMiddleware } from "#middlewares/not-found.middleware";
+import type { RateLimiterPort } from "#middlewares/rate-limit.types";
+import { requestIdMiddleware } from "#middlewares/request-id.middleware";
+import { AppError } from "#shared/errors/app-error";
+import type { Logger } from "#shared/logger";
+
+import { mountRoutes } from "./routes/index.js";
 
 const cookieParser = require("cookie-parser") as typeof import("cookie-parser");
 const cors = require("cors") as typeof import("cors");
@@ -35,16 +28,13 @@ const helmet = require("helmet").default as typeof import("helmet").default;
 export interface CreateAppDependencies {
   readonly environment: AppEnvironment;
   readonly logger: Logger;
-  readonly requestLogger?: RequestHandler;
   readonly rateLimiter?: RateLimiterPort;
   readonly databaseProbe?: DatabaseProbe;
   readonly readinessProbes?: readonly ReadinessProbe[];
-  /**
-   * Register only endpoints that must read raw bytes (for example signed webhooks).
-   * Each registrar must attach its own narrow raw-body parser.
-   */
-  readonly rawBodyRegistrars?: readonly ModuleRegistrar[];
-  readonly modules?: readonly ModuleRegistrar[];
+  readonly authenticationRouter?: import("express").Router;
+  readonly httpLogStream?: HttpLogStream;
+  /** Test-only hook for focused integration routes before the 404 handler. */
+  readonly mountTestRoutes?: (app: Express) => void;
 }
 
 function createCorsOptions(environment: AppEnvironment): CorsOptions {
@@ -71,79 +61,40 @@ function createCorsOptions(environment: AppEnvironment): CorsOptions {
 }
 
 /**
- * @desc Create the configured Cleanora Express application.
- * @access Internal composition root
- * @explanation This function assembles safe middleware, system routes, and
- * approved business modules without starting a network listener.
+ * Create the configured Express app without opening a network port.
  */
 export function createApp(dependencies: CreateAppDependencies): Express {
-  // Create the Express application using the requested CommonJS runtime style.
   const app = express();
   app.disable("x-powered-by");
 
-  // Add request tracing before logging so every log line has the same ID.
   app.use(requestIdMiddleware);
-  if (dependencies.requestLogger !== undefined) {
-    app.use(dependencies.requestLogger);
-  }
-
-  // Add secure HTTP headers and an allowlisted credential-aware CORS policy.
+  app.use(
+    createHttpLogger(
+      dependencies.environment.NODE_ENV,
+      dependencies.httpLogStream,
+    ),
+  );
   app.use(helmet());
   app.use(cors(createCorsOptions(dependencies.environment)));
-
-  // Expose read-only interactive and machine-readable API documentation.
-  app.use(
-    `${dependencies.environment.API_PREFIX}/docs`,
-    createSwaggerRouter(dependencies.environment.API_PREFIX),
-  );
-
-  // Register signed webhook parsers before the global JSON parser.
-  registerModules(app, dependencies.rawBodyRegistrars ?? []);
-
-
-
-
-  // Parse normal API bodies and cookies after raw webhook routes.
   app.use(express.json({ limit: dependencies.environment.REQUEST_BODY_LIMIT }));
   app.use(cookieParser());
 
+  mountRoutes(app, {
+    environment: dependencies.environment,
+    logger: dependencies.logger,
+    rateLimiter:
+      dependencies.rateLimiter ?? new MemoryRateLimiterAdapter(),
+    ...(dependencies.databaseProbe === undefined
+      ? {}
+      : { databaseProbe: dependencies.databaseProbe }),
+    readinessProbes: dependencies.readinessProbes ?? [],
+    ...(dependencies.authenticationRouter === undefined
+      ? {}
+      : { authenticationRouter: dependencies.authenticationRouter }),
+  });
 
+  dependencies.mountTestRoutes?.(app);
 
-  // Mount public system endpoints under the configured API version.
-  app.use(
-    `${dependencies.environment.API_PREFIX}${SYSTEM_ROUTE_SUFFIX}/health/ready`,
-    createRateLimitMiddleware({
-      limiter: dependencies.rateLimiter ?? new MemoryRateLimiterAdapter(),
-      scope: "system-health-ready",
-      limit: 120,
-      windowSeconds: 60,
-      subject: (requestIp) => requestIp ?? "unknown",
-    }),
-  );
-
-
-
-  app.use(
-    `${dependencies.environment.API_PREFIX}${SYSTEM_ROUTE_SUFFIX}`,
-    createSystemRouter({
-      logger: dependencies.logger,
-      ...(dependencies.databaseProbe === undefined
-        ? {}
-        : { databaseProbe: dependencies.databaseProbe }),
-      readinessProbes: dependencies.readinessProbes ?? [],
-    }),
-  );
-
-
-
-
-  // Register only business modules approved by the active phase.
-  registerModules(app, [
-    ...foundationModuleRegistrars,
-    ...(dependencies.modules ?? []),
-  ]);
-
-  // Finish the pipeline with standard not-found and error responses.
   app.use(notFoundMiddleware);
   app.use(createErrorMiddleware(dependencies.logger));
 

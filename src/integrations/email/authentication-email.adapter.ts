@@ -1,12 +1,12 @@
-import type { EmailPort } from "#core/email/index";
+import type { EmailPort } from "#integrations/email/email.types";
 import type {
   AuthenticationDelivery,
   EmailAuthenticationDeliveryPort,
-} from "#modules/authentication";
+} from "../../modules/authentication/domain/authentication.ports.js";
 import {
   formatDeliveryExpiry,
   maskEmailDestination,
-} from "#modules/authentication";
+} from "../../modules/authentication/domain/auth.policy.js";
 import { renderCleanoraAuthenticationEmail } from "./cleanora-authentication-email.template.js";
 
 /** Translate authentication delivery intents into provider-neutral email messages. */

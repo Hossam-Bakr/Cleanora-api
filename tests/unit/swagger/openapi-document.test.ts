@@ -1,4 +1,4 @@
-import { cleanoraOpenApiDocument } from '../../../src/swagger/index.js';
+import { cleanoraOpenApiDocument } from '../../../src/swagger/openapi.document.js';
 
 interface OpenApiParser {
   validate(document: Readonly<Record<string, unknown>>): Promise<unknown>;

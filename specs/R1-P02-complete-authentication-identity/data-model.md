@@ -1,7 +1,10 @@
 # R1-P02 Authentication Data Model
 
 **Migration owner**: R1-P02  
-**Migration name**: `r1_p02_complete_authentication`  
+**Migration history**: `r1_p02_complete_authentication`, followed by the
+immutable forward fixes `r1_p02_fix_phone_e164_constraint`,
+`r1_p02_google_provider_profile_claims`, and
+`r1_p02_email_verification_for_individuals`
 **Baseline**: additive after
 `r1_p01_foundation_country_configuration`; the applied R1-P01 SQL is immutable
 
@@ -37,6 +40,13 @@ models and relations remain unchanged.
 | `SocialProvider` | `GOOGLE` |
 | `AuthEventOutcome` | `SUCCEEDED`, `FAILED`, `DENIED` |
 
+`AuthDeliveryChannel.SMS` and
+`OtpPurpose.OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION` remain in the centralized
+schema only because they are part of an already-applied migration. DEC-028
+forbids new R1-P02 runtime use of those historical values; removing them would
+require a separately reviewed compatibility migration and is unnecessary for
+the email-only behavior.
+
 `auth_events.event_type` remains a module-validated string so adding a safe
 event name does not require a database enum migration.
 
@@ -45,8 +55,8 @@ event name does not require a database enum migration.
 | Field | Prisma/database direction | Rule |
 |---|---|---|
 | `id` | `String @id @default(cuid())` | Opaque identity ID |
-| `phoneE164` | nullable, unique, `VARCHAR(16)`, map `phone_e164` | Nullable only for a new Google individual before phone binding |
-| `emailNormalized` | nullable, unique, `VARCHAR(320)`, map `email_normalized` | Lowercase normalized email |
+| `phoneE164` | nullable, unique, `VARCHAR(16)`, map `phone_e164` | Contact/login identifier when present; R1-P02 never infers phone ownership |
+| `emailNormalized` | nullable at storage level, unique, `VARCHAR(320)`, map `email_normalized` | Lowercase normalized email; application-required for every new R1-P02 self-signup and Google identity |
 | `accountCategories` | `AccountCategory[] @default([])` | Enrolled categories |
 | `verifiedCategories` | `AccountCategory[] @default([])` | Category gates completed |
 | `status` | `UserStatus @default(ACTIVE)` | Identity-wide availability |
@@ -66,7 +76,10 @@ verified.
 - `verified_categories <@ account_categories`.
 - E.164 format is `^\+[1-9][0-9]{1,14}$` when present.
 - Normalized email equals its lowercased trimmed representation.
-- Verified `INDIVIDUAL` requires phone and `phone_verified_at`.
+- The forward constraint
+  `users_verified_individual_contact_check` requires a verified Individual to
+  have email plus `email_verified_at`, while preserving already-verified
+  historical phone identities for migration compatibility.
 - Verified `COMPANY`, `ENGINEER`, or `PROVIDER_OWNER` requires email and
   `email_verified_at`.
 - `SUSPENDED` requires `suspended_until`; application validation additionally
@@ -144,7 +157,7 @@ Rotation conditionally replaces the verifier and increments
 | `userId` | FK to `users`, `onDelete: Restrict` |
 | `accountCategory` | category whose state may change |
 | `purpose` | OTP purpose enum |
-| `channel` | SMS or email |
+| `channel` | Email for all new R1-P02 challenges; SMS is historical enum compatibility only |
 | `destinationHash` | `CHAR(64)` domain-separated HMAC |
 | `codeVerifier` | `CHAR(64)` HMAC; never raw OTP |
 | `verifierKeyVersion` | positive integer |
@@ -174,7 +187,7 @@ query also includes status and expiry; an index does not replace the predicate.
 | `id` | cuid public selector |
 | `userId` | FK to `users`, `onDelete: Restrict` |
 | `purpose` | `PASSWORD_RESET` |
-| `channel` | authoritative SMS or email channel |
+| `channel` | authoritative email channel for all new R1-P02 recovery rows; historical enum compatibility permits earlier values |
 | `destinationHash` | `CHAR(64)` HMAC |
 | `tokenVerifier` | unique `CHAR(64)` HMAC |
 | `verifierKeyVersion` | positive integer |
@@ -279,7 +292,7 @@ Provider calls never occur inside a database transaction.
 
 ## Migration SQL Review
 
-Create later, during implementation, with:
+The initial migration was created during implementation with:
 
 ```text
 prisma migrate dev --create-only --name r1_p02_complete_authentication
@@ -297,11 +310,13 @@ generation. Before applying:
 - run `prisma validate` and regenerate the client only after SQL review.
 
 Apply the full history only to an explicit empty, non-production
-`CI_DATABASE_URL`. The database proof must show:
+`CI_DATABASE_URL`. Runtime test-database updates use the matching direct
+non-pooler migration URL and never the ordinary development/production URL.
+The database proof must show:
 
 - exactly the five R1-P01 product tables plus seven R1-P02 product tables and
   Prisma migration metadata;
-- exactly one successful history row for each phase migration;
+- exactly one successful history row for each phase migration and forward fix;
 - preserved R1-P01 seed behavior and idempotent R1-P02 policy seed additions;
 - real PostgreSQL uniqueness, partial-index, check, expiry, and concurrency
   behavior.

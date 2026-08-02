@@ -94,5 +94,29 @@ describe('authentication environment', () => {
       }),
     ).toThrow(/AUTH_ENABLED/u);
 
+    expect(() =>
+      loadEnvironment({
+        ...base,
+        ...secrets,
+      }),
+    ).toThrow(/EMAIL_AUTH_ENABLED/u);
+
+    expect(() =>
+      loadEnvironment({
+        ...base,
+        ...secrets,
+        EMAIL_AUTH_ENABLED: 'true',
+      }),
+    ).toThrow(/EMAIL_PROVIDER|SMTP_/u);
+
+    expect(() =>
+      loadEnvironment({
+        ...base,
+        ...email,
+        ...secrets,
+        GOOGLE_AUTH_ENABLED: 'true',
+        GOOGLE_CLIENT_ID: 'google-client',
+      }),
+    ).toThrow(/complete OIDC configuration/u);
   });
 });

@@ -3,8 +3,8 @@ import {
   assertCountryCurrencySupported,
   getCountryByCode,
   resolveEffectiveConfig
-} from "#modules/configuration";
-import type { PrismaLifecycle } from "../../src/integrations/database/prisma-lifecycle.js";
+} from "#modules/configuration/configuration.service";
+import type { PrismaLifecycle } from "../../src/database/prisma-lifecycle.js";
 import {
   startTestDatabaseLifecycle,
   stopTestDatabaseLifecycle

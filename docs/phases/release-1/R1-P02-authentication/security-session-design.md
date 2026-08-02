@@ -1,5 +1,7 @@
 # R1-P02 Session and Cookie Security
 
+Status: completed and preserved by the R1-P02A structural refactor.
+
 ## Approved strategy
 
 - Access JWT TTL: 900 seconds by default.

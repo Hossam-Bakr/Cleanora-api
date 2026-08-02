@@ -1,7 +1,7 @@
 import type { PrismaClient } from '../../../src/generated/prisma/client.js';
-import { bindPrismaClient, resetPrismaClientForTests } from '../../../src/integrations/database/index.js';
-import { AuthenticationService } from '../../../src/modules/authentication/application/authentication.service.js';
-import { GoogleAuthenticationService } from '../../../src/modules/authentication/application/google-authentication.js';
+import { bindPrismaClient, resetPrismaClientForTests } from '../../../src/database/prisma.js';
+import { AuthenticationService } from '../../../src/modules/authentication/auth.service.js';
+import { GoogleAuthenticationService } from '../../../src/modules/authentication/google-auth.service.js';
 import { MemoryGoogleTransactionStoreAdapter } from '../../../src/integrations/authentication/memory-google-transaction-store.adapter.js';
 
 const now = new Date();

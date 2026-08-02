@@ -1,5 +1,5 @@
-import { recoveryChannel, RESET_MAX_ATTEMPTS, RESET_TTL_SECONDS } from '../../../../src/modules/authentication/domain/recovery-channel.policy.js';
-import { assertPasswordPolicy } from '../../../../src/modules/authentication/domain/password.policy.js';
+import { recoveryChannel, RESET_MAX_ATTEMPTS, RESET_TTL_SECONDS } from '../../../../src/modules/authentication/domain/auth.policy.js';
+import { assertPasswordPolicy } from '../../../../src/modules/authentication/domain/auth.policy.js';
 
 describe('password recovery and change policy', () => {
   it('selects authoritative recovery channels and bounded reset policy', () => {

@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 
-import { createAuthenticationRouter } from "../../../src/modules/authentication/http/authentication.routes.js";
+import { createAuthenticationRouter } from "../../../src/modules/authentication/auth.routes.js";
 
 const express = require("express") as typeof import("express");
 const request = require("supertest") as typeof import("supertest");

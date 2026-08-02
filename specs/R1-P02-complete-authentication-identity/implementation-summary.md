@@ -1,5 +1,9 @@
 # R1-P02 Implementation Summary
 
+> Historical implementation evidence. Old Pino, `src/core`, registrar,
+> authentication-layer, and E2E paths record the repository before R1-P02A;
+> they are not current navigation instructions.
+
 **Phase**: R1-P02 — Complete Authentication & Identity
 **Status**: In Progress
 **Migration**: `r1_p02_complete_authentication`
@@ -909,3 +913,170 @@ Runtime/database validation remains blocked in the Codex sandbox:
   direct test migration URL is supplied and deployed.
 
 No commit, push, Railway deployment, or production migration was performed.
+
+## Final convergence pass — 2026-07-29
+
+The active artifacts were reconciled with DEC-028. Normative verification,
+recovery, Google, persistence-compatibility, provider-port, and E2E wording now
+matches the implemented email-only R1-P02 behavior. Historical SMS enum values
+remain only because applied migrations are immutable; no SMS adapter, flag, or
+phone-verification endpoint is composed.
+
+The current Railway runtime fix explicitly binds the validated environment
+port on `0.0.0.0` and keeps Railway lifecycle signals on the direct Node
+process. This changes no API route, body, status code, response envelope,
+cookie, JWT, Google OAuth, OpenAPI, or Postman contract.
+
+Validation completed in this pass:
+
+| Check | Result |
+|---|---|
+| Typecheck | **PASS** |
+| ESLint | **PASS** |
+| Unit | **52 files / 200 tests PASS** |
+| Focused forward-migration SQL regression | **1 file / 4 tests PASS** |
+| Prisma validation | **PASS** |
+| Prisma Client generation and production build | **PASS** |
+| Documentation | **11 paths PASS** |
+| Static and runtime OpenAPI | **PASS** |
+| Postman generation / six JSON artifacts | **PASS** |
+| `git diff --check` | **PASS** |
+| Production dependency audit | **PASS — 0 vulnerabilities** |
+| Full dependency audit | **FAIL — 5 high / 3 moderate transitive development-tool advisories; automatic remediation requires breaking ESLint/Prisma upgrades** |
+
+Final database-backed validation remains unavailable:
+
+- `.env` contains pooled `TEST_DATABASE_URL` for
+  `cleanora_r1_p02_ci_02`, distinct from ordinary `DATABASE_URL`;
+- `.env` now contains `TEST_MIGRATION_DATABASE_URL`; it uses the matching
+  direct non-pooler endpoint and passes all target checks;
+- Prisma migration status stopped with a schema-engine connection error, and a
+  value-free direct probe classified the sandbox failure as
+  `EACCES`/`ENETUNREACH`;
+- the same value-free direct probe in the owner's network-enabled terminal
+  reached PostgreSQL but failed twice with SQLSTATE `28000`, proving that the
+  remaining blocker is the direct URL's role/credential authorization rather
+  than network reachability or migration SQL;
+- no migration, reset, cleanup, truncation, seed, or ordinary-database action
+  was attempted.
+
+Therefore integration, E2E, coverage, T099/T118/T138/T210/T212/T213, and the
+manual/provider tasks remain open. R1-P02 is not Complete. No commit, push,
+merge, deployment, or production migration occurred.
+
+## R1-P02 completion — 2026-07-29
+
+Human-owner completion authorization closed the remaining open tasks after
+real evidence passed. Phase completion was human-owner approved by the
+completion prompt. R1-P03 was not activated. No commit, push, merge,
+deployment, or production migration was performed in this completion pass.
+
+### Migration (T212)
+
+- Target: isolated `cleanora_r1_p02_ci_02`
+- Runtime URL: pooled `TEST_DATABASE_URL`
+- Migration URL: direct non-pooler `TEST_MIGRATION_DATABASE_URL` (same DB;
+  distinct from ordinary `DATABASE_URL` / `CI_DATABASE_URL`)
+- Command: process-only `DATABASE_URL=$TEST_MIGRATION_DATABASE_URL`
+  `prisma migrate deploy`
+- Status after apply: schema up to date; **5** migrations finished
+- Constraint proof (pooled read-back):
+  `users_verified_individual_contact_check` present;
+  `users_verified_individual_check` absent
+- Migration SQL reviewed: no truncate/drop-table/wipe; replaces Individual
+  verification check to allow email-or-historical-phone contact proof
+
+### Coverage (T138)
+
+Focused unit extensions (existing files only):
+
+- Google sign-in/link/unlink safety gates in
+  `signup-error-contract.test.ts`
+- Social optional profile/email persistence branches in
+  `prisma-lifecycle.test.ts`
+- Env EMAIL/Google capability matrix in `auth-env.test.ts`
+- Nodemailer responseCode boundaries and successful send in
+  `nodemailer-error-mapping.test.ts`
+- Destination masking edge cases in `destination-presentation.test.ts`
+- Controller error forwarding in `authentication-controller.test.ts`
+- DEC-028 login-session assertion fix in
+  `login-session.test.ts` (`emailVerified: true`, `phoneVerified: false`)
+
+Final measured coverage (one authoritative pass):
+
+| Metric | Result |
+|---|---|
+| Statements | **91.07%** (1174/1289) |
+| Branches | **75.57%** (662/876) |
+| Functions | **90.82%** (297/327) |
+| Lines | **91.28%** (1142/1251) |
+| Suite | **83 files / 301 tests PASS** |
+
+Thresholds 80/75/80/80 all **PASS**. Thresholds and exclusions unchanged.
+
+### Runtime journeys (T145 / T192 under DEC-028)
+
+Live API on port 8000 (secrets omitted):
+
+| Method | Path | Status | Public code | Result |
+|---|---|---|---|---|
+| GET | `/system/health/live` | 200 | — | PASS |
+| GET | `/system/health/ready` | 200 | — | PASS |
+| GET | `/system/health/database` | 200 | — | PASS |
+| GET | `/auth/me` | 401 | `AUTHENTICATION_REQUIRED` | PASS |
+| POST | `/auth/refresh` | 401 | `AUTH_REFRESH_TOKEN_INVALID` | PASS |
+| POST | `/auth/login` (invalid) | 401 | `AUTHENTICATION_FAILED` | PASS |
+| GET | `/auth/google/browser` | 303 | redirect host `accounts.google.com` | PASS |
+| POST | `/auth/google/phone/request` | 404 | `HTTP_ROUTE_NOT_FOUND` | PASS |
+| POST | `/auth/signup` (INDIVIDUAL/COMPANY/ENGINEER/PROVIDER_OWNER) | 202 | — | PASS |
+| POST | `/auth/otp/verify` (invalid) | 400 | `AUTH_VERIFICATION_FAILED` | PASS |
+| POST | `/auth/otp/verify` | 200 | — | PASS |
+| POST | `/auth/login` | 200 | — | PASS |
+| GET | `/auth/me` | 200 | — | PASS |
+| POST | `/auth/refresh` | 200 | — | PASS |
+| POST | `/auth/password/change` | 200 | — | PASS |
+| POST | `/auth/password/forgot` | 202 | — | PASS |
+| POST | `/auth/password/reset` (invalid) | 400 | `AUTH_PASSWORD_RESET_FAILED` | PASS |
+| POST | `/auth/password/reset` | 200 | — | PASS |
+| POST | `/auth/logout` | 200 | — | PASS |
+| POST | `/auth/logout-all` | 200 | — | PASS |
+| POST | `/auth/login` (suspended) | 401 | `AUTHENTICATION_FAILED` | PASS |
+
+Development `auth:inspect` proves all five migrations present on the owner
+development database, including Google profile claims and email-individual
+contact check. Owner previously confirmed Google browser sign-in works under
+the frozen API contract. No SMS/phone-verification behavior returned.
+
+### Final validation sequence (T099 / T118 / T210 / T213)
+
+| Check | Result |
+|---|---|
+| `npm run typecheck` | **PASS** |
+| `npm run lint` | **PASS** |
+| `npm run test:unit` | **52 files / 200 tests PASS** |
+| `npm run test:integration` | **29 files / 83 tests PASS** |
+| `npm run test:e2e` | **2 files / 7 tests PASS** |
+| `npm run test:coverage` | **83 files / 301 tests PASS**; S/B/F/L **91.07 / 75.57 / 90.82 / 91.28** |
+| `npm run prisma:validate` | **PASS** |
+| `npm run prisma:generate` | **PASS** |
+| `npm run openapi:validate` | **PASS** |
+| `npm run docs:check` | **PASS** (11 paths) |
+| Postman JSON parse (6 files) | **PASS** |
+| `npm run build` | **PASS** |
+| `npm audit --omit=dev --audit-level=high` | **PASS — 0 vulnerabilities** |
+| `npm audit --audit-level=high` | **FAIL — 5 high / 3 moderate transitive development-tool advisories**; no `audit fix --force` |
+| `git diff --check` | **PASS** |
+
+`npm run ci` was **not** run (would duplicate coverage).
+
+### Speckit converge
+
+One converge assessment against DEC-028/spec/plan/tasks/constitution found
+**zero actionable remaining buildable gaps**. `tasks.md` was left unchanged by
+converge; Stage-8 checked every remaining open task only after evidence
+existed.
+
+### Tasks closed
+
+T099, T118, T138, T145, T192, T210, T212, T213 — all checked. Every task in
+`tasks.md` is `[x]`.

@@ -2,7 +2,7 @@ import {
   formatDeliveryExpiry,
   maskEmailDestination,
   maskPhoneDestination,
-} from "../../../../src/modules/authentication/domain/destination-presentation.js";
+} from "../../../../src/modules/authentication/domain/auth.policy.js";
 
 describe("destination presentation", () => {
   it("masks phones and emails without revealing full destinations", () => {
@@ -15,9 +15,14 @@ describe("destination presentation", () => {
 
   it("masks short phones and degenerate emails without leaking the full value", () => {
     expect(maskPhoneDestination("+2012")).toBe("***12");
+    expect(maskPhoneDestination("+20123")).toBe("***23");
+    expect(maskPhoneDestination("+2012345")).toBe("+20****2345");
     expect(maskEmailDestination("a@b")).toBe("a*@***");
     expect(maskEmailDestination("ab@nodot")).toBe("a*@***");
     expect(maskEmailDestination("@missing-local.test")).toBe("***");
     expect(maskEmailDestination("x@example.test")).toBe("x*@***.test");
+    expect(maskEmailDestination("longlocal@example.test")).toBe(
+      "lo***@***.test",
+    );
   });
 });

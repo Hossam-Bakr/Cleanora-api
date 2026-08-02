@@ -1,4 +1,4 @@
-import { createErrorMiddleware } from '../../../src/core/http/error.middleware.js';
+import { createErrorMiddleware } from '../../../src/middlewares/error.middleware.js';
 
 function invoke(error: unknown) {
   const logger = { error: vi.fn() };

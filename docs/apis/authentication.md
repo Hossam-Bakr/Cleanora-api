@@ -1,15 +1,20 @@
 # Authentication API
 
-Status: Implemented in R1-P02; phase remains In Progress pending final review and human approval.
+Status: Implemented and completed in R1-P02. R1-P02A changed structure only
+and preserved this contract.
 
 Phase: R1-P02
 
-The implemented routes, access rules, token transport, and response contract are
-documented in:
+The authoritative runtime contract and frontend flow are documented in:
 
-- `docs/phases/release-1/R1-P02-authentication/api-contract.md`
-- `docs/phases/release-1/R1-P02-authentication/security-session-design.md`
+- runtime Swagger at `/api/v1/docs`
+- OpenAPI at `/api/v1/docs/openapi.json`
+- `docs/apis/openapi/r1-p02-authentication.yaml`
 - `docs/apis/google-sign-in-frontend.md`
+
+The phase navigation files under
+`docs/phases/release-1/R1-P02-authentication/` are concise completion
+summaries, not a second API contract.
 
 The implementation is capability-gated by `AUTH_ENABLED` and requires the
 complete SMTP capability. Under DEC-028, every supported self-signup category
@@ -43,4 +48,5 @@ included and receives the access token plus canonical safe `user`.
 
 The single canonical authentication Postman collection and
 `docs/apis/openapi/r1-p02-authentication.yaml` are maintained with the live HTTP
-contract. Final acceptance evidence remains open while R1-P02 is In Progress.
+contract. Final R1-P02 acceptance evidence is recorded in
+`specs/R1-P02-complete-authentication-identity/implementation-summary.md`.

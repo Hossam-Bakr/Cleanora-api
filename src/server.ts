@@ -1,23 +1,22 @@
-import type { Server } from "node:http";
+import { createServer, type Server } from "node:http";
 
+import { APPLICATION_NAME } from "#config/constants";
 import {
-  APPLICATION_NAME,
   loadEnvironment,
   mapEnvironmentDiagnostics,
   type AppEnvironment,
-} from "#config/index";
-import type { DatabaseProbe } from "#core/health/database-probe";
-import type { ReadinessProbe } from "#core/health/readiness";
-import type { Logger } from "#core/logging/logger";
+} from "#config/env";
+import type {
+  DatabaseProbe,
+  ReadinessProbe,
+} from "#database/prisma-lifecycle";
+import { bindPrismaClient } from "#database/prisma";
+import { PrismaLifecycle } from "#database/prisma-lifecycle";
 import type { PrismaClient } from "#generated/prisma/client";
 import {
-  bindPrismaClient,
-  PrismaLifecycle,
-} from "#integrations/database/index";
-import {
-  createPinoLogging,
-  type PinoLogging,
-} from "#integrations/logging/index";
+  createApplicationLogger,
+  type Logger,
+} from "#shared/logger";
 
 import { createApp } from "./app.js";
 
@@ -27,7 +26,7 @@ import { JwtTokenServiceAdapter } from "./integrations/authentication/jwt-token-
 import {
   createAuthenticationModule,
   createAuthenticationPolicy,
-} from "./modules/authentication/index.js";
+} from "./modules/authentication/auth.module.js";
 import { MemoryRateLimiterAdapter } from "./integrations/security/memory-rate-limiter.adapter.js";
 import { OpenIdClientGoogleAdapter } from "./integrations/google/openid-client-google.adapter.js";
 import { MemoryGoogleTransactionStoreAdapter } from "./integrations/authentication/memory-google-transaction-store.adapter.js";
@@ -45,20 +44,46 @@ interface DatabaseLifecycle {
   readinessProbe(): ReadinessProbe;
 }
 
+interface HttpServer {
+  listen(
+    port: number,
+    hostname: string,
+    callback: () => void,
+  ): Server;
+}
+
+export const HTTP_BIND_HOST = "0.0.0.0";
+
 export interface StartApplicationDependencies {
   readonly environmentInput?: NodeJS.ProcessEnv;
   readonly createDatabase?: (connectionString: string) => DatabaseLifecycle;
-  readonly createLogging?: (
+  readonly createLogger?: (
     level: AppEnvironment["LOG_LEVEL"],
     baseContext: Readonly<Record<string, unknown>>,
-  ) => PinoLogging;
+  ) => Logger;
   readonly createApplication?: typeof createApp;
+  readonly createHttpServer?: typeof createServer;
   readonly installSignalHandlers?: boolean;
 }
 
 export interface StartedApplication {
   readonly server: Server;
   readonly shutdown: (signal: NodeJS.Signals) => Promise<void>;
+}
+
+/**
+ * Bind the HTTP server to every container network interface.
+ *
+ * Railway and other container platforms route traffic through an external
+ * proxy, so binding only to localhost makes an otherwise healthy process
+ * unreachable. The port remains environment-owned.
+ */
+export function listenForHttp(
+  server: HttpServer,
+  port: number,
+  onListening: () => void,
+): Server {
+  return server.listen(port, HTTP_BIND_HOST, onListening);
 }
 
 function rejectAfter(
@@ -148,12 +173,11 @@ export async function startApplication(
   const environment = loadEnvironment(
     dependencies.environmentInput ?? process.env,
   );
-  const loggingFactory = dependencies.createLogging ?? createPinoLogging;
-  const logging = loggingFactory(environment.LOG_LEVEL, {
+  const loggerFactory = dependencies.createLogger ?? createApplicationLogger;
+  const logger = loggerFactory(environment.LOG_LEVEL, {
     application: APPLICATION_NAME,
     environment: environment.NODE_ENV,
   });
-  const { logger } = logging;
   const database =
     dependencies.createDatabase?.(environment.DATABASE_URL) ??
     new PrismaLifecycle(environment.DATABASE_URL);
@@ -180,7 +204,6 @@ export async function startApplication(
       : new UnavailableEmailAdapter();
     const authentication = environment.AUTH_ENABLED
       ? createAuthenticationModule({
-          basePath: `${environment.API_PREFIX}/auth`,
           trustedOrigins: environment.CORS_ORIGINS,
           cookie: {
             name: environment.AUTH_REFRESH_COOKIE_NAME,
@@ -224,15 +247,21 @@ export async function startApplication(
     const app = applicationFactory({
       environment,
       logger,
-      requestLogger: logging.requestLogger,
       databaseProbe: database.databaseProbe(),
       readinessProbes: [database.readinessProbe()],
       rateLimiter,
-      modules:
-        authentication === undefined ? [] : [authentication.moduleRegistrar],
+      ...(authentication === undefined
+        ? {}
+        : { authenticationRouter: authentication.router }),
     });
-    const server = app.listen(environment.PORT, () => {
-      logger.info("HTTP server listening", { port: environment.PORT });
+    const httpServerFactory =
+      dependencies.createHttpServer ?? createServer;
+    const httpServer = httpServerFactory(app);
+    const server = listenForHttp(httpServer, environment.PORT, () => {
+      logger.info("HTTP server listening", {
+        host: HTTP_BIND_HOST,
+        port: environment.PORT,
+      });
     });
     const shutdown = createGracefulShutdown(
       server,
@@ -286,7 +315,7 @@ export function createStartupFailureContext(
 
 if (require.main === module) {
   void startApplication().catch((error: unknown) => {
-    const { logger } = createPinoLogging("error", {
+    const logger = createApplicationLogger("error", {
       application: APPLICATION_NAME,
     });
     logger.error(

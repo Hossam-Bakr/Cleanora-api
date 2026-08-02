@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { isSessionActive } from "../../../../src/modules/authentication/domain/session.policy.js";
+import { isSessionActive } from "../../../../src/modules/authentication/domain/auth.policy.js";
 
 describe("authentication session policy", () => {
   const now = new Date("2026-07-25T12:00:00.000Z");
@@ -60,14 +60,13 @@ describe("authentication service session eligibility wiring", () => {
     const source = readFileSync(
       join(
         process.cwd(),
-        "src/modules/authentication/application/authentication.service.ts"
+        "src/modules/authentication/auth.service.ts"
       ),
       "utf8"
     );
 
-    expect(source).toMatch(
-      /import \{ isSessionActive \} from ["']\.\.\/domain\/session\.policy\.js["'];/
-    );
+    expect(source).toContain("isSessionActive,");
+    expect(source).toContain('from "./domain/auth.policy.js"');
     expect(
       source.match(/!isSessionActive\(session\)/g)?.length ?? 0
     ).toBeGreaterThanOrEqual(3);

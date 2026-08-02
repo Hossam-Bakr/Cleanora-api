@@ -1,47 +1,20 @@
-# R1-P02 Test Plan
+# R1-P02 Test Evidence
 
-## Unit
+R1-P02 is Complete. Current repository testing uses only:
 
-- Actor-specific signup validation
-- Verification-gate decisions
-- Password policy and hash verification
-- OTP expiry, attempt limits, and one-time use
-- Access/refresh claims and expiry
-- Refresh rotation and reuse detection
-- Ban/suspension decisions
-- Safe error mapping and anti-enumeration responses
+- unit tests under `tests/unit/`
+- integration tests under `tests/integration/`
 
-## Integration
+Complete browser/API journeys are integration tests against the exported
+Express app. There is no separate E2E directory or separately running test
+server.
 
-- Auth migration applies to a clean PostgreSQL test database
-- Unique normalized phone/email constraints
-- Signup and credential persistence
-- Session creation, rotation, revocation, and logout-all
-- OTP request/verify with provider fakes
-- Forgot/reset/change-password transaction behavior
-- Google account linking with provider fakes
-- Rate-limit policies and failure semantics
-- Cookie flags and credential-aware CORS
+Authentication coverage includes signup and account-bound email verification,
+login, refresh rotation and reuse detection, logout, password recovery/change,
+Google verified-email sign-in/linking, status enforcement, validation,
+authorization, rate limiting, concurrency, and transaction behavior.
 
-## E2E
+Final counts and gate results are recorded in:
 
-- Individual signup → SMS OTP → login → refresh → logout
-- Company/engineer signup → email OTP → login
-- Provider-owner signup → email OTP → login
-- Worker login only after provider-controlled creation, according to the
-  approved sequencing decision
-- Forgot/reset password without account enumeration
-- Google sign-in plus remaining verification gate for each approved audience
-- Banned/suspended account denial
-- Concurrent refresh/reuse attack
-
-## Required negative tests
-
-- Duplicate phone/email
-- Invalid/expired/reused OTP
-- Wrong password
-- Expired, revoked, reused, or wrong-type token
-- Missing/forged refresh cookie
-- Disallowed CORS origin
-- Google identity collision
-- Public attempt to create staff or worker roles
+- `specs/R1-P02-complete-authentication-identity/implementation-summary.md`
+- `specs/R1-P02A-backend-structure-simplification/implementation-summary.md`

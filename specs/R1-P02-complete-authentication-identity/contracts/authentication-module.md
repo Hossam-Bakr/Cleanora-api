@@ -1,54 +1,55 @@
 # Authentication Module Public Contract
 
-## Public entry point
+R1-P02 is Complete. R1-P02A simplified the source layout without changing the
+authentication behavior described by this contract.
 
-Other modules may import only `#modules/authentication`. The root entry point exports safe authentication behavior and types; it never exports Prisma, repositories, controllers, provider payloads, token services, credentials, or raw session records.
+## Composition entry point
+
+The composition root imports the explicit named contract:
 
 ```ts
-export type AccountCategory =
-  | INDIVIDUAL
-  | COMPANY
-  | ENGINEER
-  | PROVIDER_OWNER
-  | WORKER;
+import {
+  createAuthenticationModule,
+  createAuthenticationPolicy,
+} from "#modules/authentication/auth.module";
+```
 
-export type UserStatus = ACTIVE | SUSPENDED | BANNED;
+The module returns only its router and access-authentication middleware:
 
-export interface AuthenticationPrincipal {
-  readonly userId: string;
-  readonly sessionId: string;
-  readonly accountCategories: readonly AccountCategory[];
-  readonly verifiedCategories: readonly AccountCategory[];
-  readonly pendingCategories: readonly AccountCategory[];
-  readonly status: UserStatus;
-  readonly verificationOnly: boolean;
-}
-
+```ts
 export interface AuthenticationModule {
-  readonly moduleRegistrar: ModuleRegistrar;
+  readonly router: Router;
   readonly authenticateAccess: RequestHandler;
 }
 
 export function createAuthenticationModule(
-  dependencies: AuthenticationModuleDependencies
+  dependencies: AuthenticationModuleDependencies,
 ): AuthenticationModule;
 ```
 
-`AuthenticationModuleDependencies` is composition-only and may reference business-neutral ports and module-owned provider ports. It is not a cross-module service locator.
+`src/routes/index.ts` mounts `router` at `/api/v1/auth`. There is no
+`ModuleRegistrar`, dynamic discovery, or public `index.ts` barrel.
+
+## Cross-module boundary
+
+Other modules may use an explicitly approved named authentication service or
+composition contract. They must never import authentication repositories,
+controllers, HTTP schemas, provider payloads, credentials, token services, raw
+Prisma records, or session rows.
+
+`AuthenticationModuleDependencies` is composition-only. It is not a service
+locator and does not make provider adapters public business contracts.
 
 ## Middleware behavior
 
-`authenticateAccess` validates the pinned JWT contract, loads the stable session family and current user, rejects expired/revoked/mismatched/restricted state, derives category state from the database, and attaches only `AuthenticationPrincipal` to the Express request.
+`authenticateAccess` validates the JWT contract, loads the stable session
+family and current user, rejects expired/revoked/mismatched/restricted state,
+derives category state from the database, and attaches only the safe
+`AuthenticationPrincipal` to the Express request.
 
-Verification-only principals may call only auth verification, safe current-user, recovery, and logout routes. Later modules receive no permission or role claim from R1-P02.
+## Persistence and transactions
 
-## Consumed public contracts
-
-- configuration: `#modules/configuration` for typed non-secret policies;
-- audit: `#modules/admin` for selected high-impact mutation-attempt evidence;
-- logging and rate limiting: business-neutral `Logger` and `RateLimiterPort`;
-- database: controlled process-wide accessor inside auth repositories only;
-- email: existing `EmailPort`, wrapped by auth-owned delivery behavior.
-
-Authentication application services own every R1-P02 transaction. A module-private transaction context is passed to auth repositories. No Prisma client or transaction handle crosses `index.ts`.
-
+Authentication owns its tables and transactions. Simple owning-module
+persistence may use the shared Prisma client directly; reusable, complex, and
+transactional operations remain in authentication repositories. No Prisma
+client or transaction handle crosses the module boundary.

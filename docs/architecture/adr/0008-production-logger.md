@@ -1,24 +1,16 @@
 # ADR-0008 — Production logger
 
-- Status: Accepted
+- Status: Amended by R1-P02A
 - Date: 2026-07-23
-- Accepted: 2026-07-24
-
-## Context
-
-The foundation needs safe structured application and HTTP request logging.
+- Amended: 2026-07-30
 
 ## Decision
 
-- Use Pino for structured JSON application logs.
-- Use `pino-http` for one completion log per HTTP request.
-- Keep Pino behind the internal `Logger` port and the integration layer.
-- Reuse the request correlation UUID.
-- Do not log request bodies.
-- Redact authorization, cookies, tokens, passwords, OTPs, secrets, signatures,
-  and payment payloads.
+- Use Morgan as the only HTTP access logger.
+- Use a small JSON application logger for lifecycle and provider failures.
+- Reuse request correlation IDs.
+- Exclude query strings, bodies, authorization, cookies, credentials, tokens,
+  OTPs, secrets, signatures, and payment payloads.
+- Silence HTTP access logs in automated tests.
 
-## Consequences
-
-Business modules remain independent of Pino. Console JSON is the initial
-transport; later transports require a separate operational decision.
+Business modules do not depend on Morgan.

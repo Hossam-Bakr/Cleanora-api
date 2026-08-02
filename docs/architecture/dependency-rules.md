@@ -3,28 +3,17 @@
 Allowed direction:
 
 ```text
-app/server -> modules/public APIs
-app/server -> integrations + core
-routes composition -> module registrars/public APIs
-module routes/controllers -> module services
-module services -> own repositories + other module public APIs + core ports
-module repositories -> injected centralized Prisma client
-integrations -> core ports + external packages/providers
-background-jobs composition -> owning module public worker contract + integrations
+server -> app + database + current integrations
+app -> global middleware + central routes
+central routes -> module routers
+module route -> controller -> service -> own repository/database
+current provider adapters -> the module contract they implement
 all -> genuinely generic shared code
 ```
 
-Forbidden:
+Forbidden: dynamic route discovery, DI containers, circular module imports,
+cross-module repository access, business code in `shared`, and global business
+controllers under `routes`.
 
-- Module-to-module internal imports
-- Module-to-module repository or Prisma queries
-- Core depending on a product module or concrete integration
-- Shared depending on a product module
-- Circular module dependencies
-- Repositories orchestrating business workflows
-- Global business controllers or repositories under `src/routes` or `src/core`
-
-Native Node package import maps (`#config`, `#core`, `#generated`,
-`#integrations`, `#modules`, `#routes`, and `#shared`) provide development and
-emitted-code resolution without a rewrite package. Static boundary enforcement
-beyond resolution and review remains Proposed in ADR-0005.
+Native package-import aliases cover `config`, `database`, `generated`,
+`integrations`, `middlewares`, `modules`, `routes`, and `shared`.

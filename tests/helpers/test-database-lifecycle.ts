@@ -1,8 +1,8 @@
 import {
   bindPrismaClient,
   resetPrismaClientForTests
-} from "../../src/integrations/database/prisma-client-accessor.js";
-import { PrismaLifecycle } from "../../src/integrations/database/prisma-lifecycle.js";
+} from "../../src/database/prisma.js";
+import { PrismaLifecycle } from "../../src/database/prisma-lifecycle.js";
 import { requireApprovedTestDatabaseUrl } from "./resolve-test-database-url.js";
 
 /** Bind one explicit lifecycle for a database-backed test composition. */

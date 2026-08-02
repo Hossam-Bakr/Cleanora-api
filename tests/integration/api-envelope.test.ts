@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { createApp } from "../../src/app.js";
-import { validateRequest } from "../../src/core/http/validate-request.js";
+import { validateRequest } from "../../src/middlewares/validate-request.js";
 import { createTestEnvironment } from "../helpers/test-environment.js";
 import { TestLogger } from "../helpers/test-logger.js";
 
@@ -12,18 +12,13 @@ describe("API response envelopes", () => {
     const app = createApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
-      modules: [
-        {
-          name: "envelope-validation-test",
-          register(expressApp) {
-            expressApp.post(
-              "/api/v1/test/validation",
-              validateRequest({ body: z.object({ email: z.email() }) }),
-              (_request, response) => response.status(204).end()
-            );
-          }
-        }
-      ]
+      mountTestRoutes(expressApp) {
+        expressApp.post(
+          "/api/v1/test/validation",
+          validateRequest({ body: z.object({ email: z.email() }) }),
+          (_request, response) => response.status(204).end(),
+        );
+      },
     });
 
     const response = await request(app)
@@ -49,16 +44,11 @@ describe("API response envelopes", () => {
     const app = createApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
-      modules: [
-        {
-          name: "envelope-error-test",
-          register(expressApp) {
-            expressApp.get("/api/v1/test/unexpected", () => {
-              throw new Error("SELECT * FROM private_secrets");
-            });
-          }
-        }
-      ]
+      mountTestRoutes(expressApp) {
+        expressApp.get("/api/v1/test/unexpected", () => {
+          throw new Error("SELECT * FROM private_secrets");
+        });
+      },
     });
 
     const response = await request(app)

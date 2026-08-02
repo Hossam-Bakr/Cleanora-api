@@ -1,6 +1,6 @@
 
-import { requestIdMiddleware } from "../../src/core/http/request-id.middleware.js";
-import { createRateLimitMiddleware } from "../../src/core/security/rate-limit.middleware.js";
+import { requestIdMiddleware } from "../../src/middlewares/request-id.middleware.js";
+import { createRateLimitMiddleware } from "../../src/middlewares/rate-limit.middleware.js";
 
 const express = require("express") as typeof import("express");
 const request = require("supertest") as typeof import("supertest");

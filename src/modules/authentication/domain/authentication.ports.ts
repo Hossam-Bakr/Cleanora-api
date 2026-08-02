@@ -1,7 +1,7 @@
 /**
  * Internal service contracts for authentication.
  *
- * The public module surface remains `src/modules/authentication/index.ts`.
+ * Concrete adapters are composed by `auth.module.ts`.
  */
 
 export interface SignInPolicy {

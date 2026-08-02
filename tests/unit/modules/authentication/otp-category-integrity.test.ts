@@ -1,5 +1,5 @@
-import { otpRequestSchema } from '../../../../src/modules/authentication/http/authentication.schemas.js';
-import { assertVerificationChallengeTarget, verificationTarget } from '../../../../src/modules/authentication/domain/verification-eligibility.policy.js';
+import { otpRequestSchema } from '../../../../src/modules/authentication/auth.schema.js';
+import { assertVerificationChallengeTarget, verificationTarget } from '../../../../src/modules/authentication/domain/auth.policy.js';
 import type { IdentityState } from '../../../../src/modules/authentication/domain/authentication.types.js';
 
 const pendingIndividual: IdentityState = { id: 'user-1', phoneE164: '+201000000000', emailNormalized: 'user@example.test', accountCategories: ['INDIVIDUAL'], verifiedCategories: [], status: 'ACTIVE', suspendedUntil: null, phoneVerifiedAt: null, emailVerifiedAt: null };

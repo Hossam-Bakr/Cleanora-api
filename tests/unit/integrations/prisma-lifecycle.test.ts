@@ -6,9 +6,9 @@ import {
   bindPrismaClient,
   getPrismaClient,
   resetPrismaClientForTests
-} from "../../../src/integrations/database/prisma-client-accessor.js";
-import { PrismaLifecycle } from "../../../src/integrations/database/prisma-lifecycle.js";
-import { AppConfigRepository } from "../../../src/modules/configuration/infrastructure/app-config.repository.js";
+} from "../../../src/database/prisma.js";
+import { PrismaLifecycle } from "../../../src/database/prisma-lifecycle.js";
+import { AppConfigRepository } from "../../../src/modules/configuration/configuration.repository.js";
 import { createGracefulShutdown } from "../../../src/server.js";
 
 const testDatabaseUrl =
@@ -101,5 +101,59 @@ describe("process-wide Prisma lifecycle", () => {
     expect(() => bindPrismaClient(secondLifecycle.client)).toThrow(
       /different process-wide Prisma client/
     );
+  });
+
+  it("maps optional Google profile and email fields during social persistence", async () => {
+    const update = vi.fn(async () => ({ id: "social-1" }));
+    const create = vi.fn(async () => ({ id: "social-2" }));
+    const findUnique = vi.fn(async () => null);
+    const deleteMany = vi.fn(async () => ({ count: 1 }));
+    bindPrismaClient({
+      socialAccount: { update, create, findUnique, deleteMany },
+    } as never);
+
+    const { SocialAccountRepository } = await import(
+      "../../../src/modules/authentication/infrastructure/auth.repository.js"
+    );
+    const repository = new SocialAccountRepository();
+
+    await repository.updateGoogleProfile("subject-1", {});
+    await repository.updateGoogleProfile("subject-1", {
+      displayName: "Cleanora User",
+    });
+    await repository.updateGoogleProfile("subject-1", {
+      avatarUrl: "https://lh3.googleusercontent.com/a/avatar.png",
+    });
+    await repository.updateGoogleProfile("subject-1", {
+      displayName: "Cleanora User",
+      avatarUrl: "https://lh3.googleusercontent.com/a/avatar.png",
+    });
+    await repository.link("user-1", "subject-1");
+    await repository.link("user-1", "subject-1", "person@example.test");
+    await repository.findGoogle("subject-1");
+    await repository.findGoogleByUserId("user-1");
+    await repository.unlink("user-1");
+
+    expect(update).toHaveBeenCalledTimes(4);
+    expect(create).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          providerEmailNormalized: null,
+          providerEmailVerifiedAt: null,
+        }),
+      }),
+    );
+    expect(create).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          providerEmailNormalized: "person@example.test",
+          providerEmailVerifiedAt: expect.any(Date),
+        }),
+      }),
+    );
+    expect(findUnique).toHaveBeenCalledTimes(2);
+    expect(deleteMany).toHaveBeenCalledOnce();
   });
 });

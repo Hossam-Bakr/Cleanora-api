@@ -1,7 +1,7 @@
 import type {
   AuthenticationDelivery,
   EmailAuthenticationDeliveryPort,
-} from '../../../src/modules/authentication/index.js';
+} from "../../../src/modules/authentication/domain/authentication.ports.js";
 
 export interface DeliveredAuthenticationValue extends AuthenticationDelivery {
   readonly channel: 'EMAIL';

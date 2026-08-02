@@ -1,5 +1,8 @@
 # Research — R1-P01 Project Foundation & Country Configuration
 
+> Historical R1-P01 research. Its Pino, registrar, `src/core`, and testing
+> observations were superseded by R1-P02A and are not current instructions.
+
 **Date**: 2026-07-24  
 **Phase**: R1-P01  
 **Status**: Complete (all planning unknowns resolved)  

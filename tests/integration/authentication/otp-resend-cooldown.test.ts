@@ -1,7 +1,7 @@
 import type { PrismaClient } from '../../../src/generated/prisma/client.js';
-import { bindPrismaClient, resetPrismaClientForTests } from '../../../src/integrations/database/index.js';
-import { AuthenticationService } from '../../../src/modules/authentication/application/authentication.service.js';
-import { OtpRepository } from '../../../src/modules/authentication/infrastructure/otp.repository.js';
+import { bindPrismaClient, resetPrismaClientForTests } from '../../../src/database/prisma.js';
+import { AuthenticationService } from '../../../src/modules/authentication/auth.service.js';
+import { OtpRepository } from '../../../src/modules/authentication/infrastructure/auth.repository.js';
 
 const input = { id: 'new-challenge', userId: 'user-1', category: 'INDIVIDUAL' as const, purpose: 'CATEGORY_VERIFICATION' as const, channel: 'EMAIL' as const, destinationHash: 'a'.repeat(64), verifier: 'b'.repeat(64), expiresAt: new Date(Date.now() + 600_000), resendAt: new Date(Date.now() + 60_000), maxAttempts: 5 };
 

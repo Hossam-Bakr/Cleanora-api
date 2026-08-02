@@ -2,32 +2,28 @@
 
 ```text
 src/
-├── background-jobs/ # Process-level worker composition
-├── config/          # Validated environment and constants
-├── core/            # Business-neutral ports, errors, HTTP, and security
-├── generated/       # Ignored Prisma-generated client
-├── integrations/    # Concrete external-service and database adapters
-├── modules/         # Phase-owned business capabilities
-├── routes/          # Application-level route registration only
-├── shared/          # Business-neutral types, utilities, and testing support
-├── app.ts           # Express composition root
-├── index.ts         # Programmatic exports
-└── server.ts        # Process startup and graceful shutdown
-prisma/              # One schema, migrations, and seed entry
-scripts/             # Safe local inspection and maintenance commands
+├── app.ts
+├── server.ts
+├── config/
+├── database/
+├── middlewares/
+├── modules/
+├── integrations/
+├── routes/
+├── shared/
+└── swagger/
+prisma/
+├── schema.prisma
+└── migrations/
 tests/
 ├── unit/
 ├── integration/
-├── e2e/
 └── helpers/
 ```
 
-Business controllers and routes remain inside their owning module.
-`src/routes` must not become a global business layer.
+`routes/index.ts` is the visible API map. Business routes remain in their
+module. Generated Prisma source, `dist`, `coverage`, dependencies, caches, and
+runtime data are not source and remain ignored.
 
-Generated output goes to `dist/`, never `src/`. Prisma-generated source is
-ignored and regenerated after schema changes.
-
-Internal imports use native `package.json#imports` aliases. The `development`
-condition targets TypeScript source; the default condition targets emitted
-JavaScript. Development commands must enable the `development` condition.
+Native `package.json#imports` aliases resolve TypeScript under the development
+condition and compiled JavaScript by default.

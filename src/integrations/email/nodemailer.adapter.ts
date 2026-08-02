@@ -1,4 +1,4 @@
-import type { EmailMessage, EmailPort } from "#core/email/email.port";
+import type { EmailMessage, EmailPort } from "#integrations/email/email.types";
 
 export type EmailDeliveryErrorName =
   | "EMAIL_AUTHENTICATION_FAILED"

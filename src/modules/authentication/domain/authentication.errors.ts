@@ -1,4 +1,4 @@
-import { AppError } from "#core/errors/app-error";
+import { AppError } from "#shared/errors/app-error";
 
 export type AuthenticationErrorCode =
   | "AUTHENTICATION_REQUIRED"

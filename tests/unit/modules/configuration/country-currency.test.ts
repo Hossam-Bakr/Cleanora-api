@@ -1,10 +1,10 @@
 
 import {
-  assertCountryCurrencySupported,
-  getCountryByCode,
-  getCurrencyByCode
-} from "../../../../src/modules/configuration/application/country-currency.js";
-import type { ConfigurationRepositories } from "../../../../src/modules/configuration/domain/configuration.types.js";
+  assertCountryCurrencySupportedWith as assertCountryCurrencySupported,
+  getCountryByCodeWith as getCountryByCode,
+  getCurrencyByCodeWith as getCurrencyByCode,
+} from "../../../../src/modules/configuration/configuration.service.js";
+import type { ConfigurationRepositories } from "../../../../src/modules/configuration/configuration.repository.js";
 
 function createRepositories(
   options: {

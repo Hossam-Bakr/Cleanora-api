@@ -1,9 +1,9 @@
 import { Prisma } from "#generated/prisma/client";
-import { getPrismaClient } from "#integrations/database/index";
+import { getPrismaClient } from "#database/prisma";
 import { authenticationError } from "../domain/authentication.errors.js";
 import type { AccountCategory } from "../domain/authentication.types.js";
-import { mapIdentity } from "./authentication.mapper.js";
-import { verificationTarget } from "../domain/verification-eligibility.policy.js";
+import { mapIdentity } from "./auth.repository.js";
+import { verificationTarget } from "../domain/auth.policy.js";
 
 export class AuthenticationTransactionRepository {
   async enrollCategory(input: { userId: string; category: AccountCategory }) {

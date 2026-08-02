@@ -45,3 +45,20 @@ Precedence:
 
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
+
+## Current backend navigation
+
+For implementation work, start in this order:
+
+1. `src/routes/index.ts` — complete mounted API map
+2. `src/modules/<capability>/<capability>.routes.ts`
+3. the module controller
+4. the module service
+5. Prisma directly for simple owning-module persistence, or the module
+   repository for reusable, complex, or transactional queries
+
+`src/app.ts` configures Express without listening. `src/server.ts` is the
+composition root and owns environment validation, Prisma lifecycle,
+`createServer(app)`, listening, and graceful shutdown. One-line module barrels,
+dynamic route registrars, and empty future modules are not part of the current
+architecture.

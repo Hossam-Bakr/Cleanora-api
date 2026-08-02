@@ -1,4 +1,4 @@
-import { createAuthenticateAccess } from '../../../../src/modules/authentication/http/authentication.middleware.js';
+import { createAuthenticateAccess } from '../../../../src/modules/authentication/auth.middleware.js';
 
 describe('authentication access middleware', () => {
   it.each([

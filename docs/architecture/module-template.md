@@ -1,23 +1,17 @@
 # Module Template
 
-Create this compact layout only when the active phase approves the module:
+Create a module only when its active phase needs it:
 
 ```text
-src/modules/<module-name>/
-├── <module-name>.routes.ts
-├── <module-name>.controller.ts
-├── <module-name>.service.ts
-├── <module-name>.repository.ts
-├── <module-name>.schemas.ts
-├── <module-name>.types.ts
-├── <module-name>.errors.ts
-├── <module-name>.contracts.ts
-├── index.ts
-└── __tests__/
-    ├── <module-name>.service.test.ts
-    └── <module-name>.integration.test.ts
+src/modules/<name>/
+├── <name>.routes.ts
+├── <name>.controller.ts
+├── <name>.service.ts
+├── <name>.repository.ts
+└── <name>.schema.ts
 ```
 
-Add events, jobs, policies, mappers, constants, or a README only when behavior requires them. Do not create empty optional files or an ORM `model.ts`.
-
-If complexity later justifies deeper layers, evolve internally to `api/`, `application/`, `domain/`, and `infrastructure/` while preserving the public `index.ts`.
+These are examples, not mandatory files. Do not create empty files, one-line
+barrels, a separate type file for one consumer, or an interface for one
+implementation. Add a policy, transaction repository, provider adapter, or
+deeper folder only when current complexity justifies it.

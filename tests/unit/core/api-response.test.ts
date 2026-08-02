@@ -2,7 +2,7 @@
 import {
   createFailureResponse,
   sendSuccess
-} from "../../../src/core/http/api-response.js";
+} from "../../../src/shared/http/api-response.js";
 
 describe("API response helpers", () => {
   it("creates a standard success envelope with optional metadata", () => {

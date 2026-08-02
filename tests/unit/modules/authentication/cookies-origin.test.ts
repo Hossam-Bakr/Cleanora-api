@@ -1,4 +1,4 @@
-import { requireTrustedOrigin } from '../../../../src/modules/authentication/http/authentication-origin.js';
+import { requireTrustedOrigin } from "../../../../src/modules/authentication/auth.middleware.js";
 
 describe('authentication origin guard', () => {
   it('accepts only allowlisted browser origins', () => {

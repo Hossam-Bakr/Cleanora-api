@@ -1,6 +1,6 @@
 
-import { writeAudit } from "#modules/admin";
-import type { PrismaLifecycle } from "../../src/integrations/database/prisma-lifecycle.js";
+import { writeAudit } from "#modules/admin/audit.service";
+import type { PrismaLifecycle } from "../../src/database/prisma-lifecycle.js";
 import {
   startTestDatabaseLifecycle,
   stopTestDatabaseLifecycle

@@ -1,5 +1,5 @@
-import { AUTH_RATE_LIMITS } from '../../../../src/modules/authentication/domain/rate-limit.policy.js';
-import { loginCapability } from '../../../../src/modules/authentication/domain/login-eligibility.policy.js';
+import { AUTH_RATE_LIMITS } from '../../../../src/modules/authentication/domain/auth.policy.js';
+import { loginCapability } from '../../../../src/modules/authentication/domain/auth.policy.js';
 
 describe('authentication abuse and status policy', () => {
   it('keeps deterministic endpoint limits', () => {

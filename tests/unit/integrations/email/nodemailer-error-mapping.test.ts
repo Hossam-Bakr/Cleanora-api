@@ -10,6 +10,8 @@ describe("Nodemailer delivery error mapping", () => {
     [{ code: "ETIMEDOUT" }, "EMAIL_TIMEOUT"],
     [{ code: "EENVELOPE" }, "EMAIL_RECIPIENT_REJECTED"],
     [{ responseCode: 550 }, "EMAIL_RECIPIENT_REJECTED"],
+    [{ responseCode: 559 }, "EMAIL_RECIPIENT_REJECTED"],
+    [{ responseCode: 560 }, "EMAIL_PROVIDER_UNAVAILABLE"],
     [{ code: "ECONNECTION" }, "EMAIL_CONNECTION_FAILED"],
     [{ code: "ECONNREFUSED" }, "EMAIL_CONNECTION_FAILED"],
     [{ code: "ENOTFOUND" }, "EMAIL_CONNECTION_FAILED"],
@@ -21,6 +23,21 @@ describe("Nodemailer delivery error mapping", () => {
     const mapped = mapEmailDeliveryError(error);
     expect(mapped).toBeInstanceOf(EmailDeliveryError);
     expect(mapped.name).toBe(expected);
+  });
+
+  it("accepts successful sends and empty rejected lists", async () => {
+    const sendMail = vi.fn(async () => ({ rejected: [] }));
+    const adapter = new NodemailerEmailAdapter({ sendMail });
+    await expect(
+      adapter.send({
+        to: ["person@example.test"],
+        subject: "subject",
+        html: "<p>body</p>",
+        text: "body",
+        idempotencyKey: "email-ok",
+      }),
+    ).resolves.toBeUndefined();
+    expect(sendMail).toHaveBeenCalledOnce();
   });
 
   it("rejects transport responses that list rejected recipients", async () => {

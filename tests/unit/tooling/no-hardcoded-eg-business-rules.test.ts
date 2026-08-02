@@ -31,7 +31,7 @@ describe("country configuration guard", () => {
       await Promise.all(
         sourceFiles.map(async (file) => {
           const content = await readFile(file, "utf8");
-          return file.endsWith("config-key-catalog.ts") ||
+          return file.endsWith("config-key.catalog.ts") ||
               !HARD_CODED_EGYPT_BRANCH.test(content)
             ? []
             : [relative(process.cwd(), file).split(sep).join("/")];

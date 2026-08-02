@@ -7,7 +7,7 @@ import type {
   RateLimitDecision,
   RateLimitKey,
   RateLimiterPort
-} from "#core/security/rate-limit.port";
+} from "#middlewares/rate-limit.types";
 
 interface MemoryLimiter {
   consume(key: string): Promise<{

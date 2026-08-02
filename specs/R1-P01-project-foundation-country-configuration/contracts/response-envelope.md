@@ -2,7 +2,8 @@
 
 **Phase**: R1-P01  
 **Canonical standard**: `docs/standards/api-response-and-errors.md`  
-**Implementation baseline**: `src/core/http/api-response.ts`, `error.middleware.ts`
+**Current implementation**: `src/shared/http/api-response.ts`,
+`src/middlewares/error.middleware.ts`
 
 R1-P01 reuses and freezes this envelope for all HTTP endpoints. No alternate shapes.
 

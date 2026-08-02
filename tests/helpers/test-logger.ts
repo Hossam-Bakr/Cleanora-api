@@ -1,7 +1,7 @@
 import type {
   LogContext,
   Logger
-} from "../../src/core/logging/logger.js";
+} from "../../src/shared/logger.js";
 
 /** Capture the latest error context for database-contention diagnosis without printing secrets. */
 export type CapturedTestLogError = {

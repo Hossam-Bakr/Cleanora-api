@@ -4,7 +4,7 @@ import {
   GOOGLE_OAUTH_STATE_COOKIE_NAME,
   setGoogleOAuthStateCookie,
   setRefreshCookie,
-} from "../../../../src/modules/authentication/http/authentication.cookies.js";
+} from "../../../../src/modules/authentication/auth.cookies.js";
 
 const configuration = {
   name: "cleanora_refresh_token",

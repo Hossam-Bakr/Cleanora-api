@@ -1,6 +1,6 @@
 import type { PrismaClient } from '../../../src/generated/prisma/client.js';
-import { bindPrismaClient, resetPrismaClientForTests } from '../../../src/integrations/database/index.js';
-import { AuthenticationService } from '../../../src/modules/authentication/application/authentication.service.js';
+import { bindPrismaClient, resetPrismaClientForTests } from '../../../src/database/prisma.js';
+import { AuthenticationService } from '../../../src/modules/authentication/auth.service.js';
 
 function service() {
   return new AuthenticationService({

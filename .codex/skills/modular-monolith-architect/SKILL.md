@@ -7,7 +7,9 @@ description: Define Cleanora modular-monolith boundaries, ownership, dependency 
 
 1. Read the active phase requirements and applicable architecture rules.
 2. Identify cohesive business capabilities and assign each behavior and persistence operation one owner.
-3. Define inbound use cases and the smallest stable public `index.ts` or approved contract surface.
+3. Define inbound use cases and the smallest stable named service or
+   composition file that acts as the approved contract surface; do not default
+   to a barrel.
 4. Direct dependencies toward public contracts; prohibit circular dependencies and cross-module repository access.
 5. Choose direct application calls by default. Use internal domain/application events only when they reduce coupling and their consistency semantics are explicit.
 6. Keep infrastructure behind controlled adapters and keep module-specific rules out of shared code.

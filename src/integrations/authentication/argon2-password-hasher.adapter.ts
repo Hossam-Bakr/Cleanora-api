@@ -1,4 +1,4 @@
-import type { PasswordHasherPort } from '#modules/authentication';
+import type { PasswordHasherPort } from "../../modules/authentication/domain/authentication.ports.js";
 import type { HashOptions } from 'argon2';
 
 const argon2 = require('argon2') as typeof import('argon2');

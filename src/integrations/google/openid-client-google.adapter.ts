@@ -1,4 +1,8 @@
-import type { GoogleIdentity, GoogleIdentityPort, GoogleTransaction } from '#modules/authentication';
+import type {
+  GoogleIdentity,
+  GoogleIdentityPort,
+  GoogleTransaction,
+} from "../../modules/authentication/domain/authentication.ports.js";
 
 interface OidcTokens { claims(): Record<string, unknown> | undefined; }
 interface OidcFacade {

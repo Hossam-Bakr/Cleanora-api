@@ -1,4 +1,4 @@
-import { requireFullAuthentication } from '../../../../src/modules/authentication/http/authentication.middleware.js';
+import { requireFullAuthentication } from '../../../../src/modules/authentication/auth.middleware.js';
 
 describe('verification-only route guard', () => {
   it('rejects requests when authentication middleware supplied no principal', () => {

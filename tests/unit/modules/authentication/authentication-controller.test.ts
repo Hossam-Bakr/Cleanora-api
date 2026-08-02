@@ -1,4 +1,4 @@
-import { createAuthenticationController } from '../../../../src/modules/authentication/http/authentication.controller.js';
+import { createAuthenticationController } from '../../../../src/modules/authentication/auth.controller.js';
 
 const cookies = {
   name: 'cleanora_refresh_token',
@@ -596,5 +596,64 @@ describe('authentication controller failure alternatives', () => {
       303,
       expect.stringContaining('google=success&intent=sign-in&verification=complete'),
     );
+  });
+
+  it('forwards verify, me, forgot, and reset failures to next', async () => {
+    const failure = new Error('controller-forwarded');
+    const service = {
+      verifyCode: vi.fn(async () => {
+        throw failure;
+      }),
+      currentUser: vi.fn(async () => {
+        throw failure;
+      }),
+      forgotPassword: vi.fn(async () => {
+        throw failure;
+      }),
+      resetPassword: vi.fn(async () => {
+        throw failure;
+      }),
+    };
+    const controller = createAuthenticationController(service as never, cookies);
+
+    const verifyNext = vi.fn();
+    await controller.verifyOtp(
+      request({ body: { challengeId: 'challenge-1', code: '123456' } }) as never,
+      response() as never,
+      verifyNext,
+    );
+    expect(verifyNext).toHaveBeenCalledWith(failure);
+
+    const meNext = vi.fn();
+    await controller.me(
+      request() as never,
+      response({ authenticationPrincipal: principal }) as never,
+      meNext,
+    );
+    expect(meNext).toHaveBeenCalledWith(failure);
+
+    const forgotNext = vi.fn();
+    await controller.forgot(
+      request({
+        body: { accountCategory: 'INDIVIDUAL', identifier: 'person@example.test' },
+      }) as never,
+      response() as never,
+      forgotNext,
+    );
+    expect(forgotNext).toHaveBeenCalledWith(failure);
+
+    const resetNext = vi.fn();
+    await controller.reset(
+      request({
+        body: {
+          challengeId: '0d301aa0-a709-48e5-a5a6-1e5bfb7f132c',
+          code: '5486',
+          newPassword: 'replacement-pass',
+        },
+      }) as never,
+      response() as never,
+      resetNext,
+    );
+    expect(resetNext).toHaveBeenCalledWith(failure);
   });
 });

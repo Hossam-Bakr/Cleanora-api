@@ -10,6 +10,8 @@ alwaysApply: false
 - Create a clearly named phase-owned migration and review generated SQL.
 - Document defaults, backfills, constraints, indexes, data risk, and forward-fix strategy.
 - Never edit or delete an applied migration.
-- Keep direct Prisma access inside the owning repository/infrastructure layer.
+- Keep direct Prisma access inside the owning module. Simple CRUD may live in
+  the owning service; reusable, complex, or transactional persistence belongs
+  in an owning repository.
 - Regenerate Prisma Client, validate the schema, test clean application, and run compatibility tests.
 - Use decimal-safe financial types and preserve immutable/historical records.

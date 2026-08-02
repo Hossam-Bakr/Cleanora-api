@@ -4,13 +4,13 @@
 |---|---|
 | Release | Release 1 — Core Marketplace |
 | Phase | R1-P02 |
-| Status | In Progress |
-| Current active phase | R1-P02 |
+| Status | Complete |
+| Current active phase | R1-P02A maintenance; R1-P03 inactive |
 | Depends on | R1-P00 and R1-P01 |
 | Canonical source | Vision section 4; roadmap R1-P02 |
-| Approved decisions | DEC-011, DEC-012, DEC-014 |
+| Approved decisions | DEC-011 through DEC-028, with later decisions superseding earlier temporary delivery rules |
 | Architecture decisions | ADR-0010 |
-| Blocking question | OQ-014 Google audience |
+| Blocking question | None |
 
 ## Goal
 
@@ -18,15 +18,15 @@ Implement one shared identity system for customers, provider owners, workers,
 and later marketers while enforcing the verification path required for each
 Release 1 actor.
 
-## Locked behavior
+## Final behavior
 
-- Individual: required phone and blocking six-digit SMS OTP; email optional.
-- Company/engineer: required email with blocking email OTP; phone required but
-  not SMS-verified.
-- Provider owner: required email with blocking email OTP; phone required but
-  not SMS-verified.
+- Every supported self-signup category requires account-bound email
+  verification.
+- Phone values may be collected but are not ownership-verified in R1-P02.
+- SMS and Google phone-verification endpoints are not part of R1-P02; phone
+  ownership is deferred to R1-P26.
 - Worker: provider-created identity; login uses phone and password.
-- Google sign-in does not bypass actor-specific verification.
+- Google sign-in is Individual-only and requires a Google-verified email.
 - Banned or suspended accounts are denied at login and protected requests.
 - Access JWT plus rotating refresh JWT cookie follows ADR-0010.
 
@@ -37,8 +37,8 @@ Release 1 actor.
 - [Test plan](test-plan.md)
 - [Implementation checklist](implementation-checklist.md)
 
-## Remaining operations gate
+## Current contract
 
-Egypt SMS vendor selection and production credentials remain human-owned. The
-phase uses only the approved delivery port and deterministic unavailable/test
-adapters; no production SMS network integration is activated here.
+Use `docs/apis/authentication.md`, runtime Swagger, and the OpenAPI document.
+The phase files below are navigation/evidence summaries and do not define a
+second competing API contract.

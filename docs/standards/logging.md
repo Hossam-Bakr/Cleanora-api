@@ -1,26 +1,14 @@
 # Logging Standard
 
-Pino is the approved structured application logger and `pino-http` is the
-approved HTTP request logger.
+Morgan is the only HTTP access logger:
 
-Each completed request logs:
+- development: concise method, safe path, status, duration, request ID
+- production: combined-style access line using the safe path
+- test: silent
 
-- Request ID
-- HTTP method
-- Safe URL
-- Response status
-- Response duration
-- Safe remote address
+HTTP logs exclude query strings, bodies, authorization headers, cookies,
+passwords, tokens, OTPs, secrets, signatures, and payment payloads.
 
-The logger does not log request bodies. Authorization headers, cookies,
-passwords, tokens, OTPs, secrets, signatures, and payment payloads are redacted.
-
-Levels:
-
-- `info`: normal successful requests and lifecycle events
-- `warn`: expected degraded states and 4xx responses needing attention
-- `error`: 5xx responses, startup/shutdown failures, and failed dependencies
-- `debug`: development-only safe diagnostic metadata
-
-Business modules depend on the `Logger` port. Pino remains an integration
-adapter and must not leak into module contracts.
+A small JSON application logger handles startup, shutdown, provider failures,
+and safe lifecycle events. Its context is recursively redacted. Business
+modules depend only on the small `Logger` shape and never on Morgan.

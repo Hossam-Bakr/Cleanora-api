@@ -2,10 +2,10 @@ import type { PrismaClient } from '../../../src/generated/prisma/client.js';
 import {
   bindPrismaClient,
   resetPrismaClientForTests
-} from '../../../src/integrations/database/index.js';
+} from '../../../src/database/prisma.js';
 import { AuthenticationTransactionRepository } from '../../../src/modules/authentication/infrastructure/authentication-transaction.repository.js';
-import { PasswordResetRepository } from '../../../src/modules/authentication/infrastructure/password-reset.repository.js';
-import { AuthEventRepository } from '../../../src/modules/authentication/infrastructure/auth-event.repository.js';
+import { PasswordResetRepository } from '../../../src/modules/authentication/infrastructure/auth.repository.js';
+import { AuthEventRepository } from '../../../src/modules/authentication/infrastructure/auth.repository.js';
 
 describe('authentication repository conditional mutations', () => {
   afterEach(() => resetPrismaClientForTests('test'));
