@@ -1,9 +1,97 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { Prisma, PrismaClient } from "../src/generated/prisma/client.js";
+import {
+  AUTHORIZATION_PERMISSIONS,
+  AUTHORIZATION_ROLES,
+  PRIVILEGED_ACTION_REASONS,
+  ROLE_PERMISSION_MAP,
+} from "../src/modules/authentication/domain/authorization.catalog.js";
 
 /**
- * Seed only R1-P01 reference data. Every write uses its approved natural key.
+ * Seed the R1-P03 authorization definitions only: roles, permissions, the
+ * role-permission map, and privileged-action reasons.
+ *
+ * This never creates a user-role grant, a user, or a staff bootstrap. Production
+ * grants happen only through the internal role-management contract.
+ *
+ * Every definition upserts by its stable `code` (or role/permission pair) so a
+ * second seed restores drifted `name` / `operation` / `isActive` without
+ * creating duplicates.
+ */
+async function seedAuthorizationDefinitions(
+  prisma: PrismaClient
+): Promise<void> {
+  for (const role of AUTHORIZATION_ROLES) {
+    await prisma.role.upsert({
+      where: { code: role.code },
+      create: { code: role.code, name: role.name },
+      update: { name: role.name }
+    });
+  }
+
+  for (const permission of AUTHORIZATION_PERMISSIONS) {
+    await prisma.permission.upsert({
+      where: { code: permission.code },
+      create: { code: permission.code, name: permission.name },
+      update: { name: permission.name }
+    });
+  }
+
+  for (const reason of PRIVILEGED_ACTION_REASONS) {
+    await prisma.privilegedActionReason.upsert({
+      where: { code: reason.code },
+      create: {
+        code: reason.code,
+        name: reason.name,
+        operation: reason.operation,
+        isActive: reason.isActive
+      },
+      update: {
+        name: reason.name,
+        operation: reason.operation,
+        isActive: reason.isActive
+      }
+    });
+  }
+
+  const [storedRoles, storedPermissions] = await Promise.all([
+    prisma.role.findMany({ select: { id: true, code: true } }),
+    prisma.permission.findMany({ select: { id: true, code: true } })
+  ]);
+  const roleIdsByCode = new Map(
+    storedRoles.map((role) => [role.code, role.id])
+  );
+  const permissionIdsByCode = new Map(
+    storedPermissions.map((permission) => [permission.code, permission.id])
+  );
+
+  for (const [roleCode, permissionCodes] of Object.entries(
+    ROLE_PERMISSION_MAP
+  )) {
+    const roleId = roleIdsByCode.get(roleCode);
+    if (roleId === undefined) {
+      throw new Error(`Seed is missing role ${roleCode}`);
+    }
+    for (const permissionCode of permissionCodes) {
+      const permissionId = permissionIdsByCode.get(permissionCode);
+      if (permissionId === undefined) {
+        throw new Error(`Seed is missing permission ${permissionCode}`);
+      }
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: { roleId, permissionId }
+        },
+        create: { roleId, permissionId },
+        update: {}
+      });
+    }
+  }
+}
+
+/**
+ * Seed R1-P01 reference data and R1-P03 authorization definitions. Every write
+ * uses its approved natural key so repeated runs stay idempotent.
  */
 export async function seed(): Promise<void> {
   const connectionString = process.env["DATABASE_URL"];
@@ -167,6 +255,8 @@ export async function seed(): Promise<void> {
       },
       update: { value: "EGP", valueKind: "STRING" }
     });
+
+    await seedAuthorizationDefinitions(prisma);
   } finally {
     await prisma.$disconnect();
   }

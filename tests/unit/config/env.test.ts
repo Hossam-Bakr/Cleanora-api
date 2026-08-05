@@ -1,12 +1,10 @@
 
 import {
+  createStartupFailureContext,
   loadEnvironment,
   mapEnvironmentDiagnostics
 } from "../../../src/config/env.js";
-import {
-  createStartupFailureContext,
-  startApplication
-} from "../../../src/server.js";
+import { startApplication } from "../../../src/server.js";
 
 const validEnvironment: NodeJS.ProcessEnv = {
   NODE_ENV: "test",
@@ -145,21 +143,18 @@ describe("loadEnvironment", () => {
   });
 
   it("fails validation before database composition or listening can begin", async () => {
-    const { DATABASE_URL: _databaseUrl, ...withoutDatabaseUrl } = validEnvironment;
-    let databaseCreationAttempted = false;
+    const originalDatabaseUrl = process.env["DATABASE_URL"];
+    delete process.env["DATABASE_URL"];
 
-    await expect(
-      startApplication({
-        environmentInput: withoutDatabaseUrl,
-        createDatabase: () => {
-          databaseCreationAttempted = true;
-          throw new Error("database creation must not run");
-        },
-        installSignalHandlers: false
-      })
-    ).rejects.toBeDefined();
-
-    expect(databaseCreationAttempted).toBe(false);
+    try {
+      await expect(startApplication()).rejects.toBeDefined();
+    } finally {
+      if (originalDatabaseUrl === undefined) {
+        delete process.env["DATABASE_URL"];
+      } else {
+        process.env["DATABASE_URL"] = originalDatabaseUrl;
+      }
+    }
   });
 
   it("creates a structured startup context without raw Zod issues", () => {

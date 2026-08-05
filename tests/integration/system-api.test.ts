@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createApp } from "../../src/app.js";
+import { createTestApp } from "../helpers/create-test-app.js";
 import { createTestEnvironment } from "../helpers/test-environment.js";
 import { TestLogger } from "../helpers/test-logger.js";
 
@@ -8,7 +8,7 @@ const request = require("supertest") as typeof import("supertest");
 
 describe("system API", () => {
   it("returns the standard success envelope for liveness", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger()
     });
@@ -30,7 +30,7 @@ describe("system API", () => {
   });
 
   it("returns the standard failure envelope for an unknown route", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger()
     });
@@ -49,7 +49,7 @@ describe("system API", () => {
   });
 
   it("returns ready when every dependency probe succeeds", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       readinessProbes: [
@@ -65,7 +65,7 @@ describe("system API", () => {
   });
 
   it("returns database health without database implementation details", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       databaseProbe: { check: async () => Promise.resolve() }
@@ -82,7 +82,7 @@ describe("system API", () => {
   });
 
   it("maps a database probe failure to DATABASE_UNAVAILABLE", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       databaseProbe: {
@@ -106,7 +106,7 @@ describe("system API", () => {
   });
 
   it("returns a safe dependency error when a readiness probe fails", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       readinessProbes: [
@@ -132,7 +132,7 @@ describe("system API", () => {
   });
 
   it("maps Zod errors to safe field issues", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       mountTestRoutes(expressApp) {
@@ -162,7 +162,7 @@ describe("system API", () => {
   });
 
   it("hides unexpected error details", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       mountTestRoutes(expressApp) {
@@ -187,7 +187,7 @@ describe("system API", () => {
   });
 
   it("rejects a browser origin outside the configured allowlist", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger()
     });

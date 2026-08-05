@@ -62,6 +62,7 @@ export function sanitizeLogContext(context: LogContext): LogContext {
   return sanitizeValue(context, new WeakSet<object>()) as LogContext;
 }
 
+/** Write the log line to the standard output. */
 function defaultSink(line: string): void {
   process.stdout.write(`${line}\n`);
 }

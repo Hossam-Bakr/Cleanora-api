@@ -1,7 +1,7 @@
 import { cpus, platform } from 'node:os';
 import { performance } from 'node:perf_hooks';
 import type { RequestHandler } from 'express';
-import { createApp } from '../../../src/app.js';
+import { createTestApp } from '../../helpers/create-test-app.js';
 import { createAuthenticationRouter } from '../../../src/modules/authentication/auth.routes.js';
 import type { AuthenticationService } from '../../../src/modules/authentication/auth.service.js';
 import { createTestEnvironment } from '../../helpers/test-environment.js';
@@ -35,7 +35,7 @@ describe('deterministic session endpoint latency', () => {
       googleProviderCallbackUri: undefined,
       googleFrontendCallbackUri: undefined,
     });
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       rateLimiter: limiter,

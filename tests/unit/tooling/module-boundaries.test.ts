@@ -57,4 +57,23 @@ describe("business module dependency boundaries", () => {
 
     expect(violations).toEqual([]);
   });
+
+  it("lets only admin persistence map and write audit_logs", async () => {
+    const files = await listTypeScriptFiles(modulesRoot);
+    const writers = (
+      await Promise.all(
+        files.map(async (file) => {
+          const source = await readFile(file, "utf8");
+          return /\.auditLog\b/.test(source)
+            ? [relative(modulesRoot, file).split(sep).join("/")]
+            : [];
+        })
+      )
+    ).flat();
+
+    expect(writers.sort()).toEqual([
+      "admin/audit.service.ts",
+      "admin/infrastructure/prisma-privileged-audit.writer.ts"
+    ]);
+  });
 });

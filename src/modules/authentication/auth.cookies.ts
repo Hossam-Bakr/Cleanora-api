@@ -3,6 +3,8 @@ import type { CookieOptions, Response } from "express";
 export const DEFAULT_REFRESH_COOKIE_NAME = "cleanora_refresh_token";
 export const GOOGLE_OAUTH_STATE_COOKIE_NAME = "cleanora_google_oauth_state";
 
+// Old external cookie names Cleanora must expire. Cleanora never issues or
+// accepts them, and the current configured cookie never appears here.
 const LEGACY_REFRESH_COOKIE_NAMES = [
   "cleanora_refresh",
   "fs_refreshtoken",

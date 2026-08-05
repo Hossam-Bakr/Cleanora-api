@@ -50,15 +50,18 @@ pointer activates that phase.
 
 For implementation work, start in this order:
 
-1. `src/routes/index.ts` — complete mounted API map
-2. `src/modules/<capability>/<capability>.routes.ts`
-3. the module controller
-4. the module service
-5. Prisma directly for simple owning-module persistence, or the module
+1. `src/server.ts` — visible process startup and shutdown ownership
+2. `src/composition.ts` — construction of existing runtime dependencies
+3. `src/app.ts` — Express and global middleware order
+4. `src/routes/index.ts` — complete mounted API map
+5. `src/modules/<capability>/<capability>.routes.ts`
+6. the module controller
+7. the module service
+8. Prisma directly for simple owning-module persistence, or the module
    repository for reusable, complex, or transactional queries
 
-`src/app.ts` configures Express without listening. `src/server.ts` is the
-composition root and owns environment validation, Prisma lifecycle,
-`createServer(app)`, listening, and graceful shutdown. One-line module barrels,
-dynamic route registrars, and empty future modules are not part of the current
-architecture.
+`src/app.ts` configures Express without listening. `src/server.ts` owns the
+visible environment → composition → database → app/routes → listener →
+shutdown sequence, while pure listener mechanics live in
+`src/server-lifecycle.ts`. One-line module barrels, dynamic route registrars,
+and empty future modules are not part of the current architecture.

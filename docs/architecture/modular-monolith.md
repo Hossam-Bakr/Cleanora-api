@@ -5,17 +5,23 @@ and one Prisma schema.
 
 ## Navigation
 
-Start at `src/routes/index.ts`. Every active HTTP group is mounted there
-explicitly. The normal path is:
+Start at `src/server.ts` to follow the process from environment validation to
+runtime composition, Express creation, route mounting, listening, and graceful
+shutdown. The normal reading path is:
 
 ```text
-route -> controller -> service -> Prisma/repository
+server.ts
+  -> composition.ts
+  -> app.ts
+  -> routes/index.ts
+  -> module route -> controller -> service -> Prisma/repository
 ```
 
-`app.ts` creates Express, global middleware, Morgan, routes, the 404 handler,
-and the error handler. It never listens. `server.ts` validates the environment,
-connects Prisma, composes current providers, calls `createServer(app)`, listens,
-and owns graceful shutdown.
+`composition.ts` constructs existing adapters and module routers without
+starting the process or containing business rules. `app.ts` creates Express,
+registers global middleware, directly mounts the explicit public-route map,
+and adds the 404 and error handlers last. `routes/index.ts` is that route-group
+map. Pure listener and shutdown mechanics live in `server-lifecycle.ts`.
 
 ## Module rule
 

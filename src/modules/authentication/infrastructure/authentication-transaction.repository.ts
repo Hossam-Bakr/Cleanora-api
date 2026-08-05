@@ -74,10 +74,7 @@ export class AuthenticationTransactionRepository {
         where: { id: challenge.userId },
         data: {
           verifiedCategories: [
-            ...new Set([
-              ...user.verifiedCategories,
-              challenge.accountCategory,
-            ]),
+            ...new Set([...user.verifiedCategories, challenge.accountCategory]),
           ],
           emailVerifiedAt: new Date(),
         },
@@ -166,10 +163,7 @@ export class AuthenticationTransactionRepository {
       const current = await transaction.user.findUnique({
         where: { id: userId },
       });
-      if (
-        current === null ||
-        !current.accountCategories.includes("INDIVIDUAL")
-      ) {
+      if (!current?.accountCategories.includes("INDIVIDUAL")) {
         return null;
       }
       if (current.verifiedCategories.includes("INDIVIDUAL")) {

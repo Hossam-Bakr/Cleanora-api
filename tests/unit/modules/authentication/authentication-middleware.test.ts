@@ -1,4 +1,6 @@
 import { createAuthenticateAccess } from '../../../../src/modules/authentication/auth.middleware.js';
+import { AuthorizationService } from '../../../../src/modules/authentication/authorization.service.js';
+import { createGrantReaderForEnabledRoles } from '../../../helpers/authorization/authorization-fixtures.js';
 
 describe('authentication access middleware', () => {
   it.each([
@@ -70,5 +72,39 @@ describe('authentication access middleware', () => {
     expect(service.authenticateAccess).toHaveBeenCalledWith('valid-access-token');
     expect(response.locals['authenticationPrincipal']).toEqual(principal);
     expect(next).toHaveBeenCalledWith();
+  });
+
+  // R1-P03 adds no public endpoint, so an internal protected operation runs only
+  // after this middleware installs a principal. Without one it never runs.
+  it('stops an internal R1-P03 protected operation when no principal is installed', async () => {
+    const service = { authenticateAccess: vi.fn() };
+    const middleware = createAuthenticateAccess(service as never);
+    const response = { locals: {} as Record<string, unknown> };
+    const next = vi.fn();
+
+    await middleware(
+      { get: vi.fn(() => undefined) } as never,
+      response as never,
+      next
+    );
+
+    expect(response.locals).not.toHaveProperty('authenticationPrincipal');
+    expect(next.mock.calls[0]?.[0]).toMatchObject({
+      code: 'AUTHENTICATION_REQUIRED',
+      statusCode: 401
+    });
+
+    const authorization = new AuthorizationService(
+      createGrantReaderForEnabledRoles({ 'user-1': ['staff_admin'] })
+    );
+    const principal = response.locals['authenticationPrincipal'];
+
+    expect(principal).toBeUndefined();
+    await expect(
+      authorization.authorizeProtectedOperation({
+        principal: principal as never,
+        operationId: 'identity.roles.assign'
+      })
+    ).resolves.toEqual({ allowed: false, denialCode: 'ACCOUNT_STATE_DENIED' });
   });
 });

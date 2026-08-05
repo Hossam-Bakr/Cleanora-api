@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createApp } from "../../src/app.js";
+import { createTestApp } from "../helpers/create-test-app.js";
 import { validateRequest } from "../../src/middlewares/validate-request.js";
 import { createTestEnvironment } from "../helpers/test-environment.js";
 import { TestLogger } from "../helpers/test-logger.js";
@@ -9,7 +9,7 @@ const request = require("supertest") as typeof import("supertest");
 
 describe("API response envelopes", () => {
   it("returns the validation failure envelope from validateRequest", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       mountTestRoutes(expressApp) {
@@ -41,7 +41,7 @@ describe("API response envelopes", () => {
   });
 
   it("returns the unexpected-error envelope without private details", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       mountTestRoutes(expressApp) {

@@ -5,6 +5,8 @@ import type {
   ReadinessProbe,
 } from "#database/prisma-lifecycle";
 import type { Logger } from "#shared/logger";
+import { createRateLimitMiddleware } from "#middlewares/rate-limit.middleware";
+import type { RateLimiterPort } from "#middlewares/rate-limit.types";
 
 import {
   createFailureResponse,
@@ -14,6 +16,7 @@ import {
 export interface SystemRouterDependencies {
   readonly databaseProbe?: DatabaseProbe;
   readonly logger: Logger;
+  readonly rateLimiter: RateLimiterPort;
   readonly readinessProbes: readonly ReadinessProbe[];
 }
 
@@ -47,32 +50,43 @@ export function createSystemRouter(
    * @explanation This route checks PostgreSQL and future readiness probes and
    * returns only safe dependency names when a check fails.
    */
+  router.use(
+    "/health/ready",
+    createRateLimitMiddleware({
+      limiter: dependencies.rateLimiter,
+      scope: "system-health-ready",
+      limit: 120,
+      windowSeconds: 60,
+      subject: (requestIp) => requestIp ?? "unknown",
+    }),
+  );
+
   router.get("/health/ready", async (request, response) => {
     const results = await Promise.allSettled(
       dependencies.readinessProbes.map(async (probe) => {
         await probe.check();
         return probe.name;
-      })
+      }),
     );
 
     const failed = results.flatMap((result, index) =>
       result.status === "rejected"
         ? [dependencies.readinessProbes[index]?.name ?? "unknown"]
-        : []
+        : [],
     );
 
     if (failed.length > 0) {
       dependencies.logger.warn("Readiness check failed", {
         requestId: request.requestId,
-        failedProbes: failed
+        failedProbes: failed,
       });
       response.status(503).json(
         createFailureResponse(request, {
           code: "DEPENDENCY_NOT_READY",
           statusCode: 503,
           message: "One or more required services are unavailable",
-          details: { failed }
-        })
+          details: { failed },
+        }),
       );
       return;
     }

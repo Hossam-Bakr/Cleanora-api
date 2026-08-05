@@ -1,5 +1,5 @@
 
-import { createApp } from "../../src/app.js";
+import { createTestApp } from "../helpers/create-test-app.js";
 import { createTestEnvironment } from "../helpers/test-environment.js";
 import { TestLogger } from "../helpers/test-logger.js";
 
@@ -8,7 +8,7 @@ const request = require("supertest") as typeof import("supertest");
 describe("request ID response envelopes", () => {
   it("returns an accepted request ID in successful envelopes and headers", async () => {
     const requestId = "2f9cb3a5-767e-4e48-bcc3-1d8354d71be7";
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger()
     });
@@ -23,7 +23,7 @@ describe("request ID response envelopes", () => {
   });
 
   it("returns a minted request ID in error envelopes", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger()
     });

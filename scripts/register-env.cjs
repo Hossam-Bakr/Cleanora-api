@@ -33,7 +33,6 @@ if (existsSync(envPath)) {
   }
 }
 
-// Automated tests prefer TEST_DATABASE_URL (pooled), then CI_DATABASE_URL
-// (legacy isolated fallback). Never mutate CI_DATABASE_URL; never select
-// ordinary development DATABASE_URL when an approved test URL exists.
+// Automated tests use only TEST_DATABASE_URL and never select the ordinary
+// development DATABASE_URL implicitly.
 applyTestDatabaseEnv(process.env);

@@ -3,7 +3,9 @@
 ```text
 src/
 ├── app.ts
+├── composition.ts
 ├── server.ts
+├── server-lifecycle.ts
 ├── config/
 ├── database/
 ├── middlewares/
@@ -21,7 +23,9 @@ tests/
 └── helpers/
 ```
 
-`routes/index.ts` is the visible API map. Business routes remain in their
+`server.ts` is the visible process entry, `composition.ts` constructs existing
+runtime dependencies, `app.ts` owns global middleware and terminal handlers,
+and `routes/index.ts` is the visible API map. Business routes remain in their
 module. Generated Prisma source, `dist`, `coverage`, dependencies, caches, and
 runtime data are not source and remain ignored.
 

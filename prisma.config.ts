@@ -22,7 +22,7 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts"
   },
   datasource: {
-    // Schema-only commands must run on clean CI workers without a database.
+    // Schema-only commands must run locally without a configured database.
     // Port 1 is deliberately unreachable; commands that connect still fail
     // safely unless the caller supplies an explicit DATABASE_URL.
     url:
