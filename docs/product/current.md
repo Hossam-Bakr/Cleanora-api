@@ -3,17 +3,68 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `R1-P02A — Backend Structure Simplification` |
+| Current Phase | `R1-P03 — Roles, Permissions & Privileged Audit` |
 | Status | `Complete` |
 | Backend Branch | `TBD` |
 | Frontend Branch | `TBD` |
 | Backend Owner | `TBD` |
 | Frontend Owner | `TBD` |
-| Started At | `2026-07-30` |
-| Completed At | `2026-08-01` |
-| Last Updated | `2026-08-01` |
+| Started At | `2026-08-03` |
+| Completed At | `2026-08-05` |
+| Last Updated | `2026-08-05` |
 
-No phase is currently In Progress. **R1-P03 is not activated.**
+## Completed phase — R1-P03
+
+R1-P03 (`Roles, Permissions & Privileged Audit`) is **Complete** as of
+`2026-08-05`, by explicit human-owner approval:
+
+```text
+I approve R1-P03 — Roles, Permissions & Privileged Audit as Complete.
+```
+
+It was activated as of `2026-08-03` after R1-P02B completed with fresh coverage
+and independent review `PASS`. Specify, clarify, plan, tasks, planning
+remediation, and `/speckit.analyze` (`CLEAN`) completed first. Human
+implementation authorization was approved. Implementation and convergence
+finished against the frozen specification, plan, contracts, data model,
+quickstart, and tasks T001–T086. Independent review verdict was `PASS` with no
+blocker or major findings; both documentation minors were resolved
+(`review-resolution.md`). Final completion audit outcome was
+`READY_FOR_OWNER_APPROVAL` (`completion-report.md`).
+
+Identity owns roles, permissions, grants, and privileged-reason tables.
+Admin retains the `audit_logs` lifecycle through the approved composition
+seam. No public R1-P03 endpoints were introduced. Migration
+`r1_p03_roles_permissions_privileged_audit` is forward-only. Applied
+migrations remain immutable.
+
+No other phase is In Progress. R1-P04 (`Customer Profiles, Preferences & Saved
+Addresses`) and all later phases remain inactive until separate explicit
+human-owner authorization. This completion does not authorize commit, push,
+merge, deployment, or production migration.
+
+## Completed phase — R1-P02B
+
+R1-P02B (`Backend Readability Simplification`) is **Complete** as of
+`2026-08-03`, by explicit human-owner approval. It was a behavior-preserving
+maintenance phase focused only on making the startup and routing path easy to
+follow from `server.ts` through `app.ts`, `routes/index.ts`, and module routes.
+The supplied `ecommerce-api.rar` is a readability reference only and is not a
+Cleanora dependency or source of product behavior.
+
+Every endpoint, method, request, response, status code, cookie, token, OTP,
+Google flow, security rule, Prisma schema, applied migration, and frontend
+contract remains frozen.
+
+On `2026-08-03`, the human owner removed repository automation and then refined
+the readability target to a junior-readable production entry point. The
+refinement is implemented and validated: `server.ts` now uses direct
+calls without factory override bags, conditional dependency selection,
+injected route callbacks, or test-only startup switches. Fresh coverage passed
+all configured thresholds, the independent final review returned `PASS` with
+no unresolved finding, and the human owner approved completion on
+`2026-08-03`. That closure satisfied the one-active-phase gate before R1-P03
+was activated for specification work.
 
 ## Completed phase — R1-P02A
 
@@ -24,13 +75,13 @@ the backend structure, replaced Pino HTTP logging with Morgan, removed
 confirmed placeholders and E2E duplication, and kept R1-P02 contracts frozen.
 Final completion gates passed after a trailing-whitespace fix in `src/app.ts`.
 This approval does not authorize commit, push, merge, deployment, or production
-migration. **R1-P03 is not activated.**
+migration. At that completion point, R1-P03 had not been activated.
 
 ## Completed phase — R1-P02
 
 R1-P02 (`Complete Authentication & Identity`) is **Complete** as of
 `2026-07-29`, by human-owner authorization in the phase completion prompt.
-The one-active-phase rule remains: **R1-P03 is not activated**.
+At that completion point, the one-active-phase rule kept R1-P03 inactive.
 
 Completed with DEC-028 email-only verification/recovery, Google
 provider-email Individual activation, isolated test-database migration
@@ -104,7 +155,7 @@ isolated pooled test target received
 `r1_p02_email_verification_for_individuals` through matching direct
 `TEST_MIGRATION_DATABASE_URL`. Final validation, coverage thresholds,
 runtime acceptance, independent review `APPROVED`, and human-owner completion
-approval are recorded. **R1-P03 is not activated.**
+approval are recorded. R1-P03 was inactive at that recorded completion point.
 
 ## Completed phase — R1-P01
 
@@ -116,7 +167,8 @@ R1-P01 (`Project Foundation & Country Configuration`) is **Complete** as of `202
 - All required non-database quality gates passed (typecheck, lint, unit/integration/e2e tests, coverage, prisma validate, docs check, OpenAPI validate, build)
 - Coverage passed above configured thresholds
 - Historical isolated clean-database migration and double-seed proof remains valid
-- The explicit CI database gate remains conditional on `CI_DATABASE_URL`
+- The historical clean-database proof remained conditional on an explicit safe
+  test target
 - Implementation summary: `specs/R1-P01-project-foundation-country-configuration/implementation-summary.md`
 - Phase-owned migration: `prisma/migrations/r1_p01_foundation_country_configuration/`
 

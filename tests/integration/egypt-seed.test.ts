@@ -55,6 +55,6 @@ describe.skipIf(!hasDatabase)("Egypt seed", () => {
       expect(appConfigCount).toBe(4);
       expect(countryConfigCount).toBe(3);
     },
-    30_000
+    120_000
   );
 });

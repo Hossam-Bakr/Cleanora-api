@@ -1,5 +1,5 @@
 
-import { createApp } from "../../../src/app.js";
+import { createTestApp } from "../../helpers/create-test-app.js";
 import { MemoryRateLimiterAdapter } from "../../../src/integrations/security/memory-rate-limiter.adapter.js";
 import { createTestEnvironment } from "../../helpers/test-environment.js";
 import { TestLogger } from "../../helpers/test-logger.js";
@@ -29,7 +29,7 @@ describe("MemoryRateLimiterAdapter", () => {
   });
 
   it("returns RATE_LIMITER_UNAVAILABLE when the mounted limiter fails", async () => {
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       rateLimiter: {
@@ -47,5 +47,23 @@ describe("MemoryRateLimiterAdapter", () => {
         "Request protection is temporarily unavailable. Please try again later."
     });
     expect(JSON.stringify(response.body)).not.toContain("storage unavailable");
+  });
+
+  it("protects the readiness path before unsupported-method handling", async () => {
+    const app = createTestApp({
+      environment: createTestEnvironment(),
+      logger: new TestLogger(),
+      rateLimiter: {
+        consume: async () => Promise.reject(new Error("storage unavailable")),
+      },
+    });
+
+    const response = await request(app)
+      .post("/api/v1/system/health/ready")
+      .expect(503);
+
+    expect(response.body.error).toMatchObject({
+      code: "RATE_LIMITER_UNAVAILABLE",
+    });
   });
 });

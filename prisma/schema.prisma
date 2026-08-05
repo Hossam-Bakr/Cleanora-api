@@ -99,6 +99,20 @@ enum AuthEventOutcome {
   DENIED
 }
 
+enum UserRoleStatus {
+  ENABLED
+  DISABLED
+  REVOKED
+}
+
+enum PrivilegedActionOperation {
+  ROLE_ASSIGN
+  ROLE_REVOKE
+  ROLE_ENABLE
+  ROLE_DISABLE
+  STAFF_SAMPLE_PRIVILEGED_WRITE
+}
+
 model Currency {
   id            String    @id @default(cuid())
   code          String    @unique @db.VarChar(3)
@@ -199,6 +213,7 @@ model User {
   passwordResets     PasswordResetToken[]
   socialAccounts     SocialAccount[]
   authEvents         AuthEvent[]
+  userRoles          UserRole[]
 
   @@index([status])
   @@map("users")
@@ -348,4 +363,78 @@ model AuthEvent {
   @@index([requestId])
   @@index([sessionId])
   @@map("auth_events")
+}
+
+// R1-P03 authorization definitions. Identity owns these five tables.
+// Role and permission definitions have no activation flag; only user_roles.status
+// and privileged_action_reasons.is_active carry lifecycle state.
+
+model Role {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Restrict)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  id         String         @id @default(cuid())
+  userId     String         @map("user_id")
+  roleId     String         @map("role_id")
+  status     UserRoleStatus
+  assignedAt DateTime       @default(now()) @map("assigned_at")
+  enabledAt  DateTime?      @map("enabled_at")
+  disabledAt DateTime?      @map("disabled_at")
+  revokedAt  DateTime?      @map("revoked_at")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+  user       User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  role       Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, roleId])
+  @@index([userId, status])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model PrivilegedActionReason {
+  id        String                    @id @default(cuid())
+  code      String                    @unique
+  name      String
+  operation PrivilegedActionOperation @unique
+  isActive  Boolean                   @default(true) @map("is_active")
+  createdAt DateTime                  @default(now()) @map("created_at")
+  updatedAt DateTime                  @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("privileged_action_reasons")
 }

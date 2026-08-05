@@ -1,0 +1,9 @@
+{
+  "workflow": "speckit",
+  "specName": "R1-P03-roles-permissions-privileged-audit",
+  "branch": "R1-P03-roles-permissions-privileged-audit",
+  "selectedAt": "2026-08-03T05:50:14.691Z",
+  "currentStep": "specify",
+  "status": "draft",
+  "history": []
+}

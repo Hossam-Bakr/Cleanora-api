@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 import { join } from "node:path";
 
-export type TestDatabaseUrlSource = "TEST_DATABASE_URL" | "CI_DATABASE_URL";
+export type TestDatabaseUrlSource = "TEST_DATABASE_URL";
 
 export type ResolvedTestDatabaseUrl = {
   readonly url: string | undefined;

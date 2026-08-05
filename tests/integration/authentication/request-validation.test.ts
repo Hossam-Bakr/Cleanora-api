@@ -1,4 +1,4 @@
-import { createApp } from "../../../src/app.js";
+import { createTestApp } from "../../helpers/create-test-app.js";
 import { validateRequest } from "../../../src/middlewares/validate-request.js";
 import { signupSchema } from "../../../src/modules/authentication/auth.schema.js";
 import { createTestEnvironment } from "../../helpers/test-environment.js";
@@ -15,7 +15,7 @@ describe("authentication request validation", () => {
       validateRequest({ body: signupSchema.shape.body }),
       (_request, response) => response.status(204).end(),
     );
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment(),
       logger: new TestLogger(),
       mountTestRoutes(expressApp) {

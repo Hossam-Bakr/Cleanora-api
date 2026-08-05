@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import {
   assertAppliedMigration,
+  assertAuthorizationCatalogMigrationSql,
   assertDatabaseEmpty,
   assertExactPostDeployTables,
   assertForwardMigrationSql,
@@ -49,13 +50,13 @@ describe("R1-P01 migration boundary", () => {
     ).toThrow(/explicit test/i);
     expect(() =>
       assertSafeCleanTestDatabaseUrl(
-        "postgresql://cleanora:secret@db.example.com/cleanora_ci",
+        "postgresql://cleanora:secret@db.example.com/cleanora_test",
         "production"
       )
     ).toThrow(/forbidden in production/i);
     expect(() =>
       assertSafeCleanTestDatabaseUrl(
-        "postgresql://cleanora:secret@db.example.com/cleanora_ci",
+        "postgresql://cleanora:secret@db.example.com/cleanora_test",
         "test"
       )
     ).not.toThrow();
@@ -72,6 +73,13 @@ describe("R1-P01 migration boundary", () => {
     ];
 
     expected.push('users', 'user_credentials', 'user_sessions', 'otp_codes', 'password_reset_tokens', 'social_accounts', 'auth_events');
+    expected.push(
+      "roles",
+      "permissions",
+      "role_permissions",
+      "user_roles",
+      "privileged_action_reasons",
+    );
     expect(() => assertExactPostDeployTables(expected)).not.toThrow();
     expect(() =>
       assertExactPostDeployTables([...expected, "future_phase_table"])
@@ -103,10 +111,62 @@ describe("R1-P01 migration boundary", () => {
           migration_name: "r1_p02_google_provider_profile_claims",
           finished_at: new Date(),
           rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p03_roles_permissions_privileged_audit",
+          finished_at: new Date(),
+          rolled_back_at: null
         }
       ])
     ).not.toThrow();
     expect(() => assertAppliedMigration([])).toThrow(/migration history/i);
+  });
+});
+
+describe("R1-P03 chronological migration compatibility", () => {
+  it("applies after every earlier phase without touching their tables", async () => {
+    const sql = await readFile(
+      join(
+        process.cwd(),
+        "prisma/migrations/r1_p03_roles_permissions_privileged_audit/migration.sql"
+      ),
+      "utf8"
+    );
+
+    expect(() => assertAuthorizationCatalogMigrationSql(sql)).not.toThrow();
+    for (const earlierTable of [
+      "currencies",
+      "countries",
+      "app_configs",
+      "country_configs",
+      "audit_logs",
+      "user_credentials",
+      "user_sessions",
+      "otp_codes",
+      "password_reset_tokens",
+      "social_accounts",
+      "auth_events"
+    ]) {
+      expect(sql).not.toContain(`"${earlierTable}"`);
+    }
+    // user_roles references users, so only that read-only reference is expected.
+    expect(sql.match(/REFERENCES "users"/gu) ?? []).toHaveLength(1);
+  });
+
+  it("rejects an R1-P03 migration that changes admin-owned audit persistence", () => {
+    expect(() =>
+      assertAuthorizationCatalogMigrationSql(
+        'CREATE TABLE "roles" ();\nALTER TABLE "audit_logs" ADD COLUMN "extra" TEXT;'
+      )
+    ).toThrow(/audit_logs/u);
+  });
+
+  it("rejects an R1-P03 migration that drops an earlier-phase object", () => {
+    expect(() =>
+      assertAuthorizationCatalogMigrationSql(
+        'CREATE TABLE "roles" ();\nDROP TABLE "users";'
+      )
+    ).toThrow(/destructive SQL/u);
   });
 });
 

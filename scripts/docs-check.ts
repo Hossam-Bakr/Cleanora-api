@@ -1,7 +1,7 @@
 /**
  * @desc Verify required R1-P01 documentation paths exist.
  * @access Maintainer tooling
- * @explanation This script fails CI when foundation docs or OpenAPI are missing.
+ * @explanation This local validation fails when required docs or OpenAPI are missing.
  */
 const { existsSync } = require("node:fs");
 const { resolve } = require("node:path");

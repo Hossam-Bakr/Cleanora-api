@@ -138,4 +138,23 @@ describe("canonical Auth Postman artifacts", () => {
       environment.values?.map((value) => value.key),
     );
   });
+
+  // R1-P03 is internal only: it adds no request to any published collection.
+  it("adds no R1-P03 role, permission, or audit request", async () => {
+    const files = (await readdir(resolve("postman"))).filter((file) =>
+      file.endsWith(".json"),
+    );
+
+    for (const file of files) {
+      const document = JSON.parse(
+        await readFile(resolve("postman", file), "utf8"),
+      ) as PostmanDocument;
+
+      for (const request of walk(document.item)) {
+        expect(request.route).not.toMatch(
+          /\/(roles?|permissions?|user-roles|privileged|audit)\b/iu,
+        );
+      }
+    }
+  });
 });

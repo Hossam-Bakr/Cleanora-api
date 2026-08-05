@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import { createApp } from '../../../src/app.js';
+import { createTestApp } from '../create-test-app.js';
 import { createAuthenticationModule } from "../../../src/modules/authentication/auth.module.js";
 import { Argon2PasswordHasherAdapter } from '../../../src/integrations/authentication/argon2-password-hasher.adapter.js';
 import { CryptoVerifierAdapter } from '../../../src/integrations/authentication/crypto-verifier.adapter.js';
@@ -36,7 +36,7 @@ export async function startAuthenticationTestApp() {
     googleFrontendCallbackUri: environment.GOOGLE_FRONTEND_CALLBACK_URI!
   });
   const logger = new TestLogger();
-  const app = createApp({
+  const app = createTestApp({
     environment,
     logger,
     rateLimiter,

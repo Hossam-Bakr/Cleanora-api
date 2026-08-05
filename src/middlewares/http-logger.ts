@@ -4,7 +4,7 @@ const morgan = require("morgan") as typeof import("morgan");
 export interface HttpLogStream {
   write(line: string): void;
 }
-
+// add safe-url token
 morgan.token("safe-url", (request) => {
   const expressRequest = request as typeof request & {
     readonly originalUrl?: string;
@@ -13,6 +13,7 @@ morgan.token("safe-url", (request) => {
   return url.split("?")[0] ?? "/";
 });
 
+// add request-id token
 morgan.token("request-id", (request) => {
   const requestWithId = request as typeof request & {
     readonly requestId?: string;

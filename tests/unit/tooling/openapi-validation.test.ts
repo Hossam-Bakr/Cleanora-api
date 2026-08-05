@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 
 describe("OpenAPI validation tooling", () => {
@@ -38,6 +38,40 @@ describe("OpenAPI validation tooling", () => {
       expect(result.stderr).toContain("OPENAPI_INVALID");
     } finally {
       await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  // R1-P03 role management is an internal contract, so no published document
+  // may gain a role, permission, or privileged-audit path.
+  it("publishes no R1-P03 authorization path", async () => {
+    const documents = [
+      "docs/apis/openapi/r1-p01-foundation.yaml",
+      "docs/apis/openapi/r1-p02-authentication.yaml",
+    ];
+
+    for (const document of documents) {
+      const yaml = await readFile(resolve(document), "utf8");
+      const pathLines = yaml
+        .split("\n")
+        .filter((line) => /^\s{2}\/api\//u.test(line));
+
+      for (const pathLine of pathLines) {
+        expect(pathLine).not.toMatch(
+          /\/(roles?|permissions?|user-roles|privileged)\b/iu,
+        );
+      }
+    }
+  });
+
+  it("keeps the runtime document free of R1-P03 authorization paths", async () => {
+    const { cleanoraOpenApiDocument } = await import(
+      "../../../src/swagger/openapi.document.js"
+    );
+
+    for (const path of Object.keys(cleanoraOpenApiDocument.paths ?? {})) {
+      expect(path).not.toMatch(
+        /\/(roles?|permissions?|user-roles|privileged)\b/iu,
+      );
     }
   });
 });

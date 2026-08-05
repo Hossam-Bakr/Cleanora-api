@@ -12,3 +12,4 @@ src/generated/
 Thumbs.db
 .runtime-smoke/
 .npm-cache-local/
+railway.exampleRailway.env

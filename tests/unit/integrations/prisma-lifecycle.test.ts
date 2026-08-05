@@ -9,7 +9,7 @@ import {
 } from "../../../src/database/prisma.js";
 import { PrismaLifecycle } from "../../../src/database/prisma-lifecycle.js";
 import { AppConfigRepository } from "../../../src/modules/configuration/configuration.repository.js";
-import { createGracefulShutdown } from "../../../src/server.js";
+import { createGracefulShutdown } from "../../../src/server-lifecycle.js";
 
 const testDatabaseUrl =
   "postgresql://test:test@localhost:5432/cleanora_prisma_identity_test";
@@ -86,6 +86,23 @@ describe("process-wide Prisma lifecycle", () => {
     expect(close).toHaveBeenCalledTimes(1);
     expect(disconnect).toHaveBeenCalledTimes(1);
     expect(closeAllConnections).not.toHaveBeenCalled();
+  });
+
+  it("forces connections closed when graceful shutdown times out", async () => {
+    const close = vi.fn((_callback: (error?: Error) => void) => undefined);
+    const closeAllConnections = vi.fn();
+    const server = { close, closeAllConnections } as unknown as Server;
+    const shutdown = createGracefulShutdown(
+      server,
+      { disconnect: vi.fn(async () => Promise.resolve()) },
+      new TestLogger(),
+      5,
+    );
+
+    await expect(shutdown("SIGTERM")).rejects.toThrow(
+      "Graceful shutdown timed out",
+    );
+    expect(closeAllConnections).toHaveBeenCalledOnce();
   });
 
   it("test reset cannot change production binding behavior", () => {

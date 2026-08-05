@@ -342,3 +342,29 @@ export function mapEnvironmentDiagnostics(
     message: issue.message
   }));
 }
+
+/** Build safe startup log details without exposing environment values. */
+export function createStartupFailureContext(
+  error: unknown,
+): Readonly<Record<string, unknown>> {
+  const diagnostics = mapEnvironmentDiagnostics(error);
+  const context: Record<string, unknown> = {
+    errorName: error instanceof Error ? error.name : "UnknownError",
+  };
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    /^[A-Z][A-Z0-9_]{1,31}$/u.test(error.code)
+  ) {
+    context["errorCode"] = error.code;
+  }
+
+  if (diagnostics.length > 0) {
+    context["environmentDiagnostics"] = diagnostics;
+  }
+
+  return context;
+}

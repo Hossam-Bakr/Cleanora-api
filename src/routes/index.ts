@@ -6,7 +6,6 @@ import type {
   DatabaseProbe,
   ReadinessProbe,
 } from "#database/prisma-lifecycle";
-import { createRateLimitMiddleware } from "#middlewares/rate-limit.middleware";
 import type { RateLimiterPort } from "#middlewares/rate-limit.types";
 import type { Logger } from "#shared/logger";
 
@@ -36,19 +35,10 @@ export function mountRoutes(
   app.use(`${apiPrefix}/docs`, createSwaggerRouter(apiPrefix));
 
   app.use(
-    `${apiPrefix}${SYSTEM_ROUTE_SUFFIX}/health/ready`,
-    createRateLimitMiddleware({
-      limiter: dependencies.rateLimiter,
-      scope: "system-health-ready",
-      limit: 120,
-      windowSeconds: 60,
-      subject: (requestIp) => requestIp ?? "unknown",
-    }),
-  );
-  app.use(
     `${apiPrefix}${SYSTEM_ROUTE_SUFFIX}`,
     createSystemRouter({
       logger: dependencies.logger,
+      rateLimiter: dependencies.rateLimiter,
       ...(dependencies.databaseProbe === undefined
         ? {}
         : { databaseProbe: dependencies.databaseProbe }),

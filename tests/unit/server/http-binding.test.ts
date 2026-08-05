@@ -3,7 +3,7 @@ import type { Server } from "node:http";
 import {
   HTTP_BIND_HOST,
   listenForHttp,
-} from "../../../src/server.js";
+} from "../../../src/server-lifecycle.js";
 
 describe("HTTP container binding", () => {
   it("binds the environment port on every network interface", () => {

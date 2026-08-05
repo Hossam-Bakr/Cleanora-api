@@ -12,7 +12,8 @@ const migrationNames = [
   'r1_p01_foundation_country_configuration',
   'r1_p02_complete_authentication',
   'r1_p02_fix_phone_e164_constraint',
-  'r1_p02_google_provider_profile_claims'
+  'r1_p02_google_provider_profile_claims',
+  'r1_p03_roles_permissions_privileged_audit'
 ] as const;
 const expectedTables = [
   "currencies",
@@ -26,8 +27,39 @@ const expectedTables = [
   'otp_codes',
   'password_reset_tokens',
   'social_accounts',
-  'auth_events'
+  'auth_events',
+  "roles",
+  "permissions",
+  "role_permissions",
+  "user_roles",
+  "privileged_action_reasons"
 ] as const;
+/** Tables each table-creating migration is allowed and required to create. */
+const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
+  r1_p01_foundation_country_configuration: [
+    "currencies",
+    "countries",
+    "app_configs",
+    "country_configs",
+    "audit_logs"
+  ],
+  r1_p02_complete_authentication: [
+    "users",
+    "user_credentials",
+    "user_sessions",
+    "otp_codes",
+    "password_reset_tokens",
+    "social_accounts",
+    "auth_events"
+  ],
+  r1_p03_roles_permissions_privileged_audit: [
+    "roles",
+    "permissions",
+    "role_permissions",
+    "user_roles",
+    "privileged_action_reasons"
+  ]
+};
 const expectedPostDeployTables = ["_prisma_migrations", ...expectedTables] as const;
 const destructivePattern =
   /\b(DROP\s+TABLE|TRUNCATE|DELETE\s+FROM)\b/i;
@@ -54,17 +86,17 @@ export function assertSafeCleanTestDatabaseUrl(
   try {
     url = new URL(connectionString);
   } catch {
-    throw new Error("CI_DATABASE_URL must be a valid PostgreSQL URL");
+    throw new Error("TEST_MIGRATION_DATABASE_URL must be a valid PostgreSQL URL");
   }
 
   if (url.protocol !== "postgresql:" && url.protocol !== "postgres:") {
-    throw new Error("CI_DATABASE_URL must use the PostgreSQL protocol");
+    throw new Error("TEST_MIGRATION_DATABASE_URL must use the PostgreSQL protocol");
   }
 
   const targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
   const targetDescriptor = `${url.hostname}/${targetName}`.toLowerCase();
   if (/(^|[._/-])prod(uction)?([._/-]|$)/u.test(targetDescriptor)) {
-    throw new Error("CI_DATABASE_URL looks like a production target");
+    throw new Error("TEST_MIGRATION_DATABASE_URL looks like a production target");
   }
 
   const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(
@@ -72,12 +104,12 @@ export function assertSafeCleanTestDatabaseUrl(
   );
   if (
     !isLocalHost &&
-    !/(^|[._/-])(test|ci|clean|proof|r1[_-]?p0[12])([._/-]|$)/u.test(
+    !/(^|[._/-])(test|clean|proof|r1[_-]?p0[12])([._/-]|$)/u.test(
       targetName.toLowerCase()
     )
   ) {
     throw new Error(
-      "Remote CI_DATABASE_URL must name an explicit test, CI, clean, or proof database"
+      "Remote TEST_MIGRATION_DATABASE_URL must name an explicit test, clean, or proof database"
     );
   }
 }
@@ -106,6 +138,38 @@ export function assertGoogleProfileClaimsMigrationSql(sql: string): void {
   const normalized = sql.replace(/\s+/gu, " ").trim();
   if (normalized !== expectedGoogleProfileClaimsSql) {
     throw new Error("Google profile-claims migration contains unrelated SQL");
+  }
+}
+
+/**
+ * Accept only the five identity authorization tables. R1-P03 must not change
+ * admin-owned audit persistence or any earlier-phase table.
+ */
+export function assertAuthorizationCatalogMigrationSql(sql: string): void {
+  if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/i.test(sql)) {
+    throw new Error(
+      "R1-P03 authorization migration contains destructive SQL"
+    );
+  }
+  if (sql.includes("audit_logs")) {
+    throw new Error(
+      "R1-P03 authorization migration must not change admin-owned audit_logs"
+    );
+  }
+  for (const table of migrationOwnedTables[
+    "r1_p03_roles_permissions_privileged_audit"
+  ] ?? []) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(
+        `R1-P03 authorization migration is missing table ${table}`
+      );
+    }
+  }
+  const createdTables = sql.match(/CREATE TABLE/g) ?? [];
+  if (createdTables.length !== 5) {
+    throw new Error(
+      `R1-P03 authorization migration must create exactly five tables; found ${String(createdTables.length)}`
+    );
   }
 }
 
@@ -152,8 +216,11 @@ async function validateMigrationFolder(): Promise<void> {
       assertGoogleProfileClaimsMigrationSql(sql);
       continue;
     }
-    const ownedTables = migrationName.includes('p01') ? expectedTables.slice(0, 5) : expectedTables.slice(5);
-    for (const table of ownedTables) {
+    if (migrationName === "r1_p03_roles_permissions_privileged_audit") {
+      assertAuthorizationCatalogMigrationSql(sql);
+      continue;
+    }
+    for (const table of migrationOwnedTables[migrationName] ?? []) {
       if (!sql.includes(`"${table}"`)) throw new Error(`Migration ${migrationName} is missing expected table ${table}`);
     }
   }
@@ -201,7 +268,7 @@ async function assertPostDeployState(
         finished_at,
         rolled_back_at
       FROM "_prisma_migrations"
-      WHERE migration_name IN (${migrationNames[0]}, ${migrationNames[1]}, ${migrationNames[2]}, ${migrationNames[3]})
+      WHERE migration_name IN (${migrationNames[0]}, ${migrationNames[1]}, ${migrationNames[2]}, ${migrationNames[3]}, ${migrationNames[4]})
     `;
     assertAppliedMigration(history);
   } finally {
@@ -215,10 +282,10 @@ async function run(): Promise<void> {
   console.info(`Expected product tables: ${expectedTables.join(', ')}`);
   console.info("SQL review: no DROP TABLE / TRUNCATE / DELETE FROM detected");
 
-  const connectionString = process.env["CI_DATABASE_URL"];
+  const connectionString = process.env["TEST_MIGRATION_DATABASE_URL"];
   if (connectionString === undefined || connectionString.length === 0) {
     console.info(
-      "CI_DATABASE_URL is not set; skipped clean-apply database proof."
+      "TEST_MIGRATION_DATABASE_URL is not set; skipped clean-apply database proof."
     );
     return;
   }

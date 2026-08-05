@@ -1,43 +1,31 @@
 import type { CorsOptions } from "cors";
 import type { Express } from "express";
 
-import type { AppEnvironment } from "#config/env";
-import type {
-  DatabaseProbe,
-  ReadinessProbe,
-} from "#database/prisma-lifecycle";
-import { MemoryRateLimiterAdapter } from "#integrations/security/memory-rate-limiter.adapter";
 import { createErrorMiddleware } from "#middlewares/error.middleware";
 import {
   createHttpLogger,
   type HttpLogStream,
 } from "#middlewares/http-logger";
 import { notFoundMiddleware } from "#middlewares/not-found.middleware";
-import type { RateLimiterPort } from "#middlewares/rate-limit.types";
 import { requestIdMiddleware } from "#middlewares/request-id.middleware";
+import type { RouteDependencies } from "#routes/index";
+import { mountRoutes } from "#routes/index";
 import { AppError } from "#shared/errors/app-error";
-import type { Logger } from "#shared/logger";
-
-import { mountRoutes } from "./routes/index.js";
 
 const cookieParser = require("cookie-parser") as typeof import("cookie-parser");
 const cors = require("cors") as typeof import("cors");
 const express = require("express") as typeof import("express");
 const helmet = require("helmet").default as typeof import("helmet").default;
 
-export interface CreateAppDependencies {
-  readonly environment: AppEnvironment;
-  readonly logger: Logger;
-  readonly rateLimiter?: RateLimiterPort;
-  readonly databaseProbe?: DatabaseProbe;
-  readonly readinessProbes?: readonly ReadinessProbe[];
-  readonly authenticationRouter?: import("express").Router;
+export interface CreateAppOptions {
   readonly httpLogStream?: HttpLogStream;
-  /** Test-only hook for focused integration routes before the 404 handler. */
+  /** Test-only routes mounted before the 404 handler. */
   readonly mountTestRoutes?: (app: Express) => void;
 }
 
-function createCorsOptions(environment: AppEnvironment): CorsOptions {
+function createCorsOptions(
+  environment: RouteDependencies["environment"],
+): CorsOptions {
   return {
     credentials: true,
     exposedHeaders: ["x-request-id"],
@@ -60,43 +48,31 @@ function createCorsOptions(environment: AppEnvironment): CorsOptions {
   };
 }
 
-/**
- * Create the configured Express app without opening a network port.
- */
-export function createApp(dependencies: CreateAppDependencies): Express {
+/** Create Express, mount middleware/routes, and return the app. */
+export function createApp(
+  routes: RouteDependencies,
+  options: CreateAppOptions = {},
+): Express {
   const app = express();
-  app.disable("x-powered-by");
 
+  // Request tracing and safe HTTP logs.
+  app.disable("x-powered-by");
   app.use(requestIdMiddleware);
   app.use(
-    createHttpLogger(
-      dependencies.environment.NODE_ENV,
-      dependencies.httpLogStream,
-    ),
+    createHttpLogger(routes.environment.NODE_ENV, options.httpLogStream),
   );
+
+  // Security and request parsing.
   app.use(helmet());
-  app.use(cors(createCorsOptions(dependencies.environment)));
-  app.use(express.json({ limit: dependencies.environment.REQUEST_BODY_LIMIT }));
+  app.use(cors(createCorsOptions(routes.environment)));
+  app.use(express.json({ limit: routes.environment.REQUEST_BODY_LIMIT }));
   app.use(cookieParser());
 
-  mountRoutes(app, {
-    environment: dependencies.environment,
-    logger: dependencies.logger,
-    rateLimiter:
-      dependencies.rateLimiter ?? new MemoryRateLimiterAdapter(),
-    ...(dependencies.databaseProbe === undefined
-      ? {}
-      : { databaseProbe: dependencies.databaseProbe }),
-    readinessProbes: dependencies.readinessProbes ?? [],
-    ...(dependencies.authenticationRouter === undefined
-      ? {}
-      : { authenticationRouter: dependencies.authenticationRouter }),
-  });
-
-  dependencies.mountTestRoutes?.(app);
-
+  // Public routes must be mounted before the terminal handlers.
+  mountRoutes(app, routes);
+  options.mountTestRoutes?.(app);
   app.use(notFoundMiddleware);
-  app.use(createErrorMiddleware(dependencies.logger));
+  app.use(createErrorMiddleware(routes.logger));
 
   return app;
 }

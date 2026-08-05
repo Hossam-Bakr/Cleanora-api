@@ -1,4 +1,4 @@
-import { createApp } from "../../src/app.js";
+import { createTestApp } from "../helpers/create-test-app.js";
 import { createApplicationLogger } from "../../src/shared/logger.js";
 import { createTestEnvironment } from "../helpers/test-environment.js";
 
@@ -38,7 +38,7 @@ describe("application and Morgan logging", () => {
   it("uses Morgan without logging query, authorization, or cookie values", async () => {
     const lines: string[] = [];
     const logger = createApplicationLogger("info");
-    const app = createApp({
+    const app = createTestApp({
       environment: createTestEnvironment({ NODE_ENV: "production" }),
       logger,
       httpLogStream: { write: (line) => lines.push(line) },
