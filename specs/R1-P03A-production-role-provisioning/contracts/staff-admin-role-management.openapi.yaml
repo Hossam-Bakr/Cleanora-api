@@ -1,0 +1,171 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P03A Staff-Admin Role Management
+  version: 2.0.0
+  description: >-
+    Minimal Authentication-owned HTTPS command API (DEC-030). Delegates to
+    RoleManagementService. Customer role commands are rejected at this boundary.
+servers:
+  - url: /api/v1
+paths:
+  /auth/role-grants/commands:
+    post:
+      operationId: submitRoleGrantCommand
+      summary: Submit one privileged non-customer role-grant command
+      description: >-
+        Requires trusted bearer authentication, enabled staff_admin actor,
+        matching operation permission and reason. Role code customer is forbidden.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleGrantCommand'
+      responses:
+        '200':
+          description: Mutation or authorized no-op
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleGrantSuccessEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RoleCode:
+      type: string
+      description: Non-customer roles only; customer is rejected by API validation
+      enum:
+        - staff_admin
+        - staff_operations
+        - staff_support
+        - staff_finance
+        - provider_member
+        - provider_supervisor
+        - provider_admin
+        - worker
+    RoleGrantOperation:
+      type: string
+      enum:
+        - assign
+        - revoke
+        - enable
+        - disable
+    RoleGrantCommand:
+      type: object
+      required:
+        - operation
+        - targetUserId
+        - roleCode
+        - reasonCode
+      properties:
+        operation:
+          $ref: '#/components/schemas/RoleGrantOperation'
+        targetUserId:
+          type: string
+        roleCode:
+          $ref: '#/components/schemas/RoleCode'
+        reasonCode:
+          type: string
+          description: Must match operation (role_grant_assign, etc.)
+        correlationId:
+          type: string
+          description: Optional client correlation; server may override
+    RoleGrantSuccessEnvelope:
+      type: object
+      required:
+        - outcome
+        - targetUserId
+        - roleCode
+        - grantStatus
+      properties:
+        outcome:
+          type: string
+        targetUserId:
+          type: string
+        roleCode:
+          $ref: '#/components/schemas/RoleCode'
+        grantStatus:
+          type: string
+          enum:
+            - ENABLED
+            - DISABLED
+            - REVOKED
+            - ABSENT
+    SafeErrorEnvelope:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+  responses:
+    BadRequest:
+      description: Invalid command including forbidden customer role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeErrorEnvelope'
+    Unauthorized:
+      description: Missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeErrorEnvelope'
+    Forbidden:
+      description: Permission or reason denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeErrorEnvelope'
+    NotFound:
+      description: Target not found (safe semantics)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeErrorEnvelope'
+    Conflict:
+      description: Stale or conflicting command
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeErrorEnvelope'
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeErrorEnvelope'
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeErrorEnvelope'

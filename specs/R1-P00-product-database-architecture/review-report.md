@@ -1,5 +1,10 @@
 # Review Report — R1-P00 Product & Database Architecture
 
+> **Historical phase-state note:** This report preserves the point-in-time
+> R1-P00 review state before later human completion. R1-P00 is now Complete;
+> every `In Progress` statement below is historical. `docs/product/current.md`
+> is the authority for current phase state.
+
 ## Scope and evidence
 
 - Specification: `specs/R1-P00-product-database-architecture/spec.md` (FR-001–FR-066, SC-001–SC-014); plan/tasks; constitution; `docs/product/current.md` (Status `In Progress`)

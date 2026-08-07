@@ -43,7 +43,7 @@ describe("OpenAPI validation tooling", () => {
 
   // R1-P03 role management is an internal contract, so no published document
   // may gain a role, permission, or privileged-audit path.
-  it("publishes no R1-P03 authorization path", async () => {
+  it("publishes no R1-P03 authorization path in foundation and authentication docs", async () => {
     const documents = [
       "docs/apis/openapi/r1-p01-foundation.yaml",
       "docs/apis/openapi/r1-p02-authentication.yaml",
@@ -63,12 +63,19 @@ describe("OpenAPI validation tooling", () => {
     }
   });
 
-  it("keeps the runtime document free of R1-P03 authorization paths", async () => {
+  it("keeps the runtime document free of unpublished R1-P03 authorization paths", async () => {
     const { cleanoraOpenApiDocument } = await import(
       "../../../src/swagger/openapi.document.js"
     );
+    const approvedR1P03APaths = new Set([
+      "/auth/role-grants/commands",
+      "/internal/owner/staff-admins",
+    ]);
 
     for (const path of Object.keys(cleanoraOpenApiDocument.paths ?? {})) {
+      if (approvedR1P03APaths.has(path)) {
+        continue;
+      }
       expect(path).not.toMatch(
         /\/(roles?|permissions?|user-roles|privileged)\b/iu,
       );

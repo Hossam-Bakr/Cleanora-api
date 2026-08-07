@@ -134,6 +134,8 @@ const environmentSchema = z
     GOOGLE_CLIENT_SECRET: optionalTextSchema,
     GOOGLE_REDIRECT_URI: optionalUrlSchema,
     GOOGLE_FRONTEND_CALLBACK_URI: optionalUrlSchema,
+    OWNER_ADMIN_API_ENABLED: booleanFlagSchema.default(false),
+    OWNER_ADMIN_SECRET: optionalSecretSchema,
     SHUTDOWN_TIMEOUT_MS: z.coerce
       .number()
       .int()
@@ -142,6 +144,13 @@ const environmentSchema = z
     REQUEST_BODY_LIMIT: z.string().min(1).default(DEFAULT_REQUEST_BODY_LIMIT)
   })
   .superRefine((environment, context) => {
+    if (environment.OWNER_ADMIN_API_ENABLED && environment.OWNER_ADMIN_SECRET === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["OWNER_ADMIN_SECRET"],
+        message: "OWNER_ADMIN_SECRET is required when OWNER_ADMIN_API_ENABLED=true",
+      });
+    }
     if (environment.AUTH_ENABLED) {
       const required = [
         ['JWT_ACCESS_SECRET', environment.JWT_ACCESS_SECRET],

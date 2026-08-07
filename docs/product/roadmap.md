@@ -5,7 +5,7 @@
 | Product | Cleanora |
 | Delivery Model | Three releases |
 | Current Release | Release 1 |
-| Current Phase | R1-P00 |
+| Current Phase | See `docs/product/current.md` (canonical live phase pointer) |
 | Vision | `vision.md` |
 | Approved Decisions | `decision-log.md` |
 | Open Product Rules | `open-questions.md` |
@@ -495,6 +495,49 @@ Make authorization authoritative across customer, provider, worker, and staff op
 - Privileged writes require a reason where configured.
 - Supervisor/provider-admin can proxy only within their provider.
 - Staff powers are separated and tested.
+
+---
+
+## R1-P03A — Production Role Provisioning
+
+### Goal
+
+Establish an owner-controlled `staff_admin` provisioning path and an
+authenticated caller for ordinary non-`customer` role management without
+weakening completed authentication or authorization contracts.
+
+### Scope
+
+- Authentication-owned owner-secret internal API for `staff_admin` assign/re-enable
+  (`POST /api/v1/internal/owner/staff-admins`, disabled by default)
+- Timing-safe secret compare, rate limiting, idempotent atomic audit, no Admin UI
+- Minimal authenticated staff-admin role-management surface
+- Ordinary assign, revoke, enable, and disable delegation to the completed
+  R1-P03 role-management contract for non-`customer` roles
+- No Release 1 customer-role provisioning requirement (DEC-030)
+- Preservation of R1-P02 authentication and R1-P03 authorization, transaction,
+  and audit behavior
+
+### Data boundary
+
+- Authentication retains ownership of the existing authorization entities.
+- No new table or schema representation is approved during specification
+  preparation; any later data change requires an approved technical plan and a
+  phase-owned forward migration.
+- No seed, migration, backfill, startup path, category rule, or hidden database
+  edit may create a production user-role grant.
+
+### Done When
+
+- Owner-secret `staff_admin` provisioning is disabled by default, idempotent,
+  rate-limited, audited, and validated under DEC-030.
+- Ordinary non-`customer` role commands use the completed R1-P03 service and
+  preserve its permission, reason, transition, transaction, and audit rules.
+- Release 1 does not require granting the historical `customer` role for
+  customer self-service or marketplace participation.
+- Completed R1-P02 authentication contracts remain unchanged.
+- The phase passes independent review and validation and the human owner
+  explicitly approves it as Complete before R1-P04 resumes.
 
 ---
 

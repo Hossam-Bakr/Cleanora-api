@@ -19,6 +19,8 @@ import {
 import type { GoogleAuthenticationService } from "./google-auth.service.js";
 import { AUTH_RATE_LIMITS } from "./domain/auth.policy.js";
 import { requireFullAuthentication } from "./auth.middleware.js";
+import type { RoleManagementService } from "./role-management.service.js";
+import { createRoleGrantCommandController } from "./role-grant-command.controller.js";
 
 export interface AuthenticationRouterDependencies {
   readonly service: AuthenticationService;
@@ -30,6 +32,7 @@ export interface AuthenticationRouterDependencies {
   readonly google: GoogleAuthenticationService | undefined;
   readonly googleProviderCallbackUri: string | undefined;
   readonly googleFrontendCallbackUri: string | undefined;
+  readonly roleManagement?: RoleManagementService;
 }
 
 function rateLimitSubject(value: unknown): string {
@@ -55,6 +58,7 @@ export function createAuthenticationRouter(
     google,
     googleProviderCallbackUri,
     googleFrontendCallbackUri,
+    roleManagement,
   } = dependencies;
   const router = Router();
   const controller = createAuthenticationController(
@@ -69,6 +73,10 @@ export function createAuthenticationRouter(
           frontendCallbackUri: googleFrontendCallbackUri,
         },
   );
+  const roleGrantController =
+    roleManagement === undefined
+      ? undefined
+      : createRoleGrantCommandController(roleManagement);
   const hashSubject = (value: unknown) =>
     createHmac("sha256", privacyHashSecret)
       .update(rateLimitSubject(value))
@@ -99,6 +107,12 @@ export function createAuthenticationRouter(
       ? []
       : [limit(`${scope}-subject`, values.subject, subject)]),
   ];
+  const responsePrincipalId = (request: Request): string => {
+    const value = (
+      request.res?.locals as { authenticationPrincipal?: { userId?: string } } | undefined
+    )?.authenticationPrincipal?.userId;
+    return typeof value === "string" ? value : "missing";
+  };
   const configuredIp = (
     scope: string,
     key: 'signupPer15Minutes' | 'loginPer15Minutes',
@@ -222,5 +236,18 @@ export function createAuthenticationRouter(
     requireFullAuthentication,
     controller.googleUnlink,
   );
+  if (roleGrantController !== undefined) {
+    router.post(
+      "/role-grants/commands",
+      authenticateAccess,
+      requireFullAuthentication,
+      ...policy(
+        "role-grant-command",
+        { ip: [20, 60], subject: [10, 60] },
+        (request) => responsePrincipalId(request),
+      ),
+      roleGrantController.submit,
+    );
+  }
   return router;
 }

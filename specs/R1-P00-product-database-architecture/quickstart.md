@@ -1,7 +1,12 @@
 # Quickstart Validation: R1-P00 Architecture Contract
 
-**Date**: 2026-07-24  
-**Phase**: R1-P00 — Product & Database Architecture  
+This quickstart is historical validation context for the completed R1-P00
+phase. References to its active pointer describe the R1-P00 preparation period,
+not the current repository state; `docs/product/current.md` remains the canonical
+live phase authority.
+
+**Date**: 2026-07-24
+**Phase**: R1-P00 — Product & Database Architecture
 **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md)
 
 ## Purpose
@@ -12,7 +17,8 @@ or API call in this phase.
 
 ## Prerequisites
 
-- Active phase pointer is R1-P00 in `docs/product/current.md`
+- Historical validation prerequisite: the active phase pointer was R1-P00 in
+  `docs/product/current.md` during R1-P00 preparation
 - Spec Kit artifacts present under `specs/R1-P00-product-database-architecture/`
 - Canonical sources available: `docs/product/vision.md`, `decision-log.md`,
   `open-questions.md`, `roadmap.md`, `standalone-project-boundary.md`
@@ -31,7 +37,7 @@ Run before `/speckit-tasks` / documentation implementation.
 
 | # | Check | Expected | Evidence |
 |---|---|---|---|
-| 0.1 | Active phase | `R1-P00` Not Started / active pointer only | `docs/product/current.md` |
+| 0.1 | Historical active-phase snapshot | `R1-P00` was Not Started / active pointer only during preparation | historical `docs/product/current.md` evidence |
 | 0.2 | OQ-010 owner | `R1-P13`, not R1-P12 | `open-questions.md`, `spec.md` |
 | 0.3 | Material blockers | No OQ blocks R1-P00 | spec Open Questions table |
 | 0.4 | Plan artifacts | `plan.md`, `research.md`, `data-model.md`, `quickstart.md` present | this directory |
@@ -145,7 +151,7 @@ alone may approve phase completion.
 ## Suggested commands (documentation evidence only)
 
 ```powershell
-# Confirm active phase and OQ-010 owner
+# Confirm historical R1-P00 pointer evidence and OQ-010 owner
 Select-String -Path docs/product/current.md -Pattern "R1-P00"
 Select-String -Path docs/product/open-questions.md -Pattern "OQ-010"
 

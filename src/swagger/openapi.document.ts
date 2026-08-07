@@ -69,8 +69,8 @@ export const cleanoraOpenApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Cleanora API",
-    version: "1.0.0-r1-p02",
-    summary: "Cleanora Release 1 foundation and authentication API",
+    version: "1.0.0-r1-p03a",
+    summary: "Cleanora Release 1 foundation, authentication, and R1-P03A admin APIs",
     description: [
       "Professional living documentation for the implemented Cleanora modular-monolith API.",
       "",
@@ -78,7 +78,7 @@ export const cleanoraOpenApiDocument = {
       "Access tokens are sent as Bearer credentials. Refresh credentials are stored only in an HttpOnly cookie.",
       "Examples use placeholders and never contain usable passwords, tokens, OTPs, provider credentials, or database values.",
       "",
-      "R1-P02 is still In Progress. The document describes implemented behavior but does not mark the phase Complete.",
+      "R1-P02 authentication is Complete. R1-P03A adds owner staff-admin provisioning and staff-admin role-grant commands under DEC-030.",
     ].join("\n"),
     contact: {
       name: "Cleanora Engineering",
@@ -119,6 +119,16 @@ export const cleanoraOpenApiDocument = {
       name: "Google Identity",
       description:
         "Individual-only Google sign-in through a verified provider email, browser callback, deliberate linking, and safe unlinking.",
+    },
+    {
+      name: "Staff-Admin Role Commands",
+      description:
+        "Privileged non-customer role-grant commands for enabled staff_admin actors. Customer role codes are rejected at validation.",
+    },
+    {
+      name: "Owner Staff-Admin Provisioning",
+      description:
+        "Internal owner-only staff_admin provisioning guarded by X-Owner-Admin-Secret and OWNER_ADMIN_API_ENABLED.",
     },
     {
       name: "API Documentation",
@@ -655,6 +665,144 @@ export const cleanoraOpenApiDocument = {
           "401": apiErrorResponse,
           "403": apiErrorResponse,
           "409": apiErrorResponse,
+        },
+      },
+    },
+    "/auth/role-grants/commands": {
+      post: {
+        tags: ["Staff-Admin Role Commands"],
+        operationId: "submitRoleGrantCommand",
+        summary: "Submit one privileged non-customer role-grant command",
+        description:
+          "Requires a full Bearer session from an enabled staff_admin actor. Delegates assign, revoke, enable, and disable to RoleManagementService with permission and reason checks. The customer role code is forbidden at validation.",
+        security: [{ bearerAuth: [] }],
+        requestBody: jsonRequest(
+          "RoleGrantCommandRequest",
+          "One assign, revoke, enable, or disable command with a matching reason code and a non-customer role code.",
+        ),
+        responses: {
+          "200": successResponse(
+            "The command completed or returned an authorized no-op.",
+            "RoleGrantCommandData",
+          ),
+          "400": documentedErrorResponse(
+            "The body is invalid, including forbidden customer role codes or mismatched reason codes.",
+            {
+              invalidCommand: {
+                summary: "Invalid or forbidden command body",
+                value: {
+                  success: false,
+                  error: {
+                    code: "INVALID_REQUEST",
+                    statusCode: 400,
+                    message: "The request is invalid.",
+                  },
+                  requestId: exampleRequestId,
+                },
+              },
+            },
+          ),
+          "401": documentedErrorResponse(
+            "Bearer authentication is missing or invalid.",
+            {
+              authenticationRequired: {
+                summary: "Missing principal",
+                value: {
+                  success: false,
+                  error: {
+                    code: "AUTHENTICATION_REQUIRED",
+                    statusCode: 401,
+                    message: "Authentication is required.",
+                  },
+                  requestId: exampleRequestId,
+                },
+              },
+            },
+          ),
+          "403": documentedErrorResponse(
+            "Permission, reason, target, or transition checks rejected the command.",
+            {
+              rejected: {
+                summary: "Coalesced command rejection",
+                value: {
+                  success: false,
+                  error: {
+                    code: "ROLE_GRANT_COMMAND_REJECTED",
+                    statusCode: 403,
+                    message: "The role-grant command was rejected.",
+                  },
+                  requestId: exampleRequestId,
+                },
+              },
+            },
+          ),
+          "429": rateLimitResponse,
+          "500": apiErrorResponse,
+        },
+      },
+    },
+    "/internal/owner/staff-admins": {
+      post: {
+        tags: ["Owner Staff-Admin Provisioning"],
+        operationId: "provisionOwnerStaffAdmin",
+        summary: "Assign or re-enable staff_admin for one target user",
+        description:
+          "Internal owner endpoint disabled unless OWNER_ADMIN_API_ENABLED is true. Requires the X-Owner-Admin-Secret header and an email body that identifies an existing verified active user.",
+        parameters: [
+          {
+            in: "header",
+            name: "X-Owner-Admin-Secret",
+            required: true,
+            schema: { type: "string" },
+            description:
+              "Owner provisioning secret. Examples use placeholders only.",
+            example: "OWNER_ADMIN_SECRET_PLACEHOLDER",
+          },
+        ],
+        requestBody: jsonRequest(
+          "OwnerStaffAdminProvisionRequest",
+          "Verified target user email address.",
+        ),
+        responses: {
+          "200": successResponse(
+            "The grant was created, re-enabled, or returned idempotently.",
+            "OwnerStaffAdminProvisionData",
+          ),
+          "400": documentedErrorResponse(
+            "The request body failed validation.",
+            {
+              invalidRequest: {
+                summary: "Invalid email body",
+                value: {
+                  success: false,
+                  error: {
+                    code: "INVALID_REQUEST",
+                    statusCode: 400,
+                    message: "The request is invalid.",
+                  },
+                  requestId: exampleRequestId,
+                },
+              },
+            },
+          ),
+          "403": documentedErrorResponse(
+            "The owner secret, service gate, or target eligibility rejected provisioning.",
+            {
+              rejected: {
+                summary: "Owner provisioning rejected",
+                value: {
+                  success: false,
+                  error: {
+                    code: "OWNER_STAFF_ADMIN_REJECTED",
+                    statusCode: 403,
+                    message: "Owner staff-admin provisioning was rejected.",
+                  },
+                  requestId: exampleRequestId,
+                },
+              },
+            },
+          ),
+          "429": rateLimitResponse,
         },
       },
     },
@@ -1201,6 +1349,94 @@ export const cleanoraOpenApiDocument = {
         type: "object",
         additionalProperties: true,
         description: "Safe database availability result.",
+      },
+      RoleGrantNonCustomerCode: {
+        type: "string",
+        enum: [
+          "staff_admin",
+          "staff_operations",
+          "staff_support",
+          "staff_finance",
+          "provider_member",
+          "provider_supervisor",
+          "provider_admin",
+          "worker",
+        ],
+        description:
+          "Non-customer role codes allowed on the staff-admin command API.",
+      },
+      RoleGrantOperation: {
+        type: "string",
+        enum: ["assign", "revoke", "enable", "disable"],
+      },
+      RoleGrantCommandRequest: {
+        type: "object",
+        additionalProperties: false,
+        required: ["operation", "targetUserId", "roleCode", "reasonCode"],
+        properties: {
+          operation: { $ref: "#/components/schemas/RoleGrantOperation" },
+          targetUserId: {
+            type: "string",
+            minLength: 1,
+            maxLength: 128,
+            example: "usr_target_example",
+          },
+          roleCode: { $ref: "#/components/schemas/RoleGrantNonCustomerCode" },
+          reasonCode: {
+            type: "string",
+            description:
+              "Must match the operation: role_grant_assign, role_grant_revoke, role_grant_enable, or role_grant_disable.",
+            example: "role_grant_assign",
+          },
+        },
+      },
+      RoleGrantCommandData: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "targetUserId",
+          "roleCode",
+          "status",
+          "mutated",
+          "auditAppended",
+        ],
+        properties: {
+          targetUserId: { type: "string", example: "usr_target_example" },
+          roleCode: { $ref: "#/components/schemas/RoleGrantNonCustomerCode" },
+          status: {
+            type: "string",
+            enum: ["ENABLED", "DISABLED", "REVOKED"],
+          },
+          mutated: { type: "boolean" },
+          auditAppended: { type: "boolean" },
+        },
+      },
+      OwnerStaffAdminProvisionRequest: {
+        type: "object",
+        additionalProperties: false,
+        required: ["email"],
+        properties: {
+          email: {
+            type: "string",
+            format: "email",
+            maxLength: 320,
+            example: "existing-user@example.com",
+          },
+        },
+      },
+      OwnerStaffAdminProvisionData: {
+        type: "object",
+        additionalProperties: false,
+        required: ["outcome", "targetUserId", "roleCode", "grantStatus"],
+        properties: {
+          outcome: {
+            type: "string",
+            enum: ["CREATED", "RE_ENABLED", "ALREADY_ENABLED"],
+          },
+          targetUserId: { type: "string", example: "usr_target_example" },
+          roleCode: { type: "string", const: "staff_admin" },
+          grantStatus: { type: "string", const: "ENABLED" },
+        },
       },
       SuccessEnvelope: {
         type: "object",

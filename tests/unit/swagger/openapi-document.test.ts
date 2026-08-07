@@ -21,10 +21,25 @@ describe('Cleanora Swagger OpenAPI document', () => {
           .filter((value): value is string => typeof value === 'string'),
     );
 
-    expect(operationIds).toHaveLength(22);
+    expect(operationIds).toHaveLength(24);
     expect(new Set(operationIds).size).toBe(operationIds.length);
     expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
       "/auth/google/result",
+    );
+  });
+
+  it('documents R1-P03A paths and excludes obsolete bootstrap routes', () => {
+    expect(cleanoraOpenApiDocument.paths).toHaveProperty(
+      "/auth/role-grants/commands",
+    );
+    expect(cleanoraOpenApiDocument.paths).toHaveProperty(
+      "/internal/owner/staff-admins",
+    );
+    expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
+      "/auth/first-staff-admin/bootstrap",
+    );
+    expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
+      "/internal/first-staff-admin/bootstrap",
     );
   });
 

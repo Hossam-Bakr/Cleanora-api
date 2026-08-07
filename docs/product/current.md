@@ -3,15 +3,62 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `R1-P03 — Roles, Permissions & Privileged Audit` |
+| Current Phase | `R1-P03A — Production Role Provisioning` |
 | Status | `Complete` |
-| Backend Branch | `TBD` |
-| Frontend Branch | `TBD` |
-| Backend Owner | `TBD` |
-| Frontend Owner | `TBD` |
-| Started At | `2026-08-03` |
-| Completed At | `2026-08-05` |
-| Last Updated | `2026-08-05` |
+| Backend Branch | `Active working branch — see repository` |
+| Frontend Branch | `Not created — no R1-P03A UI` |
+| Backend Owner | `Assigned — completed under DEC-030` |
+| Frontend Owner | `Not applicable — no R1-P03A UI` |
+| Started At | `2026-08-06` |
+| Completed At | `2026-08-07` |
+| Last Updated | `2026-08-07` (human-owner Complete approval; T029 closed; no next phase active) |
+
+## Completed phase — R1-P03A
+
+R1-P03A (`Production Role Provisioning`) is **Complete** as of `2026-08-07`, by
+explicit human-owner approval:
+
+```text
+I approve R1-P03A — Production Role Provisioning as Complete.
+```
+
+Implementation, sequential validation, and focused post-repair independent
+re-review `PASS` preceded this approval
+(`specs/R1-P03A-production-role-provisioning/implementation-review-report.md`,
+`completion-report.md`). Tasks T001–T029 are complete.
+
+Authentication remains the sole owner of roles, permissions, user-role grants,
+privileged reasons, provisioning behavior, and transaction control. Under
+DEC-030, R1-P03A delivered:
+
+- a temporarily enabled owner-secret internal API
+  (`POST /api/v1/internal/owner/staff-admins`, header `X-Owner-Admin-Secret`,
+  env `OWNER_ADMIN_API_ENABLED` default `false` and `OWNER_ADMIN_SECRET`) for
+  `staff_admin` assign/re-enable only, with timing-safe compare, rate limiting,
+  idempotent atomic audit (`owner_staff_admin_provision`), and no Admin UI; and
+- the existing authenticated staff-admin role-management HTTPS API for ordinary
+  non-`customer` assign, revoke, enable, and disable through the completed
+  R1-P03 `RoleManagementService`.
+
+Release 1 does **not** require customer role provisioning. R1-P04 customer
+self-service will use trusted `AuthenticationPrincipal` facts plus `SELF`
+ownership and category eligibility under DEC-030; no `customer` role grant,
+`resource.self.read`/`resource.self.write`, or other role-derived R1-P04
+customer permission is required.
+
+This completion does **not** authorize commit, push, merge, deployment,
+production migration, real owner secret configuration, or live staff_admin
+provisioning. No other phase is In Progress.
+
+## Dependent phase — R1-P04 (not active)
+
+R1-P04 (`Customer Profiles, Preferences & Text Addresses`) remains **not
+active**. Its approved specification and independent review `PASS` remain valid.
+The R1-P03A Complete gate that blocked planning resume is now satisfied.
+R1-P04 may resume planning only after **separate** explicit human-owner
+activation. No R1-P04 planning, tasks, implementation, schema or migration work,
+Git action, deployment, or production action is authorized by the R1-P03A
+Complete approval alone.
 
 ## Completed phase — R1-P03
 
@@ -38,9 +85,9 @@ seam. No public R1-P03 endpoints were introduced. Migration
 `r1_p03_roles_permissions_privileged_audit` is forward-only. Applied
 migrations remain immutable.
 
-No other phase is In Progress. R1-P04 (`Customer Profiles, Preferences & Saved
-Addresses`) and all later phases remain inactive until separate explicit
-human-owner authorization. This completion does not authorize commit, push,
+R1-P04 (`Customer Profiles, Preferences & Text Addresses`) was subsequently
+activated on `2026-08-05` for specification preparation only, then paused while
+R1-P03A ran. The R1-P03 completion itself did not authorize commit, push,
 merge, deployment, or production migration.
 
 ## Completed phase — R1-P02B

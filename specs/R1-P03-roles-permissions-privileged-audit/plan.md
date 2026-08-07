@@ -4,7 +4,11 @@
 
 **Input**: Feature specification from `specs/R1-P03-roles-permissions-privileged-audit/spec.md` (clarification complete)
 
-**Note**: Planning artifacts only. No runtime, schema, migration, seed, or test implementation in this command. Analyze remediation revised 2026-08-03 — implementation remains unauthorized until a fresh `/speckit.analyze` passes and the human owner approves.
+**Note**: Historical R1-P03 planning artifact. At this recorded point no runtime,
+schema, migration, seed, or test implementation was authorized until a fresh
+`/speckit.analyze` passed and the human owner approved. Those later gates and
+implementation completed; R1-P03 is now Complete and this plan does not describe
+the current active phase.
 
 ## Summary
 
@@ -45,7 +49,7 @@ Make authorization authoritative for customer, provider, worker, and staff opera
 | Principle | Status | Evidence |
 |---|---|---|
 | I. Standalone greenfield | PASS | Repository-local spec/plan only; no external app dependency |
-| II. One active phase + traceability | PASS | `docs/product/current.md` = R1-P03 In Progress; plan traces to clarified `spec.md` |
+| II. One active phase + traceability | PASS | Historical planning state: `docs/product/current.md` recorded R1-P03 In Progress; plan traces to clarified `spec.md` |
 | III. Modular monolith ownership | PASS | Identity owns authz tables; admin owns audit via infrastructure factory seam; no barrels/God service planned |
 | IV. Global design, local incremental migration | PASS | Only R1-P03 tables; migration name fixed; no early provider/worker models |
 | V. Canonical product truth / no invention | PASS | Clarifications Session 2026-08-03 resolves catalog, interim scope, surface, reasons, grants, auth-only endpoints |
@@ -213,11 +217,11 @@ RoleManagementService sees only:
 
 ## Data and migration
 
-**Migration name**: `r1_p03_roles_permissions_privileged_audit`  
-**Action**: Forward-only. Do not edit applied migrations.  
-**Models**: See [data-model.md](./data-model.md) for `roles`, `permissions`, `role_permissions`, `user_roles`, `privileged_action_reasons`.  
-**Unchanged / frozen**: Existing `audit_logs` (admin-owned) — no structural or index changes in R1-P03.  
-**Definition lifecycle**: No `roles.isActive` or `permissions.isActive`. Assignment lifecycle lives only on `user_roles.status`. `privileged_action_reasons.isActive` remains.  
+**Migration name**: `r1_p03_roles_permissions_privileged_audit`
+**Action**: Forward-only. Do not edit applied migrations.
+**Models**: See [data-model.md](./data-model.md) for `roles`, `permissions`, `role_permissions`, `user_roles`, `privileged_action_reasons`.
+**Unchanged / frozen**: Existing `audit_logs` (admin-owned) — no structural or index changes in R1-P03.
+**Definition lifecycle**: No `roles.isActive` or `permissions.isActive`. Assignment lifecycle lives only on `user_roles.status`. `privileged_action_reasons.isActive` remains.
 **No** `user_roles.assignedByUserId`.
 
 ## Seed plan

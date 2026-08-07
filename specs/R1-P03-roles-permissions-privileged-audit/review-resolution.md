@@ -1,5 +1,11 @@
 # Review Resolution — R1-P03 — Roles, Permissions & Privileged Audit
 
+> **Historical phase-state note:** This resolution preserves the point-in-time
+> R1-P03 repair state before human completion on 2026-08-05. R1-P03 is now
+> Complete; every `In Progress` or not-yet-Complete statement below is
+> historical. `docs/product/current.md` is the authority for current phase
+> state.
+
 ## Resolution summary
 
 | Finding | Decision | Evidence/fix | Validation |

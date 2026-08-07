@@ -1,5 +1,11 @@
 # Completion Report — R1-P03 — Roles, Permissions & Privileged Audit
 
+> **Historical phase-state note:** Statements below that no other phase was
+> active or that a later phase must not yet be activated describe the R1-P03
+> completion-time snapshot. R1-P03 is Complete, R1-P03A is Complete as of
+> `2026-08-07`, and R1-P04 is not active. `docs/product/current.md` is the
+> authority for current phase state.
+
 ## Outcome
 
 `COMPLETE` — human-owner approved on `2026-08-05`.
