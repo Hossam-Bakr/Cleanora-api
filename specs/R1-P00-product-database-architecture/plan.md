@@ -4,9 +4,10 @@
 
 **Input**: Feature specification from `/specs/R1-P00-product-database-architecture/spec.md`
 
-**Note**: This plan is documentation/architecture only. It freezes the
-implementation contract for later phases. It does not implement runtime
-application behavior.
+**Note**: This is the historical R1-P00 plan record. During R1-P00 it authorized
+documentation/architecture work only and froze the implementation contract for
+later phases. R1-P00 is now Complete; this plan does not describe the current
+active phase or authorize runtime application behavior.
 
 ## Summary
 
@@ -57,7 +58,7 @@ entities traced to owner/phase/consumers/source in ≤2 minutes each (SC-010).
 - No stored-value wallets (DEC-003)
 - Docker/cloud deferred to Release 3
 - OQ-010 remains open; resolution owner R1-P13
-- One active phase: R1-P00
+- Historical preparation state: R1-P00 was the one active phase
 
 **Scale/Scope**: Complete three-release conceptual model and planned-table
 ownership map; four architecture deliverables; no runtime surface.
@@ -72,8 +73,9 @@ Verified against `.specify/memory/constitution.md` v1.0.0:
 
 - [x] **I. Standalone Greenfield Product** — plan uses only Cleanora
       repository-local sources; no external app/schema/history dependency
-- [x] **II. One Active Phase and Complete Traceability** — active pointer is
-      R1-P00; artifacts trace to FR/SC/DEC/OQ/roadmap
+- [x] **II. One Active Phase and Complete Traceability** — during this historical
+      planning check, the active pointer was R1-P00; artifacts trace to
+      FR/SC/DEC/OQ/roadmap
 - [x] **III. Modular Monolith Ownership** — module catalog and ownership rules
       defined; no cross-module repository access authorized
 - [x] **IV. Global Design, Local Implementation, Incremental Migration** —

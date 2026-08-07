@@ -1,8 +1,12 @@
 # Research: R1-P00 — Product & Database Architecture
 
-**Date**: 2026-07-24  
-**Phase**: `R1-P00` (documentation and architecture only)  
+**Date**: 2026-07-24
+**Phase**: `R1-P00` (documentation and architecture only)
 **Spec**: [spec.md](./spec.md)
+
+This is historical R1-P00 research. Phase-state entries below record the
+pre-flight state at that time; R1-P00 is now Complete and
+`docs/product/current.md` is the canonical live phase authority.
 
 ## Research purpose
 
@@ -14,7 +18,7 @@ application behavior is required in this phase.
 
 | Check | Result |
 |---|---|
-| Active phase | `R1-P00 — Product & Database Architecture` (`docs/product/current.md`) |
+| Historical active phase at pre-flight | `R1-P00 — Product & Database Architecture` (then recorded in `docs/product/current.md`) |
 | OQ-010 resolution owner | `R1-P13` (confirmed in `open-questions.md` and `spec.md`) |
 | Material product blockers for R1-P00 | None — OQ-001–OQ-014 are deferred with containment rules |
 | Runtime implementation in R1-P00 | Forbidden by FR-007, constitution IV/X, DEC-014 |

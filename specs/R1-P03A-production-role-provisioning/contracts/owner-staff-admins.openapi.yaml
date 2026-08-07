@@ -1,0 +1,53 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P03A Owner Staff-Admin Provisioning
+  version: 2.1.0
+  description: >-
+    Internal owner HTTPS endpoint (DEC-030). Disabled unless
+    OWNER_ADMIN_API_ENABLED=true. Uses timing-safe owner secret header.
+    Request body identifies the target by email. Examples use placeholders only.
+servers:
+  - url: /api/v1
+paths:
+  /internal/owner/staff-admins:
+    post:
+      operationId: provisionOwnerStaffAdmin
+      summary: Assign or re-enable staff_admin for one target user
+      parameters:
+        - in: header
+          name: X-Owner-Admin-Secret
+          required: true
+          schema:
+            type: string
+          example: OWNER_ADMIN_SECRET_PLACEHOLDER
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnerStaffAdminProvisionRequest'
+            example:
+              email: existing-user@example.com
+      responses:
+        '200':
+          description: Grant created, re-enabled, or idempotent success
+        '400':
+          description: INVALID_REQUEST
+        '403':
+          description: OWNER_STAFF_ADMIN_REJECTED
+        '429':
+          description: RATE_LIMIT_EXCEEDED
+        '500':
+          description: REQUEST_FAILED
+components:
+  schemas:
+    OwnerStaffAdminProvisionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320

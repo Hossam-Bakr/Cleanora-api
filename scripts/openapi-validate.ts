@@ -6,7 +6,12 @@ interface OpenApiParser {
   validate(document: string | Readonly<Record<string, unknown>>): Promise<unknown>;
 }
 const openApiParser = require('@apidevtools/swagger-parser') as OpenApiParser;
-const defaults = ['docs/apis/openapi/r1-p01-foundation.yaml', 'docs/apis/openapi/r1-p02-authentication.yaml'];
+const defaults = [
+  'docs/apis/openapi/r1-p01-foundation.yaml',
+  'docs/apis/openapi/r1-p02-authentication.yaml',
+  'docs/apis/openapi/r1-p03a-staff-admin-role-management.yaml',
+  'docs/apis/openapi/r1-p03a-owner-staff-admins.yaml',
+];
 
 async function main(): Promise<void> {
   const paths = process.argv[2] === undefined ? defaults : [process.argv[2]];

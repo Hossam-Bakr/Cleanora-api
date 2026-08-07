@@ -1,6 +1,6 @@
 # Cleanora — Open Product Questions
 
-> Items in this file must not be invented by developers or AI systems.  
+> Items in this file must not be invented by developers or AI systems.
 > A decision must be approved and moved to `decision-log.md` before implementation.
 
 | ID | Open Question | Affected Areas | Temporary Implementation Rule |

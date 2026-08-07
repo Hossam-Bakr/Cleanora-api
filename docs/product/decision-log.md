@@ -1,13 +1,13 @@
 # Cleanora — Decision Log
 
-> This file records approved project decisions that clarify delivery timing or terminology.  
+> This file records approved project decisions that clarify delivery timing or terminology.
 > It does not silently rewrite locked product behavior in `vision.md`.
 
 ---
 
 ## DEC-001 — Three-release delivery model
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 The product will be delivered through three releases:
@@ -22,7 +22,7 @@ Bassam's P0–P5 labels remain useful as historical product prioritization, but 
 
 ## DEC-002 — Release 1 is a large end-to-end marketplace
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Release 1 contains the complete normal marketplace journey:
@@ -48,7 +48,7 @@ A real user must be able to complete the journey without manual database edits.
 
 ## DEC-003 — No internal Cleanora wallets
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Cleanora will not hold reusable customer, provider, or marketer balances.
@@ -73,7 +73,7 @@ Any source-document reference to a provider or marketer “wallet” must be int
 
 ## DEC-004 — Maps and WebSockets are deferred to Release 3
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Release 1 uses normal REST APIs and textual/configured coverage areas.
@@ -94,7 +94,7 @@ These remain part of the product vision and are delivered in Release 3.
 
 ## DEC-005 — Eligibility engine is built in two versions
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Release 1 implements Eligibility Engine V1 using:
@@ -121,7 +121,7 @@ The engine must not be duplicated.
 
 ## DEC-006 — Money closure moves into Release 1
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Although Bassam's phased delivery separates P0 trust and P1 money closure, the approved Release 1 includes:
@@ -140,7 +140,7 @@ This is required for an end-to-end production release.
 
 ## DEC-007 — Marketers and Premium are Release 2
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Release 2 includes:
@@ -159,7 +159,7 @@ Coupons are excluded until their stacking and accounting rules are approved.
 
 ## DEC-008 — Basic ratings and reviews are Release 1
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Release 1 supports:
@@ -176,7 +176,7 @@ Advanced dimensions, edit windows, publication rules, and richer moderation rema
 
 ## DEC-009 — Panic core is Release 1; live location is Release 3
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Release 1 provides emergency state, alerts, dossier, audit, and controlled clearing.
@@ -191,7 +191,7 @@ Release 3 adds:
 
 ## DEC-010 — Admin control is split by dependency
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Release 1 includes all admin actions that do not require maps or marketer modules.
@@ -204,7 +204,7 @@ Release 3 adds live map and realtime operations.
 
 ## DEC-011 — Google sign-in is part of complete authentication
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved product addition
 
 Google sign-in is included in Release 1 authentication.
@@ -215,7 +215,7 @@ It does not replace the actor-specific verification rules. Required phone or ema
 
 ## DEC-012 — Cleanora is a standalone greenfield project
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Cleanora is implemented as a completely standalone project.
@@ -255,21 +255,24 @@ The rule is:
 
 ## DEC-013 — Product sources remain traceable
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 Bassam's four documents remain unchanged source references.
 
-`vision.md` is the consolidated canonical implementation vision.  
-`decision-log.md` records approved timing and terminology decisions.  
-`roadmap.md` controls delivery order.  
+`vision.md` is the consolidated canonical implementation vision.
+
+`decision-log.md` records approved timing and terminology decisions.
+
+`roadmap.md` controls delivery order.
+
 `open-questions.md` blocks invention.
 
 ---
 
 ## DEC-014 — Prisma schema and migrations evolve phase by phase
 
-**Date:** 2026-07-23  
+**Date:** 2026-07-23
 **Status:** Approved
 
 R1-P00 creates the Master ERD and database conventions, but does not fully create every release table.
@@ -612,3 +615,104 @@ delivery channel in local development and hosted environments:
 This is a product-scope change, not a claim that email proves ownership of a
 phone number. R1-P26 must define how existing unverified phone values are
 verified without silently marking historical data as verified.
+
+---
+
+## DEC-029 — R1-P03A production role-provisioning boundaries
+
+> **Supersession note (2026-08-07):** DEC-030 supersedes this entry's
+> first-administrator bootstrap and customer-role provisioning clauses. Historical
+> text is retained for traceability.
+
+**Date:** 2026-08-06
+**Status:** Superseded by DEC-030 for bootstrap and customer-provisioning clauses; resolves OQ-015 through OQ-018
+
+R1-P03A uses the following approved production role-provisioning rules:
+
+- Any historical `staff_admin` grant in `ENABLED`, `DISABLED`, or `REVOKED`
+  state permanently closes first-administrator bootstrap.
+- Bootstrap provides no administrator-recovery path after total administrator
+  loss. Any future recovery capability requires a separate owner-approved
+  phase.
+- The selected first-`staff_admin` target must be an existing `ACTIVE` identity,
+  must not be verification-only, must have a verified email, and must have at
+  least one server-confirmed verified enrolled category. No specific category
+  grants staff authority.
+- Authentication must reload and revalidate every first-admin target fact inside
+  the same bootstrap transaction immediately before grant, permanent closure,
+  and audit. Any missing or changed fact fails without grant or closure.
+- Ordinary role management uses a minimal public HTTPS admin API in the
+  existing backend, with no R1-P03A user interface. Trusted authentication,
+  the matching R1-P03 permission and approved reason, safe errors, throttling,
+  and audit protection remain mandatory.
+- Assigning or enabling the `customer` role requires an `ACTIVE` target with at
+  least one server-confirmed verified `Individual`, `Company`, or `Engineer`
+  category.
+- An authorized disable or revoke operation remains available for an existing
+  `customer` grant when the target is currently ineligible, subject to the
+  ordinary R1-P03 actor, reason, and transition rules.
+
+Category and account facts are eligibility evidence only. They never derive,
+select, or automatically grant a role.
+
+---
+
+## DEC-030 — Junior-friendly MVP staff-admin and customer authorization
+
+**Date:** 2026-08-07
+**Status:** Approved by human owner; supersedes DEC-029 bootstrap and customer-provisioning parts
+
+Cleanora is a small junior-friendly MVP. Release 1 role provisioning and
+customer self-service authorization are simplified accordingly.
+
+### Staff-admin provisioning
+
+The first and subsequent `staff_admin` grants use a temporarily enabled
+owner-secret internal API:
+
+- `POST /api/v1/internal/owner/staff-admins`
+- Header: `X-Owner-Admin-Secret`
+- Environment: `OWNER_ADMIN_API_ENABLED` (default `false`) and `OWNER_ADMIN_SECRET`
+
+Rules:
+
+- Timing-safe secret comparison; never log the secret.
+- Rate limit the endpoint.
+- Target must be an `ACTIVE` identity with verified email.
+- Assign or re-enable `staff_admin` only; no other role through this path.
+- Idempotent; atomic audit with fixed reason `owner_staff_admin_provision`.
+- No Admin UI for this path.
+
+Ordinary authenticated staff-admin role management continues through the
+existing R1-P03 HTTPS API for non-`customer` roles.
+
+### Customer self-service (R1-P04)
+
+R1-P04 customer profile and preference self-service authorizes callers through
+the trusted `AuthenticationPrincipal` plus `SELF` ownership. **No `customer` role
+grant is required** for Release 1 customer self-service. Customer self-service
+MUST NOT require `resource.self.read`, `resource.self.write`, or any other
+R1-P04 customer permission derived from role grants.
+
+R1-P04 access rules:
+
+- Category profile data requires an ACTIVE identity, a matching verified
+  enrolled category, and `SELF` ownership.
+- Shared image and address data require an ACTIVE identity, at least one
+  verified enrolled category, and `SELF` ownership.
+- Contact, preference, and privacy data require an ACTIVE identity enrolled in
+  a supported customer category and `SELF` ownership; pending-only enrolled
+  categories remain allowed for this family.
+- Suspended, banned, and deactivated identities are denied.
+- Losing eligibility suspends access without deleting stored data.
+- Historical presence or absence of a `customer` role grant is irrelevant.
+
+### Superseded complexity
+
+The earlier signed-envelope bootstrap (Ed25519 envelopes, permanent closure,
+authorization-use tracking, six-class observed-attempt matrix) and explicit
+customer-role provisioning decisions in DEC-029 are superseded for Release 1.
+
+The applied R1-P03 role catalog may retain a historical `customer` role entry.
+Release 1 must not require granting that role for customer self-service or
+ordinary marketplace participation.

@@ -15,11 +15,11 @@ commit, push, merge, deployment, or production migration.
 
 ## T001 — Baseline inventory
 
-### Active phase pointer
+### Historical active phase pointer at T001
 
-`docs/product/current.md` records exactly one active phase:
-`R1-P03 — Roles, Permissions & Privileged Audit`, status `In Progress`.
-No other phase is active.
+At the T001 baseline, `docs/product/current.md` recorded exactly one active
+phase: `R1-P03 — Roles, Permissions & Privileged Audit`, status `In Progress`.
+No other phase was active at that historical baseline. R1-P03 is now Complete.
 
 ### Existing migrations (baseline, immutable)
 

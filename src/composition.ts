@@ -20,7 +20,10 @@ import {
 } from "#modules/authentication/auth.module";
 import { AuthorizationService } from "#modules/authentication/authorization.service";
 import { AuthorizationRepository } from "#modules/authentication/infrastructure/authorization.repository";
+import { PrismaOwnerStaffAdminUnitOfWork } from "#modules/authentication/infrastructure/prisma-owner-staff-admin.unit-of-work";
 import { PrismaRoleManagementUnitOfWork } from "#modules/authentication/infrastructure/prisma-role-management.unit-of-work";
+import { createOwnerInternalRouter } from "#modules/authentication/owner-staff-admin.routes";
+import { OwnerStaffAdminProvisionService } from "#modules/authentication/owner-staff-admin.service";
 import { RoleManagementService } from "#modules/authentication/role-management.service";
 import type { RouteDependencies } from "#routes/index";
 import {
@@ -33,11 +36,12 @@ export interface RuntimeDependencies {
   readonly logger: Logger;
   readonly routes: RouteDependencies;
   /**
-   * Internal R1-P03 authorization contracts. No public route consumes them:
-   * role management is available to authorized in-process callers only.
+   * Internal R1-P03 authorization contracts. Role management is also exposed
+   * through authenticated staff-admin HTTP commands (non-customer roles).
    */
   readonly authorization: AuthorizationService;
   readonly roleManagement: RoleManagementService;
+  readonly ownerStaffAdminProvision: OwnerStaffAdminProvisionService;
 }
 
 /**
@@ -62,9 +66,22 @@ function createAuthorizationDependencies(): {
   };
 }
 
+function createOwnerStaffAdminProvision(
+  environment: AppEnvironment,
+): OwnerStaffAdminProvisionService {
+  return new OwnerStaffAdminProvisionService(
+    {
+      enabled: environment.OWNER_ADMIN_API_ENABLED,
+      secret: environment.OWNER_ADMIN_SECRET,
+    },
+    new PrismaOwnerStaffAdminUnitOfWork(createPrismaPrivilegedAuditWriter),
+  );
+}
+
 function createAuthenticationRouter(
   environment: AppEnvironment,
   rateLimiter: RateLimiterPort,
+  roleManagement: RoleManagementService,
 ): Router | undefined {
   if (!environment.AUTH_ENABLED) {
     return undefined;
@@ -80,14 +97,12 @@ function createAuthenticationRouter(
         password: environment.SMTP_PASSWORD!,
         fromName: environment.SMTP_FROM_NAME!,
         fromEmail: environment.SMTP_FROM_EMAIL!,
-        connectionTimeoutMilliseconds:
-          environment.SMTP_CONNECTION_TIMEOUT_MS!,
+        connectionTimeoutMilliseconds: environment.SMTP_CONNECTION_TIMEOUT_MS!,
         socketTimeoutMilliseconds: environment.SMTP_SOCKET_TIMEOUT_MS!,
       })
     : new UnavailableEmailAdapter();
 
-      //  add email adapter to the authentication module
-    const authentication = createAuthenticationModule({
+  const authentication = createAuthenticationModule({
     trustedOrigins: environment.CORS_ORIGINS,
     cookie: {
       name: environment.AUTH_REFRESH_COOKIE_NAME,
@@ -110,6 +125,7 @@ function createAuthenticationRouter(
     accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
     refreshTtlSeconds: environment.JWT_REFRESH_TTL_SECONDS,
     rateLimiter,
+    roleManagement,
     ...(environment.GOOGLE_AUTH_ENABLED
       ? {
           googleIdentity: new OpenIdClientGoogleAdapter(
@@ -137,24 +153,34 @@ export function createRuntimeDependencies(
   });
   const database = new PrismaLifecycle(environment.DATABASE_URL);
   const rateLimiter = new MemoryRateLimiterAdapter();
+  const { authorization, roleManagement } = createAuthorizationDependencies();
+  const ownerStaffAdminProvision = createOwnerStaffAdminProvision(environment);
   const authenticationRouter = createAuthenticationRouter(
     environment,
     rateLimiter,
+    roleManagement,
   );
-
-  const { authorization, roleManagement } = createAuthorizationDependencies();
+  const ownerInternalRouter = createOwnerInternalRouter({
+    service: ownerStaffAdminProvision,
+    limiter: rateLimiter,
+    privacyHashSecret:
+      environment.AUTH_PRIVACY_HASH_SECRET ??
+      "cleanora-owner-rate-limit-subject-hash",
+  });
 
   return {
     database,
     logger,
     authorization,
     roleManagement,
+    ownerStaffAdminProvision,
     routes: {
       environment,
       logger,
       rateLimiter,
       databaseProbe: database.databaseProbe(),
       readinessProbes: [database.readinessProbe()],
+      ownerInternalRouter,
       ...(authenticationRouter === undefined ? {} : { authenticationRouter }),
     },
   };

@@ -1,0 +1,17 @@
+{
+  "workflow": "companion",
+  "specName": "R1-P04-customer-profiles-preferences-text-addresses",
+  "branch": "R1-P04-customer-profiles-preferences-text-addresses",
+  "selectedAt": "2026-08-06T01:29:56.419Z",
+  "currentStep": "specify",
+  "status": "specified",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "codex-review-repair",
+      "at": "2026-08-06T05:03:43.886Z"
+    }
+  ]
+}

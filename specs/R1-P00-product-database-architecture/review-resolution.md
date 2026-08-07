@@ -1,5 +1,10 @@
 # Review Resolution — R1-P00 Product & Database Architecture
 
+> **Historical phase-state note:** This resolution preserves the point-in-time
+> R1-P00 repair state before later human completion. R1-P00 is now Complete;
+> every `In Progress` or not-yet-Complete statement below is historical.
+> `docs/product/current.md` is the authority for current phase state.
+
 ## Resolution summary
 
 | Finding | Decision | Evidence/fix | Validation |

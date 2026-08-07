@@ -33,6 +33,7 @@ export function createTestEnvironment(
     AUTH_COOKIE_SAME_SITE: "lax",
     GOOGLE_REDIRECT_URI: "http://localhost:8000/api/v1/auth/google/callback",
     GOOGLE_FRONTEND_CALLBACK_URI: "http://localhost:5173/auth/google/callback",
+    OWNER_ADMIN_API_ENABLED: false,
     SHUTDOWN_TIMEOUT_MS: 10_000,
     REQUEST_BODY_LIMIT: "1mb",
     ...overrides

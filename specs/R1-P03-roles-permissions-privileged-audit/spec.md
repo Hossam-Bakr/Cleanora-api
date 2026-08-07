@@ -697,8 +697,10 @@ tests.
 
 ## Assumptions
 
-- R1-P03 is the only active phase and is authorized for specification and
-  planning now; implementation awaits later Spec Kit gates and human approval.
+- Historical planning context: while R1-P03 was active, it was the only active
+  phase and was authorized for specification and planning; implementation then
+  awaited later Spec Kit gates and human approval. R1-P03 is now Complete and
+  this historical context does not reopen it or alter its settled behavior.
 - Completed authentication remains the sole source of trusted sign-in identity,
   session validity, cookies/tokens, verification state, and account
   active/suspended/banned enforcement.

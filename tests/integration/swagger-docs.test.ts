@@ -48,17 +48,23 @@ describe('Swagger API documentation', () => {
     expect(response.body.paths).toHaveProperty('/system/health/ready');
   });
 
-  // R1-P03 adds no public route, so the served document keeps the same paths
-  // and gains no role, permission, or privileged-audit endpoint.
-  it('publishes no R1-P03 authorization endpoint', async () => {
+  // R1-P03A publishes only the DEC-030 approved staff-admin surfaces.
+  it("publishes no unpublished R1-P03 authorization endpoint", async () => {
     const response = await request(app)
-      .get('/api/v1/docs/openapi.json')
+      .get("/api/v1/docs/openapi.json")
       .expect(200);
 
     const paths = Object.keys(response.body.paths as Record<string, unknown>);
+    const approvedR1P03APaths = new Set([
+      "/auth/role-grants/commands",
+      "/internal/owner/staff-admins",
+    ]);
 
     expect(paths).toEqual(Object.keys(cleanoraOpenApiDocument.paths ?? {}));
     for (const path of paths) {
+      if (approvedR1P03APaths.has(path)) {
+        continue;
+      }
       expect(path).not.toMatch(
         /\/(roles?|permissions?|user-roles|privileged)\b/iu,
       );

@@ -19,6 +19,7 @@ export interface RouteDependencies {
   readonly databaseProbe?: DatabaseProbe;
   readonly readinessProbes?: readonly ReadinessProbe[];
   readonly authenticationRouter?: Router;
+  readonly ownerInternalRouter?: Router;
 }
 
 /**
@@ -48,5 +49,9 @@ export function mountRoutes(
 
   if (dependencies.authenticationRouter !== undefined) {
     app.use(`${apiPrefix}/auth`, dependencies.authenticationRouter);
+  }
+
+  if (dependencies.ownerInternalRouter !== undefined) {
+    app.use(`${apiPrefix}/internal/owner`, dependencies.ownerInternalRouter);
   }
 }

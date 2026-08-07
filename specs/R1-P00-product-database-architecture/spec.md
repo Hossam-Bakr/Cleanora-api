@@ -4,13 +4,17 @@
 
 **Created**: 2026-07-24
 
-**Status**: Draft
+**Status**: Historical specification record — R1-P00 was completed on
+2026-07-24; this document preserves its approved scope and decisions
 
 **Input**: Freeze Cleanora's global product and database architecture for all three approved releases before any product models or migrations are created.
 
 ## Canonical Sources & Phase Boundary *(mandatory)*
 
-**Active Phase**: `R1-P00 — Product & Database Architecture`, confirmed by `docs/product/current.md` with status `Not Started`.
+**Historical phase snapshot**: During R1-P00 specification preparation,
+`R1-P00 — Product & Database Architecture` was the repository's active phase
+pointer. R1-P00 is now Complete; `docs/product/current.md` is the canonical live
+phase authority.
 
 **Phase Goal and Definition of Done**: `docs/product/roadmap.md`, section `R1-P00 — Product & Database Architecture`. The phase freezes the implementation contract and global data model before product migrations. It is done only when every major entity is present, every planned table has one release and phase owner, internal stored-value wallets are absent, payout destinations are separated from financial dues, open questions are visible, and architecture review approves the clean-slate model.
 

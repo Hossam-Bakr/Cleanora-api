@@ -15,6 +15,7 @@ import type {
 } from "./domain/authentication.ports.js";
 import { GoogleAuthenticationService } from "./google-auth.service.js";
 import { ConfigurationAuthenticationPolicyAdapter } from './infrastructure/configuration-authentication-policy.adapter.js';
+import type { RoleManagementService } from "./role-management.service.js";
 
 /** Create the approved configuration-backed policy dependency at composition time. */
 export function createAuthenticationPolicy(): AuthenticationPolicyPort {
@@ -30,6 +31,7 @@ export interface AuthenticationModuleDependencies extends AuthenticationServiceD
   readonly googleProviderCallbackUri?: string;
   readonly googleFrontendCallbackUri?: string;
   readonly privacyHashSecret: string;
+  readonly roleManagement?: RoleManagementService;
 }
 
 export interface AuthenticationModule {
@@ -56,6 +58,9 @@ export function createAuthenticationModule(dependencies: AuthenticationModuleDep
       google,
       googleProviderCallbackUri: dependencies.googleProviderCallbackUri,
       googleFrontendCallbackUri: dependencies.googleFrontendCallbackUri,
+      ...(dependencies.roleManagement === undefined
+        ? {}
+        : { roleManagement: dependencies.roleManagement }),
     }),
   };
 }
