@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 
 import { seed } from "../../../prisma/seed.js";
+import { getPrismaClient } from "../../../src/database/prisma.js";
 import type { PrismaLifecycle } from "../../../src/database/prisma-lifecycle.js";
 import { createAuthenticationRouter } from "../../../src/modules/authentication/auth.routes.js";
 import type { AuthenticationService } from "../../../src/modules/authentication/auth.service.js";
@@ -70,7 +71,7 @@ describe.skipIf(!hasDatabase)("role-grant command security", () => {
 
   beforeAll(async () => {
     database = await startTestDatabaseLifecycle();
-    await seed();
+    await seed(getPrismaClient());
   }, 180_000);
 
   afterAll(async () => {

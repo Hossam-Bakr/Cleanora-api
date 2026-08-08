@@ -136,6 +136,14 @@ const environmentSchema = z
     GOOGLE_FRONTEND_CALLBACK_URI: optionalUrlSchema,
     OWNER_ADMIN_API_ENABLED: booleanFlagSchema.default(false),
     OWNER_ADMIN_SECRET: optionalSecretSchema,
+    MEDIA_STORAGE_PROVIDER: optionalTextSchema,
+    CLOUDINARY_CLOUD_NAME: optionalTextSchema,
+    CLOUDINARY_API_KEY: optionalTextSchema,
+    CLOUDINARY_API_SECRET: optionalTextSchema,
+    CLOUDINARY_PROFILE_IMAGE_FOLDER: optionalTextSchema,
+    CLOUDINARY_SIGNED_URL_TTL_SECONDS: optionalPositiveIntegerSchema,
+    MEDIA_IMAGE_MAX_BYTES: optionalPositiveIntegerSchema,
+    PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS: optionalPositiveIntegerSchema,
     SHUTDOWN_TIMEOUT_MS: z.coerce
       .number()
       .int()
@@ -309,10 +317,89 @@ const environmentSchema = z
 
 export type AppEnvironment = z.infer<typeof environmentSchema>;
 
+/** Customers-runtime env subset required when composing customers/media. */
+export type CustomersRuntimeEnvironment = AppEnvironment & {
+  readonly MEDIA_STORAGE_PROVIDER: "cloudinary";
+  readonly CLOUDINARY_CLOUD_NAME: string;
+  readonly CLOUDINARY_API_KEY: string;
+  readonly CLOUDINARY_API_SECRET: string;
+  readonly CLOUDINARY_PROFILE_IMAGE_FOLDER: string;
+  readonly CLOUDINARY_SIGNED_URL_TTL_SECONDS: number;
+  readonly MEDIA_IMAGE_MAX_BYTES: number;
+  readonly PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS: number;
+};
+
 function emptyStringToUndefined(value: unknown): unknown {
   return typeof value === "string" && value.trim().length === 0
     ? undefined
     : value;
+}
+
+/**
+ * @desc Fail closed when customers/media runtime is composed without Cloudinary
+ * media configuration or retention days (DEC-033).
+ * @access Composition / readiness
+ * @explanation Foundation tooling that never composes customers must not call
+ * this helper, so Cloudinary secrets and
+ * `PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS` stay optional at base
+ * `loadEnvironment` time. Selecting `s3` fails clearly — not implemented in
+ * R1-P04.
+ */
+export function assertCustomersRuntimeEnvironment(
+  environment: AppEnvironment,
+): asserts environment is CustomersRuntimeEnvironment {
+  const provider = environment.MEDIA_STORAGE_PROVIDER;
+  if (provider === undefined || provider.trim().length === 0) {
+    throw new Error(
+      "MEDIA_STORAGE_PROVIDER is required when customers runtime is composed",
+    );
+  }
+  if (provider === "s3") {
+    throw new Error("S3 is not implemented in R1-P04");
+  }
+  if (provider !== "cloudinary") {
+    throw new Error(
+      `Unsupported MEDIA_STORAGE_PROVIDER '${provider}'. R1-P04 supports cloudinary only.`,
+    );
+  }
+  if (
+    environment.CLOUDINARY_CLOUD_NAME === undefined ||
+    environment.CLOUDINARY_CLOUD_NAME.trim().length === 0 ||
+    environment.CLOUDINARY_API_KEY === undefined ||
+    environment.CLOUDINARY_API_KEY.trim().length === 0 ||
+    environment.CLOUDINARY_API_SECRET === undefined ||
+    environment.CLOUDINARY_API_SECRET.trim().length === 0 ||
+    environment.CLOUDINARY_PROFILE_IMAGE_FOLDER === undefined ||
+    environment.CLOUDINARY_PROFILE_IMAGE_FOLDER.trim().length === 0
+  ) {
+    throw new Error(
+      "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, and CLOUDINARY_PROFILE_IMAGE_FOLDER are required when MEDIA_STORAGE_PROVIDER=cloudinary",
+    );
+  }
+  if (
+    environment.CLOUDINARY_SIGNED_URL_TTL_SECONDS === undefined ||
+    !Number.isInteger(environment.CLOUDINARY_SIGNED_URL_TTL_SECONDS) ||
+    environment.CLOUDINARY_SIGNED_URL_TTL_SECONDS < 60 ||
+    environment.CLOUDINARY_SIGNED_URL_TTL_SECONDS > 86_400
+  ) {
+    throw new Error(
+      "CLOUDINARY_SIGNED_URL_TTL_SECONDS must be a positive integer between 60 and 86400 when customers runtime is composed",
+    );
+  }
+  if (environment.MEDIA_IMAGE_MAX_BYTES !== 5 * 1024 * 1024) {
+    throw new Error(
+      "MEDIA_IMAGE_MAX_BYTES must equal 5242880 (5 MiB) for R1-P04",
+    );
+  }
+  if (
+    environment.PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS === undefined ||
+    !Number.isInteger(environment.PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS) ||
+    environment.PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS < 1
+  ) {
+    throw new Error(
+      "PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS is required as a positive integer when customers runtime is composed",
+    );
+  }
 }
 
 /**

@@ -1,3 +1,4 @@
+import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { Prisma, PrismaClient } from "../src/generated/prisma/client.js";
@@ -17,7 +18,8 @@ import {
  *
  * Every definition upserts by its stable `code` (or role/permission pair) so a
  * second seed restores drifted `name` / `operation` / `isActive` without
- * creating duplicates.
+ * creating duplicates. Privileged reasons also clear conflicting operation
+ * holders inside a transaction with bounded P2002/P2034 retry.
  */
 async function seedAuthorizationDefinitions(
   prisma: PrismaClient
@@ -38,21 +40,48 @@ async function seedAuthorizationDefinitions(
     });
   }
 
-  for (const reason of PRIVILEGED_ACTION_REASONS) {
-    await prisma.privilegedActionReason.upsert({
-      where: { code: reason.code },
-      create: {
-        code: reason.code,
-        name: reason.name,
-        operation: reason.operation,
-        isActive: reason.isActive
-      },
-      update: {
-        name: reason.name,
-        operation: reason.operation,
-        isActive: reason.isActive
+  // Privileged reasons use @@unique(code) and @@unique(operation). Restore is
+  // transactional: clear any other row holding a catalog operation, then upsert
+  // by code. Bounded retry covers pooler races (P2002) and serialization
+  // failures (P2034) without creating duplicates or touching unrelated rows.
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await prisma.$transaction(async (transaction) => {
+        for (const reason of PRIVILEGED_ACTION_REASONS) {
+          await transaction.privilegedActionReason.deleteMany({
+            where: {
+              operation: reason.operation,
+              NOT: { code: reason.code },
+            },
+          });
+          await transaction.privilegedActionReason.upsert({
+            where: { code: reason.code },
+            create: {
+              code: reason.code,
+              name: reason.name,
+              operation: reason.operation,
+              isActive: reason.isActive,
+            },
+            update: {
+              name: reason.name,
+              operation: reason.operation,
+              isActive: reason.isActive,
+            },
+          });
+        }
+      });
+      break;
+    } catch (error) {
+      const retryable =
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        (error.code === "P2002" || error.code === "P2034") &&
+        attempt < maxAttempts;
+      if (!retryable) {
+        throw error;
       }
-    });
+      await new Promise((resolve) => setTimeout(resolve, 15 * attempt));
+    }
   }
 
   const [storedRoles, storedPermissions] = await Promise.all([
@@ -92,16 +121,31 @@ async function seedAuthorizationDefinitions(
 /**
  * Seed R1-P01 reference data and R1-P03 authorization definitions. Every write
  * uses its approved natural key so repeated runs stay idempotent.
+ *
+ * When a Prisma client is provided (test lifecycle), reuse it and do not
+ * disconnect. Standalone CLI seed opens a dedicated max-1 pool so it cannot
+ * exhaust shared Neon connection budgets during Vitest coverage runs.
  */
-export async function seed(): Promise<void> {
-  const connectionString = process.env["DATABASE_URL"];
-  if (connectionString === undefined || connectionString.length === 0) {
-    throw new Error("DATABASE_URL is required to run the seed");
-  }
+export async function seed(existingClient?: PrismaClient): Promise<void> {
+  let prisma = existingClient;
+  let ownsClient = false;
 
-  const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString })
-  });
+  if (prisma === undefined) {
+    const connectionString = process.env["DATABASE_URL"];
+    if (connectionString === undefined || connectionString.length === 0) {
+      throw new Error("DATABASE_URL is required to run the seed");
+    }
+
+    const pool = new pg.Pool({
+      connectionString,
+      max: 1,
+      allowExitOnIdle: true,
+    });
+    prisma = new PrismaClient({
+      adapter: new PrismaPg(pool, { disposeExternalPool: true }),
+    });
+    ownsClient = true;
+  }
 
   try {
     const currency = await prisma.currency.upsert({
@@ -258,7 +302,9 @@ export async function seed(): Promise<void> {
 
     await seedAuthorizationDefinitions(prisma);
   } finally {
-    await prisma.$disconnect();
+    if (ownsClient) {
+      await prisma.$disconnect();
+    }
   }
 }
 

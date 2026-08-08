@@ -165,6 +165,16 @@ export async function getCountryByCode(code: string): Promise<CountryRecord> {
   return getCountryByCodeWith(configurationRepositories, code);
 }
 
+/** Public Configuration contract for consumers persisting an active country FK. */
+export async function getActiveCountryIdByCode(code: string): Promise<string> {
+  await getCountryByCode(code);
+  const id = await configurationRepositories.country.findIdByCode(code);
+  if (id === undefined) {
+    throw configurationError("COUNTRY_UNAVAILABLE", "Country is unavailable");
+  }
+  return id;
+}
+
 export async function getCurrencyByCode(code: string): Promise<CurrencyRecord> {
   return getCurrencyByCodeWith(configurationRepositories, code);
 }

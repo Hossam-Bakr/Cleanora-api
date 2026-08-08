@@ -56,6 +56,16 @@
   they do not require a `customer` role grant, `resource.self.read`/
   `resource.self.write`, or other role-derived R1-P04 customer permissions.
   Historical `customer` role grants do not affect eligibility.
-- R1-P04 remains paused until R1-P03A (DEC-030 owner MVP) is implemented,
-  validated, and owner-approved Complete — for phase sequencing, not customer grants.
-- The blocked pre-research gate record in `plan.md` was updated to reflect DEC-030.
+- Historical: R1-P04 was paused until R1-P03A Complete for phase sequencing,
+  not customer grants. That gate is satisfied as of `2026-08-07`.
+- Current: R1-P04 is the sole active phase; Phase 0/1 technical planning is
+  complete (`PASS`); final post-tasks `/speckit.analyze` is **`CLEAN`**;
+  T001–T100 historical (checked); **T101–T109** checked after validation
+  (2026-08-08); historical implementation review **`CHANGES REQUIRED`**;
+  historical first re-review **`BLOCKED`**; latest independent re-review
+  **`CHANGES REQUIRED`**; live Cloudinary smoke **PASS**
+  (`cloudinary-smoke-evidence.json`); proof DB `cleanora_r1_p04_clean_proof`;
+  next gate **fresh independent read-only implementation re-review**; phase
+  **In Progress** — **not** Complete. Historical analyze `CHANGES REQUIRED`
+  results preserved as evidence. The approved specification checklist remains
+  16/16 and is not being reopened.

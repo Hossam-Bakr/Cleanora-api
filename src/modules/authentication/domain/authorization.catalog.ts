@@ -53,6 +53,10 @@ export const AUTHORIZATION_PERMISSIONS: readonly PermissionDefinitionSeed[] = [
     name: "Act inside a provider as a provider administrator",
   },
   { code: "authz.scope.worker", name: "Act inside a worker scope" },
+  {
+    code: "privacy.requests.reassign",
+    name: "Reassign a privacy request processor",
+  },
 ];
 
 /**
@@ -70,6 +74,7 @@ export const ROLE_PERMISSION_MAP: Readonly<
     "authz.roles.disable",
     "authz.reasons.use",
     "authz.staff.admin.sample",
+    "privacy.requests.reassign",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],
@@ -113,6 +118,12 @@ export const PRIVILEGED_ACTION_REASONS: readonly PrivilegedActionReasonSeed[] = 
     code: "staff_sample_privileged_write",
     name: "Staff sample privileged write",
     operation: "STAFF_SAMPLE_PRIVILEGED_WRITE",
+    isActive: true,
+  },
+  {
+    code: "privacy_request_reassign",
+    name: "Reassign a privacy request processor",
+    operation: "PRIVACY_REQUEST_REASSIGN",
     isActive: true,
   },
 ];
@@ -209,10 +220,30 @@ const STAFF_SAMPLE_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
   },
 ];
 
+/**
+ * R1-P04 privileged privacy reassignment (DEC-031).
+ *
+ * Internal only: `publicHttp` is false because reassignment is invoked through
+ * the customers application port, not a public HTTP route in R1-P04.
+ */
+const PRIVACY_REASSIGNMENT_OPERATIONS: readonly ProtectedOperationDeclaration[] =
+  [
+    {
+      operationId: "customers.privacy.requests.reassign",
+      permissionCode: "privacy.requests.reassign",
+      ownership: "NONE",
+      scope: "GLOBAL",
+      privileged: true,
+      reasonOperation: "PRIVACY_REQUEST_REASSIGN",
+      publicHttp: false,
+    },
+  ];
+
 /** Every declared R1-P03 protected operation. All are internal. */
 export const PROTECTED_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
   ...ROLE_MANAGEMENT_OPERATIONS,
   ...STAFF_SAMPLE_OPERATIONS,
+  ...PRIVACY_REASSIGNMENT_OPERATIONS,
 ];
 
 /** Find one declared protected operation, or `undefined` when undeclared. */

@@ -1,0 +1,615 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P04 Customer Self-Service API
+  version: 0.2.0-dec033
+  description: |
+    Customer authorization uses AuthenticationPrincipal + SELF + FR-028
+    category eligibility (DEC-030). No customer role or resource.self.*
+    permission is required. DEC-031 closes privileged reassignment,
+    outcome codes, and retention environment design. DEC-032 locks preference
+    PUT to full-replacement semantics (version + complete matrix required;
+    language AR/EN/null; omitted fields rejected). DEC-033 locks customer
+    profile images to Cloudinary (Multer memoryStorage + Sharp + always-replace
+    + signed URL delivery); MEDIA_STORAGE_ROOT superseded.
+servers:
+  - url: /api/v1
+tags:
+  - name: CustomerProfiles
+  - name: CustomerPreferences
+  - name: CustomerAddresses
+  - name: CustomerPrivacyRequests
+paths:
+  /customers/profiles/individual:
+    get:
+      tags: [CustomerProfiles]
+      operationId: getIndividualProfile
+      summary: Get Individual profile or not-created state
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Profile or not-created marker
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity or category
+    put:
+      tags: [CustomerProfiles]
+      operationId: putIndividualProfile
+      summary: Create or update Individual profile
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName]
+              additionalProperties: false
+              properties:
+                fullName:
+                  type: string
+                  minLength: 1
+      responses:
+        "200":
+          description: Upserted profile
+        "400":
+          description: Validation failure
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity or category
+  /customers/profiles/company:
+    get:
+      tags: [CustomerProfiles]
+      operationId: getCompanyProfile
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Profile or not-created marker
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity or category
+    put:
+      tags: [CustomerProfiles]
+      operationId: putCompanyProfile
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [companyName, representativeFullName]
+              additionalProperties: false
+              properties:
+                companyName:
+                  type: string
+                  minLength: 1
+                representativeFullName:
+                  type: string
+                  minLength: 1
+      responses:
+        "200":
+          description: Upserted profile
+        "400":
+          description: Validation failure
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity or category
+  /customers/profiles/engineer:
+    get:
+      tags: [CustomerProfiles]
+      operationId: getEngineerProfile
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Profile or not-created marker
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity or category
+    put:
+      tags: [CustomerProfiles]
+      operationId: putEngineerProfile
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, professionalTitle]
+              additionalProperties: false
+              properties:
+                fullName:
+                  type: string
+                  minLength: 1
+                professionalTitle:
+                  type: string
+                  minLength: 1
+      responses:
+        "200":
+          description: Upserted profile
+        "400":
+          description: Validation failure
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity or category
+  /customers/profile-image:
+    get:
+      tags: [CustomerProfiles]
+      operationId: getProfileImage
+      summary: Return authorized signed profile-image URL or explicit absence
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Authorized signed Cloudinary delivery URL and safe metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profileImage]
+                additionalProperties: false
+                properties:
+                  profileImage:
+                    $ref: "#/components/schemas/ProfileImage"
+        "204":
+          description: Explicit safe absence when no association exists
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible for shared image ops
+    put:
+      tags: [CustomerProfiles]
+      operationId: putProfileImage
+      summary: Always-replace identity-wide profile image (Cloudinary)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, expectedAssociationVersion]
+              additionalProperties: false
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Single profile image; max 5 MiB; JPEG/PNG/WebP input
+                expectedAssociationVersion:
+                  type: integer
+                  minimum: 1
+                  description: Required CAS token for image_association_version
+      responses:
+        "200":
+          description: Canonical customer profile aggregate including new signed profileImage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerProfileAggregate"
+        "400":
+          description: Rejected media, multipart, MIME, size, or Sharp validation failure
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible for shared image ops
+        "409":
+          description: Stale expectedAssociationVersion; prior association preserved
+    delete:
+      tags: [CustomerProfiles]
+      operationId: deleteProfileImage
+      summary: Clear association with CAS; prior asset async cleanup
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedAssociationVersion]
+              additionalProperties: false
+              properties:
+                expectedAssociationVersion:
+                  type: integer
+                  minimum: 1
+      responses:
+        "200":
+          description: Association cleared; no storage key or public_id returned
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible for shared image ops
+        "404":
+          description: No profile-image association exists
+        "409":
+          description: Stale expectedAssociationVersion
+  /customers/contact-state:
+    get:
+      tags: [CustomerPreferences]
+      operationId: getContactState
+      summary: Read-only phone/email presence and verification labels
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Safe contact projection
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity
+  /customers/preferences:
+    get:
+      tags: [CustomerPreferences]
+      operationId: getPreferences
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Language and notification preference foundation
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity
+    put:
+      tags: [CustomerPreferences]
+      operationId: putPreferences
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreferencesUpdate"
+      responses:
+        "200":
+          description: Accepted complete preference set
+        "400":
+          description: >
+            Invalid choice, mandatory-disable attempt, or incomplete body
+            (omitted preference fields are rejected; no partial merge)
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity
+        "409":
+          description: Stale or conflicting update
+  /customers/addresses:
+    get:
+      tags: [CustomerAddresses]
+      operationId: listAddresses
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Peer address list (no default/primary)
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible for shared address ops
+    post:
+      tags: [CustomerAddresses]
+      operationId: createAddress
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddressWrite"
+      responses:
+        "201":
+          description: Created address
+        "400":
+          description: Validation or geospatial rejection
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible for shared address ops
+  /customers/addresses/{addressId}:
+    parameters:
+      - $ref: "#/components/parameters/AddressId"
+    get:
+      tags: [CustomerAddresses]
+      operationId: getAddress
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Owned address
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Eligibility or inactive-principal denial (not cross-customer ownership)
+        "404":
+          description: Missing address or cross-customer ownership denial (FR-030 enumeration-safe; identical response)
+    put:
+      tags: [CustomerAddresses]
+      operationId: updateAddress
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AddressWrite"
+                - type: object
+                  required: [version]
+                  properties:
+                    version:
+                      type: integer
+                      minimum: 1
+      responses:
+        "200":
+          description: Updated address
+        "400":
+          description: Validation failure
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Eligibility or inactive-principal denial (not cross-customer ownership)
+        "404":
+          description: Missing address or cross-customer ownership denial (FR-030 enumeration-safe; identical response)
+        "409":
+          description: Stale version or conflict
+    delete:
+      tags: [CustomerAddresses]
+      operationId: deleteAddress
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version]
+              additionalProperties: false
+              properties:
+                version:
+                  type: integer
+                  minimum: 1
+                  description: Currently accepted version; stale values conflict and preserve prior state
+      responses:
+        "200":
+          description: Removed from future selection
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Eligibility or inactive-principal denial (not cross-customer ownership)
+        "404":
+          description: Missing address or cross-customer ownership denial (FR-030 enumeration-safe; identical response)
+        "409":
+          description: Stale version or conflict
+  /customers/privacy-requests:
+    get:
+      tags: [CustomerPrivacyRequests]
+      operationId: listPrivacyRequests
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Owned non-purged requests
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity
+    post:
+      tags: [CustomerPrivacyRequests]
+      operationId: submitPrivacyRequest
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purpose]
+              additionalProperties: false
+              properties:
+                purpose:
+                  $ref: "#/components/schemas/PrivacyRequestPurpose"
+      responses:
+        "201":
+          description: Created or existing active request returned
+        "400":
+          description: Invalid purpose
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Ineligible identity
+  /customers/privacy-requests/{privacyRequestId}:
+    parameters:
+      - $ref: "#/components/parameters/PrivacyRequestId"
+    get:
+      tags: [CustomerPrivacyRequests]
+      operationId: getPrivacyRequest
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Owned request metadata
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Eligibility or inactive-principal denial (not cross-customer ownership)
+        "404":
+          description: Missing privacy request or cross-customer ownership denial (FR-030 enumeration-safe; identical response)
+  /customers/privacy-requests/{privacyRequestId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/PrivacyRequestId"
+    post:
+      tags: [CustomerPrivacyRequests]
+      operationId: cancelPrivacyRequest
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Cancelled PENDING request
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Eligibility or inactive-principal denial (not cross-customer ownership)
+        "404":
+          description: Missing privacy request or cross-customer ownership denial (FR-030 enumeration-safe; identical response)
+        "409":
+          description: Not PENDING / illegal cancel
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    AddressId:
+      name: addressId
+      in: path
+      required: true
+      schema:
+        type: string
+    PrivacyRequestId:
+      name: privacyRequestId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    ProfileImage:
+      type: object
+      required: [mediaId, url, urlExpiresAt, associationVersion]
+      additionalProperties: false
+      properties:
+        mediaId:
+          type: string
+          description: Opaque internal media identifier; not a Cloudinary public_id
+        url:
+          type: string
+          format: uri
+          description: Authenticated/signed Cloudinary delivery URL; time-limited
+        urlExpiresAt:
+          type: string
+          format: date-time
+          description: UTC expiration for the signed URL; GET regenerates fresh values
+        associationVersion:
+          type: integer
+          minimum: 1
+          description: Current image_association_version after successful replace
+        contentType:
+          type: string
+          example: image/webp
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+      description: |
+        DEC-033 protected delivery. Never includes storage_key, public_id,
+        folder, or Cloudinary credentials.
+    CustomerProfileAggregate:
+      type: object
+      description: |
+        Canonical customer profile representation returned after successful
+        profile-image PUT. Exact field set follows the project success envelope;
+        must include profileImage when an image is associated.
+      properties:
+        profileImage:
+          $ref: "#/components/schemas/ProfileImage"
+      additionalProperties: true
+    PrivacyRequestPurpose:
+      type: string
+      enum: [DEACTIVATION, DELETION, EXPORT]
+    PreferencesUpdate:
+      type: object
+      required: [version, language, reminders, promotional, mandatory]
+      additionalProperties: false
+      properties:
+        language:
+          type: ["string", "null"]
+          enum: [AR, EN, null]
+          description: >
+            Required. AR or EN selects a language; null means explicit unset
+            (DEC-032). Omitted language is rejected.
+        version:
+          type: integer
+          minimum: 1
+          description: Currently accepted version; starts at 1; success increments by 1
+        reminders:
+          type: object
+          required: [sms, push]
+          additionalProperties: false
+          properties:
+            sms:
+              type: boolean
+            push:
+              type: boolean
+        promotional:
+          type: object
+          required: [sms, push]
+          additionalProperties: false
+          properties:
+            sms:
+              type: boolean
+            push:
+              type: boolean
+        mandatory:
+          type: object
+          required: [security, activeService]
+          additionalProperties: false
+          properties:
+            security:
+              type: object
+              required: [sms, push]
+              additionalProperties: false
+              properties:
+                sms:
+                  const: true
+                push:
+                  const: true
+            activeService:
+              type: object
+              required: [sms, push]
+              additionalProperties: false
+              properties:
+                sms:
+                  const: true
+                push:
+                  const: true
+      description: |
+        DEC-032 full-replacement PUT. version plus the complete preference
+        matrix are required. language is AR, EN, or null (explicit unset).
+        reminders.sms/push and promotional.sms/push are all required.
+        Omitted fields are rejected; no partial merge and no silent defaults.
+        Mandatory security/active-service notices are policy and cannot be
+        disabled. Attempts to disable them are rejected for the whole update.
+        Stale version returns 409 and preserves prior state.
+    AddressWrite:
+      type: object
+      required: [countryCode, city, district, addressText]
+      additionalProperties: false
+      properties:
+        countryCode:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: Resolved via Configuration to active countries.id; only country_id is persisted
+        city:
+          type: string
+          minLength: 1
+        district:
+          type: string
+          minLength: 1
+        addressText:
+          type: string
+          minLength: 1
+        building:
+          type: ["string", "null"]
+        floor:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      description: |
+        Geospatial properties are intentionally absent and must be rejected if
+        supplied under additionalProperties false. Create persists version=1.
+    PrivacyRequestOutcomeCode:
+      type: string
+      enum: [REQUEST_FULFILLED, REQUEST_REJECTED]
+      description: |
+        Closed DEC-031 catalog for processor resolve only. COMPLETED requires
+        REQUEST_FULFILLED; REJECTED requires REQUEST_REJECTED.

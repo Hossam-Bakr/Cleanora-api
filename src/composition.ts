@@ -1,7 +1,8 @@
-import type { Router } from "express";
-
 import { APPLICATION_NAME } from "#config/constants";
-import type { AppEnvironment } from "#config/env";
+import {
+  assertCustomersRuntimeEnvironment,
+  type AppEnvironment,
+} from "#config/env";
 import { PrismaLifecycle } from "#database/prisma-lifecycle";
 import { Argon2PasswordHasherAdapter } from "#integrations/authentication/argon2-password-hasher.adapter";
 import { CryptoVerifierAdapter } from "#integrations/authentication/crypto-verifier.adapter";
@@ -14,6 +15,8 @@ import { OpenIdClientGoogleAdapter } from "#integrations/google/openid-client-go
 import { MemoryRateLimiterAdapter } from "#integrations/security/memory-rate-limiter.adapter";
 import type { RateLimiterPort } from "#middlewares/rate-limit.types";
 import { createPrismaPrivilegedAuditWriter } from "#modules/admin/infrastructure/prisma-privileged-audit.writer";
+import { createPrismaGeneralTransactionalAuditWriter } from "#modules/admin/infrastructure/prisma-general-transactional-audit.writer";
+import { createPrismaDenialAuditWriter } from "#modules/admin/infrastructure/prisma-denial-audit.writer";
 import {
   createAuthenticationModule,
   createAuthenticationPolicy,
@@ -25,6 +28,29 @@ import { PrismaRoleManagementUnitOfWork } from "#modules/authentication/infrastr
 import { createOwnerInternalRouter } from "#modules/authentication/owner-staff-admin.routes";
 import { OwnerStaffAdminProvisionService } from "#modules/authentication/owner-staff-admin.service";
 import { RoleManagementService } from "#modules/authentication/role-management.service";
+import { PrismaCustomersUnitOfWork } from "#modules/customers/infrastructure/prisma-customers.unit-of-work";
+import { PrismaAddressRepository } from "#modules/customers/infrastructure/prisma-address.repository";
+import { PrismaPreferencesRepository } from "#modules/customers/infrastructure/prisma-preferences.repository";
+import { IdentityContactRead } from "#modules/customers/infrastructure/identity-contact.read";
+import { AddressService } from "#modules/customers/address.service";
+import { PreferencesService } from "#modules/customers/preferences.service";
+import { PrismaPrivacyRequestRepository } from "#modules/customers/infrastructure/prisma-privacy-request.repository";
+import { PrivacyRequestService } from "#modules/customers/privacy-request.service";
+import { PrivacyProcessorService, type PrivacyProcessorPort } from "#modules/customers/privacy-processor.service";
+import { PrivacyPrivilegedService, type PrivacyPrivilegedPort } from "#modules/customers/privacy-privileged.service";
+import { PrivacyRetentionSweep, startPrivacyRetentionSweep } from "#modules/customers/privacy-retention.sweep";
+import { PrismaProfileRepository } from "#modules/customers/infrastructure/prisma-profile.repository";
+import { ProfileImageService } from "#modules/customers/profile-image.service";
+import { ProfileService } from "#modules/customers/profile.service";
+import { createCustomersRouter } from "#modules/customers/customers.routes";
+import { createMediaPendingUploadPort, createMediaStoragePort } from "#modules/media/infrastructure/media-provider.factory";
+import { SharpProfileImageProcessor } from "#modules/media/infrastructure/sharp-profile-image.processor";
+import { PrismaMediaRepository } from "#modules/media/infrastructure/prisma-media.repository";
+import {
+  MediaCleanupService,
+  startMediaCleanupSweep,
+} from "#modules/media/infrastructure/media-cleanup.service";
+import { getActiveCountryIdByCode } from "#modules/configuration/configuration.service";
 import type { RouteDependencies } from "#routes/index";
 import {
   createApplicationLogger,
@@ -42,6 +68,10 @@ export interface RuntimeDependencies {
   readonly authorization: AuthorizationService;
   readonly roleManagement: RoleManagementService;
   readonly ownerStaffAdminProvision: OwnerStaffAdminProvisionService;
+  /** Composition-only handoff contracts; no public processor or staff route exists. */
+  readonly privacyProcessor: PrivacyProcessorPort | undefined;
+  readonly privacyPrivileged: PrivacyPrivilegedPort | undefined;
+  readonly startCustomersBackgroundTasks: (() => () => void) | undefined;
 }
 
 /**
@@ -78,11 +108,11 @@ function createOwnerStaffAdminProvision(
   );
 }
 
-function createAuthenticationRouter(
+function createAuthenticationModuleForRuntime(
   environment: AppEnvironment,
   rateLimiter: RateLimiterPort,
   roleManagement: RoleManagementService,
-): Router | undefined {
+): ReturnType<typeof createAuthenticationModule> | undefined {
   if (!environment.AUTH_ENABLED) {
     return undefined;
   }
@@ -140,7 +170,7 @@ function createAuthenticationRouter(
       : {}),
   });
 
-  return authentication.router;
+  return authentication;
 }
 
 /** Construct the existing runtime adapters without starting the process. */
@@ -155,7 +185,7 @@ export function createRuntimeDependencies(
   const rateLimiter = new MemoryRateLimiterAdapter();
   const { authorization, roleManagement } = createAuthorizationDependencies();
   const ownerStaffAdminProvision = createOwnerStaffAdminProvision(environment);
-  const authenticationRouter = createAuthenticationRouter(
+  const authentication = createAuthenticationModuleForRuntime(
     environment,
     rateLimiter,
     roleManagement,
@@ -167,6 +197,103 @@ export function createRuntimeDependencies(
       environment.AUTH_PRIVACY_HASH_SECRET ??
       "cleanora-owner-rate-limit-subject-hash",
   });
+  const customersRouter =
+    authentication === undefined
+      ? undefined
+      : (() => {
+          assertCustomersRuntimeEnvironment(environment);
+          const unitOfWork = new PrismaCustomersUnitOfWork(
+            createPrismaGeneralTransactionalAuditWriter,
+            createPrismaPrivilegedAuditWriter,
+          );
+          const denialAudit = createPrismaDenialAuditWriter();
+          const privacyRepository = new PrismaPrivacyRequestRepository();
+          const mediaSelection = createMediaStoragePort(environment);
+          const pendingUploads = createMediaPendingUploadPort();
+          const profileRepository = new PrismaProfileRepository();
+          const processor = new SharpProfileImageProcessor();
+          return createCustomersRouter({
+            authenticateAccess: authentication.authenticateAccess,
+            profiles: new ProfileService(
+              unitOfWork,
+              profileRepository,
+              denialAudit,
+            ),
+            profileImages: new ProfileImageService(
+              unitOfWork,
+              mediaSelection.storage,
+              processor,
+              pendingUploads,
+              profileRepository,
+              denialAudit,
+              environment.CLOUDINARY_PROFILE_IMAGE_FOLDER,
+              mediaSelection.signedUrlTtlSeconds,
+            ),
+            addresses: new AddressService(
+              unitOfWork,
+              new PrismaAddressRepository(),
+              {
+                resolveActiveCountry: async (countryCode) => {
+                  return { id: await getActiveCountryIdByCode(countryCode) };
+                },
+              },
+              denialAudit,
+            ),
+            preferences: new PreferencesService(
+              unitOfWork,
+              new PrismaPreferencesRepository(),
+              new IdentityContactRead(authentication.identityContactReader),
+              denialAudit,
+            ),
+            privacyRequests: new PrivacyRequestService(
+              unitOfWork, privacyRepository, environment.PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS, denialAudit,
+            ),
+          });
+        })();
+  const privacyRepository =
+    authentication === undefined ? undefined : new PrismaPrivacyRequestRepository();
+  const privacyProcessor =
+    authentication === undefined ? undefined : new PrivacyProcessorService(
+      new PrismaCustomersUnitOfWork(
+        createPrismaGeneralTransactionalAuditWriter, createPrismaPrivilegedAuditWriter,
+      ),
+      privacyRepository!, environment.PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS!,
+    );
+  const privacyPrivileged =
+    authentication === undefined ? undefined : new PrivacyPrivilegedService(
+      new PrismaCustomersUnitOfWork(
+        createPrismaGeneralTransactionalAuditWriter, createPrismaPrivilegedAuditWriter,
+      ),
+      privacyRepository!, authorization,
+    );
+  const startCustomersBackgroundTasks =
+    authentication === undefined
+      ? undefined
+      : (): (() => void) => {
+          assertCustomersRuntimeEnvironment(environment);
+          const mediaSelection = createMediaStoragePort(environment);
+          const stopPrivacy = startPrivacyRetentionSweep(
+            new PrivacyRetentionSweep(
+              new PrismaCustomersUnitOfWork(
+                createPrismaGeneralTransactionalAuditWriter,
+                createPrismaPrivilegedAuditWriter,
+              ),
+              privacyRepository!,
+            ),
+            logger,
+          );
+          const stopMedia = startMediaCleanupSweep(
+            new MediaCleanupService(
+              new PrismaMediaRepository(),
+              mediaSelection.storage,
+            ),
+            logger,
+          );
+          return (): void => {
+            stopPrivacy();
+            stopMedia();
+          };
+        };
 
   return {
     database,
@@ -174,14 +301,28 @@ export function createRuntimeDependencies(
     authorization,
     roleManagement,
     ownerStaffAdminProvision,
+    privacyProcessor,
+    privacyPrivileged,
+    startCustomersBackgroundTasks,
     routes: {
       environment,
       logger,
       rateLimiter,
       databaseProbe: database.databaseProbe(),
-      readinessProbes: [database.readinessProbe()],
+      readinessProbes: [
+        database.readinessProbe(),
+        ...(customersRouter === undefined
+          ? []
+          : [{
+              name: "customers-runtime-configuration",
+              check: async (): Promise<void> => {
+                assertCustomersRuntimeEnvironment(environment);
+              },
+            }]),
+      ],
       ownerInternalRouter,
-      ...(authenticationRouter === undefined ? {} : { authenticationRouter }),
+      ...(authentication === undefined ? {} : { authenticationRouter: authentication.router }),
+      ...(customersRouter === undefined ? {} : { customersRouter }),
     },
   };
 }

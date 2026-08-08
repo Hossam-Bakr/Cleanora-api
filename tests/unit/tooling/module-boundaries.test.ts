@@ -1,4 +1,4 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 
 
@@ -73,7 +73,76 @@ describe("business module dependency boundaries", () => {
 
     expect(writers.sort()).toEqual([
       "admin/audit.service.ts",
-      "admin/infrastructure/prisma-privileged-audit.writer.ts"
+      "admin/infrastructure/prisma-denial-audit.writer.ts",
+      "admin/infrastructure/prisma-general-transactional-audit.writer.ts",
+      "admin/infrastructure/prisma-privileged-audit.writer.ts",
     ]);
+  });
+});
+
+async function listModuleTypeScriptFiles(
+  moduleName: "customers" | "media",
+): Promise<string[]> {
+  const moduleRoot = join(modulesRoot, moduleName);
+  try {
+    const moduleStat = await stat(moduleRoot);
+    if (!moduleStat.isDirectory()) {
+      return [];
+    }
+  } catch {
+    return [];
+  }
+  return listTypeScriptFiles(moduleRoot);
+}
+
+describe("R1-P04 customers/media module boundaries", () => {
+  async function collectViolations(
+    predicate: (file: string, source: string) => boolean,
+  ): Promise<string[]> {
+    const violations: string[] = [];
+    for (const moduleName of ["customers", "media"] as const) {
+      const files = await listModuleTypeScriptFiles(moduleName);
+      for (const file of files) {
+        const source = await readFile(file, "utf8");
+        if (predicate(file, source)) {
+          violations.push(relative(process.cwd(), file).split(sep).join("/"));
+        }
+      }
+    }
+    return violations;
+  }
+
+  it("forbids importing authentication or admin repositories", async () => {
+    const forbiddenImportPattern =
+      /from\s+["'][^"']*(?:authentication|admin)\/infrastructure\/[^"']*repository[^"']*["']/u;
+    const violations = await collectViolations((_file, source) =>
+      forbiddenImportPattern.test(source),
+    );
+
+    expect(violations).toEqual([]);
+  });
+
+  it("forbids direct Prisma delegates outside each module infrastructure layer", async () => {
+    const violations = await collectViolations((file, source) => {
+      const usesPersistence =
+        /#generated\/|#database\/prisma|\bPrismaClient\b/.test(source);
+      const normalized = relative(modulesRoot, file).split(sep).join("/");
+      const allowedPersistenceLocation =
+        normalized.includes("/infrastructure/") ||
+        normalized.endsWith(".repository.ts");
+      return usesPersistence && !allowedPersistenceLocation;
+    });
+
+    expect(violations).toEqual([]);
+  });
+
+  it("forbids importing other modules' Prisma infrastructure writers", async () => {
+    const forbiddenImportPattern =
+      /from\s+["'][^"']*\/modules\/(?!customers|media)[^"']*\/infrastructure\/[^"']*["']/u;
+    const violations = await collectViolations((_file, source) =>
+      forbiddenImportPattern.test(source),
+    );
+
+    expect(violations).toEqual([]);
   });
 });

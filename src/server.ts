@@ -46,14 +46,19 @@ export async function startApplication(): Promise<StartedApplication> {
         port: environment.PORT,
       });
     });
+    const stopCustomersBackgroundTasks = runtime.startCustomersBackgroundTasks?.();
 
     // 6. Close HTTP and database connections on Ctrl+C or deployment stop.
-    const shutdown = createGracefulShutdown(
+    const closeRuntime = createGracefulShutdown(
       server,
       runtime.database,
       runtime.logger,
       environment.SHUTDOWN_TIMEOUT_MS,
     );
+    const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+      stopCustomersBackgroundTasks?.();
+      await closeRuntime(signal);
+    };
     const logShutdownError = (error: unknown): void => {
       runtime.logger.error("Graceful shutdown failed", {
         errorName: error instanceof Error ? error.name : "UnknownError",

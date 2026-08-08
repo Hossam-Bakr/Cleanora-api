@@ -716,3 +716,127 @@ customer-role provisioning decisions in DEC-029 are superseded for Release 1.
 The applied R1-P03 role catalog may retain a historical `customer` role entry.
 Release 1 must not require granting that role for customer self-service or
 ordinary marketplace participation.
+
+---
+
+## DEC-031 — R1-P04 planning authority, outcomes, and retention
+
+**Date:** 2026-08-07
+**Status:** Approved by human owner during R1-P04 technical-planning repair
+
+Closes the material planning questions left open by the independent R1-P04
+technical-planning review (`CHANGES REQUIRED`).
+
+### Privileged privacy reassignment authority
+
+Only the existing role `staff_admin` receives permission
+`privacy.requests.reassign`.
+
+- `staff_support`, `staff_operations`, `staff_finance`, provider roles, workers,
+  and customers receive no reassignment authority.
+- Minimum-authority rationale: R1-P04 has no privacy staff workflow or UI;
+  broader delegation requires a future explicit requirement.
+- Deny by default when the permission mapping is absent or disabled.
+
+Authentication catalog design (additive in the future R1-P04 migration only):
+
+| Field | Value |
+|---|---|
+| Permission | `privacy.requests.reassign` |
+| Role mapping | `staff_admin` only |
+| Protected operation ID | `customers.privacy.requests.reassign` |
+| PrivilegedActionOperation | `PRIVACY_REQUEST_REASSIGN` |
+| Reason code | `privacy_request_reassign` (valid only for that operation) |
+| Ownership | `NONE` |
+| Scope | `GLOBAL` |
+| Privileged | `true` |
+| Public HTTP | `false` |
+
+### Closed privacy outcome catalog
+
+| Terminal status | Required outcome code |
+|---|---|
+| `COMPLETED` | `REQUEST_FULFILLED` |
+| `REJECTED` | `REQUEST_REJECTED` |
+
+No free-form rationale. No other outcome code is accepted in R1-P04. More
+detailed codes require a future explicit product decision.
+
+### Retention configuration
+
+- Exact environment variable: `PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS`
+- Positive integer only; no built-in or silent default
+- Missing or invalid value fails R1-P04 readiness only (customers runtime probe)
+- Expired terminal requests disappear from customer reads immediately
+  (`purge_after <= now`)
+- Physical purge: simple bounded customers-owned sweep at startup and every hour
+- No queue, broker, cron platform, generic job engine, or workflow framework
+- Admin audit rows remain separately governed and are never purged by this sweep
+
+---
+
+## DEC-032 — R1-P04 preference PUT full-replacement semantics
+
+**Date:** 2026-08-07
+**Status:** Approved by human owner during R1-P04 technical-planning re-review repair
+
+Closes the preference PUT completeness question raised by independent
+technical-planning re-review.
+
+`PUT /api/v1/customers/preferences` is a full replacement of the accepted
+preference matrix:
+
+- `version` is required (current accepted version; success increments by 1).
+- `language` is required and must be `AR`, `EN`, or `null`; `null` means
+  explicit unset.
+- `reminders.sms`, `reminders.push`, `promotional.sms`, and
+  `promotional.push` are all required booleans.
+- Omitted fields are rejected as validation failures.
+- No partial merge and no silent defaults on omitted fields.
+- FR-018 still applies: the update either commits as one complete accepted set
+  or leaves the prior set unchanged (including stale-version conflict).
+
+---
+
+## DEC-033 — R1-P04 Cloudinary profile-image storage (always replace)
+
+**Date:** 2026-08-07
+**Status:** Approved by human owner during R1-P04 implementation-repair authorization
+
+Supersedes R1-P04 local-filesystem profile-image storage (`MEDIA_STORAGE_ROOT`)
+and any earlier duplicate-image / content-hash directions for customer profile
+images.
+
+### Scope
+
+- Customer profile images only in R1-P04.
+- No videos, PDFs, service-provider gallery, or AWS S3 runtime in R1-P04.
+- Keep a small provider abstraction so S3 can be added later.
+
+### Storage and processing
+
+1. Cloudinary replaces local filesystem storage for R1-P04 customer profile images.
+2. Multer `memoryStorage` accepts exactly one profile image, maximum 5 MiB.
+3. Sharp validates, auto-orients, resizes, strips metadata, and compresses before
+   Cloudinary upload.
+4. Normalized Cloudinary input format is WebP.
+5. Cloudinary stores already-optimized Sharp output; no additional lossy incoming
+   transformation.
+6. Every accepted upload always replaces the current image.
+7. No content hash, duplicate comparison, or Cloudinary duplicate lookup.
+8. Each replacement uses a new opaque Cloudinary `public_id`.
+9. Cloudinary upload/delete never occurs inside a Prisma transaction.
+10. The existing image is never removed before the new upload and atomic
+    association succeed.
+11. The API returns the updated customer-profile representation including the new
+    authorized image URL and association version.
+12. Profile images remain protected. Return an authenticated/signed Cloudinary URL
+    only after SELF/category authorization succeeds.
+13. Do not expose Cloudinary `public_id`/storage key or API credentials.
+14. Previous asset deletion is durable and asynchronous; it must not delay the
+    successful API response.
+15. `MEDIA_STORAGE_PROVIDER` is the single provider selector.
+16. Current implemented provider is `cloudinary`.
+17. A future `s3` value remains unsupported in R1-P04 and fails readiness clearly.
+18. `MEDIA_STORAGE_ROOT` and local filesystem storage are removed.
+19. Video/PDF/provider media remain outside R1-P04.

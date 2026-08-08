@@ -21,6 +21,9 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json-summary"],
+      // Keep coverage temp files when a suite fails so later workers/merge
+      // cannot race on a deleted coverage/.tmp directory (ENOENT).
+      reportOnFailure: true,
       include: ["src/**/*.ts"],
       exclude: [
         "src/generated/**",

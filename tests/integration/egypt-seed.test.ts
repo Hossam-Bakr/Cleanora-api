@@ -24,8 +24,8 @@ describe.skipIf(!hasDatabase)("Egypt seed", () => {
   it(
     "is idempotent for authoritative country, currency, and configuration data",
     async () => {
-      await seed();
-      await seed();
+      await seed(getPrismaClient());
+      await seed(getPrismaClient());
 
       const prisma = getPrismaClient();
       const country = await prisma.country.findUniqueOrThrow({

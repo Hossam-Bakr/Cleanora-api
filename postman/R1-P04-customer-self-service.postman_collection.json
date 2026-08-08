@@ -1,0 +1,885 @@
+{
+  "info": {
+    "_postman_id": "3a5c87dd-776a-49fd-b13c-0ff226458e29",
+    "name": "Cleanora R1-P04 Customer Self-Service",
+    "description": "Executable R1-P04 customer self-service collection. Run the R1-P02 login flow first so accessToken is available. Select the Local or Railway environment, use an ACTIVE customer with the required verified category, and consult Swagger for complete error contracts. Profile-image upload uses a local JPEG/PNG/WebP file and never exports Cloudinary credentials or signed delivery URLs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Profiles",
+      "item": [
+        {
+          "name": "Get Individual Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/profiles/individual",
+            "description": "Returns the owned Individual profile or the explicit not-created representation."
+          },
+          "response": []
+        },
+        {
+          "name": "Put Individual Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{individualFullName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/customers/profiles/individual",
+            "description": "Creates or replaces the owned Individual profile fields."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Company Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/profiles/company",
+            "description": "Returns the owned Company profile or the explicit not-created representation."
+          },
+          "response": []
+        },
+        {
+          "name": "Put Company Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyName\": \"{{companyName}}\",\n  \"representativeFullName\": \"{{representativeFullName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/customers/profiles/company",
+            "description": "Creates or replaces the owned Company profile fields."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Engineer Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/profiles/engineer",
+            "description": "Returns the owned Engineer profile or the explicit not-created representation."
+          },
+          "response": []
+        },
+        {
+          "name": "Put Engineer Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{engineerFullName}}\",\n  \"professionalTitle\": \"{{professionalTitle}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/customers/profiles/engineer",
+            "description": "Creates or replaces the owned Engineer profile fields."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile Image",
+      "item": [
+        {
+          "name": "Get Profile Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200,204]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "  const version = body.data?.profileImage?.associationVersion ?? body.data?.associationVersion;",
+                  "  if (version) pm.environment.set(\"profileImageAssociationVersion\", version);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/profile-image",
+            "description": "Returns a fresh authenticated signed URL and safe metadata, or 204 when no image is associated."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload or Replace Profile Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "  const version = body.data?.profileImage?.associationVersion ?? body.data?.associationVersion;",
+                  "  if (version) pm.environment.set(\"profileImageAssociationVersion\", version);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{profileImagePath}}",
+                  "description": "Local JPEG/PNG/WebP file; maximum 5 MiB."
+                },
+                {
+                  "key": "expectedAssociationVersion",
+                  "type": "text",
+                  "value": "{{profileImageAssociationVersion}}",
+                  "description": "Current image association version."
+                }
+              ]
+            },
+            "url": "{{hostUrl}}/customers/profile-image",
+            "description": "Always replaces the current image using the required association-version CAS token. Select a local JPEG, PNG, or WebP no larger than 5 MiB if profileImagePath is not resolved by Postman."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Profile Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "  const version = body.data?.profileImage?.associationVersion ?? body.data?.associationVersion;",
+                  "  if (version) pm.environment.set(\"profileImageAssociationVersion\", version);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedAssociationVersion\": {{profileImageAssociationVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/customers/profile-image",
+            "description": "Clears the current association using CAS. Provider deletion continues through durable cleanup."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Addresses",
+      "item": [
+        {
+          "name": "List Addresses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/addresses",
+            "description": "Lists all owned peer text addresses; none is primary/default."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Address",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([201]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "  if (body.data?.id) pm.environment.set(\"addressId\", body.data.id);",
+                  "  if (body.data?.version) pm.environment.set(\"addressVersion\", body.data.version);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"countryCode\": \"{{countryCode}}\",\n  \"city\": \"{{city}}\",\n  \"district\": \"{{district}}\",\n  \"addressText\": \"{{addressText}}\",\n  \"building\": \"{{building}}\",\n  \"floor\": \"{{floor}}\",\n  \"notes\": \"{{addressNotes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/customers/addresses",
+            "description": "Creates a text-only address. countryCode must identify an active configured country; geospatial fields are rejected."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Address",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "  if (body.data?.version) pm.environment.set(\"addressVersion\", body.data.version);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/addresses/{{addressId}}",
+            "description": "Returns the owned address. Missing and wrong-owner identifiers share the enumeration-safe 404 contract."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Address",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "  if (body.data?.version) pm.environment.set(\"addressVersion\", body.data.version);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"countryCode\": \"{{countryCode}}\",\n  \"city\": \"{{city}}\",\n  \"district\": \"{{district}}\",\n  \"addressText\": \"{{addressText}}\",\n  \"building\": \"{{building}}\",\n  \"floor\": \"{{floor}}\",\n  \"notes\": \"{{addressNotes}}\",\n  \"version\": {{addressVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/customers/addresses/{{addressId}}",
+            "description": "Full replacement using the current address version."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Address",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": {{addressVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/customers/addresses/{{addressId}}",
+            "description": "Deletes the owned address using its current version."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Contact and Preferences",
+      "item": [
+        {
+          "name": "Get Contact State",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/contact-state",
+            "description": "Returns authoritative email/phone presence and verification labels from Authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Preferences",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "  if (body.data?.version) pm.environment.set(\"preferencesVersion\", body.data.version);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/preferences",
+            "description": "Returns the current or default complete preference matrix."
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Preferences",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "  if (body.data?.version) pm.environment.set(\"preferencesVersion\", body.data.version);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": {{preferencesVersion}},\n  \"language\": \"EN\",\n  \"reminders\": {\n    \"sms\": true,\n    \"push\": true\n  },\n  \"promotional\": {\n    \"sms\": false,\n    \"push\": true\n  },\n  \"mandatory\": {\n    \"security\": {\n      \"sms\": true,\n      \"push\": true\n    },\n    \"activeService\": {\n      \"sms\": true,\n      \"push\": true\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/customers/preferences",
+            "description": "DEC-032 full replacement. version, language, reminders, promotional, and mandatory notice fields are all required."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Privacy Requests",
+      "item": [
+        {
+          "name": "List Privacy Requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/privacy-requests",
+            "description": "Lists owned, non-purged privacy-request metadata."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Privacy Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([201]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "  if (body.data?.id) pm.environment.set(\"privacyRequestId\", body.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"purpose\": \"{{privacyPurpose}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/customers/privacy-requests",
+            "description": "Submits DEACTIVATION, DELETION, or EXPORT. Submission does not execute or fulfill the request."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Privacy Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/privacy-requests/{{privacyRequestId}}",
+            "description": "Returns owned request metadata. Missing and wrong-owner identifiers share the same safe 404 contract."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Privacy Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/customers/privacy-requests/{{privacyRequestId}}/cancel",
+            "description": "Cancels an owned request only while it is PENDING."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

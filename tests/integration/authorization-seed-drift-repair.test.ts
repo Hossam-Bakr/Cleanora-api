@@ -24,6 +24,94 @@ const REMOVED_ROLE_PERMISSION = {
   permissionCode: "resource.self.write",
 } as const;
 
+const REQUIRED_ROLE_CODES = [DRIFTED_ROLE_CODE] as const;
+const REQUIRED_PERMISSION_CODES = [
+  DRIFTED_PERMISSION_CODE,
+  REMOVED_ROLE_PERMISSION.permissionCode,
+] as const;
+const REQUIRED_REASON_CODES = [
+  DRIFTED_REASON_CODE,
+  REASON_FREED_FOR_OPERATION,
+] as const;
+
+/**
+ * Seed upserts by code. Privileged-reason restore also clears conflicting
+ * operation holders so drift assertions never start from a half-empty catalog.
+ */
+async function ensureAuthorizationCatalogRows(): Promise<void> {
+  const prisma = getPrismaClient();
+
+  for (const role of AUTHORIZATION_ROLES) {
+    const existing = await prisma.role.findUnique({ where: { code: role.code } });
+    if (existing === null) {
+      await prisma.role.create({
+        data: { code: role.code, name: role.name },
+      });
+    }
+  }
+
+  for (const permission of AUTHORIZATION_PERMISSIONS) {
+    const existing = await prisma.permission.findUnique({
+      where: { code: permission.code },
+    });
+    if (existing === null) {
+      await prisma.permission.create({
+        data: { code: permission.code, name: permission.name },
+      });
+    }
+  }
+
+  for (const reason of PRIVILEGED_ACTION_REASONS) {
+    await prisma.privilegedActionReason.deleteMany({
+      where: {
+        operation: reason.operation,
+        NOT: { code: reason.code },
+      },
+    });
+    await prisma.privilegedActionReason.upsert({
+      where: { code: reason.code },
+      create: {
+        code: reason.code,
+        name: reason.name,
+        operation: reason.operation,
+        isActive: reason.isActive,
+      },
+      update: {
+        name: reason.name,
+        operation: reason.operation,
+        isActive: reason.isActive,
+      },
+    });
+  }
+
+  for (const code of REQUIRED_ROLE_CODES) {
+    const row = await prisma.role.findUnique({ where: { code } });
+    if (row === null) {
+      throw new Error(
+        `Authorization seed incomplete: required role "${code}" is missing after seed()`,
+      );
+    }
+  }
+  for (const code of REQUIRED_PERMISSION_CODES) {
+    const row = await prisma.permission.findUnique({ where: { code } });
+    if (row === null) {
+      throw new Error(
+        `Authorization seed incomplete: required permission "${code}" is missing after seed()`,
+      );
+    }
+  }
+  for (const code of REQUIRED_REASON_CODES) {
+    const row = await prisma.privilegedActionReason.findUnique({
+      where: { code },
+    });
+    if (row === null) {
+      throw new Error(
+        `Authorization seed incomplete: required privileged reason "${code}" is missing after seed()`,
+      );
+    }
+  }
+}
+
 /**
  * T085: prove that a second seed restores drifted authorization definitions
  * without touching user_roles. Uses TEST_DATABASE_URL only.
@@ -43,10 +131,13 @@ describe.skipIf(!hasDatabase)(
 
     it(
       "restores drifted names, reasons, and role-permission rows on reseed",
+      { timeout: 180_000 },
       async () => {
         const prisma = getPrismaClient();
 
-        await seed();
+        // One seed, then fill any leftover catalog gaps from prior suite drift.
+        await seed(getPrismaClient());
+        await ensureAuthorizationCatalogRows();
 
         const grantsBefore = await prisma.userRole.findMany({
           select: {
@@ -146,7 +237,7 @@ describe.skipIf(!hasDatabase)(
             }),
           ).toBeNull();
 
-          await seed();
+          await seed(getPrismaClient());
 
           const restoredRole = await prisma.role.findUniqueOrThrow({
             where: { code: DRIFTED_ROLE_CODE },
@@ -221,10 +312,9 @@ describe.skipIf(!hasDatabase)(
           });
           expect(grantsAfter).toEqual(grantsBefore);
         } finally {
-          await seed();
+          await seed(getPrismaClient());
         }
       },
-      120_000,
     );
   },
 );

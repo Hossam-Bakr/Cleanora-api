@@ -80,6 +80,16 @@ describe("R1-P01 migration boundary", () => {
       "user_roles",
       "privileged_action_reasons",
     );
+    expected.push(
+      "customer_profiles",
+      "individual_profiles",
+      "company_profiles",
+      "engineer_profiles",
+      "user_preferences",
+      "user_addresses",
+      "privacy_requests",
+      "media_files",
+    );
     expect(() => assertExactPostDeployTables(expected)).not.toThrow();
     expect(() =>
       assertExactPostDeployTables([...expected, "future_phase_table"])
@@ -114,6 +124,17 @@ describe("R1-P01 migration boundary", () => {
         },
         {
           migration_name: "r1_p03_roles_permissions_privileged_audit",
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p04_customer_profiles_preferences_text_addresses",
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name:
+            "r1_p04_customer_profiles_preferences_text_addresses_02_cloudinary_profile_image_storage",
           finished_at: new Date(),
           rolled_back_at: null
         }

@@ -3,15 +3,49 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `R1-P03A — Production Role Provisioning` |
-| Status | `Complete` |
+| Current Phase | `None — R1-P04 Complete; next phase not activated` |
+| Status | `No phase In Progress` |
 | Backend Branch | `Active working branch — see repository` |
-| Frontend Branch | `Not created — no R1-P03A UI` |
-| Backend Owner | `Assigned — completed under DEC-030` |
-| Frontend Owner | `Not applicable — no R1-P03A UI` |
-| Started At | `2026-08-06` |
-| Completed At | `2026-08-07` |
-| Last Updated | `2026-08-07` (human-owner Complete approval; T029 closed; no next phase active) |
+| Frontend Branch | `Not created — no R1-P04 UI authorized` |
+| Backend Owner | `Not assigned — no active phase` |
+| Frontend Owner | `Not applicable` |
+| Started At | `n/a` |
+| Completed At | `n/a` |
+| Last Updated | `2026-08-08` (R1-P04 Complete by human-owner approval; Cleanora incident remains separate and untouched) |
+
+## Completed phase — R1-P04
+
+R1-P04 (`Customer Profiles, Preferences & Text Addresses`) is **Complete** as
+of `2026-08-08`, by explicit human-owner approval:
+
+```text
+I approve R1-P04 — Customer Profiles, Preferences & Text Addresses as Complete.
+```
+
+Fresh independent final implementation re-review verdict was **`PASS`** with no
+unresolved BLOCKER or MAJOR. Tasks **T001–T120** remain checked. Technical-
+planning review **`PASS`**. Final `/speckit.analyze` **`CLEAN`**. Completion
+evidence: `specs/R1-P04-customer-profiles-preferences-text-addresses/completion-report.md`.
+
+DEC-030–033 locks remain authoritative for the shipped customers/media slice:
+trusted-principal + `SELF` customer authorization; staff_admin-only privileged
+privacy reassignment; closed privacy outcomes; full-replacement preference PUT;
+Cloudinary profile images with **`MEDIA_STORAGE_ROOT` superseded**.
+
+Historical implementation review **`CHANGES REQUIRED`**, historical first
+re-review **`BLOCKED`**, and historical later re-review **`CHANGES REQUIRED`**
+remain labelled historical evidence only. Two non-blocking MINOR follow-ups are
+recorded in the completion report (unused SC-008 eslint-disable; acceptance
+could assert `maxActiveLanes === 25`).
+
+The historical accidental migration of database **`Cleanora`** remains a
+**separate unresolved operational incident**. Complete approval does **not**
+authorize connecting to, inspecting, accepting, rolling back, resetting,
+seeding, migrating, deleting, or recovering `Cleanora`. That database was not
+accessed during this administrative closure.
+
+This Complete approval does **not** authorize commit, push, merge, deployment,
+production migration, or activation/implementation of the next roadmap phase.
 
 ## Completed phase — R1-P03A
 
@@ -41,24 +75,14 @@ DEC-030, R1-P03A delivered:
   R1-P03 `RoleManagementService`.
 
 Release 1 does **not** require customer role provisioning. R1-P04 customer
-self-service will use trusted `AuthenticationPrincipal` facts plus `SELF`
+self-service uses trusted `AuthenticationPrincipal` facts plus `SELF`
 ownership and category eligibility under DEC-030; no `customer` role grant,
 `resource.self.read`/`resource.self.write`, or other role-derived R1-P04
 customer permission is required.
 
-This completion does **not** authorize commit, push, merge, deployment,
-production migration, real owner secret configuration, or live staff_admin
-provisioning. No other phase is In Progress.
-
-## Dependent phase — R1-P04 (not active)
-
-R1-P04 (`Customer Profiles, Preferences & Text Addresses`) remains **not
-active**. Its approved specification and independent review `PASS` remain valid.
-The R1-P03A Complete gate that blocked planning resume is now satisfied.
-R1-P04 may resume planning only after **separate** explicit human-owner
-activation. No R1-P04 planning, tasks, implementation, schema or migration work,
-Git action, deployment, or production action is authorized by the R1-P03A
-Complete approval alone.
+R1-P03A Complete approval does **not** authorize commit, push, merge,
+deployment, production migration, real owner secret configuration, or live
+staff_admin provisioning beyond separately controlled operations.
 
 ## Completed phase — R1-P03
 
@@ -87,8 +111,9 @@ migrations remain immutable.
 
 R1-P04 (`Customer Profiles, Preferences & Text Addresses`) was subsequently
 activated on `2026-08-05` for specification preparation only, then paused while
-R1-P03A ran. The R1-P03 completion itself did not authorize commit, push,
-merge, deployment, or production migration.
+R1-P03A ran, then reactivated on `2026-08-07` for technical planning only. The
+R1-P03 completion itself did not authorize commit, push, merge, deployment, or
+production migration.
 
 ## Completed phase — R1-P02B
 

@@ -20,6 +20,8 @@ export interface RouteDependencies {
   readonly readinessProbes?: readonly ReadinessProbe[];
   readonly authenticationRouter?: Router;
   readonly ownerInternalRouter?: Router;
+  /** Present only once completed customer story handlers are composed. */
+  readonly customersRouter?: Router;
 }
 
 /**
@@ -53,5 +55,9 @@ export function mountRoutes(
 
   if (dependencies.ownerInternalRouter !== undefined) {
     app.use(`${apiPrefix}/internal/owner`, dependencies.ownerInternalRouter);
+  }
+
+  if (dependencies.customersRouter !== undefined) {
+    app.use(`${apiPrefix}/customers`, dependencies.customersRouter);
   }
 }

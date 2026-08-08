@@ -159,10 +159,15 @@ describe('individual signup and mandatory email OTP', () => {
       password: identity.password,
     };
     try {
-      await request(context.app)
+      const first = await request(context.app)
         .post('/api/v1/auth/signup')
-        .send(payload)
-        .expect(202);
+        .send(payload);
+      if (first.status !== 202) {
+        // Safe diagnostics only — never log OTPs, tokens, passwords, or credentials.
+        throw new Error(
+          `expected first signup 202, got ${first.status} code=${String(first.body?.error?.code ?? 'none')}`,
+        );
+      }
 
       const conflict = await request(context.app)
         .post('/api/v1/auth/signup')

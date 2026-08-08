@@ -3,8 +3,8 @@
   "specName": "R1-P04-customer-profiles-preferences-text-addresses",
   "branch": "R1-P04-customer-profiles-preferences-text-addresses",
   "selectedAt": "2026-08-06T01:29:56.419Z",
-  "currentStep": "specify",
-  "status": "specified",
+  "currentStep": "implement",
+  "status": "completed",
   "history": [
     {
       "step": "specify",
@@ -12,6 +12,38 @@
       "kind": "complete",
       "by": "codex-review-repair",
       "at": "2026-08-06T05:03:43.886Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-08-07T03:34:00.000Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-07T03:45:00.000Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "human-owner-complete-admin",
+      "at": "2026-08-08T20:43:00.000Z",
+      "note": "Equivalent completion-state update; python3 Companion writer unavailable; after_tasks capture historically skipped"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "human-owner-complete-admin",
+      "at": "2026-08-08T20:43:00.000Z",
+      "note": "T001–T120 checked; fresh independent final implementation re-review PASS; human-owner Complete approval 2026-08-08; python3 Companion --mark-complete unavailable so equivalent validated completion-state applied"
     }
-  ]
+  ],
+  "note": "R1-P04 Complete by human-owner approval 2026-08-08. Companion python3 unavailable; applied equivalent validated completion-state (status=completed, currentStep=implement). Historical Cleanora incident remains separate and unauthorized. No commit/push/merge/deploy/next-phase.",
+  "currentTask": null
 }
