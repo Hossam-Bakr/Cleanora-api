@@ -47,7 +47,7 @@ describe("customer role automation guardrails (DEC-030)", () => {
     async () => {
       const database = await startTestDatabaseLifecycle();
       try {
-        await seed();
+        await seed(getPrismaClient());
         const prisma = getPrismaClient();
         const customerRole = await prisma.role.findUniqueOrThrow({
           where: { code: "customer" },

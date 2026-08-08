@@ -241,73 +241,82 @@ export class OtpRepository {
     resendAt: Date;
     maxAttempts: number;
   }) {
-    const now = new Date();
-    try {
-      return await getPrismaClient().$transaction(
-        async (transaction) => {
-          const coolingDown = await transaction.otpCode.findFirst({
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const now = new Date();
+      try {
+        return await getPrismaClient().$transaction(
+          async (transaction) => {
+            const coolingDown = await transaction.otpCode.findFirst({
+              where: {
+                userId: data.userId,
+                accountCategory: data.category,
+                purpose: data.purpose,
+                status: { in: ["PENDING_DELIVERY", "ACTIVE"] },
+                expiresAt: { gt: now },
+                resendAvailableAt: { gt: now },
+              },
+              orderBy: { createdAt: "desc" },
+            });
+            if (coolingDown !== null) {
+              return { challenge: coolingDown, created: false as const };
+            }
+            await transaction.otpCode.updateMany({
+              where: {
+                userId: data.userId,
+                accountCategory: data.category,
+                purpose: data.purpose,
+                status: { in: ["PENDING_DELIVERY", "ACTIVE"] },
+              },
+              data: { status: "SUPERSEDED", supersededAt: now },
+            });
+            const challenge = await transaction.otpCode.create({
+              data: {
+                id: data.id,
+                userId: data.userId,
+                accountCategory: data.category,
+                purpose: data.purpose,
+                channel: data.channel,
+                destinationHash: data.destinationHash,
+                codeVerifier: data.verifier,
+                expiresAt: data.expiresAt,
+                resendAvailableAt: data.resendAt,
+                maxAttempts: data.maxAttempts,
+              },
+            });
+            return { challenge, created: true as const };
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        );
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          (error.code === "P2002" || error.code === "P2034")
+        ) {
+          const winner = await getPrismaClient().otpCode.findFirst({
             where: {
               userId: data.userId,
               accountCategory: data.category,
               purpose: data.purpose,
               status: { in: ["PENDING_DELIVERY", "ACTIVE"] },
               expiresAt: { gt: now },
-              resendAvailableAt: { gt: now },
             },
             orderBy: { createdAt: "desc" },
           });
-          if (coolingDown !== null) {
-            return { challenge: coolingDown, created: false as const };
+          if (winner !== null) {
+            return { challenge: winner, created: false as const };
           }
-          await transaction.otpCode.updateMany({
-            where: {
-              userId: data.userId,
-              accountCategory: data.category,
-              purpose: data.purpose,
-              status: { in: ["PENDING_DELIVERY", "ACTIVE"] },
-            },
-            data: { status: "SUPERSEDED", supersededAt: now },
-          });
-          const challenge = await transaction.otpCode.create({
-            data: {
-              id: data.id,
-              userId: data.userId,
-              accountCategory: data.category,
-              purpose: data.purpose,
-              channel: data.channel,
-              destinationHash: data.destinationHash,
-              codeVerifier: data.verifier,
-              expiresAt: data.expiresAt,
-              resendAvailableAt: data.resendAt,
-              maxAttempts: data.maxAttempts,
-            },
-          });
-          return { challenge, created: true as const };
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-      );
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        (error.code === "P2002" || error.code === "P2034")
-      ) {
-        const winner = await getPrismaClient().otpCode.findFirst({
-          where: {
-            userId: data.userId,
-            accountCategory: data.category,
-            purpose: data.purpose,
-            status: { in: ["PENDING_DELIVERY", "ACTIVE"] },
-            expiresAt: { gt: now },
-          },
-          orderBy: { createdAt: "desc" },
-        });
-        if (winner !== null) {
-          return { challenge: winner, created: false as const };
+          // P2034 under pool contention often has no winner yet; retry bounded times.
+          if (error.code === "P2034" && attempt < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, 15 * attempt));
+            continue;
+          }
+          throw authenticationError("AUTH_VERIFICATION_FAILED");
         }
-        throw authenticationError("AUTH_VERIFICATION_FAILED");
+        throw error;
       }
-      throw error;
     }
+    throw authenticationError("AUTH_VERIFICATION_FAILED");
   }
 
   activate(id: string) {

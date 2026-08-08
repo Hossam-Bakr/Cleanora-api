@@ -111,6 +111,47 @@ enum PrivilegedActionOperation {
   ROLE_ENABLE
   ROLE_DISABLE
   STAFF_SAMPLE_PRIVILEGED_WRITE
+  PRIVACY_REQUEST_REASSIGN
+}
+
+enum PrivacyRequestPurpose {
+  DEACTIVATION
+  DELETION
+  EXPORT
+}
+
+enum PrivacyRequestStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum PrivacyRequestOutcomeCode {
+  REQUEST_FULFILLED
+  REQUEST_REJECTED
+}
+
+enum PreferredLanguage {
+  AR
+  EN
+}
+
+enum MediaOwnerType {
+  CUSTOMER_PROFILE_IMAGE
+}
+
+enum MediaStorageProvider {
+  CLOUDINARY
+  S3
+}
+
+enum MediaStatus {
+  PENDING_UPLOAD
+  READY
+  PENDING_DELETE
+  DELETED
 }
 
 model Currency {
@@ -141,6 +182,7 @@ model Country {
   updatedAt         DateTime        @updatedAt @map("updated_at")
   defaultCurrency   Currency        @relation("CountryDefaultCurrency", fields: [defaultCurrencyId], references: [id], onDelete: Restrict)
   countryConfigs    CountryConfig[]
+  userAddresses     UserAddress[]
 
   @@index([isActive])
   @@index([defaultCurrencyId])
@@ -214,6 +256,14 @@ model User {
   socialAccounts     SocialAccount[]
   authEvents         AuthEvent[]
   userRoles          UserRole[]
+  customerProfile    CustomerProfile?
+  individualProfile  IndividualProfile?
+  companyProfile     CompanyProfile?
+  engineerProfile    EngineerProfile?
+  userPreferences    UserPreferences?
+  userAddresses      UserAddress[]
+  privacyRequests    PrivacyRequest[]
+  ownedMediaFiles    MediaFile[]
 
   @@index([status])
   @@map("users")
@@ -437,4 +487,133 @@ model PrivilegedActionReason {
 
   @@index([isActive])
   @@map("privileged_action_reasons")
+}
+
+// R1-P04 customer profiles, preferences, text addresses, and privacy requests.
+// customers owns business tables; media owns media_files.
+
+model CustomerProfile {
+  id                      String     @id @default(cuid())
+  userId                  String     @unique @map("user_id")
+  profileImageMediaFileId String?    @unique @map("profile_image_media_file_id")
+  imageAssociationVersion Int        @default(1) @map("image_association_version")
+  createdAt               DateTime   @default(now()) @map("created_at")
+  updatedAt               DateTime   @updatedAt @map("updated_at")
+  user                    User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  profileImageMediaFile   MediaFile? @relation(fields: [profileImageMediaFileId], references: [id], onDelete: SetNull)
+
+  @@map("customer_profiles")
+}
+
+model IndividualProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  fullName  String   @map("full_name")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("individual_profiles")
+}
+
+model CompanyProfile {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique @map("user_id")
+  companyName            String   @map("company_name")
+  representativeFullName String   @map("representative_full_name")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("company_profiles")
+}
+
+model EngineerProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique @map("user_id")
+  fullName          String   @map("full_name")
+  professionalTitle String   @map("professional_title")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("engineer_profiles")
+}
+
+model UserPreferences {
+  id              String             @id @default(cuid())
+  userId          String             @unique @map("user_id")
+  language        PreferredLanguage?
+  remindersSms    Boolean            @default(false) @map("reminders_sms")
+  remindersPush   Boolean            @default(false) @map("reminders_push")
+  promotionalSms  Boolean            @default(false) @map("promotional_sms")
+  promotionalPush Boolean            @default(false) @map("promotional_push")
+  version         Int                @default(1)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  user            User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("user_preferences")
+}
+
+model UserAddress {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  countryId   String   @map("country_id")
+  city        String
+  district    String
+  addressText String   @map("address_text")
+  building    String?
+  floor       String?
+  notes       String?
+  version     Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  country     Country  @relation(fields: [countryId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@map("user_addresses")
+}
+
+model PrivacyRequest {
+  id           String                     @id @default(cuid())
+  userId       String                     @map("user_id")
+  purpose      PrivacyRequestPurpose
+  status       PrivacyRequestStatus
+  processorId  String?                    @map("processor_id")
+  outcomeCode  PrivacyRequestOutcomeCode? @map("outcome_code")
+  requestedAt  DateTime                   @default(now()) @map("requested_at")
+  updatedAt    DateTime                   @updatedAt @map("updated_at")
+  cancelledAt  DateTime?                  @map("cancelled_at")
+  processingAt DateTime?                  @map("processing_at")
+  terminalAt   DateTime?                  @map("terminal_at")
+  purgeAfter   DateTime?                  @map("purge_after")
+  user         User                       @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, purpose, status])
+  @@index([purgeAfter])
+  @@map("privacy_requests")
+}
+
+model MediaFile {
+  id                   String               @id @default(cuid())
+  ownerUserId          String               @map("owner_user_id")
+  ownerType            MediaOwnerType       @map("owner_type")
+  storageProvider      MediaStorageProvider @map("storage_provider")
+  storageKey           String               @map("storage_key")
+  contentType          String               @map("content_type")
+  byteSize             Int                  @map("byte_size")
+  width                Int?
+  height               Int?
+  status               MediaStatus
+  cleanupEligibleAt    DateTime?            @map("cleanup_eligible_at")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  ownerUser            User                 @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+  customerProfileImage CustomerProfile?
+
+  @@index([ownerUserId, ownerType])
+  @@index([status, cleanupEligibleAt])
+  @@map("media_files")
 }

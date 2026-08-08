@@ -674,6 +674,23 @@ export class AuthenticationService {
     };
   }
 
+  /** Internal identity-facts contract for customer contact-state projection. */
+  async readContactFacts(userId: string): Promise<{
+    readonly phoneE164: string | null;
+    readonly emailNormalized: string | null;
+    readonly phoneVerifiedAt: Date | null;
+    readonly emailVerifiedAt: Date | null;
+  }> {
+    const user = await this.users.findById(userId);
+    if (user === null) throw authenticationError("AUTHENTICATION_REQUIRED");
+    return {
+      phoneE164: user.phoneE164,
+      emailNormalized: user.emailNormalized,
+      phoneVerifiedAt: user.phoneVerifiedAt,
+      emailVerifiedAt: user.emailVerifiedAt,
+    };
+  }
+
   async forgotPassword(input: {
     category: AccountCategory;
     identifier: string;

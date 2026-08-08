@@ -34,8 +34,8 @@ describe.skipIf(!hasDatabase)("R1-P03 authorization definition seed", () => {
   it(
     "seeds the exact definition catalog and stays idempotent across two runs",
     async () => {
-      await seed();
-      await seed();
+      await seed(getPrismaClient());
+      await seed(getPrismaClient());
 
       const prisma = getPrismaClient();
       const [roles, permissions, rolePermissionCount, reasons] =
@@ -77,7 +77,7 @@ describe.skipIf(!hasDatabase)("R1-P03 authorization definition seed", () => {
         where: { roleId: staffAdmin.id },
       });
 
-      await seed();
+      await seed(getPrismaClient());
 
       expect(await prisma.userRole.count()).toBe(grantsBeforeSeed);
       expect(

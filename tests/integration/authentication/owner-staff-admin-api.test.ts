@@ -73,7 +73,7 @@ describe.skipIf(!hasDatabase)("owner staff-admin provisioning API", () => {
 
   beforeAll(async () => {
     database = await startTestDatabaseLifecycle();
-    await seed();
+    await seed(getPrismaClient());
   }, 180_000);
 
   afterAll(async () => {

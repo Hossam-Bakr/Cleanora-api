@@ -57,6 +57,49 @@ export interface PrivilegedAuditWriter {
   append(input: SafePrivilegedAuditInput): Promise<PrivilegedAuditAck>;
 }
 
+/** Acknowledgement for a general transactional audit append inside a business TX. */
+export interface GeneralTransactionalAuditAck {
+  readonly id: string;
+  readonly createdAt: string;
+}
+
+/** Transaction-scoped writer for ordinary FR-033 mutations (no privileged reason). */
+export interface GeneralTransactionalAuditWriter {
+  append(input: WriteAuditInput): Promise<GeneralTransactionalAuditAck>;
+}
+
+/** Security-relevant denial evidence when no business mutation commits. */
+export interface SafeDenialAuditInput extends WriteAuditInput {
+  readonly outcome: string;
+}
+
+export interface DenialAuditAck {
+  readonly id: string;
+  readonly createdAt: string;
+}
+
+/** Non-transactional writer for ownership-safe and ineligible denials. */
+export interface DenialAuditWriter {
+  append(input: SafeDenialAuditInput): Promise<DenialAuditAck>;
+}
+
+const protectedContentKeyPattern =
+  /(address|email|phone|image|profile|street|postal|export|contact|fullName|displayName)/iu;
+
+function containsProtectedContentKey(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some(containsProtectedContentKey);
+  }
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  return Object.entries(value).some(
+    ([key, nestedValue]) =>
+      protectedContentKeyPattern.test(key) ||
+      containsProtectedContentKey(nestedValue),
+  );
+}
+
 const secretKeyPattern =
   /(secret|password|credential|token|api[_-]?key|cookie|otp)/iu;
 
@@ -91,6 +134,17 @@ export function assertSafeAuditInput(input: WriteAuditInput): void {
     input.targetType.trim().length === 0 ||
     containsSecretLikeKey(input.context)
   ) {
+    throw auditInputInvalid();
+  }
+}
+
+/** Denial evidence must name the outcome and exclude protected personal payloads. */
+export function assertSafeDenialAuditInput(input: SafeDenialAuditInput): void {
+  assertSafeAuditInput(input);
+  if (input.outcome.trim().length === 0) {
+    throw auditInputInvalid();
+  }
+  if (containsProtectedContentKey(input.context)) {
     throw auditInputInvalid();
   }
 }

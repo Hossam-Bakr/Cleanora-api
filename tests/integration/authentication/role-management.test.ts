@@ -1,4 +1,5 @@
 import { seed } from "../../../prisma/seed.js";
+import { getPrismaClient } from "../../../src/database/prisma.js";
 import type { PrismaLifecycle } from "../../../src/database/prisma-lifecycle.js";
 import {
   createRoleManagementFixture,
@@ -19,7 +20,7 @@ describe.skipIf(!hasDatabase)("role management against the database", () => {
   // Seeding the remote test database takes longer than the default hook timeout.
   beforeAll(async () => {
     database = await startTestDatabaseLifecycle();
-    await seed();
+    await seed(getPrismaClient());
   }, 180_000);
 
   afterAll(async () => {

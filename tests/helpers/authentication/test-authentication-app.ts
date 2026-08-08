@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { createTestApp } from '../create-test-app.js';
 import { createAuthenticationModule } from "../../../src/modules/authentication/auth.module.js";
 import { Argon2PasswordHasherAdapter } from '../../../src/integrations/authentication/argon2-password-hasher.adapter.js';
@@ -54,7 +54,15 @@ export async function startAuthenticationTestApp() {
 }
 
 export function uniqueIdentity(label = 'user') {
-  // Egypt mobile E.164: +201 + 9 digits. Extra entropy avoids rare collisions in long single-fork runs.
-  const suffix = `${Date.now()}${randomInt(100_000, 999_999)}${randomInt(100_000, 999_999)}`.slice(-9);
-  return { phone: `+201${suffix}`, email: `${label}-${suffix}@example.test`, password: 'Correct-password-123!' };
+  // Egypt mobile E.164: +201 + 9 digits derived from UUID hex so suite-wide collisions cannot occur.
+  const id = randomUUID();
+  const hex = id.replace(/-/gu, "");
+  const nineDigits = (BigInt(`0x${hex.slice(0, 13)}`) % 1_000_000_000n)
+    .toString()
+    .padStart(9, "0");
+  return {
+    phone: `+201${nineDigits}`,
+    email: `${label}-${id}@example.test`,
+    password: "Correct-password-123!",
+  };
 }

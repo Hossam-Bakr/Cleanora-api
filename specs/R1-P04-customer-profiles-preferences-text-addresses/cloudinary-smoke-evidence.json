@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-08-08T09:01:07.073Z",
+  "nonProduction": true,
+  "syntheticInput": true,
+  "transformationFormat": "image/webp",
+  "width": 64,
+  "height": 48,
+  "byteSize": 76,
+  "uploadResourceType": "image",
+  "uploadType": "authenticated",
+  "opaquePublicIdValid": true,
+  "signedGetStatus": 200,
+  "signedGetContentType": "image/webp",
+  "firstDestroyResult": "ok",
+  "secondLookupOrDestroyResult": "not_found",
+  "noCustomerDbImportOrAssociation": true,
+  "cleanupResidue": "none",
+  "exitCode": 0,
+  "commandName": "smoke:cloudinary-profile-image"
+}

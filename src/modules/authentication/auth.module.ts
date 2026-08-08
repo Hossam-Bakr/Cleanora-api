@@ -37,6 +37,9 @@ export interface AuthenticationModuleDependencies extends AuthenticationServiceD
 export interface AuthenticationModule {
   readonly router: Router;
   readonly authenticateAccess: RequestHandler;
+  readonly identityContactReader: {
+    readContactFacts(userId: string): ReturnType<AuthenticationService["readContactFacts"]>;
+  };
 }
 
 export function createAuthenticationModule(dependencies: AuthenticationModuleDependencies): AuthenticationModule {
@@ -48,6 +51,9 @@ export function createAuthenticationModule(dependencies: AuthenticationModuleDep
     : new GoogleAuthenticationService(dependencies.googleIdentity, dependencies.googleTransactions, service);
   return {
     authenticateAccess,
+    identityContactReader: {
+      readContactFacts: (userId) => service.readContactFacts(userId),
+    },
     router: createAuthenticationRouter({
       service,
       authenticateAccess,

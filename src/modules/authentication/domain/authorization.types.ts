@@ -9,7 +9,8 @@ export type PrivilegedOperation =
   | "ROLE_REVOKE"
   | "ROLE_ENABLE"
   | "ROLE_DISABLE"
-  | "STAFF_SAMPLE_PRIVILEGED_WRITE";
+  | "STAFF_SAMPLE_PRIVILEGED_WRITE"
+  | "PRIVACY_REQUEST_REASSIGN";
 
 /** Ownership rule a protected operation requires. */
 export type OwnershipRule = "NONE" | "SELF";

@@ -1,7 +1,11 @@
 import {
   AUTHORIZATION_PERMISSIONS,
   AUTHORIZATION_ROLES,
+  PRIVILEGED_ACTION_REASONS,
+  PROTECTED_OPERATIONS,
   ROLE_PERMISSION_MAP,
+  findPrivilegedActionReason,
+  findProtectedOperation,
 } from "../../../../src/modules/authentication/domain/authorization.catalog.js";
 
 const expectedRoleCodes = [
@@ -32,6 +36,7 @@ const expectedPermissionCodes = [
   "authz.scope.provider.supervisor",
   "authz.scope.provider.admin",
   "authz.scope.worker",
+  "privacy.requests.reassign",
 ];
 
 const expectedRolePermissionMap: Record<string, string[]> = {
@@ -43,6 +48,7 @@ const expectedRolePermissionMap: Record<string, string[]> = {
     "authz.roles.disable",
     "authz.reasons.use",
     "authz.staff.admin.sample",
+    "privacy.requests.reassign",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],
@@ -161,5 +167,56 @@ describe("FR-002 authorization catalog", () => {
     ]) {
       expect(expectedRoleCodes).not.toContain(enrollmentOnly);
     }
+  });
+});
+
+describe("R1-P04 privacy reassignment catalog (DEC-031)", () => {
+  it("maps privacy.requests.reassign to staff_admin only", () => {
+    const holders = Object.entries(ROLE_PERMISSION_MAP)
+      .filter(([, codes]) => codes.includes("privacy.requests.reassign"))
+      .map(([roleCode]) => roleCode);
+
+    expect(holders).toEqual(["staff_admin"]);
+  });
+
+  it("binds privacy_request_reassign to PRIVACY_REQUEST_REASSIGN", () => {
+    expect(findPrivilegedActionReason("privacy_request_reassign")).toEqual(
+      expect.objectContaining({
+        code: "privacy_request_reassign",
+        operation: "PRIVACY_REQUEST_REASSIGN",
+        isActive: true,
+      }),
+    );
+  });
+
+  it("declares the internal customers.privacy.requests.reassign operation", () => {
+    expect(findProtectedOperation("customers.privacy.requests.reassign")).toEqual(
+      expect.objectContaining({
+        operationId: "customers.privacy.requests.reassign",
+        permissionCode: "privacy.requests.reassign",
+        reasonOperation: "PRIVACY_REQUEST_REASSIGN",
+        privileged: true,
+        publicHttp: false,
+      }),
+    );
+  });
+
+  it("keeps the additive catalog rows present exactly once", () => {
+    expect(
+      AUTHORIZATION_PERMISSIONS.filter(
+        (permission) => permission.code === "privacy.requests.reassign",
+      ),
+    ).toHaveLength(1);
+    expect(
+      PRIVILEGED_ACTION_REASONS.filter(
+        (reason) => reason.code === "privacy_request_reassign",
+      ),
+    ).toHaveLength(1);
+    expect(
+      PROTECTED_OPERATIONS.filter(
+        (operation) =>
+          operation.operationId === "customers.privacy.requests.reassign",
+      ),
+    ).toHaveLength(1);
   });
 });

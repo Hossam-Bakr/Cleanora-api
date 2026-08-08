@@ -32,9 +32,9 @@ provisioning eligibility inside role management.
 
 - R1-P03 remains Complete.
 - R1-P03A is Complete.
-- R1-P04 is not active; planning resume requires separate explicit human-owner
-  activation (prerequisite Complete gate now satisfied).
-- No phase is currently In Progress.
+- R1-P04 is Complete as of `2026-08-08` (see
+  `specs/R1-P04-customer-profiles-preferences-text-addresses/activation.md`).
+- R1-P03A itself remains Complete and is not In Progress.
 
 ## Locked boundaries
 
@@ -52,6 +52,5 @@ provisioning eligibility inside role management.
 
 ## Current gate
 
-None for R1-P03A. Next authorized action is separate human-owner direction to
-resume R1-P04 planning (or another owner-authorized phase), plus optional Git
-workflow if the owner later says exactly `commit and push`.
+None for R1-P03A. R1-P04 is Complete. No phase is In Progress. Next phase
+activation requires separate explicit human-owner authorization.

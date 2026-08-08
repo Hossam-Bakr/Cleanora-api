@@ -67,7 +67,14 @@ describe("R1-P03 protected-operation declarations", () => {
       }
       expect(operation.reasonOperation).toBeDefined();
 
-      const reasons = ["ROLE_ASSIGN", "ROLE_REVOKE", "ROLE_ENABLE", "ROLE_DISABLE", "STAFF_SAMPLE_PRIVILEGED_WRITE"];
+      const reasons = [
+        "ROLE_ASSIGN",
+        "ROLE_REVOKE",
+        "ROLE_ENABLE",
+        "ROLE_DISABLE",
+        "STAFF_SAMPLE_PRIVILEGED_WRITE",
+        "PRIVACY_REQUEST_REASSIGN",
+      ];
       expect(reasons).toContain(operation.reasonOperation);
     }
   });

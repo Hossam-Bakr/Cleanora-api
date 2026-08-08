@@ -12,6 +12,10 @@ const expectedBindings = [
     code: "staff_sample_privileged_write",
     operation: "STAFF_SAMPLE_PRIVILEGED_WRITE",
   },
+  {
+    code: "privacy_request_reassign",
+    operation: "PRIVACY_REQUEST_REASSIGN",
+  },
 ];
 
 describe("FR-026 privileged-action reason catalog", () => {

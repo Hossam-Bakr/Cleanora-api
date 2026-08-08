@@ -36,12 +36,17 @@ export class PrismaLifecycle {
    */
   constructor(
     connectionString: string,
-    options: { readonly maxConnections?: number } = {}
+    options: {
+      readonly maxConnections?: number;
+      /** Prefer IPv4 when the local network cannot reach Neon IPv6 endpoints. */
+      readonly forceIpv4?: boolean;
+    } = {}
   ) {
     this.pool = new pg.Pool({
       connectionString,
       max: options.maxConnections ?? DEFAULT_POOL_MAX,
-      allowExitOnIdle: true
+      allowExitOnIdle: true,
+      ...(options.forceIpv4 === true ? { family: 4 } : {}),
     });
     const adapter = new PrismaPg(this.pool, { disposeExternalPool: true });
     this.client = new PrismaClient({ adapter });

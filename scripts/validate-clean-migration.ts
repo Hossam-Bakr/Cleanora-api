@@ -13,7 +13,9 @@ const migrationNames = [
   'r1_p02_complete_authentication',
   'r1_p02_fix_phone_e164_constraint',
   'r1_p02_google_provider_profile_claims',
-  'r1_p03_roles_permissions_privileged_audit'
+  'r1_p03_roles_permissions_privileged_audit',
+  'r1_p04_customer_profiles_preferences_text_addresses',
+  'r1_p04_customer_profiles_preferences_text_addresses_02_cloudinary_profile_image_storage'
 ] as const;
 const expectedTables = [
   "currencies",
@@ -32,7 +34,15 @@ const expectedTables = [
   "permissions",
   "role_permissions",
   "user_roles",
-  "privileged_action_reasons"
+  "privileged_action_reasons",
+  "customer_profiles",
+  "individual_profiles",
+  "company_profiles",
+  "engineer_profiles",
+  "user_preferences",
+  "user_addresses",
+  "privacy_requests",
+  "media_files"
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -58,6 +68,16 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "role_permissions",
     "user_roles",
     "privileged_action_reasons"
+  ],
+  r1_p04_customer_profiles_preferences_text_addresses: [
+    "media_files",
+    "customer_profiles",
+    "individual_profiles",
+    "company_profiles",
+    "engineer_profiles",
+    "user_preferences",
+    "user_addresses",
+    "privacy_requests"
   ]
 };
 const expectedPostDeployTables = ["_prisma_migrations", ...expectedTables] as const;
@@ -173,6 +193,91 @@ export function assertAuthorizationCatalogMigrationSql(sql: string): void {
   }
 }
 
+/**
+ * Accept only the eight R1-P04 customers/media tables. Must not change
+ * admin-owned audit persistence, authentication catalog tables, or earlier
+ * phase objects.
+ */
+export function assertCustomerProfilesMigrationSql(sql: string): void {
+  if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/i.test(sql)) {
+    throw new Error(
+      "R1-P04 customer profiles migration contains destructive SQL"
+    );
+  }
+  if (sql.includes("audit_logs")) {
+    throw new Error(
+      "R1-P04 customer profiles migration must not change admin-owned audit_logs"
+    );
+  }
+  for (const table of migrationOwnedTables[
+    "r1_p04_customer_profiles_preferences_text_addresses"
+  ] ?? []) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(
+        `R1-P04 customer profiles migration is missing table ${table}`
+      );
+    }
+  }
+  const createdTables = sql.match(/CREATE TABLE/g) ?? [];
+  if (createdTables.length !== 8) {
+    throw new Error(
+      `R1-P04 customer profiles migration must create exactly eight tables; found ${String(createdTables.length)}`
+    );
+  }
+  if (!sql.includes("privacy_requests_one_active_per_purpose")) {
+    throw new Error(
+      "R1-P04 customer profiles migration is missing the active privacy partial unique index"
+    );
+  }
+  if (!sql.includes("PRIVACY_REQUEST_REASSIGN")) {
+    throw new Error(
+      "R1-P04 customer profiles migration must extend PrivilegedActionOperation"
+    );
+  }
+  if (/FOREIGN KEY\s*\(\s*"processor_id"\s*\)/i.test(sql)) {
+    throw new Error(
+      "R1-P04 customer profiles migration must not add a processor_id foreign key"
+    );
+  }
+}
+
+/**
+ * Accept only the reviewed Cloudinary profile-image storage repair SQL.
+ * Must not recreate customers tables or change admin-owned audit persistence.
+ */
+export function assertCloudinaryProfileImageStorageMigrationSql(sql: string): void {
+  if (destructivePattern.test(sql) || /\bDROP\s+(TABLE|COLUMN|CONSTRAINT|TYPE)\b/i.test(sql)) {
+    throw new Error(
+      "R1-P04 Cloudinary profile-image storage migration contains destructive SQL"
+    );
+  }
+  if (sql.includes("audit_logs")) {
+    throw new Error(
+      "R1-P04 Cloudinary profile-image storage migration must not change admin-owned audit_logs"
+    );
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length > 0) {
+    throw new Error(
+      "R1-P04 Cloudinary profile-image storage migration must not create tables"
+    );
+  }
+  if (!sql.includes('"MediaStorageProvider"')) {
+    throw new Error(
+      "R1-P04 Cloudinary profile-image storage migration is missing MediaStorageProvider"
+    );
+  }
+  if (!sql.includes("PENDING_UPLOAD")) {
+    throw new Error(
+      "R1-P04 Cloudinary profile-image storage migration is missing PENDING_UPLOAD"
+    );
+  }
+  if (!sql.includes("storage_provider")) {
+    throw new Error(
+      "R1-P04 Cloudinary profile-image storage migration is missing storage_provider"
+    );
+  }
+}
+
 /** Require the exact phase-owned schema plus Prisma's migration metadata. */
 export function assertExactPostDeployTables(
   tableNames: readonly string[]
@@ -218,6 +323,17 @@ async function validateMigrationFolder(): Promise<void> {
     }
     if (migrationName === "r1_p03_roles_permissions_privileged_audit") {
       assertAuthorizationCatalogMigrationSql(sql);
+      continue;
+    }
+    if (migrationName === "r1_p04_customer_profiles_preferences_text_addresses") {
+      assertCustomerProfilesMigrationSql(sql);
+      continue;
+    }
+    if (
+      migrationName ===
+      "r1_p04_customer_profiles_preferences_text_addresses_02_cloudinary_profile_image_storage"
+    ) {
+      assertCloudinaryProfileImageStorageMigrationSql(sql);
       continue;
     }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
@@ -268,7 +384,7 @@ async function assertPostDeployState(
         finished_at,
         rolled_back_at
       FROM "_prisma_migrations"
-      WHERE migration_name IN (${migrationNames[0]}, ${migrationNames[1]}, ${migrationNames[2]}, ${migrationNames[3]}, ${migrationNames[4]})
+      WHERE migration_name IN (${migrationNames[0]}, ${migrationNames[1]}, ${migrationNames[2]}, ${migrationNames[3]}, ${migrationNames[4]}, ${migrationNames[5]}, ${migrationNames[6]})
     `;
     assertAppliedMigration(history);
   } finally {

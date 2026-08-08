@@ -1,4 +1,5 @@
 import { seed } from "../../../prisma/seed.js";
+import { getPrismaClient } from "../../../src/database/prisma.js";
 import type { PrismaLifecycle } from "../../../src/database/prisma-lifecycle.js";
 import { AuthorizationService } from "../../../src/modules/authentication/authorization.service.js";
 import { AuthorizationRepository } from "../../../src/modules/authentication/infrastructure/authorization.repository.js";
@@ -17,7 +18,7 @@ describe.skipIf(!hasDatabase)("authorization freshness after a real mutation", (
   // Seeding the remote test database takes longer than the default hook timeout.
   beforeAll(async () => {
     database = await startTestDatabaseLifecycle();
-    await seed();
+    await seed(getPrismaClient());
   }, 180_000);
 
   afterAll(async () => {

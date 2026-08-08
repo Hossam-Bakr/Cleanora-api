@@ -4,26 +4,27 @@
 
 **Created**: 2026-08-05
 
-**Status**: Specification preparation complete — independent specification
-re-review `PASS` with no BLOCKER, MAJOR, or MINOR finding and no owner product
-decision remaining open. Technical planning was authorized on 2026-08-06, then
-paused before Phase 0 pending the R1-P03A prerequisite. Owner **DEC-030** (2026-08-07)
-supersedes the prior authorization-provisioning blocker and any earlier requirement
-that customer self-service hold an explicit R1-P04 permission or
+**Status**: Specification preparation complete and frozen — independent
+specification re-review `PASS` with no BLOCKER, MAJOR, or MINOR finding and no
+owner product decision remaining open. Owner **DEC-030** (2026-08-07) supersedes
+the prior authorization-provisioning blocker and any earlier requirement that
+customer self-service hold an explicit R1-P04 permission or
 `resource.self.read`/`resource.self.write` grant. R1-P04 does **not** require
 customer-role grants from R1-P03A. Customer self-service authorizes directly from
 trusted `AuthenticationPrincipal` facts plus `SELF` ownership and the category
 eligibility rules below. A historical `customer` user-role grant does not affect
-eligibility. R1-P04 remains paused until R1-P03A is implemented, validated, and
-explicitly owner-approved Complete.
+eligibility. R1-P03A is Complete. As of `2026-08-07`, R1-P04 is the sole active
+phase for **technical planning only**; this specification text remains the
+authoritative product contract and is not being rewritten.
 
 **Input**: User description: "Prepare the R1-P04 business specification for individual, company, and engineer customer profiles, profile image, contact display and verification state, language and notification preferences, customer-owned text addresses, account-deactivation and account-deletion requests, and data-export foundation, with explicit ownership, authorization, privacy, audit, boundaries, and measurable acceptance."
 
-**Activation**: R1-P04 was activated on 2026-08-05 for specification
-preparation only (`activation.md`). This specification does not authorize
-technical planning, tasks, implementation, schema or migration work, changes
-to applied migrations or completed authentication contracts, Git actions,
-deployment, or production database actions.
+**Activation**: R1-P04 was activated on 2026-08-05 for specification preparation
+only, paused during R1-P03A, and reactivated on 2026-08-07 for technical
+planning only (`activation.md`). The approved specification does not authorize
+tasks, implementation, schema or migration work, changes to applied migrations
+or completed authentication contracts, Git actions, deployment, or production
+database actions until separately authorized after planning review.
 
 ## Scope and Canonical Basis
 
@@ -1043,7 +1044,7 @@ R1-P03A as the prerequisite for production staff administration. Owner **DEC-030
 (2026-08-07) removes the prior **authorization-provisioning blocker** that required
 customer-role grants before R1-P04 planning could proceed.
 
-**Current gate (DEC-030):**
+**Current gate (DEC-030 + DEC-031):**
 
 - R1-P04 customer operations authorize via trusted `AuthenticationPrincipal`
   facts, `SELF` ownership, and the FR-028 category eligibility rules — **not**
@@ -1053,10 +1054,18 @@ customer-role grants before R1-P04 planning could proceed.
   eligibility.
 - R1-P03A (owner MVP) provisions `staff_admin` and non-customer role management
   only; it does not provision customer roles for R1-P04.
-- R1-P04 planning remains **paused** until R1-P03A is implemented, validated, and
-  explicitly owner-approved Complete — not because customer permissions lack a grant
-  path, but because R1-P03A is the active prerequisite phase for staff-admin
-  production readiness and phase sequencing.
+- **Historical pause note (resolved 2026-08-07):** Planning was paused until
+  R1-P03A Complete for phase sequencing, not because customer permissions lacked
+  a grant path. That Complete gate is now satisfied and planning is active.
+- **DEC-031 (2026-08-07):** Privileged reassignment is `staff_admin` only;
+  privacy outcomes are closed to `REQUEST_FULFILLED` / `REQUEST_REJECTED`;
+  retention uses env `PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS` with a bounded
+  customers-owned hourly sweep. These are planning/authority decisions recorded
+  in `docs/product/decision-log.md` and integrated into Phase 0/1 artifacts
+  without renumbering FR/SC requirements. Fresh independent final
+  technical-planning re-review returned `PASS`. `tasks.md` is generated under
+  tasks-generation authorization; implementation remains unauthorized until
+  separate human-owner authorization.
 
 Registration-time grants, category-derived role grants, bulk backfills, hidden
 database edits, and changes to completed R1-P02 authentication contracts remain

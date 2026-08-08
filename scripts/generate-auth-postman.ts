@@ -379,6 +379,28 @@ const secretEnvironmentValues = [
   ["accessToken", "", "Short-lived Bearer access token; captured automatically"],
 ] as const;
 
+const customerEnvironmentValues = [
+  ["individualFullName", "Cleanora Individual", "Sample Individual profile name"],
+  ["companyName", "Cleanora Services", "Sample Company profile name"],
+  ["representativeFullName", "Cleanora Representative", "Sample Company representative"],
+  ["engineerFullName", "Cleanora Engineer", "Sample Engineer profile name"],
+  ["professionalTitle", "Cleaning Engineer", "Sample Engineer title"],
+  ["profileImagePath", "", "Local JPEG/PNG/WebP path selected privately in Postman"],
+  ["profileImageAssociationVersion", "1", "Current profile-image association CAS version"],
+  ["countryCode", "EG", "Active ISO alpha-2 country code"],
+  ["city", "Cairo", "Sample address city"],
+  ["district", "Nasr City", "Sample address district"],
+  ["addressText", "Example Street", "Sample text address"],
+  ["building", "10", "Optional building value"],
+  ["floor", "2", "Optional floor value"],
+  ["addressNotes", "", "Optional address notes"],
+  ["addressId", "", "Created address ID; captured automatically"],
+  ["addressVersion", "1", "Current address CAS version; captured automatically"],
+  ["preferencesVersion", "1", "Current preference CAS version; captured automatically"],
+  ["privacyPurpose", "EXPORT", "DEACTIVATION, DELETION, or EXPORT"],
+  ["privacyRequestId", "", "Submitted privacy request ID; captured automatically"],
+] as const;
+
 function createEnvironment(input: {
   id: string;
   name: string;
@@ -420,6 +442,12 @@ function createEnvironment(input: {
         value,
         enabled: true,
         type: "secret",
+        description,
+      })),
+      ...customerEnvironmentValues.map(([key, value, description]) => ({
+        key,
+        value,
+        enabled: true,
         description,
       })),
     ],

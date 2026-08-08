@@ -9,7 +9,7 @@ const openApiParser = require('@apidevtools/swagger-parser') as OpenApiParser;
 describe('Cleanora Swagger OpenAPI document', () => {
   it('is a valid OpenAPI 3.1 document', async () => {
     await expect(
-      openApiParser.validate(cleanoraOpenApiDocument),
+      openApiParser.validate(structuredClone(cleanoraOpenApiDocument)),
     ).resolves.toBeDefined();
   });
 
@@ -21,7 +21,7 @@ describe('Cleanora Swagger OpenAPI document', () => {
           .filter((value): value is string => typeof value === 'string'),
     );
 
-    expect(operationIds).toHaveLength(24);
+    expect(operationIds).toHaveLength(45);
     expect(new Set(operationIds).size).toBe(operationIds.length);
     expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
       "/auth/google/result",
@@ -41,6 +41,49 @@ describe('Cleanora Swagger OpenAPI document', () => {
     expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
       "/internal/first-staff-admin/bootstrap",
     );
+  });
+
+  it('documents every R1-P04 customer operation and its locked request semantics', () => {
+    const customerOperations = Object.entries(cleanoraOpenApiDocument.paths)
+      .filter(([path]) => path.startsWith('/customers/'))
+      .flatMap(([path, pathItem]) =>
+        Object.entries(pathItem)
+          .filter(([method]) => ['get', 'post', 'put', 'delete'].includes(method))
+          .map(([method]) => `${method.toUpperCase()} ${path}`),
+      );
+
+    expect(customerOperations).toHaveLength(21);
+    expect(new Set(customerOperations).size).toBe(21);
+
+    const preferences =
+      cleanoraOpenApiDocument.components.schemas.PreferencesPutRequest;
+    expect(preferences.required).toContain('mandatory');
+    expect(preferences.properties.mandatory).toEqual({
+      $ref: '#/components/schemas/MandatoryNotices',
+    });
+
+    const mandatory =
+      cleanoraOpenApiDocument.components.schemas.MandatoryNotices;
+    expect(mandatory.required).toEqual([
+      'security',
+      'activeService',
+    ]);
+    expect(
+      mandatory.properties.security.properties.sms,
+    ).toEqual({ const: true });
+
+    expect(
+      cleanoraOpenApiDocument.paths['/customers/privacy-requests'].post
+        .responses,
+    ).toHaveProperty('201');
+    expect(
+      cleanoraOpenApiDocument.paths['/customers/addresses/{addressId}'].put
+        .responses,
+    ).toHaveProperty('404');
+    expect(
+      cleanoraOpenApiDocument.paths['/customers/profile-image'].delete
+        .responses,
+    ).toHaveProperty('404');
   });
 
   it('does not contain usable secrets in examples', () => {

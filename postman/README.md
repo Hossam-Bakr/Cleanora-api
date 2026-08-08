@@ -7,20 +7,26 @@
 > 🧪 **Local Swagger:** `http://localhost:8000/api/v1/docs`
 
 Cleanora is a modular-monolith backend for a multi-actor cleaning marketplace.
-This workspace documents and exercises the R1-P01 foundation and R1-P02
-authentication contracts without exporting credentials, OTPs, or tokens.
+This workspace documents and exercises the implemented foundation,
+authentication, and R1-P04 customer self-service contracts without exporting
+credentials, OTPs, tokens, Cloudinary identifiers, or signed media URLs.
 
 ---
 
 ## Quick Start
 
-1. Import the appropriate environment from `postman/environments/`.
-2. Import the generated R1-P02 authentication collection.
+1. Import `Cleanora-local.postman_environment.json` or
+   `Cleanora-railway.postman_environment.json`.
+2. Import the generated R1-P02 authentication collection and R1-P04 customer
+   self-service collection.
 3. Select the environment before sending any request.
 4. Confirm `GET {{hostUrl}}/system/health/live`.
-5. Read Swagger for request/response and error contracts.
-6. Enter private test identifiers and credentials only in your local Postman
-   environment.
+5. Run the R1-P02 login request so `accessToken` is captured.
+6. Use an ACTIVE identity with the verified category required by the selected
+   R1-P04 profile request.
+7. Read Swagger for request/response and error contracts.
+8. Enter private identifiers, credentials, and the local profile-image path
+   only in your private Postman environment.
 
 ```text
 Hosted API
@@ -160,6 +166,38 @@ GET    /auth/google/link
 DELETE /auth/social/google
 ```
 
+### R1-P04 customer self-service
+
+```http
+GET    /customers/profiles/individual
+PUT    /customers/profiles/individual
+GET    /customers/profiles/company
+PUT    /customers/profiles/company
+GET    /customers/profiles/engineer
+PUT    /customers/profiles/engineer
+GET    /customers/profile-image
+PUT    /customers/profile-image
+DELETE /customers/profile-image
+GET    /customers/contact-state
+GET    /customers/preferences
+PUT    /customers/preferences
+GET    /customers/addresses
+POST   /customers/addresses
+GET    /customers/addresses/{addressId}
+PUT    /customers/addresses/{addressId}
+DELETE /customers/addresses/{addressId}
+GET    /customers/privacy-requests
+POST   /customers/privacy-requests
+GET    /customers/privacy-requests/{privacyRequestId}
+POST   /customers/privacy-requests/{privacyRequestId}/cancel
+```
+
+The customer collection captures address, preference, profile-image
+association, and privacy-request identifiers/versions after successful
+responses. Profile-image upload uses multipart memory upload on the API; choose
+a local JPEG, PNG, or WebP no larger than 5 MiB. Postman never needs Cloudinary
+credentials.
+
 ---
 
 ## Environment Variables
@@ -178,6 +216,14 @@ DELETE /auth/social/google
 | `challengeId` | Latest verification challenge | Captured automatically |
 | `passwordResetCode` | Four-digit recovery code | Enter from email |
 | `accessToken` | Short-lived Bearer token | Captured automatically |
+| `profileImagePath` | Local JPEG/PNG/WebP for multipart upload | Enter privately |
+| `profileImageAssociationVersion` | Current image-association CAS token | Captured automatically |
+| `countryCode` | Active ISO alpha-2 country code | Environment |
+| `addressId` | Current owned address identifier | Captured automatically |
+| `addressVersion` | Current address CAS token | Captured automatically |
+| `preferencesVersion` | Current preference CAS token | Captured automatically |
+| `privacyPurpose` | `DEACTIVATION`, `DELETION`, or `EXPORT` | Environment |
+| `privacyRequestId` | Current privacy-request identifier | Captured automatically |
 
 Do not export a workspace containing real passwords, OTPs, access tokens, or
 provider credentials.
@@ -215,3 +261,10 @@ Validation failure:
 
 Swagger is the source of truth for each operation’s exact status codes,
 request body, response data, and safe error examples.
+
+Regenerate and validate the exported workspace with:
+
+```bash
+npm run postman:generate
+npm run postman:validate
+```

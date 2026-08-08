@@ -96,7 +96,7 @@ describe("canonical Auth Postman artifacts", () => {
     );
   });
 
-  it("has no second Auth or Google collection and exports only required variables", async () => {
+  it("has no second Auth or Google collection and shares the canonical environment", async () => {
     const files = await readdir(resolve("postman"));
     expect(
       files.filter((file) =>
@@ -123,6 +123,25 @@ describe("canonical Auth Postman artifacts", () => {
       "challengeId",
       "passwordResetCode",
       "accessToken",
+      "individualFullName",
+      "companyName",
+      "representativeFullName",
+      "engineerFullName",
+      "professionalTitle",
+      "profileImagePath",
+      "profileImageAssociationVersion",
+      "countryCode",
+      "city",
+      "district",
+      "addressText",
+      "building",
+      "floor",
+      "addressNotes",
+      "addressId",
+      "addressVersion",
+      "preferencesVersion",
+      "privacyPurpose",
+      "privacyRequestId",
     ]);
     expect(basename(environmentPath)).toBe(
       "Cleanora-local.postman_environment.json",

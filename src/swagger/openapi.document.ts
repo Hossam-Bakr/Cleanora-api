@@ -131,6 +131,23 @@ export const cleanoraOpenApiDocument = {
         "Internal owner-only staff_admin provisioning guarded by X-Owner-Admin-Secret and OWNER_ADMIN_API_ENABLED.",
     },
     {
+      name: "Customer Profiles",
+      description:
+        "Owner-private category profiles and one protected identity-wide profile image. Requires a Bearer principal with the matching verified customer category.",
+    },
+    {
+      name: "Customer Addresses",
+      description: "Owner-private text addresses. Countries must be active; coordinates and default-address behavior are unsupported.",
+    },
+    {
+      name: "Customer Preferences",
+      description: "Identity contact-state projection and complete language/notification preference replacement.",
+    },
+    {
+      name: "Customer Privacy Requests",
+      description: "Customer-owned request tracking only. Processing and privileged reassignment have no public HTTP surface.",
+    },
+    {
       name: "API Documentation",
       description:
         "Interactive Swagger UI and the machine-readable OpenAPI document.",
@@ -806,6 +823,124 @@ export const cleanoraOpenApiDocument = {
         },
       },
     },
+    "/customers/profiles/individual": {
+      get: {
+        tags: ["Customer Profiles"], operationId: "getIndividualProfile",
+        security: [{ bearerAuth: [] }],
+        responses: { "200": successResponse("The owned individual profile or explicit not-created state.", "CustomerProfileData"), "401": apiErrorResponse, "403": apiErrorResponse },
+      },
+      put: {
+        tags: ["Customer Profiles"], operationId: "putIndividualProfile",
+        security: [{ bearerAuth: [] }], requestBody: jsonRequest("IndividualProfileRequest", "A trimmed non-blank full name."),
+        responses: { "200": successResponse("The owned individual profile was saved.", "CustomerProfileData"), "400": apiErrorResponse, "401": apiErrorResponse, "403": apiErrorResponse },
+      },
+    },
+    "/customers/profiles/company": {
+      get: { tags: ["Customer Profiles"], operationId: "getCompanyProfile", security: [{ bearerAuth: [] }], responses: { "200": successResponse("The owned company profile or explicit not-created state.", "CustomerProfileData"), "401": apiErrorResponse, "403": apiErrorResponse } },
+      put: { tags: ["Customer Profiles"], operationId: "putCompanyProfile", security: [{ bearerAuth: [] }], requestBody: jsonRequest("CompanyProfileRequest", "Trimmed non-blank company and representative names."), responses: { "200": successResponse("The owned company profile was saved.", "CustomerProfileData"), "400": apiErrorResponse, "401": apiErrorResponse, "403": apiErrorResponse } },
+    },
+    "/customers/profiles/engineer": {
+      get: { tags: ["Customer Profiles"], operationId: "getEngineerProfile", security: [{ bearerAuth: [] }], responses: { "200": successResponse("The owned engineer profile or explicit not-created state.", "CustomerProfileData"), "401": apiErrorResponse, "403": apiErrorResponse } },
+      put: { tags: ["Customer Profiles"], operationId: "putEngineerProfile", security: [{ bearerAuth: [] }], requestBody: jsonRequest("EngineerProfileRequest", "A trimmed non-blank full name and professional title."), responses: { "200": successResponse("The owned engineer profile was saved.", "CustomerProfileData"), "400": apiErrorResponse, "401": apiErrorResponse, "403": apiErrorResponse } },
+    },
+    "/customers/profile-image": {
+      get: {
+        tags: ["Customer Profiles"],
+        operationId: "getProfileImage",
+        summary: "Return authorized signed profile-image URL or explicit absence",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": successResponse(
+            "Authorized signed Cloudinary delivery URL and safe metadata.",
+            "ProfileImageDeliveryData",
+          ),
+          "204": { description: "Explicit safe absence when no association exists." },
+          "401": apiErrorResponse,
+          "403": apiErrorResponse,
+        },
+      },
+      put: {
+        tags: ["Customer Profiles"],
+        operationId: "putProfileImage",
+        summary: "Always-replace identity-wide profile image (Cloudinary)",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: ["file", "expectedAssociationVersion"],
+                additionalProperties: false,
+                properties: {
+                  file: { type: "string", format: "binary" },
+                  expectedAssociationVersion: { type: "integer", minimum: 1 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": successResponse(
+            "Canonical customer profile aggregate including new signed profileImage.",
+            "CustomerProfileAggregateData",
+          ),
+          "400": apiErrorResponse,
+          "401": apiErrorResponse,
+          "403": apiErrorResponse,
+          "409": apiErrorResponse,
+        },
+      },
+      delete: {
+        tags: ["Customer Profiles"],
+        operationId: "deleteProfileImage",
+        summary: "Clear association with CAS; prior asset async cleanup",
+        security: [{ bearerAuth: [] }],
+        requestBody: jsonRequest(
+          "ProfileImageDeleteRequest",
+          "Required expectedAssociationVersion CAS token.",
+        ),
+        responses: {
+          "200": successResponse(
+            "The image association was removed.",
+            "ProfileImageRemovalData",
+          ),
+          "401": apiErrorResponse,
+          "403": apiErrorResponse,
+          "404": apiErrorResponse,
+          "409": apiErrorResponse,
+        },
+      },
+    },
+    "/customers/addresses": {
+      get: { tags: ["Customer Addresses"], operationId: "listCustomerAddresses", security: [{ bearerAuth: [] }], responses: { "200": successResponse("Owned peer addresses without a default designation.", "AddressListData"), "401": apiErrorResponse, "403": apiErrorResponse } },
+      post: { tags: ["Customer Addresses"], operationId: "createCustomerAddress", security: [{ bearerAuth: [] }], requestBody: jsonRequest("AddressWriteRequest", "A complete text address without geospatial attributes."), responses: { "201": successResponse("The owned address was created.", "AddressData"), "400": apiErrorResponse, "401": apiErrorResponse, "403": apiErrorResponse } },
+    },
+    "/customers/addresses/{addressId}": {
+      parameters: [{ name: "addressId", in: "path", required: true, schema: { type: "string" } }],
+      get: { tags: ["Customer Addresses"], operationId: "getCustomerAddress", security: [{ bearerAuth: [] }], responses: { "200": successResponse("The owned address was returned.", "AddressData"), "401": apiErrorResponse, "403": apiErrorResponse, "404": apiErrorResponse } },
+      put: { tags: ["Customer Addresses"], operationId: "updateCustomerAddress", security: [{ bearerAuth: [] }], requestBody: jsonRequest("AddressUpdateRequest", "A complete replacement address and its current version."), responses: { "200": successResponse("The owned address was updated.", "AddressData"), "400": apiErrorResponse, "401": apiErrorResponse, "403": apiErrorResponse, "404": apiErrorResponse, "409": apiErrorResponse } },
+      delete: { tags: ["Customer Addresses"], operationId: "deleteCustomerAddress", security: [{ bearerAuth: [] }], requestBody: jsonRequest("VersionRequest", "The currently accepted address version."), responses: { "200": successResponse("The address was removed from future selection.", "AddressRemovalData"), "401": apiErrorResponse, "403": apiErrorResponse, "404": apiErrorResponse, "409": apiErrorResponse } },
+    },
+    "/customers/contact-state": {
+      get: { tags: ["Customer Preferences"], operationId: "getCustomerContactState", security: [{ bearerAuth: [] }], responses: { "200": successResponse("Authoritative identity contact presence and verification state.", "ContactStateData"), "401": apiErrorResponse, "403": apiErrorResponse } },
+    },
+    "/customers/preferences": {
+      get: { tags: ["Customer Preferences"], operationId: "getCustomerPreferences", security: [{ bearerAuth: [] }], responses: { "200": successResponse("Current or default identity-wide preferences.", "PreferencesData"), "401": apiErrorResponse, "403": apiErrorResponse } },
+      put: { tags: ["Customer Preferences"], operationId: "replaceCustomerPreferences", security: [{ bearerAuth: [] }], requestBody: jsonRequest("PreferencesPutRequest", "A complete preference matrix and current version."), responses: { "200": successResponse("The complete preference set was saved.", "PreferencesData"), "400": apiErrorResponse, "401": apiErrorResponse, "403": apiErrorResponse, "409": apiErrorResponse } },
+    },
+    "/customers/privacy-requests": {
+      get: { tags: ["Customer Privacy Requests"], operationId: "listPrivacyRequests", security: [{ bearerAuth: [] }], responses: { "200": successResponse("Owned, unexpired privacy request metadata.", "PrivacyRequestListData"), "401": apiErrorResponse, "403": apiErrorResponse } },
+      post: { tags: ["Customer Privacy Requests"], operationId: "submitPrivacyRequest", security: [{ bearerAuth: [] }], requestBody: jsonRequest("PrivacyRequestSubmitRequest", "One deactivation, deletion, or export request. This does not fulfill the request."), responses: { "201": successResponse("The request was submitted or the existing active request was returned.", "PrivacyRequestData"), "400": apiErrorResponse, "401": apiErrorResponse, "403": apiErrorResponse } },
+    },
+    "/customers/privacy-requests/{privacyRequestId}": {
+      parameters: [{ name: "privacyRequestId", in: "path", required: true, schema: { type: "string" } }],
+      get: { tags: ["Customer Privacy Requests"], operationId: "getPrivacyRequest", security: [{ bearerAuth: [] }], responses: { "200": successResponse("Owned, unexpired privacy request metadata.", "PrivacyRequestData"), "401": apiErrorResponse, "403": apiErrorResponse, "404": apiErrorResponse } },
+    },
+    "/customers/privacy-requests/{privacyRequestId}/cancel": {
+      parameters: [{ name: "privacyRequestId", in: "path", required: true, schema: { type: "string" } }],
+      post: { tags: ["Customer Privacy Requests"], operationId: "cancelPrivacyRequest", security: [{ bearerAuth: [] }], responses: { "200": successResponse("The pending request was cancelled.", "PrivacyRequestData"), "401": apiErrorResponse, "403": apiErrorResponse, "404": apiErrorResponse, "409": apiErrorResponse } },
+    },
     "/docs": {
       get: {
         tags: ["API Documentation"],
@@ -1438,6 +1573,185 @@ export const cleanoraOpenApiDocument = {
           grantStatus: { type: "string", const: "ENABLED" },
         },
       },
+      IndividualProfileRequest: {
+        type: "object", additionalProperties: false, required: ["fullName"],
+        properties: { fullName: { type: "string", minLength: 1, maxLength: 200 } },
+      },
+      CompanyProfileRequest: {
+        type: "object", additionalProperties: false, required: ["companyName", "representativeFullName"],
+        properties: {
+          companyName: { type: "string", minLength: 1, maxLength: 200 },
+          representativeFullName: { type: "string", minLength: 1, maxLength: 200 },
+        },
+      },
+      EngineerProfileRequest: {
+        type: "object", additionalProperties: false, required: ["fullName", "professionalTitle"],
+        properties: {
+          fullName: { type: "string", minLength: 1, maxLength: 200 },
+          professionalTitle: { type: "string", minLength: 1, maxLength: 200 },
+        },
+      },
+      CustomerProfileData: {
+        type: "object", additionalProperties: false, required: ["category", "created"],
+        properties: {
+          category: { type: "string", enum: ["INDIVIDUAL", "COMPANY", "ENGINEER"] },
+          created: { type: "boolean" },
+          fullName: { type: "string" },
+          companyName: { type: "string" },
+          representativeFullName: { type: "string" },
+          professionalTitle: { type: "string" },
+        },
+      },
+      ProfileImageDeliveryData: {
+        type: "object",
+        additionalProperties: false,
+        required: ["mediaId", "url", "urlExpiresAt", "associationVersion"],
+        description:
+          "DEC-033 protected delivery. Never includes storage_key, public_id, folder, or Cloudinary credentials.",
+        properties: {
+          mediaId: {
+            type: "string",
+            description: "Opaque internal media identifier; not a Cloudinary public_id",
+          },
+          url: {
+            type: "string",
+            format: "uri",
+            description: "Authenticated/signed Cloudinary delivery URL; time-limited",
+          },
+          urlExpiresAt: { type: "string", format: "date-time" },
+          associationVersion: { type: "integer", minimum: 1 },
+          contentType: { type: "string", example: "image/webp" },
+          width: { type: "integer", minimum: 1 },
+          height: { type: "integer", minimum: 1 },
+        },
+      },
+      CustomerProfileAggregateData: {
+        type: "object",
+        additionalProperties: false,
+        required: ["profiles", "profileImage"],
+        properties: {
+          profiles: {
+            type: "array",
+            items: { $ref: "#/components/schemas/CustomerProfileData" },
+          },
+          profileImage: {
+            oneOf: [
+              { $ref: "#/components/schemas/ProfileImageDeliveryData" },
+              { type: "null" },
+            ],
+          },
+        },
+      },
+      ProfileImageDeleteRequest: {
+        type: "object",
+        additionalProperties: false,
+        required: ["expectedAssociationVersion"],
+        properties: {
+          expectedAssociationVersion: { type: "integer", minimum: 1 },
+        },
+      },
+      ProfileImageRemovalData: {
+        type: "object",
+        additionalProperties: false,
+        required: ["removed", "associationVersion"],
+        properties: {
+          removed: { type: "boolean", const: true },
+          associationVersion: { type: "integer", minimum: 1 },
+        },
+      },
+      AddressWriteRequest: {
+        type: "object", additionalProperties: false,
+        required: ["countryCode", "city", "district", "addressText"],
+        properties: {
+          countryCode: { type: "string", minLength: 2, maxLength: 2 },
+          city: { type: "string", minLength: 1, maxLength: 200 },
+          district: { type: "string", minLength: 1, maxLength: 200 },
+          addressText: { type: "string", minLength: 1, maxLength: 200 },
+          building: { type: ["string", "null"], maxLength: 200 },
+          floor: { type: ["string", "null"], maxLength: 200 },
+          notes: { type: ["string", "null"], maxLength: 200 },
+        },
+      },
+      AddressUpdateRequest: {
+        allOf: [
+          { $ref: "#/components/schemas/AddressWriteRequest" },
+          { type: "object", required: ["version"], properties: { version: { type: "integer", minimum: 1 } } },
+        ],
+      },
+      VersionRequest: {
+        type: "object", additionalProperties: false, required: ["version"],
+        properties: { version: { type: "integer", minimum: 1 } },
+      },
+      AddressData: {
+        type: "object", additionalProperties: false,
+        required: ["id", "countryCode", "city", "district", "addressText", "building", "floor", "notes", "version"],
+        properties: {
+          id: { type: "string" }, countryCode: { type: "string" }, city: { type: "string" },
+          district: { type: "string" }, addressText: { type: "string" },
+          building: { type: ["string", "null"] }, floor: { type: ["string", "null"] },
+          notes: { type: ["string", "null"] }, version: { type: "integer", minimum: 1 },
+        },
+      },
+      AddressListData: { type: "array", items: { $ref: "#/components/schemas/AddressData" } },
+      AddressRemovalData: {
+        type: "object", additionalProperties: false, required: ["removed"],
+        properties: { removed: { type: "boolean", const: true } },
+      },
+      ContactStateData: {
+        type: "object", additionalProperties: false, required: ["phone", "email"],
+        properties: {
+          phone: { $ref: "#/components/schemas/ContactValue" },
+          email: { $ref: "#/components/schemas/ContactValue" },
+        },
+      },
+      ContactValue: {
+        type: "object", additionalProperties: false, required: ["value", "verified"],
+        properties: { value: { type: ["string", "null"] }, verified: { type: "boolean" } },
+      },
+      PreferencesPutRequest: {
+        type: "object", additionalProperties: false,
+        required: ["version", "language", "reminders", "promotional", "mandatory"],
+        properties: {
+          version: { type: "integer", minimum: 1 },
+          language: { type: ["string", "null"], enum: ["AR", "EN", null] },
+          reminders: { $ref: "#/components/schemas/PreferenceChannels" },
+          promotional: { $ref: "#/components/schemas/PreferenceChannels" },
+          mandatory: { $ref: "#/components/schemas/MandatoryNotices" },
+        },
+      },
+      PreferenceChannels: {
+        type: "object", additionalProperties: false, required: ["sms", "push"],
+        properties: { sms: { type: "boolean" }, push: { type: "boolean" } },
+      },
+      MandatoryNotices: {
+        type: "object", additionalProperties: false, required: ["security", "activeService"],
+        properties: {
+          security: { type: "object", additionalProperties: false, required: ["sms", "push"], properties: { sms: { const: true }, push: { const: true } } },
+          activeService: { type: "object", additionalProperties: false, required: ["sms", "push"], properties: { sms: { const: true }, push: { const: true } } },
+        },
+      },
+      PreferencesData: {
+        allOf: [{ $ref: "#/components/schemas/PreferencesPutRequest" }],
+      },
+      PrivacyRequestSubmitRequest: {
+        type: "object", additionalProperties: false, required: ["purpose"],
+        properties: { purpose: { type: "string", enum: ["DEACTIVATION", "DELETION", "EXPORT"] } },
+      },
+      PrivacyRequestData: {
+        type: "object", additionalProperties: false,
+        required: ["id", "purpose", "status", "requestedAt", "updatedAt", "cancelledAt", "processingAt", "terminalAt", "outcomeCode"],
+        properties: {
+          id: { type: "string" },
+          purpose: { type: "string", enum: ["DEACTIVATION", "DELETION", "EXPORT"] },
+          status: { type: "string", enum: ["PENDING", "PROCESSING", "COMPLETED", "REJECTED", "CANCELLED"] },
+          requestedAt: { type: "string", format: "date-time" }, updatedAt: { type: "string", format: "date-time" },
+          cancelledAt: { type: ["string", "null"], format: "date-time" },
+          processingAt: { type: ["string", "null"], format: "date-time" },
+          terminalAt: { type: ["string", "null"], format: "date-time" },
+          outcomeCode: { type: ["string", "null"], enum: ["REQUEST_FULFILLED", "REQUEST_REJECTED", null] },
+        },
+      },
+      PrivacyRequestListData: { type: "array", items: { $ref: "#/components/schemas/PrivacyRequestData" } },
       SuccessEnvelope: {
         type: "object",
         required: ["success", "data", "requestId"],
