@@ -21,7 +21,7 @@ describe('Cleanora Swagger OpenAPI document', () => {
           .filter((value): value is string => typeof value === 'string'),
     );
 
-    expect(operationIds).toHaveLength(45);
+    expect(operationIds).toHaveLength(46);
     expect(new Set(operationIds).size).toBe(operationIds.length);
     expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
       "/auth/google/result",
@@ -52,8 +52,22 @@ describe('Cleanora Swagger OpenAPI document', () => {
           .map(([method]) => `${method.toUpperCase()} ${path}`),
       );
 
-    expect(customerOperations).toHaveLength(21);
-    expect(new Set(customerOperations).size).toBe(21);
+    expect(customerOperations).toHaveLength(22);
+    expect(new Set(customerOperations).size).toBe(22);
+
+    expect(
+      cleanoraOpenApiDocument.paths['/customers/me/overview'].get.responses,
+    ).toHaveProperty('200');
+    expect(
+      cleanoraOpenApiDocument.components.schemas.CustomerOverviewData.required,
+    ).toEqual([
+      'identity',
+      'profiles',
+      'profileImage',
+      'contactState',
+      'preferences',
+      'addresses',
+    ]);
 
     const preferences =
       cleanoraOpenApiDocument.components.schemas.PreferencesPutRequest;

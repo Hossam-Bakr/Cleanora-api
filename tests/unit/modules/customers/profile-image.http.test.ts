@@ -48,6 +48,7 @@ describe("customers profile-image HTTP surface", () => {
       addresses: {} as never,
       preferences: {} as never,
       privacyRequests: {} as never,
+      overview: {} as never,
     });
 
     const app = createTestApp({

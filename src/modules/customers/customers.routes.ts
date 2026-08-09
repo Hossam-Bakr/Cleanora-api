@@ -35,6 +35,7 @@ export function createCustomersRouter(
   const controller = createCustomersController(dependencies);
   const router = Router();
   router.use(dependencies.authenticateAccess);
+  router.get("/me/overview", controller.getOverview);
   router.get("/profiles/individual", controller.getIndividual);
   router.put(
     "/profiles/individual",

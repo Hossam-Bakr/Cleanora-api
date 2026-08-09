@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Cleanora R1-P04 Customer Self-Service API
-  version: 0.2.0-dec033
+  version: 0.3.0-overview
   description: |
     Customer authorization uses AuthenticationPrincipal + SELF + FR-028
     category eligibility (DEC-030). No customer role or resource.self.*
@@ -10,7 +10,9 @@ info:
     PUT to full-replacement semantics (version + complete matrix required;
     language AR/EN/null; omitted fields rejected). DEC-033 locks customer
     profile images to Cloudinary (Multer memoryStorage + Sharp + always-replace
-    + signed URL delivery); MEDIA_STORAGE_ROOT superseded.
+    + signed URL delivery); MEDIA_STORAGE_ROOT superseded. The customer
+    overview read provides one frontend bootstrap projection without merging
+    the independent write contracts.
 servers:
   - url: /api/v1
 tags:
@@ -19,6 +21,28 @@ tags:
   - name: CustomerAddresses
   - name: CustomerPrivacyRequests
 paths:
+  /customers/me/overview:
+    get:
+      tags: [CustomerProfiles]
+      operationId: getCustomerOverview
+      summary: Return the complete customer profile-screen projection
+      description: |
+        Returns the authenticated customer's supported category state, one
+        profile projection per verified category, shared profile image,
+        authoritative contact state, preferences, and all text addresses.
+        No primary category is inferred and this read performs no mutation.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Complete frontend projection for the authenticated customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerOverviewSuccessEnvelope"
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Identity is inactive or has no verified supported customer category
   /customers/profiles/individual:
     get:
       tags: [CustomerProfiles]
@@ -470,6 +494,127 @@ components:
       schema:
         type: string
   schemas:
+    SupportedCustomerCategory:
+      type: string
+      enum: [INDIVIDUAL, COMPANY, ENGINEER]
+    CustomerOverviewIdentity:
+      type: object
+      additionalProperties: false
+      required: [userId, status, accountCategories, verifiedCategories, pendingCategories]
+      properties:
+        userId:
+          type: string
+        status:
+          type: string
+          const: ACTIVE
+        accountCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportedCustomerCategory"
+        verifiedCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportedCustomerCategory"
+        pendingCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportedCustomerCategory"
+    CustomerOverviewProfile:
+      type: object
+      additionalProperties: false
+      required: [category, created]
+      properties:
+        category:
+          $ref: "#/components/schemas/SupportedCustomerCategory"
+        created:
+          type: boolean
+        fullName:
+          type: string
+        companyName:
+          type: string
+        representativeFullName:
+          type: string
+        professionalTitle:
+          type: string
+    CustomerOverviewContactValue:
+      type: object
+      additionalProperties: false
+      required: [value, verified]
+      properties:
+        value:
+          type: [string, "null"]
+        verified:
+          type: boolean
+    CustomerOverviewContactState:
+      type: object
+      additionalProperties: false
+      required: [phone, email]
+      properties:
+        phone:
+          $ref: "#/components/schemas/CustomerOverviewContactValue"
+        email:
+          $ref: "#/components/schemas/CustomerOverviewContactValue"
+    CustomerOverviewAddress:
+      type: object
+      additionalProperties: false
+      required: [id, countryCode, city, district, addressText, building, floor, notes, version]
+      properties:
+        id:
+          type: string
+        countryCode:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        addressText:
+          type: string
+        building:
+          type: [string, "null"]
+        floor:
+          type: [string, "null"]
+        notes:
+          type: [string, "null"]
+        version:
+          type: integer
+          minimum: 1
+    CustomerOverview:
+      type: object
+      additionalProperties: false
+      required: [identity, profiles, profileImage, contactState, preferences, addresses]
+      properties:
+        identity:
+          $ref: "#/components/schemas/CustomerOverviewIdentity"
+        profiles:
+          type: array
+          description: One entry per verified customer category; no primary category is inferred
+          items:
+            $ref: "#/components/schemas/CustomerOverviewProfile"
+        profileImage:
+          oneOf:
+            - $ref: "#/components/schemas/ProfileImage"
+            - type: "null"
+        contactState:
+          $ref: "#/components/schemas/CustomerOverviewContactState"
+        preferences:
+          $ref: "#/components/schemas/PreferencesUpdate"
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerOverviewAddress"
+    CustomerOverviewSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: "#/components/schemas/CustomerOverview"
+        requestId:
+          type: string
+          format: uuid
     ProfileImage:
       type: object
       required: [mediaId, url, urlExpiresAt, associationVersion]

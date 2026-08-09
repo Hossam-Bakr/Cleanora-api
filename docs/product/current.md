@@ -11,7 +11,7 @@
 | Frontend Owner | `Not applicable` |
 | Started At | `n/a` |
 | Completed At | `n/a` |
-| Last Updated | `2026-08-08` (R1-P04 Complete by human-owner approval; Cleanora incident remains separate and untouched) |
+| Last Updated | `2026-08-09` (post-completion DEC-034 customer overview read added; R1-P04 remains Complete; Cleanora incident remains separate and untouched) |
 
 ## Completed phase — R1-P04
 
@@ -31,6 +31,19 @@ DEC-030–033 locks remain authoritative for the shipped customers/media slice:
 trusted-principal + `SELF` customer authorization; staff_admin-only privileged
 privacy reassignment; closed privacy outcomes; full-replacement preference PUT;
 Cloudinary profile images with **`MEDIA_STORAGE_ROOT` superseded**.
+
+Post-completion **DEC-034** adds the read-only
+`GET /api/v1/customers/me/overview` frontend projection. It aggregates category
+state, verified-category profiles, profile image, contact state, preferences,
+and addresses without introducing a primary category or merging the existing
+write endpoints. This additive integration endpoint does not reactivate R1-P04.
+
+Proof-DB integration then exposed and repaired intermittent Prisma `P2028`
+transaction-pool exhaustion by bounding overview reads into two waves. Focused
+endpoint integration passed three consecutive runs; full unit passed
+119 files / 535 tests, full integration passed 52 files / 146 tests, and full
+coverage passed 171 files / 681 tests at 83.06% statements / 77.54% branches /
+86.11% functions / 84.59% lines.
 
 Historical implementation review **`CHANGES REQUIRED`**, historical first
 re-review **`BLOCKED`**, and historical later re-review **`CHANGES REQUIRED`**

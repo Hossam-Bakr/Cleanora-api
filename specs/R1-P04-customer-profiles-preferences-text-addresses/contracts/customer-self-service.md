@@ -15,6 +15,20 @@ All routes require authentication. Controllers are thin; Zod validates input;
 
 ## Endpoint families
 
+### Complete customer overview (frontend read projection)
+
+| Method | Path | Family | Behavior |
+|---|---|---|---|
+| GET | `/me/overview` | Profile-screen bootstrap | Returns the authenticated customer's supported `accountCategories`, `verifiedCategories`, and `pendingCategories`; one profile entry for every verified customer category; the shared profile image; contact state; preferences; and all addresses. No primary category is inferred. Requires an `ACTIVE` identity with at least one verified supported customer category. |
+
+The overview is a Customers-owned read orchestration over the existing services.
+It adds no table or write path, performs the component reads in bounded parallel
+waves after one aggregate authorization decision, and emits no audit on
+success. The bounded waves prevent one overview request from exhausting the
+Prisma transaction pool. Resource-specific GET/PUT/POST/DELETE endpoints remain
+available and all writes stay separate so their validation, CAS, transaction,
+and audit boundaries remain explicit.
+
 ### Profiles
 
 | Method | Path | Family | Behavior |

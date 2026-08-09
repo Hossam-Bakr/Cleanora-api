@@ -6,11 +6,13 @@ import { cleanoraOpenApiDocument } from "../src/swagger/openapi.document.js";
 interface PostmanRequest {
   readonly method: string;
   readonly url: string | { readonly raw?: string };
+  readonly body?: unknown;
 }
 
 interface PostmanItem {
   readonly name: string;
   readonly request?: PostmanRequest;
+  readonly response?: readonly { readonly name?: string }[];
   readonly item?: readonly PostmanItem[];
 }
 
@@ -41,8 +43,40 @@ function rawUrl(request: PostmanRequest): string {
 
 function normalizeCollectionRoute(url: string): string {
   return url
-    .replace(/^\{\{hostUrl\}\}/u, "")
+    .replace(/^\{\{(?:hostUrl|hostedUrl|localUrl)\}\}/u, "")
     .replace(/\{\{([^{}]+)\}\}/gu, "{$1}");
+}
+
+function targetFolder(
+  collection: PostmanCollection,
+  name: "Hosted" | "Local",
+): PostmanItem {
+  const folder = collection.item.find((item) => item.name === name);
+  assert(folder !== undefined, `Collection is missing the ${name} folder`);
+  return folder;
+}
+
+function assertSavedExamples(
+  collectionName: string,
+  items: readonly PostmanItem[],
+): void {
+  for (const item of items) {
+    if (item.request !== undefined) {
+      assert(
+        item.response?.some((response) => response.name === "Success") === true,
+        `${collectionName} / ${item.name} is missing the Success example`,
+      );
+      if (item.request.body !== undefined) {
+        assert(
+          item.response?.some(
+            (response) => response.name === "Sample of correct body",
+          ) === true,
+          `${collectionName} / ${item.name} is missing Sample of correct body`,
+        );
+      }
+    }
+    assertSavedExamples(collectionName, item.item ?? []);
+  }
 }
 
 function runtimeCustomerOperations(): string[] {
@@ -83,26 +117,43 @@ async function main(): Promise<void> {
     "R1-P04 collection must use Postman collection schema v2.1.0",
   );
 
-  const collectionOperations = collectRequests(collection.item)
-    .map(
-      (request) =>
-        `${request.method.toUpperCase()} ${normalizeCollectionRoute(rawUrl(request))}`,
-    )
-    .sort();
   const runtimeOperations = runtimeCustomerOperations();
+  for (const target of ["Hosted", "Local"] as const) {
+    const collectionOperations = collectRequests(
+      targetFolder(collection, target).item ?? [],
+    )
+      .map(
+        (request) =>
+          `${request.method.toUpperCase()} ${normalizeCollectionRoute(rawUrl(request))}`,
+      )
+      .sort();
+    assert(
+      collectionOperations.length === 22,
+      `R1-P04 ${target} folder must contain 22 requests; found ${collectionOperations.length}`,
+    );
+    assert(
+      new Set(collectionOperations).size === collectionOperations.length,
+      `R1-P04 ${target} folder contains duplicate method/path entries`,
+    );
+    assert(
+      JSON.stringify(collectionOperations) === JSON.stringify(runtimeOperations),
+      `R1-P04 ${target} operations differ from runtime Swagger.\nPostman: ${JSON.stringify(collectionOperations)}\nSwagger: ${JSON.stringify(runtimeOperations)}`,
+    );
+  }
+  assertSavedExamples("R1-P04", collection.item);
 
-  assert(
-    collectionOperations.length === 21,
-    `R1-P04 Postman collection must contain 21 requests; found ${collectionOperations.length}`,
-  );
-  assert(
-    new Set(collectionOperations).size === collectionOperations.length,
-    "R1-P04 Postman collection contains duplicate method/path entries",
-  );
-  assert(
-    JSON.stringify(collectionOperations) === JSON.stringify(runtimeOperations),
-    `R1-P04 Postman operations differ from runtime Swagger.\nPostman: ${JSON.stringify(collectionOperations)}\nSwagger: ${JSON.stringify(runtimeOperations)}`,
-  );
+  for (const file of [
+    "R1-P00-foundation.postman_collection.json",
+    "R1-P01-foundation-country-configuration.postman_collection.json",
+    "R1-P02-authentication.postman_collection.json",
+  ]) {
+    const phaseCollection = await parseJson<PostmanCollection>(
+      resolve(postmanDirectory, file),
+    );
+    targetFolder(phaseCollection, "Hosted");
+    targetFolder(phaseCollection, "Local");
+    assertSavedExamples(file, phaseCollection.item);
+  }
 
   const serializedCollection = await readFile(collectionPath, "utf8");
   for (const forbidden of [
@@ -150,6 +201,15 @@ async function main(): Promise<void> {
     const values = new Map(
       environment.values.map((entry) => [entry.key, entry.value]),
     );
+    assert(
+      values.get("hostedUrl") ===
+        "https://cleanora-production.up.railway.app/api/v1",
+      `${file} has an invalid hostedUrl`,
+    );
+    assert(
+      values.get("localUrl") === "http://localhost:8000/api/v1",
+      `${file} has an invalid localUrl`,
+    );
     for (const variable of requiredCustomerVariables) {
       assert(values.has(variable), `${file} is missing ${variable}`);
     }
@@ -162,7 +222,8 @@ async function main(): Promise<void> {
     `${JSON.stringify({
       ok: true,
       jsonFiles: jsonFiles.length,
-      r1P04Requests: collectionOperations.length,
+      r1P04RequestsPerTarget: runtimeOperations.length,
+      targets: ["Hosted", "Local"],
       runtimeParity: true,
       environments: 2,
     })}\n`,

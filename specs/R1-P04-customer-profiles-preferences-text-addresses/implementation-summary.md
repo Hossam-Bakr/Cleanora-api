@@ -557,3 +557,26 @@ gates: unit 117/530; integration 51/143; coverage 168/673 @ 83.03% / 77.3% /
 85.98% / 84.57%; SC-008 25 concurrent lanes (ratio 0.974; maxActiveLanes 25);
 live Cloudinary smoke PASS; typecheck/lint/build/docs/openapi/prisma/`git diff
 --check` PASS. See `completion-report.md`.
+
+---
+
+## Post-completion frontend overview endpoint (DEC-034, 2026-08-09)
+
+`GET /api/v1/customers/me/overview` was added as a Customers-owned read-only
+projection for initializing the customer profile screen. After one aggregate
+SELF/category authorization decision it returns supported category state, one
+profile projection for each verified category, the identity-wide profile image,
+contact state, preferences, and all addresses. Existing services retain their
+rules and persistence access; component reads run in bounded parallel waves to
+avoid exhausting the Prisma transaction pool; writes remain on their separate
+endpoints. No schema, migration, mutation, or success audit was added, and
+R1-P04 remains Complete rather than reactivated.
+
+The proof-DB endpoint regression test subsequently reproduced and repaired an
+intermittent Prisma `P2028` caused by launching every component transaction at
+once. After the bounded-wave repair, the focused endpoint integration passed
+three consecutive runs; full unit passed **119 files / 535 tests** and full
+integration passed **52 files / 146 tests**. Full coverage passed **171 files /
+681 tests** at **83.06% statements / 77.54% branches / 86.11% functions /
+84.59% lines**. See
+`customer-overview-bug-report.md`.

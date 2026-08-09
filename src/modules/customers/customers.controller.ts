@@ -7,6 +7,7 @@ import { ProfileService } from "./profile.service.js";
 import { AddressService } from "./address.service.js";
 import { PreferencesService } from "./preferences.service.js";
 import { PrivacyRequestService } from "./privacy-request.service.js";
+import { CustomerOverviewService } from "./customer-overview.service.js";
 import { sendSuccess } from "#shared/http/api-response";
 
 export interface CustomersControllerDependencies {
@@ -15,6 +16,7 @@ export interface CustomersControllerDependencies {
   readonly addresses: AddressService;
   readonly preferences: PreferencesService;
   readonly privacyRequests: PrivacyRequestService;
+  readonly overview: CustomerOverviewService;
 }
 
 export interface CustomersController {
@@ -39,6 +41,7 @@ export interface CustomersController {
   readonly listPrivacyRequests: RequestHandler;
   readonly getPrivacyRequest: RequestHandler;
   readonly cancelPrivacyRequest: RequestHandler;
+  readonly getOverview: RequestHandler;
 }
 
 function principal(response: Parameters<RequestHandler>[1]): AuthenticationPrincipal {
@@ -99,6 +102,18 @@ export function createCustomersController(
       }
     };
   return {
+    getOverview: async (request, response, next) => {
+      try {
+        sendSuccess(
+          request,
+          response,
+          200,
+          await dependencies.overview.get(principal(response), request.requestId),
+        );
+      } catch (error) {
+        next(error);
+      }
+    },
     getIndividual: readProfile("INDIVIDUAL"),
     putIndividual: putProfile("INDIVIDUAL"),
     getCompany: readProfile("COMPANY"),

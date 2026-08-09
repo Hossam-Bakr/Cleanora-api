@@ -34,7 +34,7 @@ function walk(
               folder: parents.join(" / "),
               method: item.request.method.toUpperCase(),
               route: raw
-                .replace("{{hostUrl}}", "")
+                .replace(/\{\{(?:hostUrl|hostedUrl|localUrl)\}\}/u, "")
                 .split("?")[0]!
                 .replace(/\/+$/u, ""),
             },
@@ -69,16 +69,26 @@ describe("canonical Auth Postman artifacts", () => {
       (request) => `${request.method} ${request.route}`,
     );
 
-    expect(requests).toHaveLength(17);
-    expect(new Set(keys).size).toBe(keys.length);
+    expect(document.item?.map((item) => item.name)).toEqual(["Hosted", "Local"]);
+    expect(requests).toHaveLength(34);
+    for (const target of ["Hosted", "Local"]) {
+      const targetRequests = requests.filter((request) =>
+        request.folder.startsWith(`${target} /`),
+      );
+      const targetKeys = targetRequests.map(
+        (request) => `${request.method} ${request.route}`,
+      );
+      expect(targetRequests).toHaveLength(17);
+      expect(new Set(targetKeys).size).toBe(targetKeys.length);
+    }
     expect(
       requests.filter((request) =>
-        request.folder.startsWith("Google Authentication"),
+        request.folder.includes("Google Authentication"),
       ),
-    ).toHaveLength(5);
+    ).toHaveLength(10);
     expect(
       requests.filter((request) => request.folder.includes("Google")),
-    ).toHaveLength(5);
+    ).toHaveLength(10);
     expect(keys).toEqual(
       expect.arrayContaining([
         "POST /auth/signup",
@@ -112,6 +122,8 @@ describe("canonical Auth Postman artifacts", () => {
     ) as PostmanDocument;
     expect(environment.values?.map((value) => value.key)).toEqual([
       "hostUrl",
+      "hostedUrl",
+      "localUrl",
       "swaggerUrl",
       "frontendUrl",
       "origin",

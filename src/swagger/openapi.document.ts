@@ -823,6 +823,24 @@ export const cleanoraOpenApiDocument = {
         },
       },
     },
+    "/customers/me/overview": {
+      get: {
+        tags: ["Customer Profiles"],
+        operationId: "getCustomerOverview",
+        summary: "Return the complete customer profile-screen projection",
+        description:
+          "Returns identity category state plus every verified category profile, the shared profile image, contact state, preferences, and addresses. It does not choose a primary category and performs no mutation.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": successResponse(
+            "Complete frontend projection for the authenticated customer.",
+            "CustomerOverviewData",
+          ),
+          "401": apiErrorResponse,
+          "403": apiErrorResponse,
+        },
+      },
+    },
     "/customers/profiles/individual": {
       get: {
         tags: ["Customer Profiles"], operationId: "getIndividualProfile",
@@ -1640,6 +1658,69 @@ export const cleanoraOpenApiDocument = {
               { type: "null" },
             ],
           },
+        },
+      },
+      SupportedCustomerCategory: {
+        type: "string",
+        enum: ["INDIVIDUAL", "COMPANY", "ENGINEER"],
+      },
+      CustomerOverviewIdentityData: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "userId",
+          "status",
+          "accountCategories",
+          "verifiedCategories",
+          "pendingCategories",
+        ],
+        properties: {
+          userId: { type: "string" },
+          status: { type: "string", const: "ACTIVE" },
+          accountCategories: {
+            type: "array",
+            items: { $ref: "#/components/schemas/SupportedCustomerCategory" },
+          },
+          verifiedCategories: {
+            type: "array",
+            items: { $ref: "#/components/schemas/SupportedCustomerCategory" },
+          },
+          pendingCategories: {
+            type: "array",
+            items: { $ref: "#/components/schemas/SupportedCustomerCategory" },
+          },
+        },
+      },
+      CustomerOverviewData: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "identity",
+          "profiles",
+          "profileImage",
+          "contactState",
+          "preferences",
+          "addresses",
+        ],
+        properties: {
+          identity: {
+            $ref: "#/components/schemas/CustomerOverviewIdentityData",
+          },
+          profiles: {
+            type: "array",
+            description:
+              "One profile projection for each verified supported customer category; no primary category is inferred.",
+            items: { $ref: "#/components/schemas/CustomerProfileData" },
+          },
+          profileImage: {
+            oneOf: [
+              { $ref: "#/components/schemas/ProfileImageDeliveryData" },
+              { type: "null" },
+            ],
+          },
+          contactState: { $ref: "#/components/schemas/ContactStateData" },
+          preferences: { $ref: "#/components/schemas/PreferencesData" },
+          addresses: { $ref: "#/components/schemas/AddressListData" },
         },
       },
       ProfileImageDeleteRequest: {

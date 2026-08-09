@@ -840,3 +840,31 @@ images.
 17. A future `s3` value remains unsupported in R1-P04 and fails readiness clearly.
 18. `MEDIA_STORAGE_ROOT` and local filesystem storage are removed.
 19. Video/PDF/provider media remain outside R1-P04.
+
+---
+
+## DEC-034 — Customer profile-screen overview read projection
+
+**Date:** 2026-08-09
+**Status:** Approved by human owner as a post-completion R1-P04 frontend-integration enhancement
+
+The frontend needs one read request to initialize the authenticated customer's
+profile screen without collapsing the existing resource-specific write
+contracts.
+
+- Add `GET /api/v1/customers/me/overview` under the Customers module.
+- Require an `ACTIVE` identity with at least one verified supported customer
+  category (`INDIVIDUAL`, `COMPANY`, or `ENGINEER`).
+- Return supported account, verified, and pending category state; one profile
+  projection for every verified customer category; the identity-wide profile
+  image; authoritative contact state; preferences; and all owned addresses.
+- Do not infer or persist a primary category. Cleanora supports multiple
+  customer categories on one identity.
+- Keep all profile, image, preference, and address mutations on their existing
+  resource-specific endpoints so validation, optimistic concurrency,
+  transaction ownership, and audit boundaries remain explicit.
+- Implement the overview as read-only orchestration over existing Customers
+  services after one aggregate authorization decision. It owns no persistence,
+  adds no schema or migration, and emits no success audit.
+- This focused additive endpoint does not reopen or reactivate the completed
+  R1-P04 phase.

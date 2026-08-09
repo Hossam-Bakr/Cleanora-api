@@ -1,6 +1,13 @@
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
+import {
+  createExamples,
+  createTargetFolders,
+  type PostmanItem,
+  type PostmanRequest,
+} from "./postman-collection-helpers.js";
+
 type Header = { key: string; value: string };
 
 const hostUrl = "{{hostUrl}}";
@@ -21,17 +28,41 @@ const safeUser = {
   pendingCategories: [],
 };
 
-function successBody(data: object): string {
-  return JSON.stringify(
-    {
-      success: true,
-      data,
-      requestId: "7ebf45ad-7384-41ab-8e74-e864ae048d30",
-    },
-    null,
-    2,
-  );
-}
+const bodyGuidance: Readonly<Record<string, readonly string[]>> = {
+  "/auth/signup": [
+    "accountCategory: INDIVIDUAL, COMPANY, ENGINEER, or PROVIDER_OWNER.",
+    "phone: required E.164 contact value such as +201001234567.",
+    "email: required normalized email that receives the verification OTP.",
+    "password: use the private testPassword value; never commit a real password.",
+  ],
+  "/auth/otp/request": [
+    "challengeId: opaque ID returned by Signup; do not invent or reuse an expired ID.",
+  ],
+  "/auth/otp/verify": [
+    "challengeId: current signup/category-verification challenge.",
+    "code: six-digit OTP received at the account email.",
+  ],
+  "/auth/login": [
+    "phone: normalized E.164 account phone.",
+    "password: current private account password.",
+  ],
+  "/auth/password/forgot": [
+    "accountCategory: category whose password credential is being recovered.",
+    "identifier: normalized account email; the response remains enumeration-safe.",
+  ],
+  "/auth/password/reset": [
+    "challengeId: opaque ID returned by Forgot Password.",
+    "code: four-digit recovery code delivered to the account email.",
+    "newPassword: replacement password satisfying the documented password policy.",
+  ],
+  "/auth/account-categories": [
+    "accountCategory: additional eligible category to enroll; WORKER self-enrollment is forbidden.",
+  ],
+  "/auth/password/change": [
+    "currentPassword: current account password.",
+    "newPassword: different replacement password satisfying the policy.",
+  ],
+};
 
 function requestItem(input: {
   name: string;
@@ -66,7 +97,7 @@ function requestItem(input: {
       ];
   const rawBody =
     input.body === undefined ? undefined : JSON.stringify(input.body, null, 2);
-  const request = {
+  const request: PostmanRequest = {
     method: input.method,
     ...(input.noAuth === true ? { auth: { type: "noauth" } } : {}),
     header: headers,
@@ -91,21 +122,14 @@ function requestItem(input: {
       },
     ],
     request,
-    response:
-      input.example === undefined
-        ? []
-        : [
-            {
-              name: "Success",
-              originalRequest: request,
-              status: input.status === 202 ? "Accepted" : "OK",
-              code: input.status ?? 200,
-              _postman_previewlanguage: "json",
-              header: [{ key: "Content-Type", value: "application/json" }],
-              cookie: [],
-              body: successBody(input.example),
-            },
-          ],
+    response: createExamples(request, {
+      successData: input.example ?? { documentedBrowserFlow: true },
+      status: input.browserOnly === true ? 302 : (input.status ?? 200),
+      ...(bodyGuidance[input.route] === undefined
+        ? {}
+        : { bodyComments: bodyGuidance[input.route] }),
+      ...(input.browserOnly === true ? { responseBody: "" } : {}),
+    }),
   };
 }
 
@@ -114,7 +138,7 @@ const collection = {
     _postman_id: "91076ea2-1262-4ee5-99ab-42a13ecb2ed5",
     name: "Cleanora R1-P02 Authentication",
     description:
-      "Canonical R1-P02 Auth API collection. It contains exactly one request per implemented method and route. Error cases such as duplicate signup identifiers, invalid credentials, weak passwords, and invalid OTPs are response examples in Swagger, not fake API requests. Refresh credentials remain in the cookie jar and secrets remain empty in exported environments.\n\n> ⚠️ **Hey Bassam, you can visit Swagger docs here, my bro:** http://localhost:8000/api/v1/docs ⚠️\n\nRailway Swagger: https://cleanora-production.up.railway.app/api/v1/docs",
+      "Canonical R1-P02 Auth API collection with explicit Hosted and Local folders. Every request includes a saved Success example; requests with bodies also include a commented Sample of correct body. Hosted request names identify email flows blocked while Railway SMTP is unavailable. Refresh credentials remain in the cookie jar and secrets remain empty in exported environments.\n\nLocal Swagger: http://localhost:8000/api/v1/docs\nRailway Swagger: https://cleanora-production.up.railway.app/api/v1/docs",
     schema:
       "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
   },
@@ -364,6 +388,24 @@ const collection = {
   ],
 };
 
+const exportedCollection = {
+  ...collection,
+  item: createTargetFolders(collection.item as readonly PostmanItem[], {
+    hostedNameOverrides: {
+      "POST /auth/signup":
+        "Signup (not working: Hosted SMTP unavailable — run locally)",
+      "POST /auth/otp/request":
+        "Request OTP (not working: Hosted SMTP unavailable — run locally)",
+      "POST /auth/otp/verify":
+        "Verify OTP (requires an OTP from the local email flow)",
+      "POST /auth/password/forgot":
+        "Forgot Password (not working: Hosted SMTP unavailable — run locally)",
+      "POST /auth/password/reset":
+        "Reset Password (requires a recovery code from the local email flow)",
+    },
+  }),
+};
+
 const secretEnvironmentValues = [
   ["testEmail", "", "Test account email; provide only in your private workspace"],
   ["testPhone", "", "Test account phone in E.164 format"],
@@ -417,6 +459,18 @@ function createEnvironment(input: {
         enabled: true,
         description:
           "Selected Cleanora API root. Every collection request resolves from this variable.",
+      },
+      {
+        key: "hostedUrl",
+        value: "https://cleanora-production.up.railway.app/api/v1",
+        enabled: true,
+        description: "Fixed API root used by every Hosted folder.",
+      },
+      {
+        key: "localUrl",
+        value: "http://localhost:8000/api/v1",
+        enabled: true,
+        description: "Fixed API root used by every Local folder.",
       },
       {
         key: "swaggerUrl",
@@ -474,7 +528,7 @@ async function main(): Promise<void> {
   await Promise.all([
     writeFile(
       resolve("postman/R1-P02-authentication.postman_collection.json"),
-      `${JSON.stringify(collection, null, 2)}\n`,
+      `${JSON.stringify(exportedCollection, null, 2)}\n`,
       "utf8",
     ),
     writeFile(

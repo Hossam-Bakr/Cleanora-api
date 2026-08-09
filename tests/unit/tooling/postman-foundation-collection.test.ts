@@ -22,28 +22,43 @@ describe("R1-P01 Postman collection", () => {
         "utf8"
       )
     ) as { readonly item: PostmanItem[] };
-    const healthFolder = collection.item.find((item) => item.name === "System health");
-    expect(healthFolder).toBeDefined();
+    expect(collection.item.map((item) => item.name)).toEqual(["Hosted", "Local"]);
 
-    for (const name of ["Live", "Ready", "Database"]) {
-      const request = healthFolder?.item?.find((item) => item.name === name);
-      const testScript = request?.event
-        ?.find((event) => event.listen === "test")
-        ?.script?.exec?.join("\n");
+    for (const target of ["Hosted", "Local"]) {
+      const targetFolder = collection.item.find((item) => item.name === target);
+      const healthFolder = targetFolder?.item?.find(
+        (item) => item.name === "System health",
+      );
+      expect(healthFolder).toBeDefined();
 
-      expect(testScript, `${name} test script`).toContain("pm.response.code");
-      expect(testScript, `${name} success envelope`).toContain("body.success");
-      expect(testScript, `${name} requestId body`).toContain("body.requestId");
-      expect(testScript, `${name} requestId header`).toContain("x-request-id");
+      for (const name of ["Live", "Ready", "Database"]) {
+        const request = healthFolder?.item?.find((item) => item.name === name);
+        const testScript = request?.event
+          ?.find((event) => event.listen === "test")
+          ?.script?.exec?.join("\n");
+
+        expect(testScript, `${target} ${name} test script`).toContain(
+          "pm.response.code",
+        );
+        expect(testScript, `${target} ${name} success envelope`).toContain(
+          "body.success",
+        );
+        expect(testScript, `${target} ${name} requestId body`).toContain(
+          "body.requestId",
+        );
+        expect(testScript, `${target} ${name} requestId header`).toContain(
+          "x-request-id",
+        );
+      }
+
+      const readyScript = healthFolder?.item
+        ?.find((item) => item.name === "Ready")
+        ?.event?.[0]?.script?.exec?.join("\n");
+      const databaseScript = healthFolder?.item
+        ?.find((item) => item.name === "Database")
+        ?.event?.[0]?.script?.exec?.join("\n");
+      expect(readyScript).toContain("DEPENDENCY_NOT_READY");
+      expect(databaseScript).toContain("DATABASE_UNAVAILABLE");
     }
-
-    const readyScript = healthFolder?.item
-      ?.find((item) => item.name === "Ready")
-      ?.event?.[0]?.script?.exec?.join("\n");
-    const databaseScript = healthFolder?.item
-      ?.find((item) => item.name === "Database")
-      ?.event?.[0]?.script?.exec?.join("\n");
-    expect(readyScript).toContain("DEPENDENCY_NOT_READY");
-    expect(databaseScript).toContain("DATABASE_UNAVAILABLE");
   });
 });

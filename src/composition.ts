@@ -43,6 +43,7 @@ import { PrismaProfileRepository } from "#modules/customers/infrastructure/prism
 import { ProfileImageService } from "#modules/customers/profile-image.service";
 import { ProfileService } from "#modules/customers/profile.service";
 import { createCustomersRouter } from "#modules/customers/customers.routes";
+import { CustomerOverviewService } from "#modules/customers/customer-overview.service";
 import { createMediaPendingUploadPort, createMediaStoragePort } from "#modules/media/infrastructure/media-provider.factory";
 import { SharpProfileImageProcessor } from "#modules/media/infrastructure/sharp-profile-image.processor";
 import { PrismaMediaRepository } from "#modules/media/infrastructure/prisma-media.repository";
@@ -212,37 +213,48 @@ export function createRuntimeDependencies(
           const pendingUploads = createMediaPendingUploadPort();
           const profileRepository = new PrismaProfileRepository();
           const processor = new SharpProfileImageProcessor();
+          const profiles = new ProfileService(
+            unitOfWork,
+            profileRepository,
+            denialAudit,
+          );
+          const profileImages = new ProfileImageService(
+            unitOfWork,
+            mediaSelection.storage,
+            processor,
+            pendingUploads,
+            profileRepository,
+            denialAudit,
+            environment.CLOUDINARY_PROFILE_IMAGE_FOLDER,
+            mediaSelection.signedUrlTtlSeconds,
+          );
+          const addresses = new AddressService(
+            unitOfWork,
+            new PrismaAddressRepository(),
+            {
+              resolveActiveCountry: async (countryCode) => {
+                return { id: await getActiveCountryIdByCode(countryCode) };
+              },
+            },
+            denialAudit,
+          );
+          const preferences = new PreferencesService(
+            unitOfWork,
+            new PrismaPreferencesRepository(),
+            new IdentityContactRead(authentication.identityContactReader),
+            denialAudit,
+          );
           return createCustomersRouter({
             authenticateAccess: authentication.authenticateAccess,
-            profiles: new ProfileService(
-              unitOfWork,
-              profileRepository,
-              denialAudit,
-            ),
-            profileImages: new ProfileImageService(
-              unitOfWork,
-              mediaSelection.storage,
-              processor,
-              pendingUploads,
-              profileRepository,
-              denialAudit,
-              environment.CLOUDINARY_PROFILE_IMAGE_FOLDER,
-              mediaSelection.signedUrlTtlSeconds,
-            ),
-            addresses: new AddressService(
-              unitOfWork,
-              new PrismaAddressRepository(),
-              {
-                resolveActiveCountry: async (countryCode) => {
-                  return { id: await getActiveCountryIdByCode(countryCode) };
-                },
-              },
-              denialAudit,
-            ),
-            preferences: new PreferencesService(
-              unitOfWork,
-              new PrismaPreferencesRepository(),
-              new IdentityContactRead(authentication.identityContactReader),
+            profiles,
+            profileImages,
+            addresses,
+            preferences,
+            overview: new CustomerOverviewService(
+              profiles,
+              profileImages,
+              addresses,
+              preferences,
               denialAudit,
             ),
             privacyRequests: new PrivacyRequestService(

@@ -1,35 +1,192 @@
 {
   "info": {
-    "_postman_id": "534205cd-61cf-4f16-95b5-4966f792cba3",
+    "_postman_id": "9b38f4ae-657c-47db-a8d3-815d0dd0f000",
     "name": "Cleanora R1-P00 Foundation",
-    "description": "Implemented system health and readiness APIs.\n\n> ⚠️ **Hey Bassam, you can visit Swagger docs here, my bro:** http://localhost:8000/api/v1/docs ⚠️",
+    "description": "R1-P00 foundation health endpoints, duplicated into explicit Hosted and Local folders. Every request includes a saved Success example.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "System",
+      "name": "Hosted",
       "item": [
         {
-          "name": "Liveness",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{hostUrl}}/system/health/live",
-              "host": ["{{hostUrl}}"],
-              "path": ["system", "health", "live"]
+          "name": "System",
+          "item": [
+            {
+              "name": "Liveness",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostedUrl}}/system/health/live",
+                "description": "Confirms that the API process is alive."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostedUrl}}/system/health/live",
+                    "description": "Confirms that the API process is alive."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"status\": \"ok\",\n    \"service\": \"cleanora-backend\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Readiness",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostedUrl}}/system/health/ready",
+                "description": "Confirms that required runtime dependencies are ready."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostedUrl}}/system/health/ready",
+                    "description": "Confirms that required runtime dependencies are ready."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"status\": \"ready\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
             }
-          }
-        },
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Local",
+      "item": [
         {
-          "name": "Readiness",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{hostUrl}}/system/health/ready",
-              "host": ["{{hostUrl}}"],
-              "path": ["system", "health", "ready"]
+          "name": "System",
+          "item": [
+            {
+              "name": "Liveness",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{localUrl}}/system/health/live",
+                "description": "Confirms that the API process is alive."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{localUrl}}/system/health/live",
+                    "description": "Confirms that the API process is alive."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"status\": \"ok\",\n    \"service\": \"cleanora-backend\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Readiness",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{localUrl}}/system/health/ready",
+                "description": "Confirms that required runtime dependencies are ready."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{localUrl}}/system/health/ready",
+                    "description": "Confirms that required runtime dependencies are ready."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"status\": \"ready\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
             }
-          }
+          ]
         }
       ]
     }
