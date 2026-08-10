@@ -120,10 +120,12 @@ const collection = {
           name: "Put Company Profile",
           method: "PUT",
           route: "/customers/profiles/company",
-          description: "Creates or replaces the owned Company profile fields.",
+          description: "Creates or replaces the owned Company profile, including nullable commercial and tax registration identifiers.",
           rawBody: `{
   "companyName": "{{companyName}}",
-  "representativeFullName": "{{representativeFullName}}"
+  "representativeFullName": "{{representativeFullName}}",
+  "commercialRegistrationNumber": "{{commercialRegistrationNumber}}",
+  "taxRegistrationNumber": "{{taxRegistrationNumber}}"
 }`,
         }),
         requestItem({

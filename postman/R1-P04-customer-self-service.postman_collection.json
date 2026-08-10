@@ -165,7 +165,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"companyName\": \"{{companyName}}\",\n  \"representativeFullName\": \"{{representativeFullName}}\"\n}",
+              "raw": "{\n  \"companyName\": \"{{companyName}}\",\n  \"representativeFullName\": \"{{representativeFullName}}\",\n  \"commercialRegistrationNumber\": \"{{commercialRegistrationNumber}}\",\n  \"taxRegistrationNumber\": \"{{taxRegistrationNumber}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -173,7 +173,7 @@
               }
             },
             "url": "{{hostUrl}}/customers/profiles/company",
-            "description": "Creates or replaces the owned Company profile fields."
+            "description": "Creates or replaces the owned Company profile, including nullable commercial and tax registration identifiers."
           },
           "response": []
         },

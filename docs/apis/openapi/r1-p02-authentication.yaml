@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Cleanora Authentication API
-  version: 1.0.0
-  description: R1-P02 identity, verification, session, recovery, and individual Google authentication.
+  version: 1.1.0
+  description: Authentication plus R1-P04A category-aware customer signup with email-only activation for every supported category.
 servers:
   - url: https://cleanora-production.up.railway.app/api/v1
     description: Railway hosted API (default)
@@ -58,11 +58,23 @@ components:
     AccountCategory: { type: string, enum: [INDIVIDUAL, COMPANY, ENGINEER, PROVIDER_OWNER, WORKER] }
     AuthNextAction: { type: string, enum: [VERIFY_ACCOUNT, LOGIN, CONTINUE] }
     SignupInput:
-      type: object
-      additionalProperties: false
-      required: [accountCategory, phone, email, password]
-      properties: { accountCategory: { $ref: '#/components/schemas/SelfSignupCategory' }, phone: { type: string, description: International E.164 phone; spaces parentheses and hyphens are normalized }, email: { type: string, format: email }, password: { type: string, minLength: 7, maxLength: 128, description: Numbers-only is allowed; common, repeated, and sequential passwords are rejected } }
-    EnrollInput: { type: object, additionalProperties: false, required: [accountCategory], properties: { accountCategory: { $ref: '#/components/schemas/SelfSignupCategory' } } }
+      oneOf:
+        - { $ref: '#/components/schemas/IndividualSignupInput' }
+        - { $ref: '#/components/schemas/CompanySignupInput' }
+        - { $ref: '#/components/schemas/EngineerSignupInput' }
+        - { $ref: '#/components/schemas/ProviderOwnerSignupInput' }
+      discriminator: { propertyName: accountCategory }
+    IndividualSignupInput: { type: object, additionalProperties: false, required: [accountCategory, fullName, phone, email, password], properties: { accountCategory: { type: string, const: INDIVIDUAL }, fullName: { type: string, minLength: 1, maxLength: 200 }, phone: { type: string }, email: { type: string, format: email }, password: { type: string, minLength: 7, maxLength: 128 } } }
+    CompanySignupInput: { type: object, additionalProperties: false, required: [accountCategory, companyName, representativeFullName, phone, email, password], properties: { accountCategory: { type: string, const: COMPANY }, companyName: { type: string, minLength: 1, maxLength: 200 }, representativeFullName: { type: string, minLength: 1, maxLength: 200 }, phone: { type: string }, email: { type: string, format: email }, password: { type: string, minLength: 7, maxLength: 128 } } }
+    EngineerSignupInput: { type: object, additionalProperties: false, required: [accountCategory, fullName, professionalTitle, phone, email, password], properties: { accountCategory: { type: string, const: ENGINEER }, fullName: { type: string, minLength: 1, maxLength: 200 }, professionalTitle: { type: string, minLength: 1, maxLength: 200 }, phone: { type: string }, email: { type: string, format: email }, password: { type: string, minLength: 7, maxLength: 128 } } }
+    ProviderOwnerSignupInput: { type: object, additionalProperties: false, required: [accountCategory, phone, email, password], properties: { accountCategory: { type: string, const: PROVIDER_OWNER }, phone: { type: string }, email: { type: string, format: email }, password: { type: string, minLength: 7, maxLength: 128 } } }
+    EnrollInput:
+      oneOf:
+        - { type: object, additionalProperties: false, required: [accountCategory, fullName], properties: { accountCategory: { type: string, const: INDIVIDUAL }, fullName: { type: string, minLength: 1, maxLength: 200 } } }
+        - { type: object, additionalProperties: false, required: [accountCategory, companyName, representativeFullName], properties: { accountCategory: { type: string, const: COMPANY }, companyName: { type: string, minLength: 1, maxLength: 200 }, representativeFullName: { type: string, minLength: 1, maxLength: 200 } } }
+        - { type: object, additionalProperties: false, required: [accountCategory, fullName, professionalTitle], properties: { accountCategory: { type: string, const: ENGINEER }, fullName: { type: string, minLength: 1, maxLength: 200 }, professionalTitle: { type: string, minLength: 1, maxLength: 200 } } }
+        - { type: object, additionalProperties: false, required: [accountCategory], properties: { accountCategory: { type: string, const: PROVIDER_OWNER } } }
+      discriminator: { propertyName: accountCategory }
     OtpRequestInput:
       type: object
       additionalProperties: false
@@ -157,8 +169,26 @@ components:
             details: { type: object, additionalProperties: true, description: Optional safe details; validation failures include every independently detectable invalid field in details.issues }
         requestId: { type: string, format: uuid }
   requestBodies:
-    Signup: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SignupInput' } } } }
-    Enroll: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/EnrollInput' } } } }
+    Signup:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SignupInput' }
+          examples:
+            individual: { summary: Individual — email activation, value: { accountCategory: INDIVIDUAL, fullName: Cleanora Individual, phone: '+201000000001', email: individual@example.test, password: '4829517' } }
+            company: { summary: Company — email activation, value: { accountCategory: COMPANY, companyName: Cleanora Services, representativeFullName: Cleanora Representative, phone: '+201000000002', email: company@example.test, password: '4829517' } }
+            engineer: { summary: Engineer — email activation, value: { accountCategory: ENGINEER, fullName: Cleanora Engineer, professionalTitle: Cleaning Engineer, phone: '+201000000003', email: engineer@example.test, password: '4829517' } }
+            providerOwner: { summary: Provider Owner — email activation, value: { accountCategory: PROVIDER_OWNER, phone: '+201000000004', email: owner@example.test, password: '4829517' } }
+    Enroll:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/EnrollInput' }
+          examples:
+            individual: { summary: Enroll Individual, value: { accountCategory: INDIVIDUAL, fullName: Cleanora Individual } }
+            company: { summary: Enroll Company, value: { accountCategory: COMPANY, companyName: Cleanora Services, representativeFullName: Cleanora Representative } }
+            engineer: { summary: Enroll Engineer, value: { accountCategory: ENGINEER, fullName: Cleanora Engineer, professionalTitle: Cleaning Engineer } }
+            providerOwner: { summary: Enroll Provider Owner, value: { accountCategory: PROVIDER_OWNER } }
     OtpRequest: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OtpRequestInput' } } } }
     OtpVerify: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/OtpVerifyInput' } } } }
     Login: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LoginInput' } } } }

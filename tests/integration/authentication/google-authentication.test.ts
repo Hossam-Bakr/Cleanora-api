@@ -56,6 +56,14 @@ describe("Google individual authentication", () => {
         },
       });
       expect(context.email.all()).toHaveLength(0);
+      const user = await context.prisma.user.findUniqueOrThrow({
+        where: { emailNormalized: identity.email },
+      });
+      await expect(
+        context.prisma.individualProfile.findUniqueOrThrow({
+          where: { userId: user.id },
+        }),
+      ).resolves.toMatchObject({ fullName: "Cleanora Google User" });
       await agent
         .get("/api/v1/auth/me")
         .set(
@@ -96,6 +104,36 @@ describe("Google individual authentication", () => {
     }
   });
 
+  it("rejects a new verified Google identity without a usable profile name", async () => {
+    const context = await startAuthenticationTestApp();
+    const identity = uniqueIdentity("google-missing-name");
+    const agent = request.agent(context.app);
+    try {
+      context.google.program({
+        subject: `google-${identity.email}`,
+        email: identity.email,
+        emailVerified: true,
+        displayName: "   ",
+      });
+      const start = await agent.get("/api/v1/auth/google").expect(200);
+      const callback = await agent
+        .get("/api/v1/auth/google/callback")
+        .query({ state: stateFrom(start), code: "deterministic" })
+        .expect(303);
+      expect(callback.headers["location"]).toContain(
+        "google=error&intent=sign-in&reason=authentication-failed",
+      );
+      expect(await context.prisma.user.count({
+        where: { emailNormalized: identity.email },
+      })).toBe(0);
+      expect(await context.prisma.individualProfile.count({
+        where: { fullName: "" },
+      })).toBe(0);
+    } finally {
+      await context.stop();
+    }
+  });
+
   it("links and unlinks Google only from a verified Individual session", async () => {
     const context = await startAuthenticationTestApp();
     const identity = uniqueIdentity("google-link");
@@ -105,6 +143,7 @@ describe("Google individual authentication", () => {
         .post("/api/v1/auth/signup")
         .send({
           accountCategory: "INDIVIDUAL",
+          fullName: "Google Link Customer",
           phone: identity.phone,
           email: identity.email,
           password: identity.password,

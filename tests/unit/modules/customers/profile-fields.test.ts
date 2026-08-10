@@ -16,8 +16,21 @@ describe("US1 profile field validation", () => {
       companyProfileBody.parse({
         companyName: " Cleanora ",
         representativeFullName: " Ada ",
+        commercialRegistrationNumber: " CR-123 ",
+        taxRegistrationNumber: null,
       }),
-    ).toEqual({ companyName: "Cleanora", representativeFullName: "Ada" });
+    ).toEqual({
+      companyName: "Cleanora",
+      representativeFullName: "Ada",
+      commercialRegistrationNumber: "CR-123",
+      taxRegistrationNumber: null,
+    });
+    expect(() => companyProfileBody.parse({
+      companyName: "Cleanora",
+      representativeFullName: "Ada",
+      commercialRegistrationNumber: " ",
+      taxRegistrationNumber: null,
+    })).toThrow();
     expect(() => engineerProfileBody.parse({ fullName: "Ada", biography: "no" })).toThrow();
   });
 });

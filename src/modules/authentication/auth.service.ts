@@ -47,16 +47,22 @@ import {
 } from "./infrastructure/auth.repository.js";
 import { AuthenticationTransactionRepository } from "./infrastructure/authentication-transaction.repository.js";
 import { writeAudit } from "#modules/admin/audit.service";
+import type {
+  CustomerSignupProfileInput,
+  CustomerSignupProfileWriterFactory,
+} from "#modules/customers/customer-signup-profile.writer";
 
 export interface AuthenticationServiceDependencies {
   readonly passwordHasher: PasswordHasherPort;
   readonly tokens: TokenServicePort;
   readonly verifier: OneTimeVerifierPort;
   readonly email: EmailAuthenticationDeliveryPort;
+  readonly customerSignupProfiles?: CustomerSignupProfileWriterFactory;
   readonly accessTtlSeconds: number;
   readonly refreshTtlSeconds: number;
   readonly privacyHashSecret: string;
   readonly policy?: AuthenticationPolicyPort;
+  readonly now?: () => Date;
 }
 
 interface VerificationSessionContext {
@@ -105,12 +111,56 @@ export class AuthenticationService {
   private readonly resets = new PasswordResetRepository();
   private readonly events: AuthEventRepository;
   private readonly social = new SocialAccountRepository();
-  private readonly transactions = new AuthenticationTransactionRepository();
+  private readonly transactions: AuthenticationTransactionRepository;
 
   constructor(
     private readonly dependencies: AuthenticationServiceDependencies,
   ) {
     this.events = new AuthEventRepository(dependencies.privacyHashSecret);
+    this.transactions = new AuthenticationTransactionRepository(
+      dependencies.customerSignupProfiles,
+      dependencies.now,
+    );
+  }
+
+  private now(): Date {
+    return this.dependencies.now?.() ?? new Date();
+  }
+
+  private customerProfileInput(input: {
+    readonly accountCategory: AccountCategory;
+    readonly fullName?: string;
+    readonly companyName?: string;
+    readonly representativeFullName?: string;
+    readonly professionalTitle?: string;
+  }): CustomerSignupProfileInput | undefined {
+    switch (input.accountCategory) {
+      case "INDIVIDUAL":
+        if (input.fullName === undefined)
+          throw authenticationError("AUTH_SIGNUP_UNAVAILABLE");
+        return { category: "INDIVIDUAL", fullName: input.fullName };
+      case "COMPANY":
+        if (
+          input.companyName === undefined ||
+          input.representativeFullName === undefined
+        )
+          throw authenticationError("AUTH_SIGNUP_UNAVAILABLE");
+        return {
+          category: "COMPANY",
+          companyName: input.companyName,
+          representativeFullName: input.representativeFullName,
+        };
+      case "ENGINEER":
+        if (input.fullName === undefined || input.professionalTitle === undefined)
+          throw authenticationError("AUTH_SIGNUP_UNAVAILABLE");
+        return {
+          category: "ENGINEER",
+          fullName: input.fullName,
+          professionalTitle: input.professionalTitle,
+        };
+      default:
+        return undefined;
+    }
   }
 
   async endpointLimits(): Promise<EndpointLimitPolicy> {
@@ -155,6 +205,10 @@ export class AuthenticationService {
       phone?: string;
       email?: string;
       password: string;
+      fullName?: string;
+      companyName?: string;
+      representativeFullName?: string;
+      professionalTitle?: string;
     },
     metadata: AuthenticationRequestMetadata = {},
   ) {
@@ -174,11 +228,13 @@ export class AuthenticationService {
     const passwordHash = await this.dependencies.passwordHasher.hash(
       input.password,
     );
+    const profile = this.customerProfileInput(input);
     const user = await this.transactions.createSignup({
       phoneE164,
       ...(emailNormalized === undefined ? {} : { emailNormalized }),
       category: input.accountCategory,
       passwordHash,
+      ...(profile === undefined ? {} : { profile }),
     });
     if (user === null) {
       // A concurrent signup can win after the pre-check but before insertion.
@@ -203,6 +259,7 @@ export class AuthenticationService {
         await this.transactions.rollbackFailedSignup(
           user.id,
           failedChallenge.id,
+          input.accountCategory,
         );
       throw error;
     }
@@ -216,7 +273,17 @@ export class AuthenticationService {
     return challenge;
   }
 
-  async enroll(userId: string, category: AccountCategory) {
+  async enroll(
+    userId: string,
+    input: {
+      readonly accountCategory: AccountCategory;
+      readonly fullName?: string;
+      readonly companyName?: string;
+      readonly representativeFullName?: string;
+      readonly professionalTitle?: string;
+    },
+  ) {
+    const category = input.accountCategory;
     assertSelfSignupCategory(category);
     const current = await this.users.findById(userId);
     if (current === null || current.accountCategories.includes(category))
@@ -229,7 +296,12 @@ export class AuthenticationService {
       targetId: userId,
       context: { category },
     });
-    const user = await this.transactions.enrollCategory({ userId, category });
+    const profile = this.customerProfileInput(input);
+    const user = await this.transactions.enrollCategory({
+      userId,
+      category,
+      ...(profile === undefined ? {} : { profile }),
+    });
     if (user === null) throw authenticationError("AUTH_SIGNUP_UNAVAILABLE");
     return this.requestVerificationForUser(
       this.users.map(user),
@@ -285,8 +357,7 @@ export class AuthenticationService {
       accountCategory: category,
       purpose,
       channel,
-      maskedDestination:
-        maskEmailDestination(destination),
+      maskedDestination: maskEmailDestination(destination),
       expiresAt: challenge.expiresAt.toISOString(),
       resendAvailableAt: challenge.resendAvailableAt.toISOString(),
     };
@@ -306,7 +377,7 @@ export class AuthenticationService {
     const { channel, destination } = target;
     const id = randomUUID();
     const code = this.dependencies.verifier.randomOtp();
-    const now = Date.now();
+    const now = this.now().getTime();
     const creation = await this.otps.create({
       id,
       userId: identity.id,
@@ -364,7 +435,7 @@ export class AuthenticationService {
     const challenge = await this.otps.find(input.challengeId);
     if (
       challenge?.status !== "ACTIVE" ||
-      challenge.expiresAt <= new Date()
+      challenge.expiresAt <= this.now()
     )
       throw authenticationError("AUTH_VERIFICATION_FAILED");
     if (
@@ -477,7 +548,7 @@ export class AuthenticationService {
   ): Promise<SessionTokens> {
     const sessionId = randomUUID();
     const refreshExpiresAt = new Date(
-      Date.now() + this.dependencies.refreshTtlSeconds * 1000,
+      this.now().getTime() + this.dependencies.refreshTtlSeconds * 1000,
     );
     const refresh = this.dependencies.tokens.issueRefresh(
       {
@@ -895,12 +966,13 @@ export class AuthenticationService {
       const emailNormalized = normalizeEmail(provider.email);
       if ((await this.users.findByEmail(emailNormalized)) !== null)
         throw authenticationError("AUTH_SOCIAL_AUTHENTICATION_FAILED");
+      const displayName = provider.displayName?.trim();
+      if (displayName === undefined || displayName.length === 0 || displayName.length > 200)
+        throw authenticationError("AUTH_SOCIAL_AUTHENTICATION_FAILED");
       user = await this.transactions.createGoogleIdentity({
         emailNormalized,
         subject: provider.subject,
-        ...(provider.displayName === undefined
-          ? {}
-          : { displayName: provider.displayName }),
+        displayName,
         ...(provider.avatarUrl === undefined
           ? {}
           : { avatarUrl: provider.avatarUrl }),

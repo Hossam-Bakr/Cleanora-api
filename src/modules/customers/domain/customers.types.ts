@@ -7,6 +7,8 @@ export type ProfileInput =
       readonly category: "COMPANY";
       readonly companyName: string;
       readonly representativeFullName: string;
+      readonly commercialRegistrationNumber: string | null;
+      readonly taxRegistrationNumber: string | null;
     }
   | {
       readonly category: "ENGINEER";
@@ -20,6 +22,8 @@ export interface CustomerProfileView {
   readonly fullName?: string;
   readonly companyName?: string;
   readonly representativeFullName?: string;
+  readonly commercialRegistrationNumber?: string | null;
+  readonly taxRegistrationNumber?: string | null;
   readonly professionalTitle?: string;
 }
 

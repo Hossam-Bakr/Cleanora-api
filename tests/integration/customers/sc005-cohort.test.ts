@@ -184,6 +184,8 @@ describe("SC-005 cohort acceptance journey", () => {
                 category: "COMPANY" as const,
                 companyName: `${participant.id} Co`,
                 representativeFullName: `${participant.id} Rep`,
+                commercialRegistrationNumber: null,
+                taxRegistrationNumber: null,
               }
             : {
                 category: "ENGINEER" as const,

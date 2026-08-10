@@ -122,15 +122,20 @@ These are entry surfaces over one identity system, not separate authentication s
 #### Individual customer
 
 - Phone is required.
-- Six-digit SMS OTP verification is blocking.
-- Email is optional.
-- If email is supplied, email verification is encouraged but non-blocking.
+- In the current development phase, six-digit email OTP verification is
+  blocking. It verifies email but not phone.
+- No SMS provider, phone-verification flow, or email-grace deadline is active.
+- Future direction: after a separately approved SMS phase, Individual will
+  activate by phone and receive 15 days to verify email before order creation is
+  restricted. That future behavior is not an R1-P04A runtime contract.
 
 #### Company or engineer customer
 
 - Phone is required but not SMS-verified.
 - Email is required.
 - Email OTP verification is blocking.
+- Future phone verification from the authenticated profile is deferred with SMS
+  provider selection.
 
 #### Provider owner
 

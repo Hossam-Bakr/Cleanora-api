@@ -15,7 +15,8 @@ const migrationNames = [
   'r1_p02_google_provider_profile_claims',
   'r1_p03_roles_permissions_privileged_audit',
   'r1_p04_customer_profiles_preferences_text_addresses',
-  'r1_p04_customer_profiles_preferences_text_addresses_02_cloudinary_profile_image_storage'
+  'r1_p04_customer_profiles_preferences_text_addresses_02_cloudinary_profile_image_storage',
+  'r1_p04a_category_aware_customer_signup_verification'
 ] as const;
 const expectedTables = [
   "currencies",
@@ -278,6 +279,28 @@ export function assertCloudinaryProfileImageStorageMigrationSql(sql: string): vo
   }
 }
 
+/** Accept only the reviewed nullable R1-P04A Company profile additions. */
+export function assertCategoryAwareSignupMigrationSql(sql: string): void {
+  if (
+    destructivePattern.test(sql) ||
+    /\bDROP\s+(TABLE|COLUMN|CONSTRAINT|TYPE)\b/iu.test(sql) ||
+    /\bCREATE\s+TABLE\b/iu.test(sql) ||
+    /\bNOT\s+NULL\b/iu.test(sql) ||
+    /\bDEFAULT\b/iu.test(sql)
+  ) {
+    throw new Error('R1-P04A signup migration contains destructive or backfill-implying SQL');
+  }
+  if (sql.includes('audit_logs')) {
+    throw new Error('R1-P04A signup migration must not change admin-owned audit_logs');
+  }
+  const normalized = sql.replace(/--[^\r\n]*/gu, '').replace(/\s+/gu, ' ').trim();
+  const expected =
+    'ALTER TABLE "company_profiles" ADD COLUMN "commercial_registration_number" VARCHAR(100), ADD COLUMN "tax_registration_number" VARCHAR(100);';
+  if (normalized !== expected) {
+    throw new Error('R1-P04A signup migration contains missing or unrelated SQL');
+  }
+}
+
 /** Require the exact phase-owned schema plus Prisma's migration metadata. */
 export function assertExactPostDeployTables(
   tableNames: readonly string[]
@@ -336,6 +359,10 @@ async function validateMigrationFolder(): Promise<void> {
       assertCloudinaryProfileImageStorageMigrationSql(sql);
       continue;
     }
+    if (migrationName === 'r1_p04a_category_aware_customer_signup_verification') {
+      assertCategoryAwareSignupMigrationSql(sql);
+      continue;
+    }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
       if (!sql.includes(`"${table}"`)) throw new Error(`Migration ${migrationName} is missing expected table ${table}`);
     }
@@ -384,7 +411,7 @@ async function assertPostDeployState(
         finished_at,
         rolled_back_at
       FROM "_prisma_migrations"
-      WHERE migration_name IN (${migrationNames[0]}, ${migrationNames[1]}, ${migrationNames[2]}, ${migrationNames[3]}, ${migrationNames[4]}, ${migrationNames[5]}, ${migrationNames[6]})
+      WHERE migration_name IN (${migrationNames[0]}, ${migrationNames[1]}, ${migrationNames[2]}, ${migrationNames[3]}, ${migrationNames[4]}, ${migrationNames[5]}, ${migrationNames[6]}, ${migrationNames[7]})
     `;
     assertAppliedMigration(history);
   } finally {

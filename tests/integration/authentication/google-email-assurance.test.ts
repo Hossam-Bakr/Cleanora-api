@@ -44,7 +44,7 @@ describe('Google provider assurance', () => {
     } as unknown as PrismaClient;
     bindPrismaClient(client);
 
-    const result = await new AuthenticationService(dependencies).googleSignIn({ subject: 'subject-1', email: 'User@Example.Test', emailVerified: true });
+    const result = await new AuthenticationService(dependencies).googleSignIn({ subject: 'subject-1', email: 'User@Example.Test', emailVerified: true, displayName: 'Google Individual' });
     expect(result.verificationOnly).toBe(false);
     expect(result.principal).toMatchObject({ accountCategories: ['INDIVIDUAL'], verifiedCategories: ['INDIVIDUAL'], verificationOnly: false });
     expect(userCreate).toHaveBeenCalledWith({

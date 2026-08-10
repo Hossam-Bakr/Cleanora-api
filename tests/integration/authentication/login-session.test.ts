@@ -13,7 +13,7 @@ function refreshCookie(response: import('supertest').Response): string {
 
 async function verifiedIndividual(context: Awaited<ReturnType<typeof startAuthenticationTestApp>>) {
   const identity = uniqueIdentity('session');
-  const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
+  const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', fullName: 'Session Customer', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
   await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId: signup.body.data.challengeId, code: context.email.latest(identity.email)!.value }).expect(200);
   return identity;
 }

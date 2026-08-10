@@ -3,15 +3,41 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `None — R1-P04 Complete; next phase not activated` |
-| Status | `No phase In Progress` |
+| Current Phase | `R1-P04A — Category-Aware Customer Signup & Verification` |
+| Status | `In Progress — specification, planning, implementation, and tests authorized` |
 | Backend Branch | `Active working branch — see repository` |
-| Frontend Branch | `Not created — no R1-P04 UI authorized` |
-| Backend Owner | `Not assigned — no active phase` |
-| Frontend Owner | `Not applicable` |
-| Started At | `n/a` |
+| Frontend Branch | `Not created — backend UX contract only` |
+| Backend Owner | `Codex — authorized implementation` |
+| Frontend Owner | `Not assigned — no frontend application exists` |
+| Started At | `2026-08-09` |
 | Completed At | `n/a` |
-| Last Updated | `2026-08-08` (R1-P04 Complete by human-owner approval; Cleanora incident remains separate and untouched) |
+| Last Updated | `2026-08-10` (DEC-035 email-only implementation validated; guarded Git handoff authorized and pending environment access) |
+
+## Active phase — R1-P04A
+
+R1-P04A (`Category-Aware Customer Signup & Verification`) is the sole active
+phase. The human owner explicitly approved specification, planning,
+implementation, schema/migration changes, documentation, and required tests on
+`2026-08-09`.
+
+Authoritative artifacts:
+
+- `specs/R1-P04A-category-aware-customer-signup-verification/spec.md`
+- `specs/R1-P04A-category-aware-customer-signup-verification/activation.md`
+- DEC-034 and DEC-035
+
+Locked phase behavior: matching customer profile data is required during signup.
+Every supported category—including Individual—activates by email OTP, which
+proves email only; phone stays unverified. `SMS_AUTH_ENABLED` must remain false,
+and no SMS provider, phone-verification endpoint, 15-day deadline, or order
+restriction is implemented in this phase. The owner-approved future phone/email
+sequence is documented in DEC-035 for a later explicit phase. Company regulatory
+identifiers remain nullable post-signup profile fields.
+
+The owner authorized the guarded feature-branch commit and push workflow on
+2026-08-10. It remains pending clean-apply proof and environment permission to
+write `.git`. Merge, deployment, production migration, and access to the
+historical `Cleanora` database incident remain unauthorized.
 
 ## Completed phase — R1-P04
 

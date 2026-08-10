@@ -15,6 +15,7 @@ describe("individual email verification", () => {
         .post("/api/v1/auth/signup")
         .send({
           accountCategory: "INDIVIDUAL",
+          fullName: "Individual Customer",
           phone: identity.phone,
           password: identity.password,
         })
@@ -24,6 +25,7 @@ describe("individual email verification", () => {
         .post("/api/v1/auth/signup")
         .send({
           accountCategory: "INDIVIDUAL",
+          fullName: "Individual Customer",
           phone: identity.phone,
           email: identity.email,
           password: identity.password,

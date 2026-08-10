@@ -30,6 +30,23 @@ describe('authentication environment', () => {
     });
     expect(enabled.AUTH_ENABLED).toBe(true);
   });
+  it('allows email-only authentication and rejects enabling deferred SMS', () => {
+    const emailOnly = {
+      ...base,
+      ...email,
+      AUTH_ENABLED: 'true',
+      SMS_AUTH_ENABLED: 'false',
+      JWT_ACCESS_SECRET: 'access-secret-at-least-thirty-two-characters',
+      JWT_REFRESH_SECRET: 'refresh-secret-at-least-thirty-two-characters',
+      AUTH_VERIFIER_SECRET: 'verifier-secret-at-least-thirty-two-characters',
+      AUTH_PRIVACY_HASH_SECRET: 'privacy-secret-at-least-thirty-two-characters',
+    };
+
+    expect(loadEnvironment(emailOnly).SMS_AUTH_ENABLED).toBe(false);
+    expect(() =>
+      loadEnvironment({ ...emailOnly, SMS_AUTH_ENABLED: 'true' }),
+    ).toThrow(/SMS authentication is deferred/u);
+  });
   it('keeps R1-P01 startup compatible when disabled', () => {
     expect(loadEnvironment(base).AUTH_ENABLED).toBe(false);
   });

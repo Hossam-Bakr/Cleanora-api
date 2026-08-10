@@ -2,6 +2,12 @@ import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 type Header = { key: string; value: string };
+type AdditionalExample = {
+  readonly name: string;
+  readonly body: object;
+  readonly example: object;
+  readonly status?: number;
+};
 
 const hostUrl = "{{hostUrl}}";
 const jsonHeader: Header = { key: "Content-Type", value: "application/json" };
@@ -13,13 +19,34 @@ const safeUser = {
   avatarUrl: "https://lh3.googleusercontent.com/a/example",
   email: "user@example.test",
   phone: "+201234567890",
-  emailVerified: false,
-  phoneVerified: true,
+  emailVerified: true,
+  phoneVerified: false,
   status: "ACTIVE",
   accountCategories: ["INDIVIDUAL"],
   verifiedCategories: ["INDIVIDUAL"],
   pendingCategories: [],
 };
+
+function verificationChallenge(input: {
+  accountCategory: "INDIVIDUAL" | "COMPANY" | "ENGINEER" | "PROVIDER_OWNER";
+  channel: "EMAIL" | "SMS";
+  maskedDestination: string;
+  purpose?:
+    | "CATEGORY_VERIFICATION"
+    | "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION";
+}) {
+  return {
+    accepted: true,
+    challengeId: "<challenge-id>",
+    nextAction: "VERIFY_ACCOUNT",
+    accountCategory: input.accountCategory,
+    purpose: input.purpose ?? "CATEGORY_VERIFICATION",
+    channel: input.channel,
+    maskedDestination: input.maskedDestination,
+    expiresAt: "2026-08-24T12:10:00.000Z",
+    resendAvailableAt: "2026-08-24T12:01:00.000Z",
+  };
+}
 
 function successBody(data: object): string {
   return JSON.stringify(
@@ -42,6 +69,8 @@ function requestItem(input: {
   headers?: Header[];
   status?: number;
   example?: object;
+  exampleName?: string;
+  additionalExamples?: readonly AdditionalExample[];
   noAuth?: boolean;
   browserOnly?: boolean;
 }) {
@@ -82,6 +111,49 @@ function requestItem(input: {
     url: `${hostUrl}${input.route}`,
     description: input.description,
   };
+  const requestWithBody = (body: object) => ({
+    ...request,
+    body: {
+      mode: "raw",
+      raw: JSON.stringify(body, null, 2),
+      options: { raw: { language: "json" } },
+    },
+  });
+  const responseExample = (
+    name: string,
+    originalRequest: typeof request,
+    status: number,
+    example: object,
+  ) => ({
+    name,
+    originalRequest,
+    status: status === 202 ? "Accepted" : "OK",
+    code: status,
+    _postman_previewlanguage: "json",
+    header: [{ key: "Content-Type", value: "application/json" }],
+    cookie: [],
+    body: successBody(example),
+  });
+  const responses = [
+    ...(input.example === undefined
+      ? []
+      : [
+          responseExample(
+            input.exampleName ?? "Success",
+            request,
+            input.status ?? 200,
+            input.example,
+          ),
+        ]),
+    ...(input.additionalExamples ?? []).map((example) =>
+      responseExample(
+        example.name,
+        requestWithBody(example.body),
+        example.status ?? input.status ?? 200,
+        example.example,
+      ),
+    ),
+  ];
   return {
     name: input.name,
     event: [
@@ -91,28 +163,14 @@ function requestItem(input: {
       },
     ],
     request,
-    response:
-      input.example === undefined
-        ? []
-        : [
-            {
-              name: "Success",
-              originalRequest: request,
-              status: input.status === 202 ? "Accepted" : "OK",
-              code: input.status ?? 200,
-              _postman_previewlanguage: "json",
-              header: [{ key: "Content-Type", value: "application/json" }],
-              cookie: [],
-              body: successBody(input.example),
-            },
-          ],
+    response: responses,
   };
 }
 
 const collection = {
   info: {
     _postman_id: "91076ea2-1262-4ee5-99ab-42a13ecb2ed5",
-    name: "Cleanora R1-P02 Authentication",
+    name: "Cleanora R1-P02 Authentication + R1-P04A Signup",
     description:
       "Canonical R1-P02 Auth API collection. It contains exactly one request per implemented method and route. Error cases such as duplicate signup identifiers, invalid credentials, weak passwords, and invalid OTPs are response examples in Swagger, not fake API requests. Refresh credentials remain in the cookie jar and secrets remain empty in exported environments.\n\n> ⚠️ **Hey Bassam, you can visit Swagger docs here, my bro:** http://localhost:8000/api/v1/docs ⚠️\n\nRailway Swagger: https://cleanora-production.up.railway.app/api/v1/docs",
     schema:
@@ -132,25 +190,72 @@ const collection = {
           method: "POST",
           route: "/auth/signup",
           description:
-            "Creates an account and stores challengeId. Every self-signup category receives its verification code at the required normalized testEmail. Phone verification is deferred to R1-P26. Possible 400/409/429/503 responses are documented in Swagger.",
+            "Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant.",
           body: {
             accountCategory: "INDIVIDUAL",
+            fullName: "{{individualFullName}}",
             phone: "{{testPhone}}",
             email: "{{testEmail}}",
             password: "{{testPassword}}",
           },
           status: 202,
-          example: {
-            accepted: true,
-            challengeId: "<challenge-id>",
-            nextAction: "VERIFY_ACCOUNT",
+          exampleName: "Success - Individual (email activation)",
+          example: verificationChallenge({
             accountCategory: "INDIVIDUAL",
-            purpose: "CATEGORY_VERIFICATION",
             channel: "EMAIL",
-            maskedDestination: "t***t@example.com",
-            expiresAt: "2026-07-27T12:10:00.000Z",
-            resendAvailableAt: "2026-07-27T12:01:00.000Z",
-          },
+            maskedDestination: "cl***@example.test",
+          }),
+          additionalExamples: [
+            {
+              name: "Success - Company (email activation)",
+              status: 202,
+              body: {
+                accountCategory: "COMPANY",
+                companyName: "{{companyName}}",
+                representativeFullName: "{{representativeFullName}}",
+                phone: "{{testPhone}}",
+                email: "{{testEmail}}",
+                password: "{{testPassword}}",
+              },
+              example: verificationChallenge({
+                accountCategory: "COMPANY",
+                channel: "EMAIL",
+                maskedDestination: "cl***@example.test",
+              }),
+            },
+            {
+              name: "Success - Engineer (email activation)",
+              status: 202,
+              body: {
+                accountCategory: "ENGINEER",
+                fullName: "{{engineerFullName}}",
+                professionalTitle: "{{professionalTitle}}",
+                phone: "{{testPhone}}",
+                email: "{{testEmail}}",
+                password: "{{testPassword}}",
+              },
+              example: verificationChallenge({
+                accountCategory: "ENGINEER",
+                channel: "EMAIL",
+                maskedDestination: "cl***@example.test",
+              }),
+            },
+            {
+              name: "Success - Provider Owner (email activation)",
+              status: 202,
+              body: {
+                accountCategory: "PROVIDER_OWNER",
+                phone: "{{testPhone}}",
+                email: "{{testEmail}}",
+                password: "{{testPassword}}",
+              },
+              example: verificationChallenge({
+                accountCategory: "PROVIDER_OWNER",
+                channel: "EMAIL",
+                maskedDestination: "cl***@example.test",
+              }),
+            },
+          ],
         }),
         requestItem({
           name: "Request OTP",
@@ -160,11 +265,11 @@ const collection = {
             "Requests/resends the existing challenge. Cooldown applies. Possible invalid, expired, and rate-limit responses are in Swagger.",
           body: { challengeId: "{{challengeId}}" },
           status: 202,
-          example: {
-            accepted: true,
-            challengeId: "<challenge-id>",
-            nextAction: "VERIFY_ACCOUNT",
-          },
+          example: verificationChallenge({
+            accountCategory: "INDIVIDUAL",
+            channel: "EMAIL",
+            maskedDestination: "cl***@example.test",
+          }),
         }),
         requestItem({
           name: "Verify OTP",
@@ -316,13 +421,57 @@ const collection = {
           route: "/auth/account-categories",
           description:
             "Adds one supported category to the current fully authenticated identity.",
-          body: { accountCategory: "COMPANY" },
-          status: 202,
-          example: {
-            accepted: true,
-            challengeId: "<challenge-id>",
-            nextAction: "VERIFY_ACCOUNT",
+          body: {
+            accountCategory: "COMPANY",
+            companyName: "{{companyName}}",
+            representativeFullName: "{{representativeFullName}}",
           },
+          status: 202,
+          exampleName: "Success - Company enrollment",
+          example: verificationChallenge({
+            accountCategory: "COMPANY",
+            channel: "EMAIL",
+            maskedDestination: "cl***@example.test",
+          }),
+          additionalExamples: [
+            {
+              name: "Success - Individual enrollment",
+              status: 202,
+              body: {
+                accountCategory: "INDIVIDUAL",
+                fullName: "{{individualFullName}}",
+              },
+              example: verificationChallenge({
+                accountCategory: "INDIVIDUAL",
+                channel: "EMAIL",
+                maskedDestination: "cl***@example.test",
+              }),
+            },
+            {
+              name: "Success - Engineer enrollment",
+              status: 202,
+              body: {
+                accountCategory: "ENGINEER",
+                fullName: "{{engineerFullName}}",
+                professionalTitle: "{{professionalTitle}}",
+              },
+              example: verificationChallenge({
+                accountCategory: "ENGINEER",
+                channel: "EMAIL",
+                maskedDestination: "cl***@example.test",
+              }),
+            },
+            {
+              name: "Success - Provider Owner enrollment",
+              status: 202,
+              body: { accountCategory: "PROVIDER_OWNER" },
+              example: verificationChallenge({
+                accountCategory: "PROVIDER_OWNER",
+                channel: "EMAIL",
+                maskedDestination: "cl***@example.test",
+              }),
+            },
+          ],
         }),
         requestItem({
           name: "Change Password",
@@ -383,6 +532,8 @@ const customerEnvironmentValues = [
   ["individualFullName", "Cleanora Individual", "Sample Individual profile name"],
   ["companyName", "Cleanora Services", "Sample Company profile name"],
   ["representativeFullName", "Cleanora Representative", "Sample Company representative"],
+  ["commercialRegistrationNumber", "CR-EXAMPLE-001", "Optional Company commercial registration number; send null to clear"],
+  ["taxRegistrationNumber", "TAX-EXAMPLE-001", "Optional Company tax registration number; send null to clear"],
   ["engineerFullName", "Cleanora Engineer", "Sample Engineer profile name"],
   ["professionalTitle", "Cleaning Engineer", "Sample Engineer title"],
   ["profileImagePath", "", "Local JPEG/PNG/WebP path selected privately in Postman"],

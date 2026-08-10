@@ -18,6 +18,7 @@ describe('authentication endpoints without any role grant', () => {
         .post('/api/v1/auth/signup')
         .send({
           accountCategory: 'INDIVIDUAL',
+          fullName: 'Plain Signup Customer',
           phone: identity.phone,
           email: identity.email,
           password: identity.password
@@ -65,6 +66,7 @@ describe('authentication endpoints without any role grant', () => {
         .post('/api/v1/auth/signup')
         .send({
           accountCategory: 'INDIVIDUAL',
+          fullName: 'Plain Auth Customer',
           phone: identity.phone,
           email: identity.email,
           password: identity.password

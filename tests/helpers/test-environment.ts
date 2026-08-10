@@ -12,6 +12,7 @@ export function createTestEnvironment(
   return {
     AUTH_ENABLED: false,
     EMAIL_AUTH_ENABLED: false,
+    SMS_AUTH_ENABLED: false,
     GOOGLE_AUTH_ENABLED: false,
     AUTH_VERIFIER_SECRET: 'test-verifier-secret-that-is-longer-than-32-chars',
     AUTH_PRIVACY_HASH_SECRET: 'test-privacy-secret-that-is-longer-than-32-chars',

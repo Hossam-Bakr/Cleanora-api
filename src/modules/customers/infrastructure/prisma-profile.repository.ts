@@ -34,6 +34,9 @@ export class PrismaProfileRepository {
               created: true,
               companyName: profile.companyName,
               representativeFullName: profile.representativeFullName,
+              commercialRegistrationNumber:
+                profile.commercialRegistrationNumber,
+              taxRegistrationNumber: profile.taxRegistrationNumber,
             };
       }
       case "ENGINEER": {
@@ -82,10 +85,16 @@ export class PrismaProfileRepository {
             userId,
             companyName: input.companyName,
             representativeFullName: input.representativeFullName,
+            commercialRegistrationNumber:
+              input.commercialRegistrationNumber,
+            taxRegistrationNumber: input.taxRegistrationNumber,
           },
           update: {
             companyName: input.companyName,
             representativeFullName: input.representativeFullName,
+            commercialRegistrationNumber:
+              input.commercialRegistrationNumber,
+            taxRegistrationNumber: input.taxRegistrationNumber,
           },
         });
         return {
@@ -93,6 +102,8 @@ export class PrismaProfileRepository {
           created: true,
           companyName: profile.companyName,
           representativeFullName: profile.representativeFullName,
+          commercialRegistrationNumber: profile.commercialRegistrationNumber,
+          taxRegistrationNumber: profile.taxRegistrationNumber,
         };
       }
       case "ENGINEER": {

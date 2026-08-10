@@ -1,9 +1,8 @@
 # Authentication API
 
-Status: Implemented and completed in R1-P02. R1-P02A changed structure only
-and preserved this contract.
+Status: Implemented in R1-P02 and extended by active phase R1-P04A.
 
-Phase: R1-P02
+Phase: R1-P02 + R1-P04A
 
 The authoritative runtime contract and frontend flow are documented in:
 
@@ -16,10 +15,27 @@ The phase navigation files under
 `docs/phases/release-1/R1-P02-authentication/` are concise completion
 summaries, not a second API contract.
 
-The implementation is capability-gated by `AUTH_ENABLED` and requires the
-complete SMTP capability. Under DEC-028, every supported self-signup category
-receives verification and recovery credentials at its account-bound email.
-Phone values remain unverified and SMS is not part of R1-P02.
+The implementation is capability-gated by `AUTH_ENABLED`. Email delivery is
+required and uses SMTP. `SMS_AUTH_ENABLED` defaults to and must remain `false`;
+setting it to `true` fails startup because provider selection and SMS delivery
+are deferred. No SMS provider variables or adapters are part of this phase.
+
+R1-P04A makes signup and category enrollment profile-aware and atomic:
+
+- Individual requires `fullName` and uses blocking email OTP. Successful
+  activation verifies email only; phone remains unverified.
+- Company requires `companyName` and `representativeFullName`; Engineer requires
+  `fullName` and `professionalTitle`. Both use blocking email OTP and leave
+  phone unverified.
+- Provider Owner preserves the existing email-OTP signup contract. Worker
+  self-signup remains prohibited.
+- Company commercial-registration and tax-registration numbers are nullable at
+  signup and are replaced through the authenticated Company profile endpoint.
+
+There are no current phone-verification endpoints, phone CTA, Individual email
+deadline, or order-creation restriction. The future phone-first Individual flow
+and Company/Engineer profile phone verification remain documented product
+direction for a later explicitly approved phase.
 
 DEC-020 standardizes JSON failures as `code`, matching numeric `statusCode`,
 safe descriptive `message`, optional field-level `details`, and `requestId`.
@@ -40,7 +56,9 @@ authentication boundary expires it as known stale localhost state.
 Google browser sign-in uses a backend callback followed by a safe frontend
 redirect. Tokens and provider callback parameters are never placed in the
 frontend redirect URL. New Google identities become active only when Google
-asserts a verified email; R1-P02 exposes no Google phone-verification endpoint.
+asserts a verified email and supplies a usable display name; that name creates
+the required Individual profile atomically. Google identities remain email and
+category verified without a separate SMS signup challenge.
 The backend never renders a Google result page. Chrome flows begin at
 `/google/browser`, return through `/google/callback`, then redirect to the
 configured frontend callback. The frontend calls `/refresh` with credentials

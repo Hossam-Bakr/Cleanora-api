@@ -15,6 +15,7 @@ describe('individual signup and mandatory email OTP', () => {
         .post('/api/v1/auth/signup')
         .send({
           accountCategory: 'INDIVIDUAL',
+          fullName: 'First Customer',
           phone: first.phone,
           email: first.email.toUpperCase(),
           password: first.password,
@@ -24,6 +25,7 @@ describe('individual signup and mandatory email OTP', () => {
         .post('/api/v1/auth/signup')
         .send({
           accountCategory: 'INDIVIDUAL',
+          fullName: 'Second Customer',
           phone: second.phone,
           email: second.email,
           password: second.password,
@@ -57,6 +59,7 @@ describe('individual signup and mandatory email OTP', () => {
         .post('/api/v1/auth/signup')
         .send({
           accountCategory: 'INDIVIDUAL',
+          fullName: 'Recipient Override',
           phone: identity.phone,
           email: identity.email,
           password: identity.password,
@@ -75,11 +78,34 @@ describe('individual signup and mandatory email OTP', () => {
     }
   });
 
-  it('creates a pending individual, verifies the email challenge, and rejects replay', async () => {
+  it('rolls back the auth identity and customer profile when email delivery fails', async () => {
+    const context = await startAuthenticationTestApp();
+    const identity = uniqueIdentity('email-rollback');
+    try {
+      context.email.failNext();
+      const failed = await request(context.app)
+        .post('/api/v1/auth/signup')
+        .send({
+          accountCategory: 'INDIVIDUAL',
+          fullName: 'Rollback Customer',
+          phone: identity.phone,
+          email: identity.email,
+          password: identity.password,
+        })
+        .expect(503);
+      expect(failed.body.error.code).toBe('AUTH_PROVIDER_UNAVAILABLE');
+      expect(await context.prisma.user.count({ where: { phoneE164: identity.phone } })).toBe(0);
+      expect(await context.prisma.individualProfile.count({ where: { fullName: 'Rollback Customer' } })).toBe(0);
+    } finally {
+      await context.stop();
+    }
+  });
+
+  it('creates a pending individual profile, verifies the email challenge, and rejects replay', async () => {
     const context = await startAuthenticationTestApp();
     const identity = uniqueIdentity('individual');
     try {
-      const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
+      const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', fullName: '  Individual Customer  ', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
       expect(signup.body.data).toMatchObject({
         accepted: true,
         nextAction: 'VERIFY_ACCOUNT',
@@ -98,6 +124,7 @@ describe('individual signup and mandatory email OTP', () => {
 
       const pending = await context.prisma.user.findUniqueOrThrow({ where: { phoneE164: identity.phone } });
       expect(pending).toMatchObject({ accountCategories: ['INDIVIDUAL'], verifiedCategories: [], phoneVerifiedAt: null, emailVerifiedAt: null });
+      await expect(context.prisma.individualProfile.findUniqueOrThrow({ where: { userId: pending.id } })).resolves.toMatchObject({ fullName: 'Individual Customer' });
 
       const resend = await request(context.app).post('/api/v1/auth/otp/request').send({ challengeId }).expect(202);
       expect(resend.body.data).toMatchObject({ accepted: true, challengeId, nextAction: 'VERIFY_ACCOUNT' });
@@ -118,7 +145,7 @@ describe('individual signup and mandatory email OTP', () => {
     const context = await startAuthenticationTestApp();
     const identity = uniqueIdentity('attempts');
     try {
-      const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
+      const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', fullName: 'Attempt Customer', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
       const challengeId = signup.body.data.challengeId as string;
       await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId, code: '000000' }).expect(400);
       const challenge = await context.prisma.otpCode.findUniqueOrThrow({ where: { id: challengeId } });
@@ -134,7 +161,7 @@ describe('individual signup and mandatory email OTP', () => {
     const context = await startAuthenticationTestApp();
     const identity = uniqueIdentity('malformed-phone');
     try {
-      const response = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: '20123-not-e164', email: identity.email, password: identity.password }).expect(400);
+      const response = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', fullName: 'Malformed Phone', phone: '20123-not-e164', email: identity.email, password: identity.password }).expect(400);
       expect(response.body.error).toMatchObject({
         code: 'REQUEST_VALIDATION_FAILED',
         statusCode: 400,
@@ -154,6 +181,7 @@ describe('individual signup and mandatory email OTP', () => {
     const identity = uniqueIdentity('duplicate-identifiers');
     const payload = {
       accountCategory: 'INDIVIDUAL',
+      fullName: 'Duplicate Customer',
       phone: identity.phone,
       email: identity.email,
       password: identity.password,

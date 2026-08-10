@@ -80,15 +80,13 @@ paths:
           application/json:
             schema:
               type: object
-              required: [companyName, representativeFullName]
               additionalProperties: false
+              required: [companyName, representativeFullName, commercialRegistrationNumber, taxRegistrationNumber]
               properties:
-                companyName:
-                  type: string
-                  minLength: 1
-                representativeFullName:
-                  type: string
-                  minLength: 1
+                companyName: { type: string, minLength: 1, maxLength: 200 }
+                representativeFullName: { type: string, minLength: 1, maxLength: 200 }
+                commercialRegistrationNumber: { type: [string, 'null'], minLength: 1, maxLength: 100 }
+                taxRegistrationNumber: { type: [string, 'null'], minLength: 1, maxLength: 100 }
       responses:
         "200":
           description: Upserted profile

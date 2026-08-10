@@ -578,6 +578,44 @@ Allow customers to manage identity-adjacent account data without map dependencie
 
 ---
 
+## R1-P04A — Category-Aware Customer Signup & Verification
+
+### Goal
+
+Require the matching customer name/profile at registration while preserving the
+current email-only activation model for every supported category.
+
+### Scope
+
+- Strict category-discriminated Individual, Company, and Engineer signup data
+- Atomic customer profile creation with signup and category enrollment
+- Blocking email OTP activation for every supported category
+- Phone values remain unverified; SMS provider selection and phone verification
+  are deferred to a later explicitly approved phase
+- Nullable Company commercial-registration and tax-registration numbers edited
+  after signup
+- Fail-closed `SMS_AUTH_ENABLED=false` development configuration
+- Additive API documentation and regression coverage
+
+### Tables
+
+- Incremental changes to `company_profiles` only
+- Existing `individual_profiles`, `engineer_profiles`, `customer_profiles`,
+  `user_credentials`, `user_sessions`, and `auth_events`
+
+### Done When
+
+- No accepted customer signup or customer-category enrollment can activate
+  without its matching non-blank profile.
+- Every accepted category activation sets email assurance only and never claims
+  phone assurance.
+- No SMS provider code, phone verification route, or future grace restriction is
+  shipped early.
+- Company registration identifiers can be completed privately after signup.
+- Forward-only migration, contracts, tests, and repository quality gates pass.
+
+---
+
 ## R1-P05 — Provider Onboarding, Profile & Lifecycle
 
 ### Goal

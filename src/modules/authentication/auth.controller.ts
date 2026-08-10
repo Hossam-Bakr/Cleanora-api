@@ -141,7 +141,7 @@ export function createAuthenticationController(
         202,
         await service.enroll(
           principal(response).userId,
-          request.body.accountCategory,
+          request.body,
         ),
       );
     } catch (error) {

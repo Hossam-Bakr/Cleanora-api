@@ -466,7 +466,6 @@ describe("SC-008 acceptance workload (T071/T118)", () => {
         perLaneElapsedMs: result.perLaneElapsedMs,
         poolMaxConnections: 15,
       };
-      // eslint-disable-next-line no-console
       console.log(JSON.stringify({ sc008: timingEvidence }));
       const { writeFileSync, mkdirSync } = await import("node:fs");
       mkdirSync(".validation-t118", { recursive: true });

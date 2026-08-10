@@ -5,7 +5,7 @@ vi.setConfig({ testTimeout: 120_000 });
 
 async function verifiedLogin(context: Awaited<ReturnType<typeof startAuthenticationTestApp>>, label: string) {
   const identity = uniqueIdentity(label);
-  const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
+  const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', fullName: 'Security Test Customer', phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
   const code = context.email.latest(identity.email)!.value;
   await request(context.app).post('/api/v1/auth/otp/verify').send({ challengeId: signup.body.data.challengeId, code }).expect(200);
   const login = await request(context.app).post('/api/v1/auth/login').send({ phone: identity.phone, password: identity.password }).expect(200);

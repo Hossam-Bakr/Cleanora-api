@@ -237,33 +237,33 @@ model AuditLog {
 }
 
 model User {
-  id                 String               @id @default(cuid())
-  phoneE164          String?              @unique @map("phone_e164") @db.VarChar(16)
-  emailNormalized    String?              @unique @map("email_normalized") @db.VarChar(320)
-  accountCategories  AccountCategory[]    @default([]) @map("account_categories")
-  verifiedCategories AccountCategory[]    @default([]) @map("verified_categories")
-  status             UserStatus           @default(ACTIVE)
-  suspendedUntil     DateTime?            @map("suspended_until")
-  statusChangedAt    DateTime             @default(now()) @map("status_changed_at")
-  phoneVerifiedAt    DateTime?            @map("phone_verified_at")
-  emailVerifiedAt    DateTime?            @map("email_verified_at")
-  createdAt          DateTime             @default(now()) @map("created_at")
-  updatedAt          DateTime             @updatedAt @map("updated_at")
-  credential         UserCredential?
-  sessions           UserSession[]
-  otpCodes           OtpCode[]
-  passwordResets     PasswordResetToken[]
-  socialAccounts     SocialAccount[]
-  authEvents         AuthEvent[]
-  userRoles          UserRole[]
-  customerProfile    CustomerProfile?
-  individualProfile  IndividualProfile?
-  companyProfile     CompanyProfile?
-  engineerProfile    EngineerProfile?
-  userPreferences    UserPreferences?
-  userAddresses      UserAddress[]
-  privacyRequests    PrivacyRequest[]
-  ownedMediaFiles    MediaFile[]
+  id                               String               @id @default(cuid())
+  phoneE164                        String?              @unique @map("phone_e164") @db.VarChar(16)
+  emailNormalized                  String?              @unique @map("email_normalized") @db.VarChar(320)
+  accountCategories                AccountCategory[]    @default([]) @map("account_categories")
+  verifiedCategories               AccountCategory[]    @default([]) @map("verified_categories")
+  status                           UserStatus           @default(ACTIVE)
+  suspendedUntil                   DateTime?            @map("suspended_until")
+  statusChangedAt                  DateTime             @default(now()) @map("status_changed_at")
+  phoneVerifiedAt                  DateTime?            @map("phone_verified_at")
+  emailVerifiedAt                  DateTime?            @map("email_verified_at")
+  createdAt                        DateTime             @default(now()) @map("created_at")
+  updatedAt                        DateTime             @updatedAt @map("updated_at")
+  credential                       UserCredential?
+  sessions                         UserSession[]
+  otpCodes                         OtpCode[]
+  passwordResets                   PasswordResetToken[]
+  socialAccounts                   SocialAccount[]
+  authEvents                       AuthEvent[]
+  userRoles                        UserRole[]
+  customerProfile                  CustomerProfile?
+  individualProfile                IndividualProfile?
+  companyProfile                   CompanyProfile?
+  engineerProfile                  EngineerProfile?
+  userPreferences                  UserPreferences?
+  userAddresses                    UserAddress[]
+  privacyRequests                  PrivacyRequest[]
+  ownedMediaFiles                  MediaFile[]
 
   @@index([status])
   @@map("users")
@@ -517,13 +517,15 @@ model IndividualProfile {
 }
 
 model CompanyProfile {
-  id                     String   @id @default(cuid())
-  userId                 String   @unique @map("user_id")
-  companyName            String   @map("company_name")
-  representativeFullName String   @map("representative_full_name")
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @updatedAt @map("updated_at")
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  id                           String   @id @default(cuid())
+  userId                       String   @unique @map("user_id")
+  companyName                  String   @map("company_name")
+  representativeFullName       String   @map("representative_full_name")
+  commercialRegistrationNumber String?  @map("commercial_registration_number") @db.VarChar(100)
+  taxRegistrationNumber        String?  @map("tax_registration_number") @db.VarChar(100)
+  createdAt                    DateTime @default(now()) @map("created_at")
+  updatedAt                    DateTime @updatedAt @map("updated_at")
+  user                         User     @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@map("company_profiles")
 }

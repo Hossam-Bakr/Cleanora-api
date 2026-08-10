@@ -46,23 +46,62 @@ const passwordSchema = z
     }
   });
 
+const requiredProfileText = z
+  .string()
+  .trim()
+  .min(1, "This field is required")
+  .max(200, "This field is too long");
+
+const signupIdentityFields = {
+  phone: requiredPhoneSchema,
+  email: requiredEmailSchema,
+  password: passwordSchema,
+} as const;
+
 export const signupSchema = z.object({
-  body: z
-    .object({
-      accountCategory: selfSignupCategorySchema,
-      phone: requiredPhoneSchema,
-      email: requiredEmailSchema,
-      password: passwordSchema,
-    })
-    .strict(),
+  body: z.discriminatedUnion("accountCategory", [
+    z.object({
+      accountCategory: z.literal("INDIVIDUAL"),
+      ...signupIdentityFields,
+      fullName: requiredProfileText,
+    }).strict(),
+    z.object({
+      accountCategory: z.literal("COMPANY"),
+      ...signupIdentityFields,
+      companyName: requiredProfileText,
+      representativeFullName: requiredProfileText,
+    }).strict(),
+    z.object({
+      accountCategory: z.literal("ENGINEER"),
+      ...signupIdentityFields,
+      fullName: requiredProfileText,
+      professionalTitle: requiredProfileText,
+    }).strict(),
+    z.object({
+      accountCategory: z.literal("PROVIDER_OWNER"),
+      ...signupIdentityFields,
+    }).strict(),
+  ]),
 });
 
 export const enrollSchema = z.object({
-  body: z
-    .object({
-      accountCategory: selfSignupCategorySchema,
-    })
-    .strict(),
+  body: z.discriminatedUnion("accountCategory", [
+    z.object({
+      accountCategory: z.literal("INDIVIDUAL"),
+      fullName: requiredProfileText,
+    }).strict(),
+    z.object({
+      accountCategory: z.literal("COMPANY"),
+      companyName: requiredProfileText,
+      representativeFullName: requiredProfileText,
+    }).strict(),
+    z.object({
+      accountCategory: z.literal("ENGINEER"),
+      fullName: requiredProfileText,
+      professionalTitle: requiredProfileText,
+    }).strict(),
+    z.object({ accountCategory: z.literal("PROVIDER_OWNER") }).strict(),
+  ]),
 });
 
 export const otpRequestSchema = z.object({

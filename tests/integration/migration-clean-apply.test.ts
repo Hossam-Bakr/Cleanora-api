@@ -137,6 +137,11 @@ describe("R1-P01 migration boundary", () => {
             "r1_p04_customer_profiles_preferences_text_addresses_02_cloudinary_profile_image_storage",
           finished_at: new Date(),
           rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p04a_category_aware_customer_signup_verification",
+          finished_at: new Date(),
+          rolled_back_at: null
         }
       ])
     ).not.toThrow();

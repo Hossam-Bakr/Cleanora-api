@@ -6,7 +6,15 @@ type PostmanItem = {
   readonly request?: {
     readonly method?: string;
     readonly url?: string | { readonly raw?: string };
+    readonly body?: { readonly raw?: string };
   };
+  readonly response?: readonly {
+    readonly name?: string;
+    readonly originalRequest?: {
+      readonly body?: { readonly raw?: string };
+    };
+    readonly body?: string;
+  }[];
   readonly item?: readonly PostmanItem[];
 };
 
@@ -41,6 +49,18 @@ function walk(
           ];
     return [...own, ...walk(item.item, path)];
   });
+}
+
+function flatten(items: readonly PostmanItem[] = []): PostmanItem[] {
+  return items.flatMap((item) => [
+    ...(item.request === undefined ? [] : [item]),
+    ...flatten(item.item),
+  ]);
+}
+
+function parseObject(raw: string | undefined): Record<string, unknown> {
+  if (raw === undefined) throw new Error("Expected a JSON example body");
+  return JSON.parse(raw) as Record<string, unknown>;
 }
 
 describe("canonical Auth Postman artifacts", () => {
@@ -96,6 +116,63 @@ describe("canonical Auth Postman artifacts", () => {
     );
   });
 
+  it("keeps complete saved email-only signup variants", async () => {
+    const document = JSON.parse(
+      await readFile(
+        resolve("postman/R1-P02-authentication.postman_collection.json"),
+        "utf8",
+      ),
+    ) as PostmanDocument;
+    const requests = flatten(document.item);
+    const signup = requests.find((item) => item.name === "Signup");
+    expect(signup?.response).toHaveLength(4);
+
+    const variants = signup?.response?.map((example) =>
+      parseObject(example.originalRequest?.body?.raw),
+    );
+    expect(variants?.map((variant) => variant["accountCategory"])).toEqual([
+      "INDIVIDUAL",
+      "COMPANY",
+      "ENGINEER",
+      "PROVIDER_OWNER",
+    ]);
+    expect(variants?.[0]).toHaveProperty("fullName");
+    expect(variants?.[1]).toMatchObject({
+      companyName: "{{companyName}}",
+      representativeFullName: "{{representativeFullName}}",
+    });
+    expect(variants?.[2]).toMatchObject({
+      fullName: "{{engineerFullName}}",
+      professionalTitle: "{{professionalTitle}}",
+    });
+    expect(variants?.[3]).not.toHaveProperty("fullName");
+
+    const signupResponses = signup?.response?.map((example) => {
+      const envelope = parseObject(example.body);
+      return envelope["data"] as Record<string, unknown>;
+    });
+    expect(signupResponses?.map((response) => response["channel"])).toEqual([
+      "EMAIL",
+      "EMAIL",
+      "EMAIL",
+      "EMAIL",
+    ]);
+    for (const response of signupResponses ?? []) {
+      expect(response).toEqual(
+        expect.objectContaining({
+          accepted: true,
+          challengeId: "<challenge-id>",
+          nextAction: "VERIFY_ACCOUNT",
+          purpose: "CATEGORY_VERIFICATION",
+          maskedDestination: expect.any(String),
+          expiresAt: expect.any(String),
+          resendAvailableAt: expect.any(String),
+        }),
+      );
+    }
+
+  });
+
   it("has no second Auth or Google collection and shares the canonical environment", async () => {
     const files = await readdir(resolve("postman"));
     expect(
@@ -126,6 +203,8 @@ describe("canonical Auth Postman artifacts", () => {
       "individualFullName",
       "companyName",
       "representativeFullName",
+      "commercialRegistrationNumber",
+      "taxRegistrationNumber",
       "engineerFullName",
       "professionalTitle",
       "profileImagePath",

@@ -27,6 +27,7 @@ describe("authentication request validation", () => {
       .post("/api/v1/auth/signup")
       .send({
         accountCategory: "INDIVIDUAL",
+        fullName: "Invalid Fields Customer",
         phone: "123",
         email: "invalid",
         password: "1234567",

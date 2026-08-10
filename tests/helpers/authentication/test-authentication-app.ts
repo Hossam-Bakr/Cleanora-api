@@ -11,13 +11,16 @@ import { startTestDatabaseLifecycle, stopTestDatabaseLifecycle } from '../test-d
 import { requireApprovedTestDatabaseUrl } from '../resolve-test-database-url.js';
 import { DeterministicAuthenticationInbox } from './deterministic-delivery.js';
 import { DeterministicGoogleAdapter } from './deterministic-google.adapter.js';
+import { createPrismaCustomerSignupProfileWriter } from '../../../src/modules/customers/infrastructure/prisma-customer-signup-profile.writer.js';
 
-export async function startAuthenticationTestApp() {
+export async function startAuthenticationTestApp(options: {
+  readonly now?: () => Date;
+} = {}) {
   const database = await startTestDatabaseLifecycle();
   const email = new DeterministicAuthenticationInbox();
   const google = new DeterministicGoogleAdapter();
   const { url: testDatabaseUrl } = requireApprovedTestDatabaseUrl();
-  const environment = createTestEnvironment({ AUTH_ENABLED: true, GOOGLE_AUTH_ENABLED: true, DATABASE_URL: testDatabaseUrl });
+  const environment = createTestEnvironment({ AUTH_ENABLED: true, EMAIL_AUTH_ENABLED: true, SMS_AUTH_ENABLED: false, GOOGLE_AUTH_ENABLED: true, DATABASE_URL: testDatabaseUrl });
   const rateLimiter = { consume: async () => ({ allowed: true, remaining: 1_000 }) };
   const authentication = createAuthenticationModule({
     trustedOrigins: environment.CORS_ORIGINS,
@@ -27,13 +30,15 @@ export async function startAuthenticationTestApp() {
     verifier: new CryptoVerifierAdapter(environment.AUTH_VERIFIER_SECRET!),
     privacyHashSecret: environment.AUTH_PRIVACY_HASH_SECRET!,
     email,
+    customerSignupProfiles: createPrismaCustomerSignupProfileWriter,
     accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
     refreshTtlSeconds: environment.JWT_REFRESH_TTL_SECONDS,
     rateLimiter,
     googleIdentity: google,
     googleTransactions: new MemoryGoogleTransactionStoreAdapter(),
     googleProviderCallbackUri: environment.GOOGLE_REDIRECT_URI!,
-    googleFrontendCallbackUri: environment.GOOGLE_FRONTEND_CALLBACK_URI!
+    googleFrontendCallbackUri: environment.GOOGLE_FRONTEND_CALLBACK_URI!,
+    ...(options.now === undefined ? {} : { now: options.now }),
   });
   const logger = new TestLogger();
   const app = createTestApp({

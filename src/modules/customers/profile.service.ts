@@ -91,6 +91,9 @@ function trimProfileInput(input: ProfileInput): ProfileInput {
         category: input.category,
         companyName: input.companyName.trim(),
         representativeFullName: input.representativeFullName.trim(),
+        commercialRegistrationNumber:
+          input.commercialRegistrationNumber?.trim() ?? null,
+        taxRegistrationNumber: input.taxRegistrationNumber?.trim() ?? null,
       };
     case "ENGINEER":
       return {

@@ -43,6 +43,7 @@ import { PrismaProfileRepository } from "#modules/customers/infrastructure/prism
 import { ProfileImageService } from "#modules/customers/profile-image.service";
 import { ProfileService } from "#modules/customers/profile.service";
 import { createCustomersRouter } from "#modules/customers/customers.routes";
+import { createPrismaCustomerSignupProfileWriter } from "#modules/customers/infrastructure/prisma-customer-signup-profile.writer";
 import { createMediaPendingUploadPort, createMediaStoragePort } from "#modules/media/infrastructure/media-provider.factory";
 import { SharpProfileImageProcessor } from "#modules/media/infrastructure/sharp-profile-image.processor";
 import { PrismaMediaRepository } from "#modules/media/infrastructure/prisma-media.repository";
@@ -152,6 +153,7 @@ function createAuthenticationModuleForRuntime(
     privacyHashSecret: environment.AUTH_PRIVACY_HASH_SECRET!,
     policy: createAuthenticationPolicy(),
     email: new AuthenticationEmailAdapter(email),
+    customerSignupProfiles: createPrismaCustomerSignupProfileWriter,
     accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
     refreshTtlSeconds: environment.JWT_REFRESH_TTL_SECONDS,
     rateLimiter,

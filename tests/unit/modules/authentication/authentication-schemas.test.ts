@@ -26,6 +26,8 @@ describe("authentication HTTP schemas", () => {
           phone: "+201012345678",
           email: "company@example.test",
           password: "safe-pass",
+          companyName: "Clean Co",
+          representativeFullName: "Mona Ali",
         },
       }).success,
     ).toBe(true);
@@ -36,6 +38,7 @@ describe("authentication HTTP schemas", () => {
           phone: "+201012345678",
           email: "person@example.test",
           password: "safe-pass",
+          fullName: "Ada Lovelace",
         },
       }).success,
     ).toBe(true);
@@ -57,6 +60,7 @@ describe("authentication HTTP schemas", () => {
         phone: "not-a-phone",
         email: "not-an-email",
         password: "1234567",
+        fullName: "Ada",
       },
     });
     expect(result.success).toBe(false);
@@ -74,8 +78,22 @@ describe("authentication HTTP schemas", () => {
       enrollSchema.safeParse({ body: { accountCategory: "WORKER" } }).success,
     ).toBe(false);
     expect(
-      enrollSchema.safeParse({ body: { accountCategory: "ENGINEER" } }).success,
+      enrollSchema.safeParse({
+        body: {
+          accountCategory: "ENGINEER",
+          fullName: "Omar Hassan",
+          professionalTitle: "Civil Engineer",
+        },
+      }).success,
     ).toBe(true);
+    expect(
+      enrollSchema.safeParse({
+        body: {
+          accountCategory: "ENGINEER",
+          companyName: "Wrong category field",
+        },
+      }).success,
+    ).toBe(false);
   });
 
   it("enforces six-digit OTP codes and login phone shape", () => {

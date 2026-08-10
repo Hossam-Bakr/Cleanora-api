@@ -4,9 +4,26 @@ import { authenticationError } from "../domain/authentication.errors.js";
 import type { AccountCategory } from "../domain/authentication.types.js";
 import { mapIdentity } from "./auth.repository.js";
 import { verificationTarget } from "../domain/auth.policy.js";
+import type {
+  CustomerSignupProfileInput,
+  CustomerSignupProfileWriterFactory,
+} from "#modules/customers/customer-signup-profile.writer";
 
 export class AuthenticationTransactionRepository {
-  async enrollCategory(input: { userId: string; category: AccountCategory }) {
+  public constructor(
+    private readonly createCustomerProfiles: CustomerSignupProfileWriterFactory =
+      () => ({
+        create: async () => undefined,
+        remove: async () => undefined,
+      }),
+    private readonly now: () => Date = () => new Date(),
+  ) {}
+
+  async enrollCategory(input: {
+    userId: string;
+    category: AccountCategory;
+    profile?: CustomerSignupProfileInput;
+  }) {
     return getPrismaClient().$transaction(async (transaction) => {
       const current = await transaction.user.findUnique({
         where: { id: input.userId },
@@ -22,6 +39,12 @@ export class AuthenticationTransactionRepository {
           accountCategories: [...current.accountCategories, input.category],
         },
       });
+      if (input.profile !== undefined) {
+        await this.createCustomerProfiles(transaction).create(
+          input.userId,
+          input.profile,
+        );
+      }
       await transaction.authEvent.create({
         data: {
           userId: input.userId,
@@ -39,11 +62,12 @@ export class AuthenticationTransactionRepository {
     session?: { readonly userId: string; readonly sessionId: string },
   ): Promise<boolean> {
     return getPrismaClient().$transaction(async (transaction) => {
+      const now = this.now();
       const challenge = await transaction.otpCode.findFirst({
         where: {
           id: challengeId,
           status: "ACTIVE",
-          expiresAt: { gt: new Date() },
+          expiresAt: { gt: now },
         },
       });
       if (challenge === null) return false;
@@ -65,9 +89,9 @@ export class AuthenticationTransactionRepository {
           id: challenge.id,
           userId: challenge.userId,
           status: "ACTIVE",
-          expiresAt: { gt: new Date() },
+          expiresAt: { gt: now },
         },
-        data: { status: "CONSUMED", consumedAt: new Date() },
+        data: { status: "CONSUMED", consumedAt: now },
       });
       if (consumed.count !== 1) return false;
       await transaction.user.update({
@@ -76,7 +100,7 @@ export class AuthenticationTransactionRepository {
           verifiedCategories: [
             ...new Set([...user.verifiedCategories, challenge.accountCategory]),
           ],
-          emailVerifiedAt: new Date(),
+          emailVerifiedAt: now,
         },
       });
       if (session !== undefined) {
@@ -86,9 +110,9 @@ export class AuthenticationTransactionRepository {
             userId: session.userId,
             capability: "VERIFICATION_ONLY",
             revokedAt: null,
-            expiresAt: { gt: new Date() },
+            expiresAt: { gt: now },
           },
-          data: { capability: "FULL", lastUsedAt: new Date() },
+          data: { capability: "FULL", lastUsedAt: now },
         });
         if (promoted.count !== 1) {
           throw authenticationError("AUTH_VERIFICATION_FAILED");
@@ -99,7 +123,11 @@ export class AuthenticationTransactionRepository {
           userId: challenge.userId,
           eventType: "VERIFICATION_COMPLETED",
           outcome: "SUCCEEDED",
-          context: { category: challenge.accountCategory },
+          context: {
+            category: challenge.accountCategory,
+            purpose: challenge.purpose,
+            channel: challenge.channel,
+          },
         },
       });
       return true;
@@ -109,7 +137,7 @@ export class AuthenticationTransactionRepository {
   async createGoogleIdentity(input: {
     emailNormalized: string;
     subject: string;
-    displayName?: string;
+    displayName: string;
     avatarUrl?: string;
   }) {
     try {
@@ -134,6 +162,10 @@ export class AuthenticationTransactionRepository {
             providerAvatarUrl: input.avatarUrl ?? null,
             lastAuthenticatedAt: new Date(),
           },
+        });
+        await this.createCustomerProfiles(transaction).create(user.id, {
+          category: "INDIVIDUAL",
+          fullName: input.displayName,
         });
         await transaction.authEvent.create({
           data: {
@@ -254,6 +286,7 @@ export class AuthenticationTransactionRepository {
     emailNormalized?: string;
     category: AccountCategory;
     passwordHash: string;
+    profile?: CustomerSignupProfileInput;
   }) {
     try {
       return await getPrismaClient().$transaction(async (transaction) => {
@@ -268,6 +301,12 @@ export class AuthenticationTransactionRepository {
         await transaction.userCredential.create({
           data: { userId: user.id, passwordHash: input.passwordHash },
         });
+        if (input.profile !== undefined) {
+          await this.createCustomerProfiles(transaction).create(
+            user.id,
+            input.profile,
+          );
+        }
         return user;
       });
     } catch (error) {
@@ -283,6 +322,7 @@ export class AuthenticationTransactionRepository {
   async rollbackFailedSignup(
     userId: string,
     challengeId: string,
+    category?: AccountCategory,
   ): Promise<void> {
     // Remove only the brand-new unverified identity created by this failed signup delivery.
     await getPrismaClient().$transaction(async (transaction) => {
@@ -296,9 +336,20 @@ export class AuthenticationTransactionRepository {
           sessions: { none: {} },
           socialAccounts: { none: {} },
         },
-        select: { id: true },
+        select: { id: true, accountCategories: true },
       });
       if (removable === null) return;
+      const rollbackCategory =
+        category ?? (removable.accountCategories[0] as AccountCategory | undefined);
+      if (
+        rollbackCategory !== undefined &&
+        ["INDIVIDUAL", "COMPANY", "ENGINEER"].includes(rollbackCategory)
+      ) {
+        await this.createCustomerProfiles(transaction).remove(
+          userId,
+          rollbackCategory as CustomerSignupProfileInput["category"],
+        );
+      }
       await transaction.userCredential.deleteMany({ where: { userId } });
       await transaction.user.delete({ where: { id: userId } });
     });

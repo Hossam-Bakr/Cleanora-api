@@ -26,6 +26,80 @@ describe('Cleanora Swagger OpenAPI document', () => {
     expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
       "/auth/google/result",
     );
+    expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
+      "/auth/contact-verifications/email/request",
+    );
+    expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
+      "/auth/contact-verifications/phone/request",
+    );
+    expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
+      "/auth/contact-verifications/verify",
+    );
+  });
+
+  it("documents category-aware email-only signup schemas", () => {
+    const signupSchema = cleanoraOpenApiDocument.components.schemas
+      .SignupRequest as {
+      readonly oneOf: readonly { readonly $ref: string }[];
+      readonly discriminator: { readonly propertyName: string };
+    };
+    expect(signupSchema.discriminator.propertyName).toBe("accountCategory");
+    expect(signupSchema.oneOf.map((branch) => branch.$ref)).toEqual([
+      "#/components/schemas/IndividualSignupRequest",
+      "#/components/schemas/CompanySignupRequest",
+      "#/components/schemas/EngineerSignupRequest",
+      "#/components/schemas/ProviderOwnerSignupRequest",
+    ]);
+    expect(
+      cleanoraOpenApiDocument.components.schemas.IndividualSignupRequest
+        .required,
+    ).toEqual([
+      "accountCategory",
+      "fullName",
+      "phone",
+      "email",
+      "password",
+    ]);
+    expect(
+      cleanoraOpenApiDocument.components.schemas.CompanySignupRequest.required,
+    ).toEqual([
+      "accountCategory",
+      "companyName",
+      "representativeFullName",
+      "phone",
+      "email",
+      "password",
+    ]);
+    expect(
+      cleanoraOpenApiDocument.components.schemas.EngineerSignupRequest.required,
+    ).toEqual([
+      "accountCategory",
+      "fullName",
+      "professionalTitle",
+      "phone",
+      "email",
+      "password",
+    ]);
+
+    type JsonRequestBody = {
+      readonly content: {
+        readonly "application/json": {
+          readonly schema: { readonly $ref: string };
+          readonly examples?: Readonly<Record<string, unknown>>;
+        };
+      };
+    };
+    const signupRequestBody = cleanoraOpenApiDocument.paths["/auth/signup"]
+      .post.requestBody as JsonRequestBody;
+    expect(
+      Object.keys(
+        signupRequestBody.content["application/json"].examples ?? {},
+      ),
+    ).toEqual(["individual", "company", "engineer", "providerOwner"]);
+
+    expect(
+      cleanoraOpenApiDocument.paths["/auth/signup"].post.description,
+    ).toContain("Every supported category currently receives its blocking OTP by email");
   });
 
   it('documents R1-P03A paths and excludes obsolete bootstrap routes', () => {

@@ -840,3 +840,105 @@ images.
 17. A future `s3` value remains unsupported in R1-P04 and fails readiness clearly.
 18. `MEDIA_STORAGE_ROOT` and local filesystem storage are removed.
 19. Video/PDF/provider media remain outside R1-P04.
+
+---
+
+## DEC-034 — Category-aware customer signup and contact verification
+
+**Date:** 2026-08-09
+**Status:** Approved by human owner; supersedes DEC-028 for the behavior below
+
+R1-P04A restores actor-specific verification while preserving one identity and
+the completed R1-P04 profile ownership model.
+
+### Signup and category profile invariant
+
+- Individual signup requires `fullName`.
+- Company signup requires `companyName` and `representativeFullName`.
+- Engineer signup requires `fullName` and `professionalTitle`.
+- Phone, email, password, and category remain required for these password-based
+  customer signups.
+- Identity, credential, matching customer profile, and initial challenge have
+  all-or-nothing observable creation semantics.
+- Category enrollment for these customer categories collects the same matching
+  profile fields before activation.
+- Provider Owner remains an email-verified non-customer signup and creates no
+  customer profile in R1-P04A.
+
+### Contact verification
+
+- Individual category activation is blocked by a six-digit SMS OTP to the
+  authoritative phone. Success sets phone assurance only.
+- Company and Engineer category activation remain blocked by a six-digit email
+  OTP. Success sets email assurance only.
+- A verified Individual completes email verification from the authenticated
+  account.
+- A verified Company or Engineer completes phone verification by SMS from the
+  authenticated account.
+- Contact-verification targets are server-resolved from the authenticated
+  identity; callers do not submit a user ID or destination.
+- Twilio Programmable Messaging is the first runtime SMS adapter behind a
+  replaceable Authentication delivery port. Tests use deterministic fakes.
+
+### Individual email grace and order restriction
+
+- Successful Individual phone activation records one deadline exactly 15
+  consecutive 24-hour periods after verification.
+- Before the deadline, unverified email does not block order creation.
+- At the deadline instant and after it, unverified email denies order creation
+  with `INDIVIDUAL_EMAIL_VERIFICATION_OVERDUE`.
+- This is an order-only restriction. The identity stays ACTIVE; login, account
+  access, and email verification remain available.
+- Successful email verification removes the restriction immediately.
+- The backend derives eligibility from authoritative timestamps and server time;
+  no background suspension job or client-calculated decision is authoritative.
+
+### Company regulatory profile completion
+
+- `commercialRegistrationNumber` and `taxRegistrationNumber` are nullable,
+  owner-private Company profile fields.
+- They are omitted from signup and completed or updated from the authenticated
+  Company account.
+- Existing Company profiles remain null; no regulatory value is invented or
+  backfilled.
+
+### Preserved boundaries
+
+- Existing applied migrations remain immutable; R1-P04A owns a forward-only
+  migration.
+- R1-P04 profile authorization/audit rules continue to apply.
+- No Company document upload, government validation, provider onboarding,
+  Orders module implementation, deployment, production migration, or Git action
+  is authorized by this decision.
+
+---
+
+## DEC-035 — Email-only R1-P04A activation; SMS deferred
+
+**Date:** 2026-08-10
+**Status:** Approved by human owner; temporarily supersedes DEC-034 contact-verification and grace behavior
+
+R1-P04A remains email-only during the current development phase. The future SMS
+provider has not been selected, so no provider-specific or generic SMS delivery
+implementation is part of the active phase.
+
+- Individual, Company, Engineer, and Provider Owner category activation all use
+  a six-digit OTP delivered to the authoritative email.
+- Successful category verification sets email assurance and the verified
+  category only. Phone assurance remains unset for password-based signup.
+- `SMS_AUTH_ENABLED` defaults to and must remain `false`. Setting it to `true`
+  fails startup with a safe configuration diagnostic.
+- No Twilio variables, SMS adapter, phone-verification endpoint, phone CTA,
+  Individual email deadline, or order-creation grace restriction is active now.
+- Category-specific signup names and Company post-signup regulatory identifiers
+  remain in R1-P04A scope.
+
+The intended future behavior is retained as product direction, not current
+implementation: Individual will eventually activate by phone then receive a
+15-day email-verification grace; Company and Engineer will continue to activate
+by email and may verify phone from the profile. Provider selection, persistence,
+API contracts, migration, assurance transitions, and rollout belong to a later
+explicitly approved phase.
+
+Commit, push, deployment, production migration, and external provider actions
+remain separately controlled actions.

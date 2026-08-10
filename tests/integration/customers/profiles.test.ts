@@ -54,4 +54,55 @@ describe("US1 customer profile integration", () => {
     await service.get({ principal: principal(userId), category: "INDIVIDUAL" });
     expect(await getPrismaClient().auditLog.count({ where: { actorId: userId } })).toBe(before + 1);
   });
+
+  it("lets a company complete and replace its commercial and tax registration data after signup", async () => {
+    const companyUserId = await getPrismaClient().user.create({
+      data: {
+        phoneE164: `+201${randomUUID().replace(/\D/gu, "").slice(0, 10).padEnd(10, "0")}`,
+        emailNormalized: `company-profile-${randomUUID()}@example.test`,
+        emailVerifiedAt: new Date(),
+        accountCategories: ["COMPANY"],
+        verifiedCategories: ["COMPANY"],
+      },
+    }).then((user) => user.id);
+    const companyPrincipal = {
+      userId: companyUserId,
+      sessionId: `session-${companyUserId}`,
+      accountCategories: ["COMPANY"] as const,
+      verifiedCategories: ["COMPANY"] as const,
+      pendingCategories: [],
+      status: "ACTIVE" as const,
+      verificationOnly: false,
+    };
+    const service = new ProfileService(
+      new PrismaCustomersUnitOfWork(createPrismaGeneralTransactionalAuditWriter, createPrismaPrivilegedAuditWriter),
+      new PrismaProfileRepository(),
+      createPrismaDenialAuditWriter(),
+    );
+    try {
+      await expect(service.upsert({
+        principal: companyPrincipal,
+        input: {
+          category: "COMPANY",
+          companyName: " Cleanora Business ",
+          representativeFullName: " Company Representative ",
+          commercialRegistrationNumber: " CR-2026-001 ",
+          taxRegistrationNumber: " TAX-2026-001 ",
+        },
+      })).resolves.toMatchObject({
+        companyName: "Cleanora Business",
+        representativeFullName: "Company Representative",
+        commercialRegistrationNumber: "CR-2026-001",
+        taxRegistrationNumber: "TAX-2026-001",
+      });
+      await expect(service.get({ principal: companyPrincipal, category: "COMPANY" })).resolves.toMatchObject({
+        commercialRegistrationNumber: "CR-2026-001",
+        taxRegistrationNumber: "TAX-2026-001",
+      });
+    } finally {
+      await getPrismaClient().companyProfile.deleteMany({ where: { userId: companyUserId } });
+      await getPrismaClient().customerProfile.deleteMany({ where: { userId: companyUserId } });
+      await getPrismaClient().user.delete({ where: { id: companyUserId } });
+    }
+  });
 });

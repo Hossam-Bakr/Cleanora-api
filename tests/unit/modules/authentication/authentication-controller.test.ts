@@ -458,7 +458,9 @@ describe('authentication controller failure alternatives', () => {
       enrollResponse as never,
       vi.fn(),
     );
-    expect(service.enroll).toHaveBeenCalledWith('user-1', 'COMPANY');
+    expect(service.enroll).toHaveBeenCalledWith('user-1', {
+      accountCategory: 'COMPANY',
+    });
     expect(enrollResponse.status).toHaveBeenCalledWith(202);
 
     const loginResponse = response();

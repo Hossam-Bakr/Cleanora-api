@@ -14,6 +14,18 @@ export const companyProfileBody = z
   .object({
     companyName: requiredText,
     representativeFullName: requiredText,
+    commercialRegistrationNumber: z
+      .string()
+      .trim()
+      .min(1, "This field is required")
+      .max(100, "This field is too long")
+      .nullable(),
+    taxRegistrationNumber: z
+      .string()
+      .trim()
+      .min(1, "This field is required")
+      .max(100, "This field is too long")
+      .nullable(),
   })
   .strict();
 

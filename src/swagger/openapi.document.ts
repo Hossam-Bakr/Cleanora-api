@@ -23,13 +23,23 @@ function documentedErrorResponse(
 
 const exampleRequestId = "7ebf45ad-7384-41ab-8e74-e864ae048d30";
 
-function jsonRequest(schemaName: string, description: string) {
+type JsonRequestExample = {
+  readonly summary: string;
+  readonly value: Readonly<Record<string, unknown>>;
+};
+
+function jsonRequest(
+  schemaName: string,
+  description: string,
+  examples?: Readonly<Record<string, JsonRequestExample>>,
+) {
   return {
     required: true,
     description,
     content: {
       "application/json": {
         schema: { $ref: `#/components/schemas/${schemaName}` },
+        ...(examples === undefined ? {} : { examples }),
       },
     },
   };
@@ -209,10 +219,53 @@ export const cleanoraOpenApiDocument = {
         operationId: "signup",
         summary: "Register a public account category",
         description:
-          "Creates an authentication identity for an approved self-signup category and sends its blocking verification code to the required normalized email address. Worker self-signup is prohibited. Phone ownership verification is deferred to R1-P26. The frontend should navigate to its verification screen using the returned opaque challenge.",
+          "Creates the authentication identity and required category profile atomically. Every supported category currently receives its blocking OTP by email; phone verification and SMS providers are deferred. Worker self-signup is prohibited. The frontend should use the returned EMAIL channel and masked destination when rendering the verification screen.",
         requestBody: jsonRequest(
           "SignupRequest",
           "Category-specific signup identifiers and a policy-compliant password.",
+          {
+            individual: {
+              summary: "Individual — email activation",
+              value: {
+                accountCategory: "INDIVIDUAL",
+                fullName: "Cleanora Individual",
+                phone: "+201000000001",
+                email: "individual@example.test",
+                password: "4829517",
+              },
+            },
+            company: {
+              summary: "Company — email activation",
+              value: {
+                accountCategory: "COMPANY",
+                companyName: "Cleanora Services",
+                representativeFullName: "Cleanora Representative",
+                phone: "+201000000002",
+                email: "company@example.test",
+                password: "4829517",
+              },
+            },
+            engineer: {
+              summary: "Engineer — email activation",
+              value: {
+                accountCategory: "ENGINEER",
+                fullName: "Cleanora Engineer",
+                professionalTitle: "Cleaning Engineer",
+                phone: "+201000000003",
+                email: "engineer@example.test",
+                password: "4829517",
+              },
+            },
+            providerOwner: {
+              summary: "Provider Owner — email activation",
+              value: {
+                accountCategory: "PROVIDER_OWNER",
+                phone: "+201000000004",
+                email: "owner@example.test",
+                password: "4829517",
+              },
+            },
+          },
         ),
         responses: {
           "202": successResponse(
@@ -300,11 +353,40 @@ export const cleanoraOpenApiDocument = {
         operationId: "enrollAccountCategory",
         summary: "Enroll another account category",
         description:
-          "Adds another supported category to the authenticated identity without creating another user, role, permission, or profile. Existing verified categories remain usable while the new category is pending.",
+          "Adds another supported category and its required profile to the authenticated identity without creating another user, role, or permission. Existing verified categories remain usable while the new category is pending.",
         security: [{ bearerAuth: [] }],
         requestBody: jsonRequest(
           "EnrollCategoryRequest",
           "The additional self-signup category to enroll.",
+          {
+            individual: {
+              summary: "Enroll Individual",
+              value: {
+                accountCategory: "INDIVIDUAL",
+                fullName: "Cleanora Individual",
+              },
+            },
+            company: {
+              summary: "Enroll Company",
+              value: {
+                accountCategory: "COMPANY",
+                companyName: "Cleanora Services",
+                representativeFullName: "Cleanora Representative",
+              },
+            },
+            engineer: {
+              summary: "Enroll Engineer",
+              value: {
+                accountCategory: "ENGINEER",
+                fullName: "Cleanora Engineer",
+                professionalTitle: "Cleaning Engineer",
+              },
+            },
+            providerOwner: {
+              summary: "Enroll Provider Owner",
+              value: { accountCategory: "PROVIDER_OWNER" },
+            },
+          },
         ),
         responses: {
           "202": successResponse(
@@ -1064,47 +1146,83 @@ export const cleanoraOpenApiDocument = {
           "Stable frontend navigation hint; it is not an authorization decision.",
       },
       SignupRequest: {
-        type: "object",
-        additionalProperties: false,
-        required: ["accountCategory", "phone", "email", "password"],
-        properties: {
-          accountCategory: {
-            $ref: "#/components/schemas/SelfSignupCategory",
-          },
-          phone: {
-            type: "string",
-            description:
-              "International E.164 phone. Spaces, parentheses, and hyphens are normalized by the server.",
-            example: "+201234567890",
-          },
-          email: {
-            type: "string",
-            format: "email",
-            description:
-              "Required verification and recovery address for every self-signup category.",
-            example: "user@example.com",
-          },
-          password: {
-            type: "string",
-            format: "password",
-            writeOnly: true,
-            minLength: 7,
-            maxLength: 128,
-            description:
-              "Password may contain any characters, including numbers only, but common, repeated, and sequential values are rejected.",
-            example: "8392741",
-          },
-        },
+        oneOf: [
+          { $ref: "#/components/schemas/IndividualSignupRequest" },
+          { $ref: "#/components/schemas/CompanySignupRequest" },
+          { $ref: "#/components/schemas/EngineerSignupRequest" },
+          { $ref: "#/components/schemas/ProviderOwnerSignupRequest" },
+        ],
+        discriminator: { propertyName: "accountCategory" },
       },
       EnrollCategoryRequest: {
-        type: "object",
-        additionalProperties: false,
-        required: ["accountCategory"],
+        oneOf: [
+          { $ref: "#/components/schemas/IndividualEnrollmentRequest" },
+          { $ref: "#/components/schemas/CompanyEnrollmentRequest" },
+          { $ref: "#/components/schemas/EngineerEnrollmentRequest" },
+          { $ref: "#/components/schemas/ProviderOwnerEnrollmentRequest" },
+        ],
+        discriminator: { propertyName: "accountCategory" },
+      },
+      IndividualSignupRequest: {
+        type: "object", additionalProperties: false,
+        required: ["accountCategory", "fullName", "phone", "email", "password"],
         properties: {
-          accountCategory: {
-            $ref: "#/components/schemas/SelfSignupCategory",
-          },
+          accountCategory: { type: "string", const: "INDIVIDUAL" },
+          fullName: { type: "string", minLength: 1, maxLength: 200 },
+          phone: { type: "string", example: "+201234567890" },
+          email: { type: "string", format: "email", example: "user@example.com" },
+          password: { type: "string", format: "password", writeOnly: true, minLength: 7, maxLength: 128 },
         },
+      },
+      CompanySignupRequest: {
+        type: "object", additionalProperties: false,
+        required: ["accountCategory", "companyName", "representativeFullName", "phone", "email", "password"],
+        properties: {
+          accountCategory: { type: "string", const: "COMPANY" },
+          companyName: { type: "string", minLength: 1, maxLength: 200 },
+          representativeFullName: { type: "string", minLength: 1, maxLength: 200 },
+          phone: { type: "string", example: "+201234567890" },
+          email: { type: "string", format: "email", example: "company@example.com" },
+          password: { type: "string", format: "password", writeOnly: true, minLength: 7, maxLength: 128 },
+        },
+      },
+      EngineerSignupRequest: {
+        type: "object", additionalProperties: false,
+        required: ["accountCategory", "fullName", "professionalTitle", "phone", "email", "password"],
+        properties: {
+          accountCategory: { type: "string", const: "ENGINEER" },
+          fullName: { type: "string", minLength: 1, maxLength: 200 },
+          professionalTitle: { type: "string", minLength: 1, maxLength: 200 },
+          phone: { type: "string", example: "+201234567890" },
+          email: { type: "string", format: "email", example: "engineer@example.com" },
+          password: { type: "string", format: "password", writeOnly: true, minLength: 7, maxLength: 128 },
+        },
+      },
+      ProviderOwnerSignupRequest: {
+        type: "object", additionalProperties: false,
+        required: ["accountCategory", "phone", "email", "password"],
+        properties: {
+          accountCategory: { type: "string", const: "PROVIDER_OWNER" },
+          phone: { type: "string", example: "+201234567890" },
+          email: { type: "string", format: "email", example: "owner@example.com" },
+          password: { type: "string", format: "password", writeOnly: true, minLength: 7, maxLength: 128 },
+        },
+      },
+      IndividualEnrollmentRequest: {
+        type: "object", additionalProperties: false, required: ["accountCategory", "fullName"],
+        properties: { accountCategory: { type: "string", const: "INDIVIDUAL" }, fullName: { type: "string", minLength: 1, maxLength: 200 } },
+      },
+      CompanyEnrollmentRequest: {
+        type: "object", additionalProperties: false, required: ["accountCategory", "companyName", "representativeFullName"],
+        properties: { accountCategory: { type: "string", const: "COMPANY" }, companyName: { type: "string", minLength: 1, maxLength: 200 }, representativeFullName: { type: "string", minLength: 1, maxLength: 200 } },
+      },
+      EngineerEnrollmentRequest: {
+        type: "object", additionalProperties: false, required: ["accountCategory", "fullName", "professionalTitle"],
+        properties: { accountCategory: { type: "string", const: "ENGINEER" }, fullName: { type: "string", minLength: 1, maxLength: 200 }, professionalTitle: { type: "string", minLength: 1, maxLength: 200 } },
+      },
+      ProviderOwnerEnrollmentRequest: {
+        type: "object", additionalProperties: false, required: ["accountCategory"],
+        properties: { accountCategory: { type: "string", const: "PROVIDER_OWNER" } },
       },
       OtpRequest: {
         type: "object",
@@ -1306,7 +1424,7 @@ export const cleanoraOpenApiDocument = {
           },
           purpose: {
             type: "string",
-            enum: ["CATEGORY_VERIFICATION"],
+            enum: ["CATEGORY_VERIFICATION", "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION"],
           },
           channel: { type: "string", enum: ["EMAIL"] },
           maskedDestination: { type: "string", example: "u***r@example.com" },
@@ -1578,10 +1696,12 @@ export const cleanoraOpenApiDocument = {
         properties: { fullName: { type: "string", minLength: 1, maxLength: 200 } },
       },
       CompanyProfileRequest: {
-        type: "object", additionalProperties: false, required: ["companyName", "representativeFullName"],
+        type: "object", additionalProperties: false, required: ["companyName", "representativeFullName", "commercialRegistrationNumber", "taxRegistrationNumber"],
         properties: {
           companyName: { type: "string", minLength: 1, maxLength: 200 },
           representativeFullName: { type: "string", minLength: 1, maxLength: 200 },
+          commercialRegistrationNumber: { type: ["string", "null"], minLength: 1, maxLength: 100 },
+          taxRegistrationNumber: { type: ["string", "null"], minLength: 1, maxLength: 100 },
         },
       },
       EngineerProfileRequest: {
@@ -1599,6 +1719,8 @@ export const cleanoraOpenApiDocument = {
           fullName: { type: "string" },
           companyName: { type: "string" },
           representativeFullName: { type: "string" },
+          commercialRegistrationNumber: { type: ["string", "null"] },
+          taxRegistrationNumber: { type: ["string", "null"] },
           professionalTitle: { type: "string" },
         },
       },

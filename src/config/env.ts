@@ -60,6 +60,7 @@ const environmentSchema = z
   .object({
     AUTH_ENABLED: booleanFlagSchema.default(false),
     EMAIL_AUTH_ENABLED: booleanFlagSchema.default(false),
+    SMS_AUTH_ENABLED: booleanFlagSchema.default(false),
     EMAIL_PROVIDER: z.preprocess(
       emptyStringToUndefined,
       z.enum(["smtp"]).optional()
@@ -202,7 +203,16 @@ const environmentSchema = z
         code: "custom",
         path: ["EMAIL_AUTH_ENABLED"],
         message:
-          "R1-P02 authentication requires EMAIL_AUTH_ENABLED=true because email is the only verification channel"
+          "R1-P04A authentication requires EMAIL_AUTH_ENABLED=true for category and in-account verification"
+      });
+    }
+
+    if (environment.SMS_AUTH_ENABLED) {
+      context.addIssue({
+        code: "custom",
+        path: ["SMS_AUTH_ENABLED"],
+        message:
+          "SMS authentication is deferred; SMS_AUTH_ENABLED must remain false in the current phase",
       });
     }
 

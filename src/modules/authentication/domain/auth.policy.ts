@@ -160,15 +160,12 @@ export function isSessionActive(
 }
 
 export function blockingVerificationChannel(
-  category: AccountCategory,
+  _category: AccountCategory,
 ): AuthDeliveryChannel {
-  void category;
   return "EMAIL";
 }
 
-export function recoveryChannel(
-  category: AccountCategory,
-): AuthDeliveryChannel {
+export function recoveryChannel(category: AccountCategory): AuthDeliveryChannel {
   return blockingVerificationChannel(category);
 }
 

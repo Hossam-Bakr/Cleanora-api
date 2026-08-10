@@ -22,8 +22,8 @@ describe('normalized signup uniqueness races', () => {
     const formatted = `${identity.phone.slice(0, 4)} (${identity.phone.slice(4, 7)}) ${identity.phone.slice(7)}`;
     try {
       const responses = await Promise.all([
-        request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: identity.phone, email: identity.email, password: identity.password }),
-        request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', phone: formatted, email: `other-${identity.email}`, password: identity.password })
+        request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', fullName: 'First Race Customer', phone: identity.phone, email: identity.email, password: identity.password }),
+        request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'INDIVIDUAL', fullName: 'Second Race Customer', phone: formatted, email: `other-${identity.email}`, password: identity.password })
       ]);
       assertRace(responses, 'AUTH_PHONE_ALREADY_REGISTERED');
       const users = await context.prisma.user.findMany({ where: { phoneE164: identity.phone }, select: { id: true } });
@@ -41,8 +41,8 @@ describe('normalized signup uniqueness races', () => {
     const variant = `  ${first.email.toUpperCase()}  `;
     try {
       const responses = await Promise.all([
-        request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'COMPANY', phone: first.phone, email: first.email, password: first.password }),
-        request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'COMPANY', phone: second.phone, email: variant, password: second.password })
+        request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'COMPANY', companyName: 'First Race Company', representativeFullName: 'First Representative', phone: first.phone, email: first.email, password: first.password }),
+        request(context.app).post('/api/v1/auth/signup').send({ accountCategory: 'COMPANY', companyName: 'Second Race Company', representativeFullName: 'Second Representative', phone: second.phone, email: variant, password: second.password })
       ]);
       assertRace(responses, 'AUTH_EMAIL_ALREADY_REGISTERED');
       const users = await context.prisma.user.findMany({ where: { emailNormalized: first.email }, select: { id: true } });

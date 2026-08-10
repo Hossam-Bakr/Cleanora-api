@@ -37,7 +37,7 @@ describe('authentication domain policies', () => {
     expect(() => assertPasswordPolicy(`safe-${'x'.repeat(120)}`)).not.toThrow();
   });
 
-  it('uses email as the only R1-P02 verification channel', () => {
+  it('uses email as the only current verification channel', () => {
     expect(blockingVerificationChannel('WORKER')).toBe('EMAIL');
     expect(blockingVerificationChannel('COMPANY')).toBe('EMAIL');
     expect(blockingVerificationChannel('ENGINEER')).toBe('EMAIL');
@@ -46,7 +46,7 @@ describe('authentication domain policies', () => {
     expect(() => assertSelfSignupCategory('WORKER')).toThrow();
     expect(pendingCategories(['INDIVIDUAL', 'COMPANY'], ['INDIVIDUAL'])).toEqual(['COMPANY']);
   });
-  it('selects actor-specific channels', () => {
+  it('selects email for every current category and recovery path', () => {
     expect(blockingVerificationChannel('INDIVIDUAL')).toBe('EMAIL');
     expect(blockingVerificationChannel('PROVIDER_OWNER')).toBe('EMAIL');
     expect(recoveryChannel('WORKER')).toBe('EMAIL');

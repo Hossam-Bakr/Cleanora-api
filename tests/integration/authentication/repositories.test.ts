@@ -80,7 +80,7 @@ describe('authentication repository conditional mutations', () => {
     const transaction = {
       otpCode: { deleteMany: vi.fn(async () => { calls.push('challenge'); return { count: 1 }; }) },
       user: {
-        findFirst: vi.fn(async () => ({ id: 'user-1' })),
+        findFirst: vi.fn(async () => ({ id: 'user-1', accountCategories: ['PROVIDER_OWNER'] })),
         delete: vi.fn(async () => { calls.push('user'); return {}; })
       },
       userCredential: { deleteMany: vi.fn(async () => { calls.push('credential'); return { count: 1 }; }) }
