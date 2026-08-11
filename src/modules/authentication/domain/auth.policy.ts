@@ -3,15 +3,20 @@ import type {
   AccountCategory,
   AuthDeliveryChannel,
   IdentityState,
+  InvitationOnboardingAllowedAction,
   SessionCapability,
 } from "./authentication.types.js";
 
+/** Public self-signup / ordinary enrollment categories. PROVIDER_OWNER is staff-approval only. */
 export const SELF_SIGNUP_CATEGORIES: readonly AccountCategory[] = [
   "INDIVIDUAL",
   "COMPANY",
   "ENGINEER",
-  "PROVIDER_OWNER",
 ];
+
+export const INVITATION_ONBOARDING_ALLOWED_ACTIONS: readonly InvitationOnboardingAllowedAction[] =
+  ["ACCEPT_PROVIDER_ADMIN_INVITATION", "SESSION_CLEANUP"] as const;
+
 export const OTP_TTL_SECONDS = 600;
 export const OTP_MAX_ATTEMPTS = 5;
 export const OTP_RESEND_SECONDS = 60;
@@ -63,7 +68,43 @@ export function pendingCategories(
   return enrolled.filter((category) => !verified.includes(category));
 }
 
+export interface LoginCapabilityOptions {
+  readonly now?: Date;
+  /**
+   * When true, Authentication has an ENABLED `provider_admin` role grant.
+   * Full capability is derived from that role alone — never from Provider tables.
+   */
+  readonly providerAdminEnabled?: boolean;
+}
+
 export function loginCapability(
+  identity: IdentityState,
+  nowOrOptions: Date | LoginCapabilityOptions = new Date(),
+): SessionCapability {
+  const options: LoginCapabilityOptions =
+    nowOrOptions instanceof Date ? { now: nowOrOptions } : nowOrOptions;
+  const now = options.now ?? new Date();
+  if (
+    identity.status === "BANNED" ||
+    (identity.status === "SUSPENDED" &&
+      (identity.suspendedUntil === null || identity.suspendedUntil > now))
+  ) {
+    throw authenticationError("AUTHENTICATION_FAILED");
+  }
+  if (
+    identity.verifiedCategories.length > 0 ||
+    options.providerAdminEnabled === true
+  ) {
+    return "FULL";
+  }
+  return "VERIFICATION_ONLY";
+}
+
+/**
+ * Capability after invitation email OTP succeeds and before invitation acceptance.
+ * The principal may only accept the invitation or clean up its session.
+ */
+export function invitationOnboardingCapability(
   identity: IdentityState,
   now = new Date(),
 ): SessionCapability {
@@ -74,9 +115,43 @@ export function loginCapability(
   ) {
     throw authenticationError("AUTHENTICATION_FAILED");
   }
-  return identity.verifiedCategories.length > 0
-    ? "FULL"
-    : "VERIFICATION_ONLY";
+  return "PROVIDER_ADMIN_INVITATION_ONBOARDING";
+}
+
+/**
+ * Resolves the effective capability for an authenticated session.
+ * Empty-category invitees stay restricted until `provider_admin` is enabled;
+ * enabled `provider_admin` yields FULL without reading Provider tables.
+ */
+export function resolveAuthenticatedCapability(
+  identity: IdentityState,
+  options: LoginCapabilityOptions = {},
+): SessionCapability {
+  const capability = loginCapability(identity, options);
+  if (capability === "FULL") {
+    return "FULL";
+  }
+  if (
+    identity.accountCategories.length === 0 &&
+    identity.verifiedCategories.length === 0 &&
+    identity.emailVerifiedAt !== null
+  ) {
+    return "PROVIDER_ADMIN_INVITATION_ONBOARDING";
+  }
+  return "VERIFICATION_ONLY";
+}
+
+export function isRestrictedInvitationOnboardingCapability(
+  capability: SessionCapability,
+): boolean {
+  return capability === "PROVIDER_ADMIN_INVITATION_ONBOARDING";
+}
+
+/** Maps domain session capability to the persisted Prisma SessionCapability enum. */
+export function toPersistedSessionCapability(
+  capability: SessionCapability,
+): "FULL" | "VERIFICATION_ONLY" {
+  return capability === "FULL" ? "FULL" : "VERIFICATION_ONLY";
 }
 
 export function isPhoneFormatValid(value: string): boolean {
@@ -171,11 +246,16 @@ export function recoveryChannel(category: AccountCategory): AuthDeliveryChannel 
 
 export type OtpPurpose =
   | "CATEGORY_VERIFICATION"
-  | "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION";
+  | "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION"
+  | "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION";
 
 export interface VerificationTarget {
   readonly userId: string;
-  readonly category: AccountCategory;
+  /**
+   * Non-null for category verification purposes.
+   * Null only for PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION (fixed-email invite flow).
+   */
+  readonly category: AccountCategory | null;
   readonly purpose: OtpPurpose;
   readonly channel: AuthDeliveryChannel;
   readonly destination: string;
@@ -187,6 +267,7 @@ export function verificationTarget(
   purpose: OtpPurpose,
 ): VerificationTarget {
   if (
+    purpose === "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION" ||
     !identity.accountCategories.includes(category) ||
     category === "WORKER" ||
     purpose !== "CATEGORY_VERIFICATION" ||
@@ -204,11 +285,35 @@ export function verificationTarget(
   };
 }
 
+/**
+ * Invitation email OTP binds the server-fixed invite email with a null
+ * accountCategory. Public signup categories are never inferred here.
+ */
+export function invitationEmailVerificationTarget(
+  identity: IdentityState,
+  fixedEmailNormalized: string,
+): VerificationTarget {
+  const destination = normalizeEmail(fixedEmailNormalized);
+  if (
+    identity.emailNormalized === null ||
+    identity.emailNormalized !== destination
+  ) {
+    throw authenticationError("AUTH_VERIFICATION_FAILED");
+  }
+  return {
+    userId: identity.id,
+    category: null,
+    purpose: "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION",
+    channel: "EMAIL",
+    destination,
+  };
+}
+
 export function assertVerificationChallengeTarget(
   target: VerificationTarget,
   challenge: {
     readonly userId: string;
-    readonly accountCategory: AccountCategory;
+    readonly accountCategory: AccountCategory | null;
     readonly purpose: OtpPurpose;
     readonly channel: AuthDeliveryChannel;
     readonly destinationHash: string;

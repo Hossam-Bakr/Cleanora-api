@@ -7,7 +7,20 @@ export type AccountCategory =
 
 export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED';
 export type AuthenticationMethod = 'PASSWORD' | 'GOOGLE';
-export type SessionCapability = 'FULL' | 'VERIFICATION_ONLY';
+/**
+ * Domain session capability. `PROVIDER_ADMIN_INVITATION_ONBOARDING` is the
+ * restricted accept/session-cleanup principal used before invitation acceptance.
+ * Persistence maps it to VERIFICATION_ONLY until a dedicated enum value exists.
+ */
+export type SessionCapability =
+  | 'FULL'
+  | 'VERIFICATION_ONLY'
+  | 'PROVIDER_ADMIN_INVITATION_ONBOARDING';
+
+export type InvitationOnboardingAllowedAction =
+  | 'ACCEPT_PROVIDER_ADMIN_INVITATION'
+  | 'SESSION_CLEANUP';
+
 export type AuthDeliveryChannel = 'SMS' | 'EMAIL';
 
 export interface AuthenticationPrincipal {
@@ -18,6 +31,11 @@ export interface AuthenticationPrincipal {
   readonly pendingCategories: readonly AccountCategory[];
   readonly status: UserStatus;
   readonly verificationOnly: boolean;
+  /**
+   * When true, the principal may only accept a Provider Admin invitation or
+   * clean up its session — not ordinary FULL account operations.
+   */
+  readonly invitationOnboardingOnly?: boolean;
 }
 
 export interface IdentityState {

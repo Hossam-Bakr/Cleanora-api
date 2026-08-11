@@ -618,24 +618,33 @@ current email-only activation model for every supported category.
 
 ## R1-P05 — Provider Onboarding, Profile & Lifecycle
 
+**Status (2026-08-11):** **Complete** (T001–T159 checked). Independent review
+returned PASS and human completion authorization is recorded. The next phase
+is **not** activated. No deployment or production migration occurred.
+
 ### Goal
 
-Allow a provider to build a controlled public business profile and move through approval states.
+Allow a verified Individual or Company to build a controlled provider profile,
+pass staff-admin application review, and prepare the provider for later
+marketplace-readiness phases without exposing direct contact details.
 
 ### Scope
 
-- Provider application
-- Business profile
-- Description and contacts
-- Logo, cover, and gallery
-- Provider members
-- Completion percentage
-- Draft, pending-review, verified, live, suspended
-- Submit for review
-- Rejection and resubmission
-- Public visibility gate
-- Provider dashboard summary
-- Provider settings
+- Provider application for `INDIVIDUAL_TEAM` and `REGISTERED_COMPANY`
+- Removal of direct `PROVIDER_OWNER` signup and self-enrollment
+- Business profile with required Arabic and optional English content
+- Private operational contacts that are never customer-facing
+- Logo, cover, up to 12 gallery images, and up to 2 gallery videos
+- Provider OWNER and ADMIN membership plus owner-managed admin invitations
+- Kind-specific server-calculated profile completion
+- Structured marketplace-readiness gates with owning-phase blockers
+- Application states: draft, pending-review, changes-requested, approved, rejected
+- Operational states: inactive, live, suspended
+- Owner-only submission and resubmission
+- Staff-admin approval, changes request, rejection, suspension, and reinstatement
+- Auditable status history and decision reasons
+- Protected contact-free preview; no anonymous public Browse API in R1-P05
+- Provider dashboard summary and aggregated settings experience
 
 ### Tables
 
@@ -643,16 +652,26 @@ Allow a provider to build a controlled public business profile and move through 
 - `provider_profiles`
 - `provider_contacts`
 - `provider_members`
+- `provider_admin_invitations`
 - `provider_gallery_items`
 - `provider_status_history`
-- `media_files`
+- `provider_email_outbox`
+- `media_files` (existing Media-owned table extended for Provider purposes)
 
 ### Done When
 
-- Provider completion percentage is calculated server-side.
-- Only approved, complete, live providers can be public.
-- Status history is preserved.
-- Ownership and provider-member access are tested.
+- Provider completion percentage and blockers are calculated server-side from
+  only the requirements applicable to the provider kind.
+- Application approval is distinct from document verification and leaves the
+  provider operationally inactive.
+- An `INDIVIDUAL_TEAM` has no document requirement; a `REGISTERED_COMPANY`
+  remains blocked on the later configurable R1-P06 verification checklist.
+- Only approved, complete, fully ready, live providers can eventually become
+  public, and R1-P05 itself exposes no anonymous Browse surface.
+- Status and review history, actors, reasons, and timestamps are preserved.
+- Ownership, OWNER/ADMIN capability boundaries, staff-only review, invitation
+  lifecycle, cross-provider denial, and direct-contact privacy are specified
+  and tested by the owning implementation phase.
 
 ---
 

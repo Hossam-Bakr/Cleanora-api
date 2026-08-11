@@ -90,6 +90,16 @@ describe("R1-P01 migration boundary", () => {
       "privacy_requests",
       "media_files",
     );
+    expected.push(
+      "providers",
+      "provider_profiles",
+      "provider_contacts",
+      "provider_status_history",
+      "provider_members",
+      "provider_admin_invitations",
+      "provider_gallery_items",
+      "provider_email_outbox",
+    );
     expect(() => assertExactPostDeployTables(expected)).not.toThrow();
     expect(() =>
       assertExactPostDeployTables([...expected, "future_phase_table"])
@@ -113,6 +123,11 @@ describe("R1-P01 migration boundary", () => {
           rolled_back_at: null
         },
         {
+          migration_name: "r1_p02_email_verification_for_individuals",
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
           migration_name: 'r1_p02_fix_phone_e164_constraint',
           finished_at: new Date(),
           rolled_back_at: null
@@ -124,6 +139,16 @@ describe("R1-P01 migration boundary", () => {
         },
         {
           migration_name: "r1_p03_roles_permissions_privileged_audit",
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p03a_production_role_provisioning",
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p03a_production_role_provisioning_drop",
           finished_at: new Date(),
           rolled_back_at: null
         },
@@ -140,6 +165,11 @@ describe("R1-P01 migration boundary", () => {
         },
         {
           migration_name: "r1_p04a_category_aware_customer_signup_verification",
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p05_provider_onboarding_profile_lifecycle",
           finished_at: new Date(),
           rolled_back_at: null
         }

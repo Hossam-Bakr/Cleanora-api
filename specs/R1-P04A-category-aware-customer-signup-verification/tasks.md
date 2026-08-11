@@ -35,7 +35,7 @@
 - [x] T019 Update generated Postman variants and environments
 - [x] T020 Update environment and human API documentation
 - [x] T021 Run focused unit and integration tests
-- [ ] T022 Run Prisma and clean-migration validation
+- [x] T022 Run Prisma and clean-migration validation
 - [x] T023 Run full quality/coverage gates and safe startup validation
 - [x] T024 Complete the R1-P04A readiness audit for owner approval
 

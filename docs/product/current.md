@@ -3,22 +3,56 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `R1-P04A — Category-Aware Customer Signup & Verification` |
-| Status | `In Progress — specification, planning, implementation, and tests authorized` |
-| Backend Branch | `Active working branch — see repository` |
+| Current Phase | `R1-P05 — Provider Onboarding, Profile & Lifecycle` |
+| Status | `Complete — T001–T159 closed; independent review PASS; next phase not activated` |
+| Backend Branch | `No active phase branch` |
 | Frontend Branch | `Not created — backend UX contract only` |
-| Backend Owner | `Codex — authorized implementation` |
+| Backend Owner | `Implementation and independent review complete` |
 | Frontend Owner | `Not assigned — no frontend application exists` |
-| Started At | `2026-08-09` |
-| Completed At | `n/a` |
-| Last Updated | `2026-08-10` (DEC-035 email-only implementation validated; guarded Git handoff authorized and pending environment access) |
+| Started At | `2026-08-10` (R1-P05) |
+| Completed At | `2026-08-11` |
+| Last Updated | `2026-08-11` (T001–T159 closed; next phase not activated; no deployment/production migration) |
 
-## Active phase — R1-P04A
+## Completed phase — R1-P05
 
-R1-P04A (`Category-Aware Customer Signup & Verification`) is the sole active
-phase. The human owner explicitly approved specification, planning,
-implementation, schema/migration changes, documentation, and required tests on
-`2026-08-09`.
+R1-P05 (`Provider Onboarding, Profile & Lifecycle`) is **Complete**.
+R1-P03, its roadmap dependency, is Complete, and R1-P04A was completed before
+this activation.
+
+**Implementation status:** Spec Kit planning (`clarify` / `plan` / `tasks` /
+`analyze`) completed earlier. Implementation and closure tasks T001–T159 are
+checked with recorded evidence in the feature directory. Independent review
+returned **PASS**, and human completion authorization is recorded. The next
+phase is **not** activated. No commit/push/merge/deploy or production migration
+was authorized by this completion run.
+
+Canonical artifacts:
+
+- `specs/R1-P05-provider-onboarding-profile-lifecycle/activation.md`
+- `specs/R1-P05-provider-onboarding-profile-lifecycle/spec.md`
+- `specs/R1-P05-provider-onboarding-profile-lifecycle/plan.md`
+- `specs/R1-P05-provider-onboarding-profile-lifecycle/tasks.md`
+- `specs/R1-P05-provider-onboarding-profile-lifecycle/implementation-summary.md`
+- `specs/R1-P05-provider-onboarding-profile-lifecycle/completion-report.md`
+- `specs/R1-P05-provider-onboarding-profile-lifecycle/implementation-prompt.md`
+- DEC-036
+
+Contract evidence: OpenAPI 35 paths / 41 operations; Postman 41 operations;
+`npm run openapi:validate` and `npm run postman:validate` exit 0.
+
+## Completed phase — R1-P04A
+
+R1-P04A (`Category-Aware Customer Signup & Verification`) is **Complete** as of
+`2026-08-10`, by explicit human-owner approval:
+
+```text
+I approve R1-P04A — Category-Aware Customer Signup & Verification as Complete.
+```
+
+Specification, planning, implementation, schema/migration changes,
+documentation, and required tests were authorized on `2026-08-09`. All tasks
+T001–T024 are complete, the implementation and module-boundary review verdict
+is `PASS`, configured coverage passed, and the clean migration proof passed.
 
 Authoritative artifacts:
 
@@ -34,9 +68,11 @@ restriction is implemented in this phase. The owner-approved future phone/email
 sequence is documented in DEC-035 for a later explicit phase. Company regulatory
 identifiers remain nullable post-signup profile fields.
 
-The owner authorized the guarded feature-branch commit and push workflow on
-2026-08-10. It remains pending clean-apply proof and environment permission to
-write `.git`. Merge, deployment, production migration, and access to the
+The owner authorized and completed the implementation Git handoff on `main` at
+`a29c239`. The clean-apply proof subsequently passed against the isolated
+`cleanora_r1_p04_clean_proof` database. At the time of that closure, no phase
+was active; R1-P05 was later activated under the separate owner authorization
+recorded above. Merge, deployment, production migration, and access to the
 historical `Cleanora` database incident remain unauthorized.
 
 ## Completed phase — R1-P04
@@ -203,7 +239,7 @@ passed:
 
 R1-P02 implementation is complete under DEC-028. Authentication code, additive
 migrations, focused and full test suites, coverage thresholds, runtime smoke,
-and independent review evidence are recorded in the active phase artifacts.
+and independent review evidence are recorded in the phase artifacts.
 Historical interim notes below are retained for traceability and do not reopen
 the phase.
 

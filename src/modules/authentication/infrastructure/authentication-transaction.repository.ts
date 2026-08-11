@@ -77,6 +77,12 @@ export class AuthenticationTransactionRepository {
         where: { id: challenge.userId },
       });
       if (user === null) return false;
+      if (
+        challenge.purpose === "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION" ||
+        challenge.accountCategory === null
+      ) {
+        return false;
+      }
       const target = verificationTarget(
         mapIdentity(user),
         challenge.accountCategory as AccountCategory,

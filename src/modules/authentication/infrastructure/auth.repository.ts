@@ -12,7 +12,6 @@ import type {
   AccountCategory,
   AuthenticationMethod,
   IdentityState,
-  SessionCapability,
 } from "../domain/authentication.types.js";
 
 export function mapIdentity(user: User): IdentityState {
@@ -157,7 +156,7 @@ export class SessionRepository {
     verifier: string;
     credentialVersion: number;
     method: AuthenticationMethod;
-    capability: SessionCapability;
+    capability: "FULL" | "VERIFICATION_ONLY";
     expiresAt: Date;
   }) {
     return getPrismaClient().userSession.create({

@@ -1,4 +1,7 @@
-import { getPrismaClient } from "../../../../src/database/prisma.js";
+import {
+  bindPrismaClient,
+  resetPrismaClientForTests,
+} from "../../../../src/database/prisma.js";
 import {
   assertSafeDenialAuditInput,
   type SafeDenialAuditInput,
@@ -6,10 +9,6 @@ import {
 } from "../../../../src/modules/admin/audit.service.js";
 import { createPrismaDenialAuditWriter } from "../../../../src/modules/admin/infrastructure/prisma-denial-audit.writer.js";
 import { createPrismaGeneralTransactionalAuditWriter } from "../../../../src/modules/admin/infrastructure/prisma-general-transactional-audit.writer.js";
-
-vi.mock("../../../../src/database/prisma.js", () => ({
-  getPrismaClient: vi.fn(),
-}));
 
 function generalInput(
   overrides: Partial<WriteAuditInput> = {},
@@ -84,13 +83,21 @@ describe("R1-P04 admin audit writers", () => {
   });
 
   describe("safe non-transactional denial writer", () => {
+    beforeEach(() => {
+      resetPrismaClientForTests("test");
+    });
+
+    afterEach(() => {
+      resetPrismaClientForTests("test");
+    });
+
     it("appends actor/action/time/outcome and opaque resource identity", async () => {
       const create = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
         id: "audit-denial-1",
         createdAt: new Date("2026-08-07T00:00:00.000Z"),
         ...data,
       }));
-      vi.mocked(getPrismaClient).mockReturnValue({
+      bindPrismaClient({
         auditLog: { create },
       } as never);
 

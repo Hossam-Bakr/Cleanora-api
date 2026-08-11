@@ -99,7 +99,9 @@ Premium status may affect sorting, but must not bypass eligibility.
 
 A user may hold multiple roles over time. Permissions are authoritative for sensitive operations.
 
-Supervisor and provider-admin capabilities are flags or scoped permissions on provider workers; they do not require separate identity systems.
+Supervisor and provider-admin capabilities are provider-scoped memberships or
+permissions; they do not require separate identity systems. A provider admin
+does not need to be a worker and never gains provider ownership implicitly.
 
 ### 4.2 Customer types
 
@@ -139,9 +141,13 @@ These are entry surfaces over one identity system, not separate authentication s
 
 #### Provider owner
 
-- Phone is required but not SMS-verified.
-- Email is required.
-- Email OTP verification is blocking.
+- `PROVIDER_OWNER` is not a public signup or ordinary self-enrollment choice.
+- A verified Individual or Company first completes the matching customer
+  profile and applies to become a provider.
+- Staff-admin approval grants the internal verified `PROVIDER_OWNER` category,
+  the provider-admin authority, and the provider's OWNER membership together.
+- A legacy user who holds only `PROVIDER_OWNER` must first enroll and verify an
+  eligible Individual or Company category before applying.
 
 #### Worker
 
@@ -158,20 +164,38 @@ Ban and suspension must be enforced at application entry and protected endpoints
 
 ## 5. Provider lifecycle and supply
 
-A provider moves through controlled lifecycle states:
+A provider has separate application and operational lifecycles.
+
+Application lifecycle:
 
 ```text
-draft → pending_review → verified → live
-                          ↘ suspended
+draft → pending_review → approved
+                     ↘ changes_requested → draft → pending_review
+                     ↘ rejected (terminal)
 ```
 
-A provider is not visible in Browse or Recommended unless required profile sections are complete and the provider is approved and live.
+Operational lifecycle:
+
+```text
+inactive → live
+live/inactive → suspended → reinstated
+```
+
+Application approval is not provider-document verification. Verification is a
+separate later-phase gate. A newly approved provider remains operationally
+inactive. A provider is not visible in Browse or Recommended unless every
+applicable readiness gate is satisfied, the provider is approved and live, and
+the owning public-browse phase has been delivered.
+
+An Individual applies as an `INDIVIDUAL_TEAM`; a Company applies as a
+`REGISTERED_COMPANY`. Individual teams do not require provider documents.
+Registered-company document requirements belong to provider verification.
 
 Provider profile areas include:
 
 - Business identity
 - Description
-- Contacts
+- Private operational contacts, never customer-facing direct contact details
 - Gallery
 - Services and prices
 - Coverage
@@ -180,6 +204,12 @@ Provider profile areas include:
 - Completion percentage
 - Verification records
 - Operational status
+
+Provider public and protected-preview representations never expose direct
+email, phone, WhatsApp, social, website, or external-booking details. Provider
+settings aggregate the specialized profile, private contact, media, member,
+status, privacy, notification-status, and account-security capabilities rather
+than storing an unstructured generic settings object.
 
 ### 5.1 Workers and teams
 

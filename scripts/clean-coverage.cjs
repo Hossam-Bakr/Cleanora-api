@@ -11,13 +11,15 @@ const REPOSITORY_ROOT = resolve(__dirname, "..");
  */
 function resolveCoverageDirectory(cwd = process.cwd()) {
   const requestedRoot = resolve(cwd);
-  if (requestedRoot !== REPOSITORY_ROOT) {
+  // Windows path comparisons are case-insensitive; normalize before equality.
+  if (requestedRoot.toLowerCase() !== REPOSITORY_ROOT.toLowerCase()) {
     throw new Error("Refusing to delete coverage outside repository root");
   }
   const coverageDir = resolve(REPOSITORY_ROOT, "coverage");
+  const rootPrefix = `${REPOSITORY_ROOT}${sep}`.toLowerCase();
   if (
-    coverageDir !== resolve(REPOSITORY_ROOT, "coverage") ||
-    !coverageDir.startsWith(`${REPOSITORY_ROOT}${sep}`)
+    coverageDir.toLowerCase() !== resolve(REPOSITORY_ROOT, "coverage").toLowerCase() ||
+    !coverageDir.toLowerCase().startsWith(rootPrefix)
   ) {
     throw new Error("Refusing to delete coverage outside repository root");
   }

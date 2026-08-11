@@ -144,7 +144,15 @@ const environmentSchema = z
     CLOUDINARY_PROFILE_IMAGE_FOLDER: optionalTextSchema,
     CLOUDINARY_SIGNED_URL_TTL_SECONDS: optionalPositiveIntegerSchema,
     MEDIA_IMAGE_MAX_BYTES: optionalPositiveIntegerSchema,
+    MEDIA_VIDEO_MAX_BYTES: optionalPositiveIntegerSchema,
     PRIVACY_REQUEST_TERMINAL_RETENTION_DAYS: optionalPositiveIntegerSchema,
+    PROVIDER_EMAIL_OUTBOX_BATCH_SIZE: optionalPositiveIntegerSchema,
+    PROVIDER_EMAIL_OUTBOX_LEASE_SECONDS: optionalPositiveIntegerSchema,
+    PROVIDER_INVITATION_TTL_HOURS: optionalPositiveIntegerSchema,
+    PROVIDER_INVITATION_TOKEN_BYTES: optionalPositiveIntegerSchema,
+    PROVIDER_GALLERY_IMAGE_MAX_COUNT: optionalPositiveIntegerSchema,
+    PROVIDER_GALLERY_VIDEO_MAX_COUNT: optionalPositiveIntegerSchema,
+    PROVIDER_MIN_READY_GALLERY_IMAGES: optionalPositiveIntegerSchema,
     SHUTDOWN_TIMEOUT_MS: z.coerce
       .number()
       .int()
@@ -326,6 +334,63 @@ const environmentSchema = z
   });
 
 export type AppEnvironment = z.infer<typeof environmentSchema>;
+
+/** Safe defaults for Provider email/token/media bounds (tests and unset env). */
+export const PROVIDER_RUNTIME_DEFAULTS = {
+  EMAIL_OUTBOX_BATCH_SIZE: 20,
+  EMAIL_OUTBOX_LEASE_SECONDS: 60,
+  INVITATION_TTL_HOURS: 72,
+  INVITATION_TOKEN_BYTES: 32,
+  MEDIA_VIDEO_MAX_BYTES: 40 * 1024 * 1024,
+  GALLERY_IMAGE_MAX_COUNT: 12,
+  GALLERY_VIDEO_MAX_COUNT: 2,
+  MIN_READY_GALLERY_IMAGES: 3,
+} as const;
+
+export interface ProviderRuntimeConfig {
+  readonly emailOutboxBatchSize: number;
+  readonly emailOutboxLeaseSeconds: number;
+  readonly invitationTtlHours: number;
+  readonly invitationTokenBytes: number;
+  readonly mediaVideoMaxBytes: number;
+  readonly galleryImageMaxCount: number;
+  readonly galleryVideoMaxCount: number;
+  readonly minReadyGalleryImages: number;
+}
+
+/**
+ * Resolve Provider email/token/media configuration with locked R1-P05 defaults.
+ */
+export function resolveProviderRuntimeConfig(
+  environment: AppEnvironment,
+): ProviderRuntimeConfig {
+  return {
+    emailOutboxBatchSize:
+      environment.PROVIDER_EMAIL_OUTBOX_BATCH_SIZE ??
+      PROVIDER_RUNTIME_DEFAULTS.EMAIL_OUTBOX_BATCH_SIZE,
+    emailOutboxLeaseSeconds:
+      environment.PROVIDER_EMAIL_OUTBOX_LEASE_SECONDS ??
+      PROVIDER_RUNTIME_DEFAULTS.EMAIL_OUTBOX_LEASE_SECONDS,
+    invitationTtlHours:
+      environment.PROVIDER_INVITATION_TTL_HOURS ??
+      PROVIDER_RUNTIME_DEFAULTS.INVITATION_TTL_HOURS,
+    invitationTokenBytes:
+      environment.PROVIDER_INVITATION_TOKEN_BYTES ??
+      PROVIDER_RUNTIME_DEFAULTS.INVITATION_TOKEN_BYTES,
+    mediaVideoMaxBytes:
+      environment.MEDIA_VIDEO_MAX_BYTES ??
+      PROVIDER_RUNTIME_DEFAULTS.MEDIA_VIDEO_MAX_BYTES,
+    galleryImageMaxCount:
+      environment.PROVIDER_GALLERY_IMAGE_MAX_COUNT ??
+      PROVIDER_RUNTIME_DEFAULTS.GALLERY_IMAGE_MAX_COUNT,
+    galleryVideoMaxCount:
+      environment.PROVIDER_GALLERY_VIDEO_MAX_COUNT ??
+      PROVIDER_RUNTIME_DEFAULTS.GALLERY_VIDEO_MAX_COUNT,
+    minReadyGalleryImages:
+      environment.PROVIDER_MIN_READY_GALLERY_IMAGES ??
+      PROVIDER_RUNTIME_DEFAULTS.MIN_READY_GALLERY_IMAGES,
+  };
+}
 
 /** Customers-runtime env subset required when composing customers/media. */
 export type CustomersRuntimeEnvironment = AppEnvironment & {

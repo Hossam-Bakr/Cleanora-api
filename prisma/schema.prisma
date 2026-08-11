@@ -63,6 +63,7 @@ enum AuthDeliveryChannel {
 enum OtpPurpose {
   CATEGORY_VERIFICATION
   OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION
+  PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION
 }
 
 enum AuthChallengeStatus {
@@ -140,6 +141,10 @@ enum PreferredLanguage {
 
 enum MediaOwnerType {
   CUSTOMER_PROFILE_IMAGE
+  PROVIDER_LOGO
+  PROVIDER_COVER
+  PROVIDER_GALLERY_IMAGE
+  PROVIDER_GALLERY_VIDEO
 }
 
 enum MediaStorageProvider {
@@ -152,6 +157,70 @@ enum MediaStatus {
   READY
   PENDING_DELETE
   DELETED
+  PROCESSING
+  FAILED
+}
+
+enum ProviderKind {
+  INDIVIDUAL_TEAM
+  REGISTERED_COMPANY
+}
+
+enum ProviderApplicationStatus {
+  DRAFT
+  PENDING_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+}
+
+enum ProviderOperationalStatus {
+  INACTIVE
+  LIVE
+  SUSPENDED
+}
+
+enum ProviderStatusDomain {
+  APPLICATION
+  OPERATIONAL
+}
+
+enum ProviderMembershipLevel {
+  OWNER
+  ADMIN
+}
+
+enum ProviderMembershipStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum ProviderInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum ProviderGalleryKind {
+  IMAGE
+  VIDEO
+}
+
+enum ProviderEmailTemplate {
+  APPLICATION_SUBMITTED
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  SUSPENDED
+  REINSTATED
+}
+
+enum ProviderEmailOutboxStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
 }
 
 model Currency {
@@ -180,9 +249,10 @@ model Country {
   isActive          Boolean         @default(true) @map("is_active")
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @updatedAt @map("updated_at")
-  defaultCurrency   Currency        @relation("CountryDefaultCurrency", fields: [defaultCurrencyId], references: [id], onDelete: Restrict)
+  defaultCurrency   Currency          @relation("CountryDefaultCurrency", fields: [defaultCurrencyId], references: [id], onDelete: Restrict)
   countryConfigs    CountryConfig[]
   userAddresses     UserAddress[]
+  providerProfiles  ProviderProfile[]
 
   @@index([isActive])
   @@index([defaultCurrencyId])
@@ -264,6 +334,15 @@ model User {
   userAddresses                    UserAddress[]
   privacyRequests                  PrivacyRequest[]
   ownedMediaFiles                  MediaFile[]
+  providerApplications             Provider[]                 @relation("ProviderApplicationOwner")
+  ownedProviders                   Provider[]                 @relation("ProviderApprovedOwner")
+  providerMemberships              ProviderMember[]           @relation("ProviderMemberUser")
+  providerMemberInvitesSent        ProviderMember[]           @relation("ProviderMemberInviter")
+  providerStatusHistoryActions     ProviderStatusHistory[]    @relation("ProviderStatusHistoryActor")
+  providerAdminInvitationsSent     ProviderAdminInvitation[]  @relation("ProviderAdminInvitationInviter")
+  providerAdminInvitationsAccepted ProviderAdminInvitation[]  @relation("ProviderAdminInvitationAccepter")
+  providerGalleryItemsCreated      ProviderGalleryItem[]      @relation("ProviderGalleryItemCreator")
+  providerEmailOutboxRecipients    ProviderEmailOutbox[]      @relation("ProviderEmailOutboxRecipient")
 
   @@index([status])
   @@map("users")
@@ -318,7 +397,7 @@ model UserSession {
 model OtpCode {
   id                 String              @id @default(cuid())
   userId             String              @map("user_id")
-  accountCategory    AccountCategory     @map("account_category")
+  accountCategory    AccountCategory?    @map("account_category")
   purpose            OtpPurpose
   channel            AuthDeliveryChannel
   destinationHash    String              @map("destination_hash") @db.Char(64)
@@ -614,8 +693,191 @@ model MediaFile {
   updatedAt            DateTime             @updatedAt @map("updated_at")
   ownerUser            User                 @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
   customerProfileImage CustomerProfile?
+  providerLogoProfile  ProviderProfile?     @relation("ProviderProfileLogo")
+  providerCoverProfile ProviderProfile?     @relation("ProviderProfileCover")
+  providerGalleryItem  ProviderGalleryItem? @relation("ProviderGalleryMedia")
 
   @@index([ownerUserId, ownerType])
   @@index([status, cleanupEligibleAt])
   @@map("media_files")
+}
+
+// R1-P05 provider onboarding, profile, membership, invitation, gallery, and outbox.
+// providers owns these tables; authentication/media/configuration keep opposite relations only.
+
+model Provider {
+  id                     String                     @id @default(cuid())
+  applicationOwnerUserId String                     @unique @map("application_owner_user_id")
+  ownerUserId            String?                    @unique @map("owner_user_id")
+  kind                   ProviderKind
+  applicationStatus      ProviderApplicationStatus  @default(DRAFT) @map("application_status")
+  operationalStatus      ProviderOperationalStatus  @default(INACTIVE) @map("operational_status")
+  reviewCycle            Int                        @default(0) @map("review_cycle")
+  version                Int                        @default(1)
+  firstSubmittedAt       DateTime?                  @map("first_submitted_at")
+  lastSubmittedAt        DateTime?                  @map("last_submitted_at")
+  applicationChangedAt   DateTime                   @default(now()) @map("application_changed_at")
+  operationalChangedAt   DateTime                   @default(now()) @map("operational_changed_at")
+  approvedAt             DateTime?                  @map("approved_at")
+  rejectedAt             DateTime?                  @map("rejected_at")
+  suspendedAt            DateTime?                  @map("suspended_at")
+  createdAt              DateTime                   @default(now()) @map("created_at")
+  updatedAt              DateTime                   @updatedAt @map("updated_at")
+  applicationOwner       User                       @relation("ProviderApplicationOwner", fields: [applicationOwnerUserId], references: [id], onDelete: Restrict)
+  owner                  User?                      @relation("ProviderApprovedOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  profile                ProviderProfile?
+  contact                ProviderContact?
+  statusHistory          ProviderStatusHistory[]
+  members                ProviderMember[]
+  adminInvitations       ProviderAdminInvitation[]
+  galleryItems           ProviderGalleryItem[]
+  emailOutbox            ProviderEmailOutbox[]
+
+  @@index([applicationStatus, kind, lastSubmittedAt, id])
+  @@index([operationalStatus, id])
+  @@map("providers")
+}
+
+model ProviderProfile {
+  id                String     @id @default(cuid())
+  providerId        String     @unique @map("provider_id")
+  displayNameAr     String?    @map("display_name_ar") @db.VarChar(200)
+  displayNameEn     String?    @map("display_name_en") @db.VarChar(200)
+  descriptionAr     String?    @map("description_ar") @db.VarChar(4000)
+  descriptionEn     String?    @map("description_en") @db.VarChar(4000)
+  countryId         String?    @map("country_id")
+  logoMediaFileId   String?    @unique @map("logo_media_file_id")
+  coverMediaFileId  String?    @unique @map("cover_media_file_id")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  provider          Provider   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  country           Country?   @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  logoMediaFile     MediaFile? @relation("ProviderProfileLogo", fields: [logoMediaFileId], references: [id], onDelete: Restrict)
+  coverMediaFile    MediaFile? @relation("ProviderProfileCover", fields: [coverMediaFileId], references: [id], onDelete: Restrict)
+
+  @@map("provider_profiles")
+}
+
+model ProviderContact {
+  id                         String   @id @default(cuid())
+  providerId                 String   @unique @map("provider_id")
+  operationalEmailNormalized String?  @map("operational_email_normalized") @db.VarChar(320)
+  operationalPhoneE164       String?  @map("operational_phone_e164") @db.VarChar(16)
+  channels                   Json     @default("[]")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+  provider                   Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+
+  @@map("provider_contacts")
+}
+
+model ProviderStatusHistory {
+  id                     String                      @id @default(cuid())
+  providerId             String                      @map("provider_id")
+  domain                 ProviderStatusDomain
+  fromApplicationStatus  ProviderApplicationStatus?  @map("from_application_status")
+  toApplicationStatus    ProviderApplicationStatus?  @map("to_application_status")
+  fromOperationalStatus  ProviderOperationalStatus?  @map("from_operational_status")
+  toOperationalStatus    ProviderOperationalStatus?  @map("to_operational_status")
+  reviewCycle            Int?                        @map("review_cycle")
+  actorUserId            String                      @map("actor_user_id")
+  reason                 String?                     @db.VarChar(2000)
+  requestId              String?                     @map("request_id")
+  createdAt              DateTime                    @default(now()) @map("created_at")
+  provider               Provider                    @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  actorUser              User                        @relation("ProviderStatusHistoryActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  emailOutboxRows        ProviderEmailOutbox[]
+
+  @@index([providerId, createdAt])
+  @@map("provider_status_history")
+}
+
+model ProviderMember {
+  id              String                    @id @default(cuid())
+  providerId      String                    @map("provider_id")
+  userId          String                    @map("user_id")
+  level           ProviderMembershipLevel
+  status          ProviderMembershipStatus
+  invitedByUserId String?                   @map("invited_by_user_id")
+  enabledAt       DateTime                  @map("enabled_at")
+  disabledAt      DateTime?                 @map("disabled_at")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+  provider        Provider                  @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  user            User                      @relation("ProviderMemberUser", fields: [userId], references: [id], onDelete: Restrict)
+  invitedByUser   User?                     @relation("ProviderMemberInviter", fields: [invitedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([providerId, userId])
+  @@index([userId, status])
+  @@index([providerId, level, status])
+  @@map("provider_members")
+}
+
+model ProviderAdminInvitation {
+  id                       String                   @id @default(cuid())
+  providerId               String                   @map("provider_id")
+  emailNormalized          String                   @map("email_normalized") @db.VarChar(320)
+  tokenVerifier            String                   @unique @map("token_verifier") @db.Char(64)
+  tokenVersion             Int                      @map("token_version")
+  status                   ProviderInvitationStatus @default(PENDING)
+  version                  Int                      @default(1)
+  invitedByUserId          String                   @map("invited_by_user_id")
+  acceptedByUserId         String?                  @map("accepted_by_user_id")
+  expiresAt                DateTime                 @map("expires_at")
+  sentAt                   DateTime?                @map("sent_at")
+  deliveryFailedAt         DateTime?                @map("delivery_failed_at")
+  lastSafeDeliveryErrorCode String?                 @map("last_safe_delivery_error_code") @db.VarChar(100)
+  acceptedAt               DateTime?                @map("accepted_at")
+  revokedAt                DateTime?                @map("revoked_at")
+  expiredAt                DateTime?                @map("expired_at")
+  createdAt                DateTime                 @default(now()) @map("created_at")
+  updatedAt                DateTime                 @updatedAt @map("updated_at")
+  provider                 Provider                 @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  invitedByUser            User                     @relation("ProviderAdminInvitationInviter", fields: [invitedByUserId], references: [id], onDelete: Restrict)
+  acceptedByUser           User?                    @relation("ProviderAdminInvitationAccepter", fields: [acceptedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([providerId, status, createdAt])
+  @@index([status, expiresAt])
+  @@map("provider_admin_invitations")
+}
+
+model ProviderGalleryItem {
+  id              String              @id @default(cuid())
+  providerId      String              @map("provider_id")
+  mediaFileId     String              @unique @map("media_file_id")
+  kind            ProviderGalleryKind
+  position        Int
+  createdByUserId String              @map("created_by_user_id")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  provider        Provider            @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  mediaFile       MediaFile           @relation("ProviderGalleryMedia", fields: [mediaFileId], references: [id], onDelete: Restrict)
+  createdByUser   User                @relation("ProviderGalleryItemCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([providerId, position])
+  @@map("provider_gallery_items")
+}
+
+model ProviderEmailOutbox {
+  id               String                     @id @default(cuid())
+  providerId       String                     @map("provider_id")
+  template         ProviderEmailTemplate
+  status           ProviderEmailOutboxStatus  @default(PENDING)
+  recipientUserId  String                     @map("recipient_user_id")
+  reviewCycle      Int?                       @map("review_cycle")
+  statusHistoryId  String?                    @map("status_history_id")
+  idempotencyKey   String                     @unique @map("idempotency_key") @db.VarChar(200)
+  attemptCount     Int                        @default(0) @map("attempt_count")
+  nextAttemptAt    DateTime?                  @map("next_attempt_at")
+  lockedUntil      DateTime?                  @map("locked_until")
+  sentAt           DateTime?                  @map("sent_at")
+  lastSafeErrorCode String?                   @map("last_safe_error_code") @db.VarChar(100)
+  createdAt        DateTime                   @default(now()) @map("created_at")
+  updatedAt        DateTime                   @updatedAt @map("updated_at")
+  provider         Provider                   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  recipientUser    User                       @relation("ProviderEmailOutboxRecipient", fields: [recipientUserId], references: [id], onDelete: Restrict)
+  statusHistory    ProviderStatusHistory?     @relation(fields: [statusHistoryId], references: [id], onDelete: Restrict)
+
+  @@index([status, nextAttemptAt, lockedUntil])
+  @@map("provider_email_outbox")
 }

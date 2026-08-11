@@ -46,6 +46,7 @@ export interface AuthenticationDelivery {
   readonly purpose?:
     | "CATEGORY_VERIFICATION"
     | "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION"
+    | "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION"
     | "PASSWORD_RESET";
   readonly expiresAt?: Date;
 }

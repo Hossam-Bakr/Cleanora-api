@@ -14,7 +14,6 @@ import {
   assertVerificationChallengeTarget,
   AUTH_RATE_LIMITS,
   isSessionActive,
-  loginCapability,
   maskEmailDestination,
   normalizeEmail,
   normalizePhone,
@@ -22,6 +21,8 @@ import {
   OTP_RESEND_SECONDS,
   OTP_TTL_SECONDS,
   recoveryChannel,
+  resolveAuthenticatedCapability,
+  toPersistedSessionCapability,
   verificationTarget,
   type OtpPurpose,
 } from "./domain/auth.policy.js";
@@ -35,6 +36,7 @@ import type {
   AuthenticationPrincipal,
   IdentityState,
   SafeAuthenticatedUser,
+  SessionCapability,
 } from "./domain/authentication.types.js";
 import {
   AuthEventRepository,
@@ -46,6 +48,7 @@ import {
   UserRepository,
 } from "./infrastructure/auth.repository.js";
 import { AuthenticationTransactionRepository } from "./infrastructure/authentication-transaction.repository.js";
+import { AuthorizationRepository } from "./infrastructure/authorization.repository.js";
 import { writeAudit } from "#modules/admin/audit.service";
 import type {
   CustomerSignupProfileInput,
@@ -112,6 +115,7 @@ export class AuthenticationService {
   private readonly events: AuthEventRepository;
   private readonly social = new SocialAccountRepository();
   private readonly transactions: AuthenticationTransactionRepository;
+  private readonly authorizationGrants = new AuthorizationRepository();
 
   constructor(
     private readonly dependencies: AuthenticationServiceDependencies,
@@ -125,6 +129,19 @@ export class AuthenticationService {
 
   private now(): Date {
     return this.dependencies.now?.() ?? new Date();
+  }
+
+  private async resolveCapability(
+    identity: IdentityState,
+  ): Promise<SessionCapability> {
+    const grants =
+      await this.authorizationGrants.findEnabledRolesAndPermissions(
+        identity.id,
+      );
+    return resolveAuthenticatedCapability(identity, {
+      now: this.now(),
+      providerAdminEnabled: grants.roleCodes.includes("provider_admin"),
+    });
   }
 
   private customerProfileInput(input: {
@@ -319,6 +336,13 @@ export class AuthenticationService {
     if (input.challengeId !== undefined) {
       const prior = await this.otps.find(input.challengeId);
       if (prior === null) throw authenticationError("AUTH_VERIFICATION_FAILED");
+      // Invitation OTP resend is owned by the invitation-onboarding command.
+      if (
+        prior.accountCategory === null ||
+        prior.purpose === "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION"
+      ) {
+        throw authenticationError("AUTH_VERIFICATION_FAILED");
+      }
       const user = await this.users.findById(prior.userId);
       if (user === null) throw authenticationError("AUTH_VERIFICATION_FAILED");
       return this.requestVerificationForUser(
@@ -368,12 +392,19 @@ export class AuthenticationService {
     category: AccountCategory,
     purpose: OtpPurpose,
   ): Promise<VerificationChallengeAccepted> {
+    // Public verification never issues invitation-purpose OTPs.
+    if (purpose === "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION") {
+      throw authenticationError("AUTH_VERIFICATION_FAILED");
+    }
+    const publicPurpose:
+      | "CATEGORY_VERIFICATION"
+      | "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION" = purpose;
     const policy = (await this.dependencies.policy?.verification()) ?? {
       ttlSeconds: OTP_TTL_SECONDS,
       maxAttempts: OTP_MAX_ATTEMPTS,
       resendSeconds: OTP_RESEND_SECONDS,
     };
-    const target = verificationTarget(identity, category, purpose);
+    const target = verificationTarget(identity, category, publicPurpose);
     const { channel, destination } = target;
     const id = randomUUID();
     const code = this.dependencies.verifier.randomOtp();
@@ -382,13 +413,13 @@ export class AuthenticationService {
       id,
       userId: identity.id,
       category,
-      purpose,
+      purpose: publicPurpose,
       channel,
       destinationHash: this.dependencies.verifier.hashDestination(
         channel,
         destination,
       ),
-      verifier: this.dependencies.verifier.verifyOtp(id, purpose, code),
+      verifier: this.dependencies.verifier.verifyOtp(id, publicPurpose, code),
       resendAt: new Date(now + policy.resendSeconds * 1000),
       expiresAt: new Date(now + policy.ttlSeconds * 1000),
       maxAttempts: policy.maxAttempts,
@@ -399,7 +430,7 @@ export class AuthenticationService {
       return this.verificationAccepted(
         challenge,
         category,
-        purpose,
+        publicPurpose,
         channel,
         destination,
       );
@@ -410,7 +441,7 @@ export class AuthenticationService {
         destination,
         value: code,
         accountCategory: category,
-        purpose,
+        purpose: publicPurpose,
         expiresAt: challenge.expiresAt,
       };
       await this.dependencies.email.send(delivery);
@@ -422,7 +453,7 @@ export class AuthenticationService {
     return this.verificationAccepted(
       challenge,
       category,
-      purpose,
+      publicPurpose,
       channel,
       destination,
     );
@@ -452,6 +483,13 @@ export class AuthenticationService {
     }
     const user = await this.users.findById(challenge.userId);
     if (user === null) throw authenticationError("AUTH_VERIFICATION_FAILED");
+    if (
+      challenge.purpose === "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION" ||
+      challenge.accountCategory === null
+    ) {
+      // Invitation OTP verification is owned by the invitation-onboarding command.
+      throw authenticationError("AUTH_VERIFICATION_FAILED");
+    }
     const target = verificationTarget(
       this.users.map(user),
       challenge.accountCategory,
@@ -528,7 +566,7 @@ export class AuthenticationService {
       });
       throw authenticationError("AUTHENTICATION_FAILED");
     }
-    const capability = loginCapability(this.users.map(user));
+    const capability = await this.resolveCapability(this.users.map(user));
     await this.credentials.success(user.id);
     return this.issueSession(
       this.users.map(user),
@@ -543,7 +581,7 @@ export class AuthenticationService {
     identity: IdentityState,
     credentialVersion: number,
     method: "PASSWORD" | "GOOGLE",
-    capability: "FULL" | "VERIFICATION_ONLY",
+    capability: SessionCapability,
     metadata: AuthenticationRequestMetadata = {},
   ): Promise<SessionTokens> {
     const sessionId = randomUUID();
@@ -570,7 +608,7 @@ export class AuthenticationService {
       verifier: refreshVerifier,
       credentialVersion,
       method,
-      capability,
+      capability: toPersistedSessionCapability(capability),
       expiresAt: refreshExpiresAt,
     });
     const access = this.dependencies.tokens.issueAccess({
@@ -591,7 +629,7 @@ export class AuthenticationService {
       accessExpiresAt: access.expiresAt,
       refreshToken: refresh.token,
       refreshExpiresAt,
-      verificationOnly: capability === "VERIFICATION_ONLY",
+      verificationOnly: capability !== "FULL",
       principal,
       user: await this.safeUser(identity),
     };
@@ -613,11 +651,11 @@ export class AuthenticationService {
         credential.credentialVersion !== claims.credentialVersion)
     )
       throw authenticationError("AUTH_ACCESS_TOKEN_INVALID");
-    const capability = loginCapability(this.users.map(user));
+    const capability = await this.resolveCapability(this.users.map(user));
     return this.principal(
       this.users.map(user),
       session.id,
-      capability === "FULL" ? session.capability : capability,
+      capability,
     );
   }
 
@@ -636,7 +674,7 @@ export class AuthenticationService {
     )
       throw authenticationError("AUTH_REFRESH_TOKEN_INVALID");
     // Re-check account status before rotating a cookie so blocked accounts cannot extend sessions.
-    const capability = loginCapability(this.users.map(user));
+    const capability = await this.resolveCapability(this.users.map(user));
     const expected = this.dependencies.verifier.verifyRefresh(
       session.id,
       rawToken,
@@ -681,7 +719,7 @@ export class AuthenticationService {
     const principal = this.principal(
       this.users.map(user),
       session.id,
-      capability === "FULL" ? session.capability : capability,
+      capability,
     );
     await this.events.append({
       userId: user.id,
@@ -997,7 +1035,7 @@ export class AuthenticationService {
         throw authenticationError("AUTH_SOCIAL_AUTHENTICATION_FAILED");
     }
     const identity = this.users.map(user);
-    const capability = loginCapability(identity);
+    const capability = await this.resolveCapability(identity);
     const credential = await this.credentials.findByUserId(user.id);
     return this.issueSession(
       identity,
@@ -1103,7 +1141,7 @@ export class AuthenticationService {
   private principal(
     identity: IdentityState,
     sessionId: string,
-    capability: "FULL" | "VERIFICATION_ONLY",
+    capability: SessionCapability,
   ): AuthenticationPrincipal {
     return {
       userId: identity.id,
@@ -1114,7 +1152,10 @@ export class AuthenticationService {
         (value) => !identity.verifiedCategories.includes(value),
       ),
       status: identity.status,
-      verificationOnly: capability === "VERIFICATION_ONLY",
+      verificationOnly: capability !== "FULL",
+      ...(capability === "PROVIDER_ADMIN_INVITATION_ONBOARDING"
+        ? { invitationOnboardingOnly: true }
+        : {}),
     };
   }
 

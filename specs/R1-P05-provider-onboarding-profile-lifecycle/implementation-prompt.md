@@ -1,0 +1,1 @@
+curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd

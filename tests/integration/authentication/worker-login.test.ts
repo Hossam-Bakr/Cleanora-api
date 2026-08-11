@@ -15,6 +15,7 @@ describe('existing worker authentication', () => {
         update: vi.fn(async () => ({}))
       },
       userSession: { create: vi.fn(async ({ data }: { data: object }) => data) },
+      userRole: { findMany: vi.fn(async () => []) },
       socialAccount: { findUnique: vi.fn(async () => null) },
       authEvent: { create: vi.fn(async ({ data }: { data: object }) => data) }
     } as unknown as PrismaClient;

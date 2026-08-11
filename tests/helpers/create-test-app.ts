@@ -20,6 +20,9 @@ interface CreateTestAppDependencies extends CreateAppOptions {
   readonly databaseProbe?: DatabaseProbe;
   readonly readinessProbes?: readonly ReadinessProbe[];
   readonly authenticationRouter?: Router;
+  readonly providersRouter?: Router;
+  readonly staffProvidersRouter?: Router;
+  readonly providerAdminInvitationRouter?: Router;
 }
 
 /** Compose the real public routes for focused app and integration tests. */
@@ -33,6 +36,9 @@ export function createTestApp(
     databaseProbe,
     readinessProbes = [],
     authenticationRouter,
+    providersRouter,
+    staffProvidersRouter,
+    providerAdminInvitationRouter,
     httpLogStream,
     mountTestRoutes,
   } = dependencies;
@@ -47,6 +53,13 @@ export function createTestApp(
       ...(authenticationRouter === undefined
         ? {}
         : { authenticationRouter }),
+      ...(providersRouter === undefined ? {} : { providersRouter }),
+      ...(staffProvidersRouter === undefined
+        ? {}
+        : { staffProvidersRouter }),
+      ...(providerAdminInvitationRouter === undefined
+        ? {}
+        : { providerAdminInvitationRouter }),
     },
     {
       ...(httpLogStream === undefined ? {} : { httpLogStream }),

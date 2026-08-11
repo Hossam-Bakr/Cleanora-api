@@ -22,6 +22,12 @@ export interface RouteDependencies {
   readonly ownerInternalRouter?: Router;
   /** Present only once completed customer story handlers are composed. */
   readonly customersRouter?: Router;
+  /** Provider applicant and member routes. */
+  readonly providersRouter?: Router;
+  /** Staff Admin Provider review and lifecycle routes owned by providers. */
+  readonly staffProvidersRouter?: Router;
+  /** Body-token Provider Admin invitation onboarding routes. */
+  readonly providerAdminInvitationRouter?: Router;
 }
 
 /**
@@ -59,5 +65,20 @@ export function mountRoutes(
 
   if (dependencies.customersRouter !== undefined) {
     app.use(`${apiPrefix}/customers`, dependencies.customersRouter);
+  }
+
+  if (dependencies.providersRouter !== undefined) {
+    app.use(`${apiPrefix}/providers`, dependencies.providersRouter);
+  }
+
+  if (dependencies.providerAdminInvitationRouter !== undefined) {
+    app.use(
+      `${apiPrefix}/provider-admin-invitations`,
+      dependencies.providerAdminInvitationRouter,
+    );
+  }
+
+  if (dependencies.staffProvidersRouter !== undefined) {
+    app.use(`${apiPrefix}/staff/providers`, dependencies.staffProvidersRouter);
   }
 }

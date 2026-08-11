@@ -57,6 +57,14 @@ export const AUTHORIZATION_PERMISSIONS: readonly PermissionDefinitionSeed[] = [
     code: "privacy.requests.reassign",
     name: "Reassign a privacy request processor",
   },
+  {
+    code: "providers.applications.review",
+    name: "Review provider applications",
+  },
+  {
+    code: "providers.lifecycle.manage",
+    name: "Manage provider operational lifecycle",
+  },
 ];
 
 /**
@@ -75,6 +83,8 @@ export const ROLE_PERMISSION_MAP: Readonly<
     "authz.reasons.use",
     "authz.staff.admin.sample",
     "privacy.requests.reassign",
+    "providers.applications.review",
+    "providers.lifecycle.manage",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],
@@ -239,11 +249,38 @@ const PRIVACY_REASSIGNMENT_OPERATIONS: readonly ProtectedOperationDeclaration[] 
     },
   ];
 
-/** Every declared R1-P03 protected operation. All are internal. */
+/**
+ * R1-P05 Staff Admin provider review and lifecycle operations.
+ *
+ * Internal declarations so permission checks stay catalog-driven. Reasons for
+ * changes/reject/suspend/reinstate are Provider status-history fields, not
+ * PrivilegedActionOperation catalog reasons.
+ */
+const PROVIDER_STAFF_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
+  {
+    operationId: "providers.applications.review",
+    permissionCode: "providers.applications.review",
+    ownership: "NONE",
+    scope: "GLOBAL",
+    privileged: false,
+    publicHttp: false,
+  },
+  {
+    operationId: "providers.lifecycle.manage",
+    permissionCode: "providers.lifecycle.manage",
+    ownership: "NONE",
+    scope: "GLOBAL",
+    privileged: false,
+    publicHttp: false,
+  },
+];
+
+/** Every declared protected operation. All are internal. */
 export const PROTECTED_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
   ...ROLE_MANAGEMENT_OPERATIONS,
   ...STAFF_SAMPLE_OPERATIONS,
   ...PRIVACY_REASSIGNMENT_OPERATIONS,
+  ...PROVIDER_STAFF_OPERATIONS,
 ];
 
 /** Find one declared protected operation, or `undefined` when undeclared. */

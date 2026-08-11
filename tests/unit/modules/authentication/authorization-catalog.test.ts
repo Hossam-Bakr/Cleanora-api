@@ -37,6 +37,8 @@ const expectedPermissionCodes = [
   "authz.scope.provider.admin",
   "authz.scope.worker",
   "privacy.requests.reassign",
+  "providers.applications.review",
+  "providers.lifecycle.manage",
 ];
 
 const expectedRolePermissionMap: Record<string, string[]> = {
@@ -49,6 +51,8 @@ const expectedRolePermissionMap: Record<string, string[]> = {
     "authz.reasons.use",
     "authz.staff.admin.sample",
     "privacy.requests.reassign",
+    "providers.applications.review",
+    "providers.lifecycle.manage",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],
@@ -124,6 +128,11 @@ describe("FR-002 authorization catalog", () => {
   });
 
   it("excludes later-phase business permissions", () => {
+    // R1-P05 Staff Provider review/lifecycle permissions are intentional.
+    const r1P05StaffProviderPermissions = new Set([
+      "providers.applications.review",
+      "providers.lifecycle.manage",
+    ]);
     for (const forbidden of [
       "provider",
       "worker.",
@@ -137,9 +146,23 @@ describe("FR-002 authorization catalog", () => {
     ]) {
       const leaked = expectedPermissionCodes.filter(
         (code) =>
-          code.includes(forbidden) && !code.startsWith("authz.scope."),
+          code.includes(forbidden) &&
+          !code.startsWith("authz.scope.") &&
+          !r1P05StaffProviderPermissions.has(code),
       );
       expect(leaked).toEqual([]);
+    }
+  });
+
+  it("grants R1-P05 Provider Staff permissions to staff_admin only", () => {
+    for (const permissionCode of [
+      "providers.applications.review",
+      "providers.lifecycle.manage",
+    ]) {
+      const holders = Object.entries(ROLE_PERMISSION_MAP)
+        .filter(([, codes]) => codes.includes(permissionCode))
+        .map(([roleCode]) => roleCode);
+      expect(holders).toEqual(["staff_admin"]);
     }
   });
 

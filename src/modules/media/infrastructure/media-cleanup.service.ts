@@ -26,7 +26,7 @@ export class MediaCleanupService {
     );
     let processed = 0;
     for (const row of candidates) {
-      if (row.status === "READY") {
+      if (row.status === "READY" || row.status === "PROCESSING") {
         continue;
       }
       try {

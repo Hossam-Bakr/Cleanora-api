@@ -12,11 +12,11 @@ export const categorySchema = z.enum([
   "WORKER",
 ]);
 
+/** Public self-signup / ordinary enrollment only — excludes PROVIDER_OWNER. */
 export const selfSignupCategorySchema = z.enum([
   "INDIVIDUAL",
   "COMPANY",
   "ENGINEER",
-  "PROVIDER_OWNER",
 ]);
 
 const requiredPhoneSchema = z
@@ -77,10 +77,6 @@ export const signupSchema = z.object({
       fullName: requiredProfileText,
       professionalTitle: requiredProfileText,
     }).strict(),
-    z.object({
-      accountCategory: z.literal("PROVIDER_OWNER"),
-      ...signupIdentityFields,
-    }).strict(),
   ]),
 });
 
@@ -100,7 +96,6 @@ export const enrollSchema = z.object({
       fullName: requiredProfileText,
       professionalTitle: requiredProfileText,
     }).strict(),
-    z.object({ accountCategory: z.literal("PROVIDER_OWNER") }).strict(),
   ]),
 });
 

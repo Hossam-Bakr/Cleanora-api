@@ -6,15 +6,13 @@ const request = require('supertest') as typeof import('supertest');
 vi.setConfig({ testTimeout: 90_000 });
 
 describe('business signup and category enrollment', () => {
-  it.each(['COMPANY', 'ENGINEER', 'PROVIDER_OWNER'] as const)('activates %s only through its email OTP', async (accountCategory) => {
+  it.each(['COMPANY', 'ENGINEER'] as const)('activates %s only through its email OTP', async (accountCategory) => {
     const context = await startAuthenticationTestApp();
     const identity = uniqueIdentity(accountCategory.toLowerCase());
     try {
       const profile = accountCategory === 'COMPANY'
         ? { companyName: 'Clean Business', representativeFullName: 'Business Representative' }
-        : accountCategory === 'ENGINEER'
-          ? { fullName: 'Design Engineer', professionalTitle: 'Senior Civil Engineer' }
-          : {};
+        : { fullName: 'Design Engineer', professionalTitle: 'Senior Civil Engineer' };
       const signup = await request(context.app).post('/api/v1/auth/signup').send({ accountCategory, ...profile, phone: identity.phone, email: identity.email, password: identity.password }).expect(202);
       const delivery = context.email.latest(identity.email);
       expect(delivery?.idempotencyKey).toBe(signup.body.data.challengeId);
@@ -38,6 +36,26 @@ describe('business signup and category enrollment', () => {
           professionalTitle: 'Senior Civil Engineer',
         });
       }
+    } finally {
+      await context.stop();
+    }
+  });
+
+  it('rejects PROVIDER_OWNER public self-signup at the Zod boundary', async () => {
+    const context = await startAuthenticationTestApp();
+    const identity = uniqueIdentity('provider-owner');
+    try {
+      const signup = await request(context.app)
+        .post('/api/v1/auth/signup')
+        .send({
+          accountCategory: 'PROVIDER_OWNER',
+          phone: identity.phone,
+          email: identity.email,
+          password: identity.password,
+        })
+        .expect(400);
+      expect(signup.body.success).toBe(false);
+      expect(signup.body.error.code).toMatch(/VALIDATION|BAD_REQUEST|AUTH_/i);
     } finally {
       await context.stop();
     }

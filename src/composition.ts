@@ -1,6 +1,7 @@
 import { APPLICATION_NAME } from "#config/constants";
 import {
   assertCustomersRuntimeEnvironment,
+  resolveProviderRuntimeConfig,
   type AppEnvironment,
 } from "#config/env";
 import { PrismaLifecycle } from "#database/prisma-lifecycle";
@@ -44,7 +45,12 @@ import { ProfileImageService } from "#modules/customers/profile-image.service";
 import { ProfileService } from "#modules/customers/profile.service";
 import { createCustomersRouter } from "#modules/customers/customers.routes";
 import { createPrismaCustomerSignupProfileWriter } from "#modules/customers/infrastructure/prisma-customer-signup-profile.writer";
-import { createMediaPendingUploadPort, createMediaStoragePort } from "#modules/media/infrastructure/media-provider.factory";
+import {
+  createMediaPendingUploadPort,
+  createMediaStoragePort,
+  createProviderMediaPort,
+  createProviderMediaStatusReader,
+} from "#modules/media/infrastructure/media-provider.factory";
 import { SharpProfileImageProcessor } from "#modules/media/infrastructure/sharp-profile-image.processor";
 import { PrismaMediaRepository } from "#modules/media/infrastructure/prisma-media.repository";
 import {
@@ -52,11 +58,148 @@ import {
   startMediaCleanupSweep,
 } from "#modules/media/infrastructure/media-cleanup.service";
 import { getActiveCountryIdByCode } from "#modules/configuration/configuration.service";
+import {
+  createActiveCountryReader,
+  createTransactionalActiveCountryReader,
+} from "#modules/configuration/configuration.public";
+import {
+  createPrismaProviderIdentityAuthorityWriterFactory,
+  createPrismaProviderIdentityReader,
+  createProviderInvitationIdentityOnboarding,
+} from "#modules/authentication/authentication.factories";
+import { createProviderApplicantProfileReader } from "#modules/customers/customers.public";
+import {
+  createProviderAdminInvitationRouter,
+  createProvidersRouter,
+  createStaffProvidersRouter,
+} from "#modules/providers/providers.routes";
+import { ProviderApplicationService } from "#modules/providers/provider-application.service";
+import { ProviderApprovalService } from "#modules/providers/provider-approval.service";
+import { ProviderInvitationAcceptanceService } from "#modules/providers/provider-invitation-acceptance.service";
+import { ProviderInvitationOnboardingService } from "#modules/providers/provider-invitation-onboarding.service";
+import { ProviderMediaService } from "#modules/providers/provider-media.service";
+import { ProviderMembershipService } from "#modules/providers/provider-membership.service";
+import { ProviderProfileService } from "#modules/providers/provider-profile.service";
+import { ProviderProjectionService } from "#modules/providers/provider-projection.service";
+import { ProviderReviewQueryService } from "#modules/providers/provider-review-query.service";
+import { ProviderReviewService } from "#modules/providers/provider-review.service";
+import { ProviderLifecycleService } from "#modules/providers/provider-lifecycle.service";
+import { ProviderInvitationEmailAdapter } from "#modules/providers/infrastructure/provider-invitation-email.adapter";
+import { ProviderEmailDeliveryAdapter } from "#modules/providers/infrastructure/provider-email-delivery.adapter";
+import {
+  ProviderEmailDispatcher,
+  startProviderEmailDispatcher,
+} from "#modules/providers/provider-email-dispatcher";
+import { PrismaProviderEmailOutboxRepository } from "#modules/providers/infrastructure/prisma-provider-email-outbox.repository";
+import { PrismaProviderMediaRepository } from "#modules/providers/infrastructure/prisma-provider-media.repository";
+import { PrismaProviderReviewRepository } from "#modules/providers/infrastructure/prisma-provider-review.repository";
+import { PrismaProviderRepository } from "#modules/providers/infrastructure/prisma-provider.repository";
+import { PrismaProvidersUnitOfWork } from "#modules/providers/infrastructure/prisma-providers.unit-of-work";
+import type {
+  ActiveCountryReaderPort,
+  ProviderApplicantProfileReaderPort,
+  ProviderIdentityReaderPort,
+} from "#modules/providers/domain/providers.ports";
+import { getPrismaClient } from "#database/prisma";
 import type { RouteDependencies } from "#routes/index";
 import {
   createApplicationLogger,
   type Logger,
 } from "#shared/logger";
+import { AppError } from "#shared/errors/app-error";
+
+function adaptProviderActiveCountryReader(
+  reader = createActiveCountryReader(),
+): ActiveCountryReaderPort {
+  return {
+    async resolveActiveCountry(countryCode) {
+      try {
+        return await reader.resolveActiveCountry(countryCode);
+      } catch (error) {
+        if (error instanceof AppError && error.code === "COUNTRY_UNAVAILABLE") {
+          return null;
+        }
+        throw error;
+      }
+    },
+    async getById(countryId) {
+      return reader.getActiveCountryById(countryId);
+    },
+  };
+}
+
+function adaptProviderIdentityReader(
+  reader: ReturnType<typeof createPrismaProviderIdentityReader>,
+): ProviderIdentityReaderPort {
+  return {
+    async getEligibilityFacts(userId) {
+      const identity = await reader.getIdentity(userId);
+      if (identity === null) {
+        return null;
+      }
+      return {
+        accountActive: identity.isAccountActive,
+        active: identity.isActiveNonVerificationOnly,
+        verificationOnly: !identity.isActiveNonVerificationOnly,
+        enrolledCategories: identity.accountCategories,
+        verifiedCategories: identity.verifiedCategories,
+        emailNormalized: identity.emailNormalized,
+        emailVerified: identity.emailVerified,
+        phoneE164: identity.phoneE164,
+        phoneVerified: identity.phoneVerified,
+        providerAdminEnabled: identity.providerAdminEnabled,
+      };
+    },
+    async getAuthoritativeEmail(userId) {
+      const identity = await reader.getIdentity(userId);
+      return identity?.emailNormalized ?? null;
+    },
+    async findByEmailNormalized(emailNormalized) {
+      const identity = await reader.findByEmailNormalized(emailNormalized);
+      if (identity === null || identity.emailNormalized === null) {
+        return null;
+      }
+      return {
+        userId: identity.userId,
+        emailNormalized: identity.emailNormalized,
+        emailVerified: identity.emailVerified,
+        accountActive: identity.isAccountActive,
+        active: identity.isActiveNonVerificationOnly,
+      };
+    },
+  };
+}
+
+function adaptProviderApplicantProfileReader(
+  reader: ReturnType<typeof createProviderApplicantProfileReader>,
+): ProviderApplicantProfileReaderPort {
+  return {
+    async getMatchingApplicantContext(input) {
+      const category =
+        input.providerKind === "INDIVIDUAL_TEAM" ? "INDIVIDUAL" : "COMPANY";
+      const profile = await reader.readApplicantProfile({
+        userId: input.userId,
+        category,
+      });
+      if (profile.category === "INDIVIDUAL") {
+        return {
+          category: "INDIVIDUAL",
+          profileComplete: profile.profileComplete,
+          individualFullName: profile.fullName,
+          companyName: null,
+          representativeFullName: null,
+        };
+      }
+      return {
+        category: "COMPANY",
+        profileComplete: profile.profileComplete,
+        individualFullName: null,
+        companyName: profile.companyName,
+        representativeFullName: profile.representativeFullName,
+      };
+    },
+  };
+}
 
 export interface RuntimeDependencies {
   readonly database: PrismaLifecycle;
@@ -268,7 +411,7 @@ export function createRuntimeDependencies(
       ),
       privacyRepository!, authorization,
     );
-  const startCustomersBackgroundTasks =
+  const startCustomerMaintenanceTasks =
     authentication === undefined
       ? undefined
       : (): (() => void) => {
@@ -296,6 +439,233 @@ export function createRuntimeDependencies(
             stopMedia();
           };
         };
+
+  const providersComposition =
+    authentication === undefined
+      ? undefined
+      : (() => {
+          const unitOfWork = new PrismaProvidersUnitOfWork(
+            createPrismaGeneralTransactionalAuditWriter,
+            createPrismaPrivilegedAuditWriter,
+            createPrismaProviderIdentityAuthorityWriterFactory,
+            (transaction) =>
+              adaptProviderIdentityReader(
+                createPrismaProviderIdentityReader(transaction),
+              ),
+            (transaction) =>
+              adaptProviderApplicantProfileReader(
+                createProviderApplicantProfileReader(transaction),
+              ),
+            (transaction) =>
+              adaptProviderActiveCountryReader(
+                createTransactionalActiveCountryReader(transaction),
+              ),
+            (transaction) =>
+              new AuthorizationService(new AuthorizationRepository(transaction)),
+            (transaction) => createProviderMediaStatusReader(transaction),
+          );
+          const providerRepository = new PrismaProviderRepository(
+            getPrismaClient(),
+          );
+          const identityReader = adaptProviderIdentityReader(
+            createPrismaProviderIdentityReader(),
+          );
+          const applicantProfiles = adaptProviderApplicantProfileReader(
+            createProviderApplicantProfileReader(),
+          );
+          const denialAudit = createPrismaDenialAuditWriter();
+          const mediaReader = createProviderMediaStatusReader();
+          const projections = new ProviderProjectionService({
+            providers: providerRepository,
+            identityReader,
+            applicantProfiles,
+            mediaReader,
+            activeCountries: adaptProviderActiveCountryReader(),
+            denialAudit,
+          });
+          const applications = new ProviderApplicationService({
+            unitOfWork,
+            providers: providerRepository,
+            identityReader,
+            applicantProfiles,
+            denialAudit,
+            mediaReader,
+            projections,
+          });
+          const profiles = new ProviderProfileService({
+            unitOfWork,
+            providers: providerRepository,
+            identityReader,
+            activeCountries: adaptProviderActiveCountryReader(),
+            denialAudit,
+            projections,
+          });
+          const mediaSelection = createMediaStoragePort(environment);
+          const media = new ProviderMediaService({
+            unitOfWork,
+            providers: providerRepository,
+            media: createProviderMediaPort(mediaSelection.storage),
+            denialAudit,
+            identityReader,
+            mediaUsage: new PrismaProviderMediaRepository(mediaReader),
+            mediaReader,
+            projections,
+            signedUrlTtlSeconds: mediaSelection.signedUrlTtlSeconds,
+            mediaFolder:
+              environment.CLOUDINARY_PROFILE_IMAGE_FOLDER ?? "cleanora-providers",
+          });
+          const reviewQuery = new ProviderReviewQueryService({
+            authorization,
+            reviewRepository: new PrismaProviderReviewRepository(),
+            providers: providerRepository,
+            identityReader,
+            applicantProfiles,
+            mediaReader,
+            projections,
+            denialAudit,
+          });
+          const approval = new ProviderApprovalService({
+            unitOfWork,
+            providers: providerRepository,
+            emailOutbox: new PrismaProviderEmailOutboxRepository(
+              getPrismaClient(),
+            ),
+            authorization,
+            identityReader,
+            applicantProfiles,
+            denialAudit,
+            projections,
+          });
+          const review = new ProviderReviewService({
+            unitOfWork,
+            providers: providerRepository,
+            authorization,
+            identityReader,
+            applicantProfiles,
+            denialAudit,
+            projections,
+          });
+          const lifecycle = new ProviderLifecycleService({
+            unitOfWork,
+            providers: providerRepository,
+            authorization,
+            identityReader,
+            applicantProfiles,
+            denialAudit,
+            projections,
+          });
+          const providerRuntime = resolveProviderRuntimeConfig(environment);
+          const invitationEmailTransport = environment.EMAIL_AUTH_ENABLED
+            ? createNodemailerEmailAdapter({
+                host: environment.SMTP_HOST!,
+                port: environment.SMTP_PORT!,
+                secure: environment.SMTP_SECURE!,
+                requireTls: environment.SMTP_REQUIRE_TLS!,
+                user: environment.SMTP_USER!,
+                password: environment.SMTP_PASSWORD!,
+                fromName: environment.SMTP_FROM_NAME!,
+                fromEmail: environment.SMTP_FROM_EMAIL!,
+                connectionTimeoutMilliseconds:
+                  environment.SMTP_CONNECTION_TIMEOUT_MS!,
+                socketTimeoutMilliseconds: environment.SMTP_SOCKET_TIMEOUT_MS!,
+              })
+            : new UnavailableEmailAdapter();
+          const invitationEmail = new ProviderInvitationEmailAdapter(
+            invitationEmailTransport,
+            `${environment.API_PREFIX}/provider-admin-invitations/accept`,
+          );
+          const providerEmailDispatcher = new ProviderEmailDispatcher({
+            outbox: new PrismaProviderEmailOutboxRepository(getPrismaClient()),
+            identityReader,
+            emailDelivery: new ProviderEmailDeliveryAdapter(invitationEmailTransport),
+            config: {
+              batchSize: providerRuntime.emailOutboxBatchSize,
+              leaseSeconds: providerRuntime.emailOutboxLeaseSeconds,
+            },
+          });
+          const invitationTokenSecret = environment.AUTH_VERIFIER_SECRET!;
+          const membership = new ProviderMembershipService({
+            unitOfWork,
+            providers: providerRepository,
+            identityReader,
+            denialAudit,
+            invitationEmail,
+            invitationTokenSecret,
+            invitationTokenBytes: providerRuntime.invitationTokenBytes,
+            invitationTtlHours: providerRuntime.invitationTtlHours,
+          });
+          const invitationOnboardingIdentity =
+            createProviderInvitationIdentityOnboarding({
+              passwordHasher: new Argon2PasswordHasherAdapter(),
+              tokens: new JwtTokenServiceAdapter({
+                accessSecret: environment.JWT_ACCESS_SECRET!,
+                refreshSecret: environment.JWT_REFRESH_SECRET!,
+                issuer: environment.JWT_ISSUER,
+                audience: environment.JWT_AUDIENCE,
+                accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
+              }),
+              verifier: new CryptoVerifierAdapter(
+                environment.AUTH_VERIFIER_SECRET!,
+              ),
+              email: new AuthenticationEmailAdapter(invitationEmailTransport),
+              accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
+              refreshTtlSeconds: environment.JWT_REFRESH_TTL_SECONDS,
+            });
+          const acceptance = new ProviderInvitationAcceptanceService({
+            unitOfWork,
+            providers: providerRepository,
+            identityReader,
+            denialAudit,
+            invitationTokenSecret,
+            invitationOnboarding: invitationOnboardingIdentity,
+          });
+          const invitationOnboarding = new ProviderInvitationOnboardingService({
+            providers: providerRepository,
+            acceptance,
+            invitationOnboarding: invitationOnboardingIdentity,
+          });
+          return {
+            startProviderBackgroundTasks: (): (() => void) =>
+              startProviderEmailDispatcher(providerEmailDispatcher, logger),
+            providersRouter: createProvidersRouter({
+              authenticateAccess: authentication.authenticateAccess,
+              applications,
+              profiles,
+              media,
+              projections,
+              membership,
+            }),
+            staffProvidersRouter: createStaffProvidersRouter({
+              authenticateAccess: authentication.authenticateAccess,
+              reviewQuery,
+              approval,
+              review,
+              lifecycle,
+            }),
+            providerAdminInvitationRouter: createProviderAdminInvitationRouter({
+              authenticateAccess: authentication.authenticateAccess,
+              rateLimiter,
+              privacyHashSecret: environment.AUTH_PRIVACY_HASH_SECRET!,
+              acceptance,
+              onboarding: invitationOnboarding,
+            }),
+          };
+        })();
+  const startCustomersBackgroundTasks =
+    startCustomerMaintenanceTasks === undefined && providersComposition === undefined
+      ? undefined
+      : (): (() => void) => {
+          const stopCustomer = startCustomerMaintenanceTasks?.();
+          const stopProvider = providersComposition?.startProviderBackgroundTasks();
+          return (): void => {
+            stopProvider?.();
+            stopCustomer?.();
+          };
+        };
+  const providersRouter = providersComposition?.providersRouter;
+  const staffProvidersRouter = providersComposition?.staffProvidersRouter;
+  const providerAdminInvitationRouter =
+    providersComposition?.providerAdminInvitationRouter;
 
   return {
     database,
@@ -325,6 +695,11 @@ export function createRuntimeDependencies(
       ownerInternalRouter,
       ...(authentication === undefined ? {} : { authenticationRouter: authentication.router }),
       ...(customersRouter === undefined ? {} : { customersRouter }),
+      ...(providersRouter === undefined ? {} : { providersRouter }),
+      ...(staffProvidersRouter === undefined ? {} : { staffProvidersRouter }),
+      ...(providerAdminInvitationRouter === undefined
+        ? {}
+        : { providerAdminInvitationRouter }),
     },
   };
 }

@@ -1,11 +1,20 @@
-# R1-P04A Completion Readiness Audit
+# R1-P04A Completion Report
 
 **Audited:** 2026-08-10  
-**Outcome:** `NOT_READY_FOR_GIT_HANDOFF — ENVIRONMENT BLOCKED`
+**Outcome:** `COMPLETE — OWNER APPROVED`
+
+## Owner approval
+
+The human owner explicitly approved phase completion on `2026-08-10`:
+
+```text
+I approve R1-P04A — Category-Aware Customer Signup & Verification as Complete.
+```
 
 ## Scope and product alignment
 
-- R1-P04A is the sole active phase.
+- R1-P04A was the sole active phase until its owner-approved completion; no
+  phase is active after closure.
 - DEC-035 locks every current category to Email OTP and keeps phone unverified.
 - Category-aware signup/profile creation, Company regulatory fields, Swagger,
   OpenAPI, Postman, and environment documentation are implemented.
@@ -29,18 +38,19 @@
   branches, 86.39% functions, and 84.85% lines.
 - Typecheck, lint, Prisma validate/generate, OpenAPI, Postman, docs, build, safe
   Email-only environment parsing, migration SQL guard, and diff check: passed.
+- Clean migration proof: complete migration history deployed from an empty
+  `cleanora_r1_p04_clean_proof` schema; exact table inventory and required
+  successful history rows verified.
+- Post-clean migration/compatibility tests: 2 files and 13 tests passed.
 
 ## Remaining blockers
 
-1. `npm run db:validate-clean-migration` still needs a demonstrably empty
-   `cleanora_r1_p04_clean_proof` target. The guarded reset attempt failed with
-   `EACCES` on its first statement; no data was deleted.
-2. The current execution environment denies writes under `.git`, so it cannot
-   create the authorized feature branch, stage, commit, or push.
+None. A redundant post-clean runtime test attempt
+was sandbox-blocked at its initial `SELECT 1`; the required full integration and
+coverage gates had already passed and no product code changed afterward.
 
 ## Required next action
 
-Restore database-network and `.git` write permissions, rerun the isolated
-clean-apply proof, then execute the already-authorized guarded feature-branch
-commit and push. Phase completion and R1-P05 activation remain separate human
-owner decisions.
+No phase is active. R1-P05 preparation or activation requires separate explicit
+owner authorization; no R1-P05 implementation begins from this report or the
+R1-P04A completion approval.

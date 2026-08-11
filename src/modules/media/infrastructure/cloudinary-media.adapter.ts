@@ -4,14 +4,23 @@ import { Readable } from "node:stream";
 import type { UploadApiResponse, v2 as CloudinaryV2 } from "cloudinary";
 
 import { MediaError } from "../domain/media.errors.js";
-import type { MediaStoragePort, StoreProfileImageInput } from "../domain/media.ports.js";
+import type {
+  MediaStoragePort,
+  StoreProfileImageInput,
+  StoreProviderVideoInput,
+} from "../domain/media.ports.js";
 import type {
   CloudinaryDestroyResult,
   DeliveryUrl,
   MediaRemoveResult,
   StoredMediaReference,
+  StoredProviderVideoReference,
 } from "../domain/media.types.js";
-import { PROFILE_IMAGE_MAX_BYTES, PROFILE_IMAGE_MAX_EDGE } from "../domain/media.types.js";
+import {
+  PROFILE_IMAGE_MAX_BYTES,
+  PROFILE_IMAGE_MAX_EDGE,
+  PROVIDER_VIDEO_MAX_BYTES,
+} from "../domain/media.types.js";
 
 export interface CloudinaryMediaConfig {
   readonly cloudName: string;
@@ -96,6 +105,108 @@ export class CloudinaryMediaAdapter implements MediaStoragePort {
       height: response.height,
       uploadResourceType: response.resource_type as "image",
       uploadType: response.type as "authenticated",
+    };
+  }
+
+  public async storeProviderVideo(
+    input: StoreProviderVideoInput,
+  ): Promise<StoredProviderVideoReference> {
+    let response: UploadApiResponse;
+    try {
+      response = await new Promise<UploadApiResponse>((resolve, reject) => {
+        const stream = this.sdk.uploader.upload_stream(
+          {
+            resource_type: "video",
+            type: "authenticated",
+            public_id: input.storageKey,
+            overwrite: false,
+            unique_filename: false,
+            use_filename: false,
+          },
+          (error, result) => {
+            if (error !== undefined || result === undefined) {
+              reject(new Error(error?.message ?? "Cloudinary video upload returned no result"));
+              return;
+            }
+            resolve(result);
+          },
+        );
+        Readable.from(input.bytes).pipe(stream);
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? redactSecrets(error.message, this.config.apiSecret)
+          : "Cloudinary video upload failed";
+      throw new MediaError("MEDIA_PROVIDER_FAILURE", message);
+    }
+
+    const format = String(response.format ?? "").toLowerCase();
+    const contentType =
+      format === "mp4" ? "video/mp4" : format === "webm" ? "video/webm" : null;
+    if (
+      response.resource_type !== "video" ||
+      response.type !== "authenticated" ||
+      response.public_id !== input.storageKey ||
+      contentType === null ||
+      typeof response.bytes !== "number" ||
+      response.bytes <= 0 ||
+      response.bytes > PROVIDER_VIDEO_MAX_BYTES ||
+      typeof response.width !== "number" ||
+      response.width <= 0 ||
+      typeof response.height !== "number" ||
+      response.height <= 0
+    ) {
+      throw new MediaError(
+        "MEDIA_PROVIDER_FAILURE",
+        "Cloudinary video upload response failed structural validation",
+      );
+    }
+
+    return {
+      provider: "CLOUDINARY",
+      storageKey: input.storageKey,
+      contentType,
+      byteSize: response.bytes,
+      width: response.width,
+      height: response.height,
+      uploadResourceType: "video",
+      uploadType: "authenticated",
+    };
+  }
+
+  public async createAuthorizedVideoThumbnailUrl(
+    reference: Pick<StoredProviderVideoReference, "provider" | "storageKey">,
+    expiresAt: Date,
+  ): Promise<DeliveryUrl> {
+    const expiresUnix = Math.floor(expiresAt.getTime() / 1000);
+    return {
+      url: this.sdk.url(reference.storageKey, {
+        resource_type: "video",
+        type: "authenticated",
+        sign_url: true,
+        secure: true,
+        expires_at: expiresUnix,
+        format: "jpg",
+        transformation: [{ start_offset: "0", width: 600, height: 600, crop: "fill" }],
+      }),
+      urlExpiresAt: expiresAt.toISOString(),
+    };
+  }
+
+  public async createAuthorizedVideoDeliveryUrl(
+    reference: Pick<StoredProviderVideoReference, "provider" | "storageKey">,
+    expiresAt: Date,
+  ): Promise<DeliveryUrl> {
+    return {
+      url: this.sdk.url(reference.storageKey, {
+        resource_type: "video",
+        type: "authenticated",
+        sign_url: true,
+        secure: true,
+        expires_at: Math.floor(expiresAt.getTime() / 1000),
+      }),
+      urlExpiresAt: expiresAt.toISOString(),
     };
   }
 

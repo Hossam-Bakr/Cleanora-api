@@ -1,0 +1,16 @@
+{
+  "workflow": "speckit",
+  "specName": "Provider Onboarding, Profile & Lifecycle",
+  "branch": "main",
+  "status": "completed",
+  "currentStep": "implement",
+  "history": [
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-11T10:30:46.959Z"
+    }
+  ]
+}

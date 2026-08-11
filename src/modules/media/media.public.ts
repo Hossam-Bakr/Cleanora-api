@@ -2,31 +2,88 @@ import { MediaError } from "./domain/media.errors.js";
 import type {
   MediaStoragePort,
   ProfileImageProcessor,
+  ProviderImageProcessor,
+  ProviderMediaPort,
   StoreProfileImageInput,
 } from "./domain/media.ports.js";
 import type {
   DeliveryUrl,
+  MediaOwnerType,
+  MediaStatus,
   MediaStorageProviderName,
   NormalizedProfileImage,
   NormalizedProfileImageContentType,
+  NormalizedProviderImage,
+  ProviderImagePurpose,
+  ProviderMediaOwnerType,
+  ProviderMediaSafeView,
   StoredMediaReference,
+  StoredProviderVideoReference,
 } from "./domain/media.types.js";
 import {
+  MEDIA_OWNER_TYPES,
+  MEDIA_STATUSES,
   PROFILE_IMAGE_MAX_BYTES,
   PROFILE_IMAGE_MAX_EDGE,
+  PROVIDER_IMAGE_DIMENSIONS,
+  PROVIDER_IMAGE_MAX_BYTES,
+  PROVIDER_MEDIA_OWNER_TYPES,
+  PROVIDER_VIDEO_MAX_BYTES,
+  PROVIDER_VIDEO_MAX_HEIGHT,
+  PROVIDER_VIDEO_MAX_WIDTH,
+  providerOwnerTypeForImagePurpose,
 } from "./domain/media.types.js";
 
 export type {
   DeliveryUrl,
+  MediaOwnerType,
+  MediaStatus,
   MediaStoragePort,
   MediaStorageProviderName,
   NormalizedProfileImage,
   NormalizedProfileImageContentType,
+  NormalizedProviderImage,
   ProfileImageProcessor,
+  ProviderImageProcessor,
+  ProviderImagePurpose,
+  ProviderMediaOwnerType,
+  ProviderMediaPort,
+  ProviderMediaSafeView,
   StoredMediaReference,
+  StoredProviderVideoReference,
   StoreProfileImageInput,
 };
-export { MediaError, PROFILE_IMAGE_MAX_BYTES, PROFILE_IMAGE_MAX_EDGE };
+
+export {
+  MediaError,
+  MEDIA_OWNER_TYPES,
+  MEDIA_STATUSES,
+  PROFILE_IMAGE_MAX_BYTES,
+  PROFILE_IMAGE_MAX_EDGE,
+  PROVIDER_IMAGE_DIMENSIONS,
+  PROVIDER_IMAGE_MAX_BYTES,
+  PROVIDER_MEDIA_OWNER_TYPES,
+  PROVIDER_VIDEO_MAX_BYTES,
+  PROVIDER_VIDEO_MAX_HEIGHT,
+  PROVIDER_VIDEO_MAX_WIDTH,
+  providerOwnerTypeForImagePurpose,
+};
+
+/**
+ * Explicit Provider owner-type markers on the public surface (R1-P05).
+ * Media never decides Provider authorization — callers supply purpose only.
+ */
+export const PROVIDER_LOGO = "PROVIDER_LOGO" as const satisfies ProviderMediaOwnerType;
+export const PROVIDER_COVER =
+  "PROVIDER_COVER" as const satisfies ProviderMediaOwnerType;
+export const PROVIDER_GALLERY_IMAGE =
+  "PROVIDER_GALLERY_IMAGE" as const satisfies ProviderMediaOwnerType;
+export const PROVIDER_GALLERY_VIDEO =
+  "PROVIDER_GALLERY_VIDEO" as const satisfies ProviderMediaOwnerType;
+
+/** Explicit lifecycle markers required for Provider video/image finalization. */
+export const PROCESSING = "PROCESSING" as const satisfies MediaStatus;
+export const FAILED = "FAILED" as const satisfies MediaStatus;
 
 /**
  * Cross-module pending-upload surface. Concrete wiring lives in composition /
@@ -44,6 +101,21 @@ export interface MediaPendingUploadPort {
     readonly height: number;
   }): Promise<void>;
   markPendingDelete(mediaId: string): Promise<void>;
+}
+
+export interface ProviderMediaStatusView {
+  readonly mediaId: string;
+  readonly status: MediaStatus;
+  readonly contentType: string;
+  readonly byteSize: number;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly hasReadyThumbnail: boolean;
+}
+
+/** Media-owned status reader used by Provider completion projections. */
+export interface ProviderMediaStatusReader {
+  getMediaStatus(mediaId: string): Promise<ProviderMediaStatusView | null>;
 }
 
 /**

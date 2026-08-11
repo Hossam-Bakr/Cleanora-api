@@ -2,14 +2,20 @@ import { v2 as cloudinary } from "cloudinary";
 
 import type { AppEnvironment } from "../../../config/env.js";
 import { MediaError } from "../domain/media.errors.js";
-import type { MediaStoragePort } from "../domain/media.ports.js";
-import type { MediaPendingUploadPort } from "../media.public.js";
+import type { MediaStoragePort, ProviderMediaPort } from "../domain/media.ports.js";
+import type {
+  MediaPendingUploadPort,
+  ProviderMediaStatusReader,
+} from "../media.public.js";
 import {
   CloudinaryMediaAdapter,
   createOpaqueCloudinaryPublicId,
   type CloudinarySdk,
 } from "./cloudinary-media.adapter.js";
+import { MediaCleanupService } from "./media-cleanup.service.js";
 import { PrismaMediaRepository } from "./prisma-media.repository.js";
+import { ProviderMediaAdapter } from "./provider-media.adapter.js";
+import { SharpProviderImageProcessor } from "./sharp-provider-image.processor.js";
 
 export interface MediaProviderSelection {
   readonly storage: MediaStoragePort;
@@ -110,6 +116,49 @@ export function createMediaPendingUploadPort(): MediaPendingUploadPort {
     },
     markPendingDelete(mediaId) {
       return repository.markPendingDelete(mediaId);
+    },
+  };
+}
+
+/**
+ * Composition-owned Provider media wiring. Public consumers import
+ * `ProviderMediaPort` from media.public; factories stay in infrastructure.
+ */
+export function createProviderMediaPort(
+  storage: MediaStoragePort,
+): ProviderMediaPort {
+  const repository = new PrismaMediaRepository();
+  return new ProviderMediaAdapter(
+    repository,
+    storage,
+    new SharpProviderImageProcessor(),
+    new MediaCleanupService(repository, storage),
+  );
+}
+
+/** Media-owned reader; composition never queries the Media Prisma delegate. */
+export function createProviderMediaStatusReader(
+  transaction?: unknown,
+): ProviderMediaStatusReader {
+  const repository = new PrismaMediaRepository(
+    transaction as ConstructorParameters<typeof PrismaMediaRepository>[0],
+  );
+  return {
+    async getMediaStatus(mediaId) {
+      const row = await repository.findById(mediaId);
+      if (row === null) {
+        return null;
+      }
+      return {
+        mediaId: row.id,
+        status: row.status,
+        contentType: row.contentType,
+        byteSize: row.byteSize,
+        width: row.width,
+        height: row.height,
+        hasReadyThumbnail:
+          row.ownerType === "PROVIDER_GALLERY_VIDEO" && row.status === "READY",
+      };
     },
   };
 }

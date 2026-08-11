@@ -17,6 +17,7 @@ interface PostmanItem {
 interface PostmanCollection {
   readonly info: { readonly schema: string };
   readonly item: readonly PostmanItem[];
+  readonly variable?: readonly EnvironmentValue[];
 }
 
 interface EnvironmentValue {
@@ -51,6 +52,24 @@ function runtimeCustomerOperations(): string[] {
     .flatMap(([path, pathItem]) =>
       Object.entries(pathItem)
         .filter(([method]) => ["get", "post", "put", "delete"].includes(method))
+        .map(([method]) => `${method.toUpperCase()} ${path}`),
+    )
+    .sort();
+}
+
+function runtimeProviderOperations(): string[] {
+  return Object.entries(cleanoraOpenApiDocument.paths)
+    .filter(
+      ([path]) =>
+        path.startsWith("/providers") ||
+        path.startsWith("/provider-admin-invitations") ||
+        path.startsWith("/staff/providers"),
+    )
+    .flatMap(([path, pathItem]) =>
+      Object.entries(pathItem)
+        .filter(([method]) =>
+          ["get", "post", "put", "patch", "delete"].includes(method),
+        )
         .map(([method]) => `${method.toUpperCase()} ${path}`),
     )
     .sort();
@@ -158,11 +177,91 @@ async function main(): Promise<void> {
     }
   }
 
+  const r1P05CollectionPath = resolve(
+    postmanDirectory,
+    "Cleanora-R1-P05.postman_collection.json",
+  );
+  const r1P05Collection =
+    await parseJson<PostmanCollection>(r1P05CollectionPath);
+  assert(
+    r1P05Collection.info.schema.endsWith("/collection/v2.1.0/collection.json"),
+    "R1-P05 collection must use Postman collection schema v2.1.0",
+  );
+  const r1P05Requests = collectRequests(r1P05Collection.item);
+  assert(
+    r1P05Requests.length === 41,
+    `R1-P05 Postman collection must contain 41 requests; found ${r1P05Requests.length}`,
+  );
+  const r1P05CollectionOperations = r1P05Requests
+    .map(
+      (request) =>
+        `${request.method.toUpperCase()} ${normalizeCollectionRoute(rawUrl(request))}`,
+    )
+    .sort();
+  const r1P05RuntimeOperations = runtimeProviderOperations();
+  assert(
+    new Set(r1P05CollectionOperations).size ===
+      r1P05CollectionOperations.length,
+    "R1-P05 Postman collection contains duplicate method/path entries",
+  );
+  assert(
+    JSON.stringify(r1P05CollectionOperations) ===
+      JSON.stringify(r1P05RuntimeOperations),
+    `R1-P05 Postman operations differ from runtime Swagger.\nPostman: ${JSON.stringify(r1P05CollectionOperations)}\nSwagger: ${JSON.stringify(r1P05RuntimeOperations)}`,
+  );
+  const r1P05Serialized = await readFile(r1P05CollectionPath, "utf8");
+  const collectionVariables = new Map(
+    (r1P05Collection.variable ?? []).map((entry) => [entry.key, entry.value]),
+  );
+  const referencedVariables = new Set(
+    [...r1P05Serialized.matchAll(/\{\{([^{}]+)\}\}/gu)].map(
+      (match) => match[1]!,
+    ),
+  );
+  for (const file of [
+    "Cleanora-local.postman_environment.json",
+    "Cleanora-railway.postman_environment.json",
+  ]) {
+    const environment = await parseJson<PostmanEnvironment>(
+      resolve(postmanDirectory, file),
+    );
+    const environmentKeys = new Set(environment.values.map((entry) => entry.key));
+    const undefinedVariables = [...referencedVariables].filter(
+      (key) => !collectionVariables.has(key) && !environmentKeys.has(key),
+    );
+    assert(
+      undefinedVariables.length === 0,
+      `${file} leaves R1-P05 variables undefined: ${undefinedVariables.join(", ")}`,
+    );
+  }
+  assert(
+    collectionVariables.get("providerAdminInvitationToken") === "",
+    "R1-P05 collection must export providerAdminInvitationToken empty",
+  );
+  assert(
+    r1P05Serialized.includes("body.error.statusCode"),
+    "R1-P05 response tests must validate error-envelope statusCode",
+  );
+  for (const forbidden of [
+    "CLOUDINARY_API_SECRET",
+    "JWT_ACCESS_SECRET",
+    "JWT_REFRESH_SECRET",
+    "DATABASE_URL",
+    "Bearer eyJ",
+    "SMTP_PASSWORD",
+  ]) {
+    assert(
+      !r1P05Serialized.includes(forbidden),
+      `R1-P05 Postman collection contains forbidden secret material: ${forbidden}`,
+    );
+  }
+
   process.stdout.write(
     `${JSON.stringify({
       ok: true,
       jsonFiles: jsonFiles.length,
       r1P04Requests: collectionOperations.length,
+      r1P05Requests: r1P05CollectionOperations.length,
       runtimeParity: true,
       environments: 2,
     })}\n`,

@@ -1,3 +1,7 @@
+import { buildImplementedR1P05SwaggerFragments } from "./r1-p05-openapi.paths.js";
+
+const r1P05Fragments = buildImplementedR1P05SwaggerFragments();
+
 const apiErrorResponse = { $ref: "#/components/responses/ApiError" } as const;
 const rateLimitResponse = {
   $ref: "#/components/responses/RateLimited",
@@ -89,6 +93,7 @@ export const cleanoraOpenApiDocument = {
       "Examples use placeholders and never contain usable passwords, tokens, OTPs, provider credentials, or database values.",
       "",
       "R1-P02 authentication is Complete. R1-P03A adds owner staff-admin provisioning and staff-admin role-grant commands under DEC-030.",
+      "R1-P05 adds authenticated Provider onboarding, profile/media, Staff review, and operational suspend/reinstate. There is no anonymous Provider browse surface.",
     ].join("\n"),
     contact: {
       name: "Cleanora Engineering",
@@ -162,8 +167,10 @@ export const cleanoraOpenApiDocument = {
       description:
         "Interactive Swagger UI and the machine-readable OpenAPI document.",
     },
+    ...r1P05Fragments.tags,
   ],
   paths: {
+    ...r1P05Fragments.paths,
     "/system/health/live": {
       get: {
         tags: ["System Health"],
@@ -1096,7 +1103,14 @@ export const cleanoraOpenApiDocument = {
         schema: { type: "integer", minimum: 1 },
       },
     },
+    parameters: {
+      ...r1P05Fragments.parameters,
+    },
+    requestBodies: {
+      ...r1P05Fragments.requestBodies,
+    },
     responses: {
+      ...r1P05Fragments.responses,
       ApiError: {
         description: "Safe stable API failure.",
         headers: {
@@ -1122,6 +1136,7 @@ export const cleanoraOpenApiDocument = {
       },
     },
     schemas: {
+      ...r1P05Fragments.schemas,
       AccountCategory: {
         type: "string",
         enum: [

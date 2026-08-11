@@ -9,7 +9,8 @@
 - Checks run: module import and Prisma-ownership searches, transaction-seam
   inspection, secret/junk scan, typecheck, lint, unit suite, Prisma validation
   and generation, OpenAPI validation, Postman validation, documentation checks,
-  build, configured coverage, and `git diff --check`.
+  build, configured coverage, clean migration apply/history verification, and
+  `git diff --check`.
 
 ## Findings
 
@@ -28,11 +29,10 @@ None.
 
 ## Tests and checks not run
 
-- The clean-apply database proof was not rerun because the approved proof target
-  is non-empty and its guarded reset failed with `EACCES` before the first
-  statement completed. The migration SQL guard itself passed, and the full
-  integration and configured coverage suites passed against that isolated proof
-  database.
+None required. A redundant post-clean focused runtime rerun was attempted but
+could not start because the current sandbox denied its initial database
+`SELECT 1` with `EACCES`; this did not replace or invalidate the previously
+passing full integration and configured coverage suites.
 
 ## Verdict
 

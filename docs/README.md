@@ -46,6 +46,12 @@ Precedence:
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
 
+**Live pointer (2026-08-11):** `R1-P05 — Provider Onboarding, Profile & Lifecycle`
+is **Complete** (T001–T159). Independent review returned PASS and human
+completion authorization is recorded. The next phase is not activated, and no
+deployment or production migration occurred. See `docs/product/current.md` and
+`specs/R1-P05-provider-onboarding-profile-lifecycle/completion-report.md`.
+
 ## Current backend navigation
 
 For implementation work, start in this order:

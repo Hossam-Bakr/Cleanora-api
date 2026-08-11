@@ -52,14 +52,15 @@ function createFakeSdk(options?: {
                 done();
                 return;
               }
+              const video = uploadOptions["resource_type"] === "video";
               callback(undefined, {
-                resource_type: "image",
+                resource_type: video ? "video" : "image",
                 type: responseType,
-                format: "webp",
+                format: video ? "mp4" : "webp",
                 public_id: String(uploadOptions["public_id"]),
                 bytes: Math.max(Buffer.concat(chunks).byteLength, 32),
-                width: 128,
-                height: 96,
+                width: video ? 1280 : 128,
+                height: video ? 720 : 96,
               });
               done();
             },
@@ -128,6 +129,43 @@ describe("CloudinaryMediaAdapter", () => {
     });
     expect(storageKey).toMatch(
       /^cleanora\/customer-profile-images\/[0-9a-f]{40}$/u,
+    );
+  });
+
+  it("uploads authenticated Provider video and creates signed video delivery/thumbnail URLs", async () => {
+    const sdk = createFakeSdk();
+    const adapter = new CloudinaryMediaAdapter(sdk, {
+      cloudName: "demo",
+      apiKey: "key",
+      apiSecret: SECRET,
+      folder: "cleanora/providers",
+      signedUrlTtlSeconds: 900,
+    });
+    const stored = await adapter.storeProviderVideo({
+      mediaId: "video-1",
+      ownerUserId: "owner-1",
+      bytes: Buffer.from("video-bytes"),
+      contentType: "video/mp4",
+      storageKey: "cleanora/providers/video-1",
+    });
+    expect(stored).toMatchObject({
+      provider: "CLOUDINARY",
+      contentType: "video/mp4",
+      width: 1280,
+      height: 720,
+      uploadResourceType: "video",
+      uploadType: "authenticated",
+    });
+    const expiresAt = new Date("2026-08-11T12:00:00.000Z");
+    await expect(
+      adapter.createAuthorizedVideoDeliveryUrl(stored, expiresAt),
+    ).resolves.toMatchObject({ urlExpiresAt: expiresAt.toISOString() });
+    await expect(
+      adapter.createAuthorizedVideoThumbnailUrl(stored, expiresAt),
+    ).resolves.toMatchObject({ urlExpiresAt: expiresAt.toISOString() });
+    expect(sdk.url).toHaveBeenCalledWith(
+      stored.storageKey,
+      expect.objectContaining({ resource_type: "video", format: "jpg" }),
     );
   });
 

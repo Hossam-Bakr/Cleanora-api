@@ -39,6 +39,7 @@ describe('Google provider assurance', () => {
       user: { findUnique: vi.fn(async () => null) },
       userCredential: { findUnique: vi.fn(async () => null) },
       userSession: { create: vi.fn(async () => ({})) },
+      userRole: { findMany: vi.fn(async () => []) },
       authEvent: { create: vi.fn(async () => ({})) },
       $transaction: vi.fn(async (work: (value: typeof transaction) => unknown) => work(transaction))
     } as unknown as PrismaClient;

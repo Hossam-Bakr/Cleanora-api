@@ -942,3 +942,184 @@ explicitly approved phase.
 
 Commit, push, deployment, production migration, and external provider actions
 remain separately controlled actions.
+
+---
+
+## DEC-036 — Application-based provider ownership and kind-specific readiness
+
+**Date:** 2026-08-10
+**Status:** Approved by human owner for R1-P05; implementation and internal validation recorded 2026-08-11 — independent review (T158) and human Complete approval (T159) still pending; phase not formally Complete; next phase not activated; no deployment or production migration
+
+This decision activates R1-P05 for specification preparation and supersedes
+the direct Provider Owner signup and self-enrollment direction in DEC-034 and
+DEC-035. It does not alter R1-P04A's historical delivered behavior; the runtime
+change belongs to the separately authorized R1-P05 implementation workflow.
+
+**Implementation note (2026-08-11):** R1-P05 implementation tasks through T157
+are checked with evidence in
+`specs/R1-P05-provider-onboarding-profile-lifecycle/completion-report.md`.
+T158 independent review and T159 human Complete approval remain open.
+
+### Provider identity and kinds
+
+- A Provider is the marketplace supply entity. `COMPANY` remains a customer
+  identity category and is not itself the Provider record.
+- Only a verified `INDIVIDUAL` with its matching profile or a verified
+  `COMPANY` with its matching profile may apply in R1-P05. `ENGINEER` is not
+  eligible.
+- A verified Individual applies as `INDIVIDUAL_TEAM`; a verified Company
+  applies as `REGISTERED_COMPANY`. A user holding both eligible categories
+  chooses one kind for the initial draft.
+- Provider kind may change only in the never-submitted initial `DRAFT`; it is
+  immutable after first submission.
+- One user may own at most one Provider. Provider-admin membership never grants
+  ownership.
+- `PROVIDER_OWNER` is removed from public self-signup and ordinary category
+  self-enrollment. It remains an internal verified category granted only by
+  staff approval.
+- A legacy user holding only `PROVIDER_OWNER` must first enroll and verify an
+  eligible Individual or Company category and complete its matching profile.
+
+### Application review and operational lifecycle
+
+- Application status is separate from operational and document-verification
+  status. The application states are `DRAFT`, `PENDING_REVIEW`,
+  `CHANGES_REQUESTED`, `APPROVED`, and terminal `REJECTED`.
+- `CHANGES_REQUESTED` returns to editable draft and may be resubmitted without
+  erasing prior review cycles. There is no withdrawal, hard deletion, or
+  rejected-application resubmission in R1-P05.
+- The application creator acts as the draft-scoped `Application Owner` before
+  approval. This grants only application, profile, private-contact, media,
+  submission, and resubmission rights while the application is editable; it is
+  not Provider membership, ownership authority, or global provider-admin
+  authority.
+- Application, profile, private-contact, and media changes are locked while
+  `PENDING_REVIEW`. Provider memberships and admin invitations are unavailable
+  before approval.
+- Only an active `staff_admin` may list/review applications, approve, request
+  changes, reject, suspend, or reinstate. Every negative or operational
+  decision requires a non-empty reason, actor, and timestamp.
+- Approval is an all-or-nothing business outcome: application `APPROVED`,
+  verified `PROVIDER_OWNER` category, enabled global `provider_admin` role,
+  active provider `OWNER` membership, status history, and privileged audit.
+- Approval does not verify documents or make payout, workers, services,
+  coverage, availability, capacity, operational live status, or public Browse
+  ready. The approved Provider remains `INACTIVE`.
+- Permitted OWNER or ADMIN profile, private-contact, and media changes after
+  approval do not reset the application from `APPROVED` in R1-P05. They
+  recalculate completion/readiness and preserve version and audit evidence.
+  Public eligibility remains false; R1-P12 must define any moderation policy
+  required after marketplace visibility begins.
+- Operational states are only `INACTIVE`, `LIVE`, and `SUSPENDED`; R1-P05 has
+  no `PAUSED` state and no way to bypass later-phase readiness into `LIVE`.
+- Suspension blocks operational and public eligibility but preserves authorized
+  OWNER/ADMIN profile, media, membership, dashboard, and remediation access.
+  Staff Admin reinstatement in R1-P05 always returns the Provider to `INACTIVE`
+  and never automatically restores or grants `LIVE`.
+
+### Profile, privacy, and media
+
+- Required common profile fields are Arabic display name and description plus
+  an active configured `countryCode`; English display name and description are
+  optional.
+- Individual name or Company name and representative name are server-resolved
+  from the matching verified customer profile for private review context, not
+  trusted as caller-supplied identity facts.
+- Operational email and phone are required or securely prefilled. Any WhatsApp,
+  social, website, or external-booking reference is private operational/review
+  data.
+- No anonymous, customer-facing, or protected-preview representation exposes
+  direct email, phone, WhatsApp, social, website, or external-booking data.
+  R1-P05 provides a protected contact-free preview but no public Browse API;
+  public Browse and Provider Details belong to R1-P12.
+- Provider media allows one logo, one cover, at most 12 gallery images, and at
+  most 2 gallery videos. Submission requires logo, cover, and at least 3 READY
+  gallery images; videos do not satisfy that minimum.
+- Each image is at most 5 MiB and accepts JPEG, PNG, or WebP. Safe normalized
+  presentation sizes are 600x600 logo, 1600x600 cover, and 1200x900 gallery,
+  with orientation normalization and unsafe metadata removal.
+- Each video is at most 40 MiB, MP4 or WebM, and no more than 1080p. Sixty
+  seconds is UX guidance, not a hard duration limit. Videos require thumbnail
+  and processing state, and only READY media contributes to completeness.
+
+### Provider membership and invitations
+
+- R1-P05 membership levels are `OWNER` and `ADMIN` only. Workers, supervisors,
+  teams, crews, and worker assignment remain R1-P07.
+- Before approval, only the `Application Owner` submits/resubmits and no
+  Provider OWNER or ADMIN membership exists. Approval converts the accepted
+  applicant into the actual Provider OWNER through the atomic approval outcome.
+- After approval, OWNER manages admins and may edit Provider content when
+  permitted. ADMIN may edit profile, private contacts, and media when permitted
+  and may view dashboard/readiness, but cannot submit, change kind, manage
+  membership, transfer ownership, or review applications.
+- Authorization requires an active identity, enabled global capability, active
+  membership for the exact requested Provider, and the required membership
+  level. Caller-supplied scope is never authoritative and cross-provider access
+  fails closed.
+- An approved Provider's OWNER may invite any valid email. Invitations do not
+  exist before application approval, are single-use, expire after 72 hours, may
+  be revoked, and resend invalidates prior active tokens. Only a secure token
+  verifier is retained; acceptance is idempotent and concurrency safe.
+- An existing user accepts after authentication and invited-email proof where
+  required. A new user uses invitation-only onboarding with fixed email,
+  required phone/password, and email OTP, receives no customer category
+  automatically, and gains enabled `provider_admin` plus active ADMIN
+  membership after acceptance.
+- Terminal rejection creates no Provider membership, global provider authority,
+  or admin invitation and preserves audit/history.
+
+### Completion, readiness, dashboard, and settings
+
+- `profileCompletion` is separate from `marketplaceReadiness`, is calculated
+  server-side, and is kind-specific. Policy version 1 gives equal weight only
+  to applicable required checks, floors the whole-number percentage, excludes
+  optional/`NOT_REQUIRED` checks, and returns 100 only when all applicable
+  checks are complete. Missing requirement codes are returned.
+- R1-P05 policy version 1 has exactly ten checks worth 10 percentage points
+  each: eligible verified category, complete matching customer profile, Arabic
+  display name, Arabic description, operational email, operational phone,
+  active country, READY logo, READY cover, and at least three READY gallery
+  images. The first two are evaluated for the selected provider kind; their
+  stable codes and the other eight codes are defined in the R1-P05 spec.
+- Structured readiness gates expose applicability, status, satisfaction,
+  blockers, and owning phase. Status concepts are `SATISFIED`, `NOT_REQUIRED`,
+  `NOT_STARTED`, and `BLOCKED`.
+- Gates are `profileComplete`, `applicationApproved`, `documentsVerified`,
+  `payoutDestinationReady`, `workersReady`, `servicesReady`, `coverageReady`,
+  `availabilityReady`, `capacityReady`, `operationalLive`, and
+  `eligibleForPublicBrowse`.
+- `INDIVIDUAL_TEAM` documents are `NOT_REQUIRED`, treated as satisfied, and
+  excluded from denominators. `REGISTERED_COMPANY` documents remain not ready
+  until R1-P06. OQ-007 controls the later configurable Company checklist and
+  does not block R1-P05.
+- Documents and every other later-phase readiness gate are excluded from
+  `profileCompletion`. A Registered Company may complete its R1-P05 profile
+  while its separate document-readiness gate remains blocked on R1-P06.
+- Later-phase gates remain explicitly blocked or not started with their owning
+  phase. `eligibleForPublicBrowse` remains false throughout R1-P05.
+- Dashboard summary includes kind, statuses, completion, blockers, latest
+  decision, media usage, admin/invitation counts, and next owner action.
+- Provider settings aggregate account/security, profile, private contacts,
+  media, members, status/history, privacy, and notification status. No generic
+  `provider_settings` table or unstructured settings object is approved.
+- Mandatory application-review email notices cannot be disabled. Optional
+  provider notification preferences are deferred.
+
+### Integrity and phase boundary
+
+- Application/status history, privileged decisions, invitations, and
+  membership mutations are auditable. Editable resources use version checks;
+  duplicate application creation, approval, and invitation acceptance must be
+  safe under retry and concurrency. Secrets, raw tokens, private contacts, and
+  storage keys are excluded from logs.
+- R1-P06 owns documents and external payout destinations; R1-P07 owns workers
+  and teams; R1-P09 owns services/pricing; R1-P10 owns coverage, availability,
+  and capacity; R1-P11 owns eligibility; R1-P12 owns anonymous Browse.
+- The original activation run authorized canonical reconciliation,
+  `activation.md`, `spec.md`, the specification checklist, feature pointer, and
+  the mandatory `after_specify` hook only. The human owner subsequently
+  authorized `clarify`, `plan`, `tasks`, and `analyze` with a mandatory stop
+  before implementation. No product code, Prisma/schema/migration execution,
+  implementation tests, Git actions, deployment, or production operations are
+  authorized by that planning continuation.

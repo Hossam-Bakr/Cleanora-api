@@ -1,4 +1,5 @@
 import { getPrismaClient } from "#database/prisma";
+import type { Prisma } from "#generated/prisma/client";
 
 import type { AuthorizationGrantReader } from "../domain/authorization.ports.js";
 import type { EffectivePermissions } from "../domain/authorization.types.js";
@@ -10,6 +11,15 @@ import type { EffectivePermissions } from "../domain/authorization.types.js";
  * disabling a grant takes effect on the very next authorization check.
  */
 export class AuthorizationRepository implements AuthorizationGrantReader {
+  public constructor(
+    private readonly suppliedDb?:
+      | Prisma.TransactionClient
+      | ReturnType<typeof getPrismaClient>,
+  ) {}
+
+  private get db(): Prisma.TransactionClient | ReturnType<typeof getPrismaClient> {
+    return this.suppliedDb ?? getPrismaClient();
+  }
   /**
    * Load the enabled role codes and their permission codes for one user.
    *
@@ -19,7 +29,7 @@ export class AuthorizationRepository implements AuthorizationGrantReader {
   async findEnabledRolesAndPermissions(
     userId: string,
   ): Promise<EffectivePermissions> {
-    const grants = await getPrismaClient().userRole.findMany({
+    const grants = await this.db.userRole.findMany({
       where: { userId, status: "ENABLED" },
       select: {
         role: {

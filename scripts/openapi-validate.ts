@@ -12,6 +12,7 @@ const defaults = [
   'docs/apis/openapi/r1-p03a-staff-admin-role-management.yaml',
   'docs/apis/openapi/r1-p03a-owner-staff-admins.yaml',
   'docs/apis/openapi/r1-p04-customer-self-service.yaml',
+  'docs/apis/openapi/r1-p05-provider-onboarding-profile-lifecycle.yaml',
 ];
 
 async function main(): Promise<void> {

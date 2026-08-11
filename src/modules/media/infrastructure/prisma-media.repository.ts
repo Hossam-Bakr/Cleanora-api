@@ -1,4 +1,9 @@
-import type { MediaFile, MediaStatus, Prisma } from "#generated/prisma/client";
+import type {
+  MediaFile,
+  MediaOwnerType,
+  MediaStatus,
+  Prisma,
+} from "#generated/prisma/client";
 import { getPrismaClient } from "#database/prisma";
 
 export type MediaFileRow = MediaFile;
@@ -6,30 +11,41 @@ export type MediaFileRow = MediaFile;
 export interface CreatePendingUploadInput {
   readonly id: string;
   readonly ownerUserId: string;
+  readonly ownerType?: MediaOwnerType;
   readonly storageProvider: "CLOUDINARY";
   readonly storageKey: string;
   readonly contentType: string;
   readonly byteSize: number;
-  readonly width: number;
-  readonly height: number;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly status?: MediaStatus;
 }
 
 export class PrismaMediaRepository {
+  public constructor(
+    private readonly suppliedDb?:
+      | Prisma.TransactionClient
+      | ReturnType<typeof getPrismaClient>,
+  ) {}
+
+  private get db(): Prisma.TransactionClient | ReturnType<typeof getPrismaClient> {
+    return this.suppliedDb ?? getPrismaClient();
+  }
   public async createPendingUpload(
     input: CreatePendingUploadInput,
   ): Promise<MediaFileRow> {
-    return getPrismaClient().mediaFile.create({
+    return this.db.mediaFile.create({
       data: {
         id: input.id,
         ownerUserId: input.ownerUserId,
-        ownerType: "CUSTOMER_PROFILE_IMAGE",
+        ownerType: input.ownerType ?? "CUSTOMER_PROFILE_IMAGE",
         storageProvider: input.storageProvider,
         storageKey: input.storageKey,
         contentType: input.contentType,
         byteSize: input.byteSize,
         width: input.width,
         height: input.height,
-        status: "PENDING_UPLOAD",
+        status: input.status ?? "PENDING_UPLOAD",
       },
     });
   }
@@ -38,7 +54,7 @@ export class PrismaMediaRepository {
     mediaId: string,
     cleanupEligibleAt: Date = new Date(),
   ): Promise<void> {
-    await getPrismaClient().mediaFile.update({
+    await this.db.mediaFile.update({
       where: { id: mediaId },
       data: {
         status: "PENDING_DELETE",
@@ -48,18 +64,25 @@ export class PrismaMediaRepository {
   }
 
   public async findById(mediaId: string): Promise<MediaFileRow | null> {
-    return getPrismaClient().mediaFile.findUnique({ where: { id: mediaId } });
+    return this.db.mediaFile.findUnique({ where: { id: mediaId } });
   }
 
   public async listCleanupCandidates(
     limit: number,
     stalePendingUploadBefore: Date,
   ): Promise<MediaFileRow[]> {
-    return getPrismaClient().mediaFile.findMany({
+    return this.db.mediaFile.findMany({
       where: {
         OR: [
           {
             status: "PENDING_DELETE",
+            OR: [
+              { cleanupEligibleAt: null },
+              { cleanupEligibleAt: { lte: new Date() } },
+            ],
+          },
+          {
+            status: "FAILED",
             OR: [
               { cleanupEligibleAt: null },
               { cleanupEligibleAt: { lte: new Date() } },
@@ -77,7 +100,7 @@ export class PrismaMediaRepository {
   }
 
   public async markDeleted(mediaId: string): Promise<void> {
-    await getPrismaClient().mediaFile.update({
+    await this.db.mediaFile.update({
       where: { id: mediaId },
       data: { status: "DELETED" satisfies MediaStatus },
     });
@@ -88,7 +111,7 @@ export class PrismaMediaRepository {
     status: MediaStatus,
     extra?: Prisma.MediaFileUpdateInput,
   ): Promise<void> {
-    await getPrismaClient().mediaFile.update({
+    await this.db.mediaFile.update({
       where: { id: mediaId },
       data: { status, ...extra },
     });

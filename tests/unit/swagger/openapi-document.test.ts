@@ -21,8 +21,14 @@ describe('Cleanora Swagger OpenAPI document', () => {
           .filter((value): value is string => typeof value === 'string'),
     );
 
-    expect(operationIds).toHaveLength(45);
+    expect(operationIds).toHaveLength(86);
     expect(new Set(operationIds).size).toBe(operationIds.length);
+    expect(cleanoraOpenApiDocument.paths).toHaveProperty(
+      "/staff/providers/{providerId}/suspend",
+    );
+    expect(cleanoraOpenApiDocument.paths).toHaveProperty(
+      "/staff/providers/{providerId}/reinstate",
+    );
     expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
       "/auth/google/result",
     );

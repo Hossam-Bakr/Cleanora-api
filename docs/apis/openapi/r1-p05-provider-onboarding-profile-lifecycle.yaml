@@ -1,0 +1,716 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P05 Provider Onboarding, Profile and Lifecycle API
+  version: 1.0.0-r1-p05
+  description: |
+    Implemented Provider and Staff Admin surface for R1-P05.
+    R1-P05 deliberately exposes no anonymous Provider browse route and never
+    exposes Provider direct contact values in preview DTOs.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Providers
+  - name: ProviderMedia
+  - name: ProviderMembers
+  - name: ProviderInvitations
+  - name: StaffProviders
+paths:
+  /providers:
+    post:
+      tags: [Providers]
+      operationId: createProviderApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateProviderRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '201': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '401': {$ref: '#/components/responses/AuthenticationFailure'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+    get:
+      tags: [Providers]
+      operationId: listMyProviders
+      parameters:
+        - {$ref: '#/components/parameters/Cursor'}
+        - {$ref: '#/components/parameters/Limit'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderListSuccess'}
+        '401': {$ref: '#/components/responses/AuthenticationFailure'}
+  /providers/{providerId}:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    get:
+      tags: [Providers]
+      operationId: getProviderPrivateAggregate
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '401': {$ref: '#/components/responses/AuthenticationFailure'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '404': {$ref: '#/components/responses/NotFoundFailure'}
+  /providers/{providerId}/kind:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    patch:
+      tags: [Providers]
+      operationId: changeProviderKind
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChangeKindRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/profile:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    get:
+      tags: [Providers]
+      operationId: getProviderProfile
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '404': {$ref: '#/components/responses/NotFoundFailure'}
+    put:
+      tags: [Providers]
+      operationId: replaceProviderProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProviderProfileRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/contacts:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    get:
+      tags: [Providers]
+      operationId: getProviderPrivateContacts
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '404': {$ref: '#/components/responses/NotFoundFailure'}
+    put:
+      tags: [Providers]
+      operationId: replaceProviderPrivateContacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProviderContactsRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/application/submit:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    post:
+      tags: [Providers]
+      operationId: submitProviderApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '201': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/media:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    get:
+      tags: [ProviderMedia]
+      operationId: listProviderMedia
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+  /providers/{providerId}/media/logo:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    put:
+      tags: [ProviderMedia]
+      operationId: replaceProviderLogo
+      requestBody: {$ref: '#/components/requestBodies/MediaUpload'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+    delete:
+      tags: [ProviderMedia]
+      operationId: clearProviderLogo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/media/cover:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    put:
+      tags: [ProviderMedia]
+      operationId: replaceProviderCover
+      requestBody: {$ref: '#/components/requestBodies/MediaUpload'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+    delete:
+      tags: [ProviderMedia]
+      operationId: clearProviderCover
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/media/gallery-images:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    post:
+      tags: [ProviderMedia]
+      operationId: addProviderGalleryImage
+      requestBody: {$ref: '#/components/requestBodies/MediaUpload'}
+      responses:
+        '201': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/media/gallery-videos:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    post:
+      tags: [ProviderMedia]
+      operationId: addProviderGalleryVideo
+      requestBody: {$ref: '#/components/requestBodies/MediaUpload'}
+      responses:
+        '201': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/media/gallery-order:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    put:
+      tags: [ProviderMedia]
+      operationId: reorderProviderGallery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/GalleryOrderRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/media/gallery/{galleryItemId}:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+      - {$ref: '#/components/parameters/GalleryItemId'}
+    delete:
+      tags: [ProviderMedia]
+      operationId: removeProviderGalleryItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/completion:
+    get:
+      tags: [Providers]
+      operationId: getProviderCompletion
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+  /providers/{providerId}/readiness:
+    get:
+      tags: [Providers]
+      operationId: getProviderReadiness
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+  /providers/{providerId}/history:
+    get:
+      tags: [Providers]
+      operationId: getProviderHistory
+      parameters:
+        - {$ref: '#/components/parameters/ProviderId'}
+        - {$ref: '#/components/parameters/Cursor'}
+        - {$ref: '#/components/parameters/Limit'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderListSuccess'}
+  /providers/{providerId}/dashboard:
+    get:
+      tags: [Providers]
+      operationId: getProviderDashboard
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+  /providers/{providerId}/settings:
+    get:
+      tags: [Providers]
+      operationId: getProviderSettings
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+  /providers/{providerId}/preview:
+    get:
+      tags: [Providers]
+      operationId: getProviderContactFreePreview
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+  /providers/{providerId}/members:
+    get:
+      tags: [ProviderMembers]
+      operationId: listProviderMembers
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      responses:
+        '200': {$ref: '#/components/responses/ProviderArraySuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+  /providers/{providerId}/members/{userId}:
+    delete:
+      tags: [ProviderMembers]
+      operationId: disableProviderAdmin
+      parameters:
+        - {$ref: '#/components/parameters/ProviderId'}
+        - {$ref: '#/components/parameters/UserId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/admin-invitations:
+    parameters:
+      - {$ref: '#/components/parameters/ProviderId'}
+    get:
+      tags: [ProviderInvitations]
+      operationId: listProviderAdminInvitations
+      parameters:
+        - {$ref: '#/components/parameters/Cursor'}
+        - {$ref: '#/components/parameters/Limit'}
+        - name: status
+          in: query
+          schema: {$ref: '#/components/schemas/ProviderInvitationStatus'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderListSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+    post:
+      tags: [ProviderInvitations]
+      operationId: createProviderAdminInvitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateInvitationRequest'}
+      responses:
+        '202': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/admin-invitations/{invitationId}/resend:
+    post:
+      tags: [ProviderInvitations]
+      operationId: resendProviderAdminInvitation
+      parameters:
+        - {$ref: '#/components/parameters/ProviderId'}
+        - {$ref: '#/components/parameters/InvitationId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionRequest'}
+      responses:
+        '202': {$ref: '#/components/responses/ProviderSuccess'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /providers/{providerId}/admin-invitations/{invitationId}/revoke:
+    post:
+      tags: [ProviderInvitations]
+      operationId: revokeProviderAdminInvitation
+      parameters:
+        - {$ref: '#/components/parameters/ProviderId'}
+        - {$ref: '#/components/parameters/InvitationId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /provider-admin-invitations/inspect:
+    post:
+      tags: [ProviderInvitations]
+      operationId: inspectProviderAdminInvitation
+      security: []
+      requestBody: {$ref: '#/components/requestBodies/TokenBody'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '410': {$ref: '#/components/responses/ConflictFailure'}
+  /provider-admin-invitations/onboarding/start:
+    post:
+      tags: [ProviderInvitations]
+      operationId: startInvitedProviderAdminOnboarding
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/InvitationOnboardingRequest'}
+      responses:
+        '202': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /provider-admin-invitations/onboarding/verify-email:
+    post:
+      tags: [ProviderInvitations]
+      operationId: verifyInvitedProviderAdminEmail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/InvitationVerifyRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '400': {$ref: '#/components/responses/ValidationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /provider-admin-invitations/accept:
+    post:
+      tags: [ProviderInvitations]
+      operationId: acceptProviderAdminInvitation
+      requestBody: {$ref: '#/components/requestBodies/TokenBody'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+        '410': {$ref: '#/components/responses/ConflictFailure'}
+  /staff/providers/applications:
+    get:
+      tags: [StaffProviders]
+      operationId: listPendingProviderApplications
+      parameters:
+        - name: status
+          in: query
+          schema: {$ref: '#/components/schemas/ProviderApplicationStatus'}
+        - name: providerKind
+          in: query
+          schema: {$ref: '#/components/schemas/ProviderKind'}
+        - {name: submittedFrom, in: query, schema: {type: string, format: date-time}}
+        - {name: submittedTo, in: query, schema: {type: string, format: date-time}}
+        - {$ref: '#/components/parameters/Cursor'}
+        - {$ref: '#/components/parameters/Limit'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderListSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+  /staff/providers/applications/{providerId}:
+    get:
+      tags: [StaffProviders]
+      operationId: getProviderApplicationDossier
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '404': {$ref: '#/components/responses/NotFoundFailure'}
+  /staff/providers/applications/{providerId}/approve:
+    post:
+      tags: [StaffProviders]
+      operationId: approveProviderApplication
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /staff/providers/applications/{providerId}/request-changes:
+    post:
+      tags: [StaffProviders]
+      operationId: requestProviderApplicationChanges
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReasonedVersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /staff/providers/applications/{providerId}/reject:
+    post:
+      tags: [StaffProviders]
+      operationId: rejectProviderApplication
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReasonedVersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /staff/providers/{providerId}/suspend:
+    post:
+      tags: [StaffProviders]
+      operationId: suspendProvider
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReasonedVersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+  /staff/providers/{providerId}/reinstate:
+    post:
+      tags: [StaffProviders]
+      operationId: reinstateProviderToInactive
+      parameters: [{$ref: '#/components/parameters/ProviderId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReasonedVersionRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ProviderSuccess'}
+        '403': {$ref: '#/components/responses/AuthorizationFailure'}
+        '409': {$ref: '#/components/responses/ConflictFailure'}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    ProviderId: {name: providerId, in: path, required: true, schema: {type: string, minLength: 1}}
+    GalleryItemId: {name: galleryItemId, in: path, required: true, schema: {type: string, minLength: 1}}
+    InvitationId: {name: invitationId, in: path, required: true, schema: {type: string, minLength: 1}}
+    UserId: {name: userId, in: path, required: true, schema: {type: string, minLength: 1}}
+    Cursor: {name: cursor, in: query, required: false, schema: {type: string, minLength: 1}}
+    Limit: {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+  requestBodies:
+    TokenBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [token]
+            properties:
+              token: {type: string, minLength: 32, writeOnly: true}
+    MediaUpload:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [file, expectedVersion]
+            properties:
+              file: {type: string, format: binary}
+              expectedVersion: {type: integer, minimum: 1}
+  responses:
+    ProviderSuccess:
+      description: Successful safe Provider response
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+    ProviderListSuccess:
+      description: Successful bounded list response
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ListEnvelope'}
+    ProviderArraySuccess:
+      description: Successful non-paginated array response
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ArrayEnvelope'}
+    ValidationFailure: {$ref: '#/components/responses/ErrorFailure'}
+    AuthenticationFailure: {$ref: '#/components/responses/ErrorFailure'}
+    AuthorizationFailure: {$ref: '#/components/responses/ErrorFailure'}
+    NotFoundFailure: {$ref: '#/components/responses/ErrorFailure'}
+    ConflictFailure: {$ref: '#/components/responses/ErrorFailure'}
+    ErrorFailure:
+      description: Safe error envelope; code varies by endpoint
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorEnvelope'}
+  schemas:
+    ProviderKind: {type: string, enum: [INDIVIDUAL_TEAM, REGISTERED_COMPANY]}
+    ProviderApplicationStatus: {type: string, enum: [DRAFT, PENDING_REVIEW, CHANGES_REQUESTED, APPROVED, REJECTED]}
+    ProviderOperationalStatus: {type: string, enum: [INACTIVE, LIVE, SUSPENDED]}
+    ProviderInvitationStatus: {type: string, enum: [PENDING, ACCEPTED, REVOKED, EXPIRED]}
+    CreateProviderRequest:
+      type: object
+      additionalProperties: false
+      required: [providerKind]
+      properties:
+        providerKind: {$ref: '#/components/schemas/ProviderKind'}
+    VersionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: {type: integer, minimum: 1}
+    ChangeKindRequest:
+      type: object
+      additionalProperties: false
+      required: [providerKind, expectedVersion]
+      properties:
+        providerKind: {$ref: '#/components/schemas/ProviderKind'}
+        expectedVersion: {type: integer, minimum: 1}
+    ReasonedVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [reason, expectedVersion]
+      properties:
+        reason: {type: string, minLength: 1, maxLength: 2000}
+        expectedVersion: {type: integer, minimum: 1}
+    ProviderProfileRequest:
+      type: object
+      additionalProperties: false
+      required: [displayNameAr, displayNameEn, descriptionAr, descriptionEn, countryCode, expectedVersion]
+      properties:
+        displayNameAr: {type: string, maxLength: 200}
+        displayNameEn: {type: [string, 'null'], maxLength: 200}
+        descriptionAr: {type: string, maxLength: 4000}
+        descriptionEn: {type: [string, 'null'], maxLength: 4000}
+        countryCode: {type: string, minLength: 2, maxLength: 3}
+        expectedVersion: {type: integer, minimum: 1}
+    ContactChannel:
+      type: object
+      additionalProperties: false
+      required: [type, value]
+      properties:
+        type: {type: string, enum: [WHATSAPP, SOCIAL, WEBSITE, EXTERNAL_BOOKING]}
+        value: {type: string, minLength: 1, maxLength: 2048}
+    ProviderContactsRequest:
+      type: object
+      additionalProperties: false
+      required: [operationalEmail, operationalPhone, channels, expectedVersion]
+      properties:
+        operationalEmail: {type: string, format: email, maxLength: 320}
+        operationalPhone: {type: string, pattern: '^\\+[1-9][0-9]{7,14}$'}
+        channels:
+          type: array
+          maxItems: 20
+          items: {$ref: '#/components/schemas/ContactChannel'}
+        expectedVersion: {type: integer, minimum: 1}
+    GalleryOrderRequest:
+      type: object
+      additionalProperties: false
+      required: [orderedGalleryItemIds, expectedVersion]
+      properties:
+        orderedGalleryItemIds:
+          type: array
+          maxItems: 14
+          uniqueItems: true
+          items: {type: string, minLength: 1}
+        expectedVersion: {type: integer, minimum: 1}
+    CreateInvitationRequest:
+      type: object
+      additionalProperties: false
+      required: [email, expectedVersion]
+      properties:
+        email: {type: string, format: email, maxLength: 320}
+        expectedVersion: {type: integer, minimum: 1}
+    InvitationOnboardingRequest:
+      type: object
+      additionalProperties: false
+      required: [token, phone, password]
+      properties:
+        token: {type: string, minLength: 32, writeOnly: true}
+        phone: {type: string, pattern: '^\\+[1-9][0-9]{7,14}$'}
+        password: {type: string, minLength: 8, maxLength: 128, writeOnly: true}
+    InvitationVerifyRequest:
+      type: object
+      additionalProperties: false
+      required: [token, challengeId, code]
+      properties:
+        token: {type: string, minLength: 32, writeOnly: true}
+        challengeId: {type: string, minLength: 1}
+        code: {type: string, minLength: 4, maxLength: 12, writeOnly: true}
+    SuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: object}
+        requestId: {type: string}
+        meta: {type: [object, 'null']}
+    ListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: array
+          items: {type: object}
+        requestId: {type: string}
+        meta:
+          type: object
+          required: [nextCursor]
+          properties:
+            nextCursor: {type: [string, 'null']}
+    ArrayEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: array
+          items: {type: object}
+        requestId: {type: string}
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, error, requestId]
+      properties:
+        success: {type: boolean, const: false}
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, statusCode]
+          properties:
+            code: {type: string}
+            message: {type: string}
+            statusCode: {type: integer, minimum: 400, maximum: 599}
+            details: {type: [object, 'null']}
+        requestId: {type: string}

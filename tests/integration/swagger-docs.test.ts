@@ -37,6 +37,13 @@ describe('Swagger API documentation', () => {
     expect(response.body).toEqual(cleanoraOpenApiDocument);
     expect(response.body.paths).toHaveProperty('/auth/signup');
     expect(response.body.paths).toHaveProperty('/auth/password/reset');
+    expect(response.body.paths).toHaveProperty(
+      '/staff/providers/{providerId}/suspend',
+    );
+    expect(response.body.paths).toHaveProperty(
+      '/staff/providers/{providerId}/reinstate',
+    );
+    expect(response.body.paths).not.toHaveProperty('/providers/browse');
     expect(response.body.servers[0].url).toBe(
       'https://cleanora-production.up.railway.app/api/v1',
     );

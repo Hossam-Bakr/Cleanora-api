@@ -1,0 +1,1803 @@
+{
+  "info": {
+    "_postman_id": "c5e0a105-p05a-4b1d-9f2e-provider-onboarding",
+    "name": "Cleanora R1-P05 Provider Onboarding Profile Lifecycle",
+    "description": "Executable R1-P05 provider onboarding collection. Authenticate first so accessToken is available. Invitation flows use body-only tokens via providerAdminInvitationToken. Never paste raw SMTP credentials, Cloudinary secrets, OTPs, or private operational contacts into examples.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "providerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "galleryItemId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "invitationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerAdminInvitationToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Application",
+      "item": [
+        {
+          "name": "Create Provider Application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([201]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"providerKind\": \"INDIVIDUAL_TEAM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers",
+            "description": "Create the single draft Provider application."
+          },
+          "response": []
+        },
+        {
+          "name": "List Own Providers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers",
+            "description": "List Providers visible to the authenticated actor."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Provider",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}",
+            "description": "Retrieve one Provider aggregate the actor may access."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Never-Submitted Kind",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"providerKind\": \"REGISTERED_COMPANY\",\n  \"expectedVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/kind",
+            "description": "Change kind only while never submitted."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/application/submit",
+            "description": "Submit or resubmit when every R1-P05 blocker is clear."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile and Contacts",
+      "item": [
+        {
+          "name": "Get Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/profile",
+            "description": "Read the editable bilingual profile."
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1,\n  \"displayNameAr\": \"اسم العرض\",\n  \"displayNameEn\": \"Display Name\",\n  \"descriptionAr\": \"وصف عربي\",\n  \"descriptionEn\": \"English description\",\n  \"countryCode\": \"{{countryCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/profile",
+            "description": "Full-replace bilingual profile fields."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contacts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/contacts",
+            "description": "Read private operational contacts."
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Contacts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1,\n  \"operationalEmail\": \"ops@example.com\",\n  \"operationalPhone\": \"+201000000000\",\n  \"channels\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/contacts",
+            "description": "Full-replace private operational contacts."
+          },
+          "response": []
+        },
+        {
+          "name": "Protected Preview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/preview",
+            "description": "Contact-free protected preview."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "item": [
+        {
+          "name": "List Media",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/media",
+            "description": "List logo, cover, and gallery references."
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Logo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200,201]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/media/logo",
+            "description": "Multipart logo upload (file field)."
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Cover",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200,201]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/media/cover",
+            "description": "Multipart cover upload (file field)."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Gallery Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([201]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/media/gallery-images",
+            "description": "Multipart gallery image upload."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Gallery Video",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([201]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/media/gallery-videos",
+            "description": "Multipart gallery video upload."
+          },
+          "response": []
+        },
+        {
+          "name": "Reorder Gallery",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1,\n  \"orderedGalleryItemIds\": [\"{{galleryItemId}}\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/media/gallery-order",
+            "description": "Replace gallery order."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Logo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/media/logo",
+            "description": "Clear the logo slot."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Cover",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/media/cover",
+            "description": "Clear the cover slot."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Gallery Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/media/gallery/{{galleryItemId}}",
+            "description": "Remove one gallery item."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Projections",
+      "item": [
+        {
+          "name": "Get Completion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/completion",
+            "description": "Derived profile completion for policy r1-p05-v1."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Readiness",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/readiness",
+            "description": "Eleven-gate marketplace readiness projection."
+          },
+          "response": []
+        },
+        {
+          "name": "Get History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/history",
+            "description": "Append-only application and operational history."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/dashboard",
+            "description": "Bounded dashboard aggregate and next action."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/settings",
+            "description": "Capability-only settings projection."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Members and Invitations",
+      "item": [
+        {
+          "name": "List Members",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/members",
+            "description": "List OWNER and ADMIN memberships."
+          },
+          "response": []
+        },
+        {
+          "name": "Disable Admin Member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/members/{{userId}}",
+            "description": "Soft-disable an ADMIN membership."
+          },
+          "response": []
+        },
+        {
+          "name": "List Admin Invitations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/providers/{{providerId}}/admin-invitations",
+            "description": "List invitation lifecycle rows."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Admin Invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([201]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin.invitee@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/admin-invitations",
+            "description": "Invite an ADMIN by normalized email."
+          },
+          "response": []
+        },
+        {
+          "name": "Resend Admin Invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/admin-invitations/{{invitationId}}/resend",
+            "description": "Rotate verifier and resend once from memory."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Admin Invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/providers/{{providerId}}/admin-invitations/{{invitationId}}/revoke",
+            "description": "Revoke a pending invitation."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invitation Token Flows",
+      "item": [
+        {
+          "name": "Inspect Invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{providerAdminInvitationToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/provider-admin-invitations/inspect",
+            "description": "Inspect a body-supplied invitation token."
+          },
+          "response": []
+        },
+        {
+          "name": "Start Invitation Onboarding",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([201]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{providerAdminInvitationToken}}\",\n  \"phone\": \"+201111111111\",\n  \"password\": \"{{testPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/provider-admin-invitations/onboarding/start",
+            "description": "Create categoryless invitee identity."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Invitation Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{providerAdminInvitationToken}}\",\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{emailOtp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/provider-admin-invitations/onboarding/verify-email",
+            "description": "Consume invitation email OTP."
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{providerAdminInvitationToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/provider-admin-invitations/accept",
+            "description": "Atomically accept and create ADMIN membership."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Staff Review and Lifecycle",
+      "item": [
+        {
+          "name": "List Applications Queue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/staff/providers/applications",
+            "description": "Deterministic Staff review queue."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application Dossier",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{hostUrl}}/staff/providers/applications/{{providerId}}",
+            "description": "Private Staff dossier for one application."
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/staff/providers/applications/{{providerId}}/approve",
+            "description": "Atomic approval leaving INACTIVE operational status."
+          },
+          "response": []
+        },
+        {
+          "name": "Request Changes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1,\n  \"reason\": \"Staff review reason\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/staff/providers/applications/{{providerId}}/request-changes",
+            "description": "Return editable CHANGES_REQUESTED with reason."
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1,\n  \"reason\": \"Staff review reason\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/staff/providers/applications/{{providerId}}/reject",
+            "description": "Terminal rejection with reason."
+          },
+          "response": []
+        },
+        {
+          "name": "Suspend Provider",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1,\n  \"reason\": \"Staff review reason\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/staff/providers/{{providerId}}/suspend",
+            "description": "Suspend an approved Provider."
+          },
+          "response": []
+        },
+        {
+          "name": "Reinstate Provider",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected HTTP status\", () => pm.expect([200]).to.include(pm.response.code));",
+                  "if (pm.response.code !== 204) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Uses the Cleanora response envelope\", () => {",
+                  "    const succeeded = pm.response.code >= 200 && pm.response.code < 300;",
+                  "    pm.expect(body.success).to.eql(succeeded);",
+                  "    pm.expect(body.requestId).to.be.a(\"string\");",
+                  "    if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedVersion\": 1,\n  \"reason\": \"Staff review reason\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{hostUrl}}/staff/providers/{{providerId}}/reinstate",
+            "description": "Reinstate to INACTIVE, never LIVE."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

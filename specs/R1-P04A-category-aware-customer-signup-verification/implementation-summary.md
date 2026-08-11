@@ -1,7 +1,13 @@
 # R1-P04A Implementation Summary
 
-Status: implementation aligned to DEC-035; final validation and owner completion
-approval pending. No Git, deployment, or production migration action performed.
+Status: Complete — owner approved 2026-08-10. No deployment or production
+migration action was performed by this administrative closure.
+
+## Owner approval
+
+```text
+I approve R1-P04A — Category-Aware Customer Signup & Verification as Complete.
+```
 
 ## Delivered
 
@@ -36,13 +42,14 @@ explicit phase. No dormant schema or endpoint for those behaviors is shipped.
 - Startup configuration parsing proved `AUTH_ENABLED=true`,
   `EMAIL_AUTH_ENABLED=true`, and `SMS_AUTH_ENABLED=false` without exposing
   secrets.
-- The phase migration SQL guard passed. The database clean-apply proof remains
-  pending: its first run safely refused the non-empty proof database. A later
-  reset attempt was guarded to `cleanora_r1_p04_clean_proof` but failed with
-  `EACCES` on its first statement, so no database data was cleared.
+- The phase migration SQL guard passed. After the owner reset only
+  `cleanora_r1_p04_clean_proof`, the clean-apply validator deployed the complete
+  migration history from an empty schema and verified the exact table inventory
+  plus one successful history row for every required migration.
 - Full configured coverage passed: 169 files and 684 tests, with 83.35%
   statements, 77.5% branches, 86.39% functions, and 84.85% lines.
 - The implementation/module-boundary review verdict is `PASS` with no remaining
   BLOCKER, MAJOR, or MINOR finding.
-- The readiness audit is complete and records the clean-apply proof plus current
-  `.git` write restriction as the only remaining Git-handoff blockers.
+- Prisma validate/generate and 13 focused migration/compatibility tests passed
+  after the clean apply.
+- The readiness audit outcome is `COMPLETE — OWNER APPROVED`.
