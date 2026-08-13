@@ -126,8 +126,11 @@ export function createMediaPendingUploadPort(): MediaPendingUploadPort {
  */
 export function createProviderMediaPort(
   storage: MediaStoragePort,
+  database?: unknown,
 ): ProviderMediaPort {
-  const repository = new PrismaMediaRepository();
+  const repository = new PrismaMediaRepository(
+    database as ConstructorParameters<typeof PrismaMediaRepository>[0],
+  );
   return new ProviderMediaAdapter(
     repository,
     storage,

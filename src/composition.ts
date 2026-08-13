@@ -100,7 +100,6 @@ import type {
   ProviderApplicantProfileReaderPort,
   ProviderIdentityReaderPort,
 } from "#modules/providers/domain/providers.ports";
-import { getPrismaClient } from "#database/prisma";
 import type { RouteDependencies } from "#routes/index";
 import {
   createApplicationLogger,
@@ -464,23 +463,24 @@ export function createRuntimeDependencies(
               new AuthorizationService(new AuthorizationRepository(transaction)),
             (transaction) => createProviderMediaStatusReader(transaction),
           );
-          const providerRepository = new PrismaProviderRepository(
-            getPrismaClient(),
-          );
+          const providerRepository = new PrismaProviderRepository(database.client);
           const identityReader = adaptProviderIdentityReader(
-            createPrismaProviderIdentityReader(),
+            createPrismaProviderIdentityReader(database.client),
           );
           const applicantProfiles = adaptProviderApplicantProfileReader(
-            createProviderApplicantProfileReader(),
+            createProviderApplicantProfileReader(database.client),
           );
           const denialAudit = createPrismaDenialAuditWriter();
-          const mediaReader = createProviderMediaStatusReader();
+          const mediaReader = createProviderMediaStatusReader(database.client);
+          const activeCountries = adaptProviderActiveCountryReader(
+            createTransactionalActiveCountryReader(database.client),
+          );
           const projections = new ProviderProjectionService({
             providers: providerRepository,
             identityReader,
             applicantProfiles,
             mediaReader,
-            activeCountries: adaptProviderActiveCountryReader(),
+            activeCountries,
             denialAudit,
           });
           const applications = new ProviderApplicationService({
@@ -496,7 +496,7 @@ export function createRuntimeDependencies(
             unitOfWork,
             providers: providerRepository,
             identityReader,
-            activeCountries: adaptProviderActiveCountryReader(),
+            activeCountries,
             denialAudit,
             projections,
           });
@@ -504,10 +504,13 @@ export function createRuntimeDependencies(
           const media = new ProviderMediaService({
             unitOfWork,
             providers: providerRepository,
-            media: createProviderMediaPort(mediaSelection.storage),
+            media: createProviderMediaPort(mediaSelection.storage, database.client),
             denialAudit,
             identityReader,
-            mediaUsage: new PrismaProviderMediaRepository(mediaReader),
+            mediaUsage: new PrismaProviderMediaRepository(
+              mediaReader,
+              database.client,
+            ),
             mediaReader,
             projections,
             signedUrlTtlSeconds: mediaSelection.signedUrlTtlSeconds,
@@ -516,7 +519,7 @@ export function createRuntimeDependencies(
           });
           const reviewQuery = new ProviderReviewQueryService({
             authorization,
-            reviewRepository: new PrismaProviderReviewRepository(),
+            reviewRepository: new PrismaProviderReviewRepository(database.client),
             providers: providerRepository,
             identityReader,
             applicantProfiles,
@@ -527,9 +530,7 @@ export function createRuntimeDependencies(
           const approval = new ProviderApprovalService({
             unitOfWork,
             providers: providerRepository,
-            emailOutbox: new PrismaProviderEmailOutboxRepository(
-              getPrismaClient(),
-            ),
+            emailOutbox: new PrismaProviderEmailOutboxRepository(database.client),
             authorization,
             identityReader,
             applicantProfiles,
@@ -575,7 +576,7 @@ export function createRuntimeDependencies(
             `${environment.API_PREFIX}/provider-admin-invitations/accept`,
           );
           const providerEmailDispatcher = new ProviderEmailDispatcher({
-            outbox: new PrismaProviderEmailOutboxRepository(getPrismaClient()),
+            outbox: new PrismaProviderEmailOutboxRepository(database.client),
             identityReader,
             emailDelivery: new ProviderEmailDeliveryAdapter(invitationEmailTransport),
             config: {

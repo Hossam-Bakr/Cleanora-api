@@ -36,7 +36,7 @@ describe("ProviderMediaAdapter branch coverage (T156)", () => {
       markPendingDelete: vi.fn(async () => undefined),
     };
     const storage = {
-      storeProfileImage: vi.fn(async () => {
+      storeProviderImage: vi.fn(async () => {
         if (options.storeThrows) {
           throw new Error("storage down");
         }

@@ -43,6 +43,7 @@ function walk(
               method: item.request.method.toUpperCase(),
               route: raw
                 .replace("{{hostUrl}}", "")
+                .replace("{{baseUrl}}", "")
                 .split("?")[0]!
                 .replace(/\/+$/u, ""),
             },
@@ -77,43 +78,47 @@ describe("canonical Auth Postman artifacts", () => {
     }
   });
 
-  it("contains every genuine Auth operation once with one Google folder", async () => {
+  it("contains every genuine Auth operation once per Hosted and Local environment", async () => {
     const path = resolve(
       "postman/R1-P02-authentication.postman_collection.json",
     );
     const document = JSON.parse(
       await readFile(path, "utf8"),
     ) as PostmanDocument;
-    const requests = walk(document.item);
-    const keys = requests.map(
-      (request) => `${request.method} ${request.route}`,
-    );
+    expect(document.item?.map((item) => item.name)).toEqual([
+      "Hosted (Not hosted yet)",
+      "Local",
+    ]);
+    for (const environmentFolder of document.item ?? []) {
+      const requests = walk(environmentFolder.item);
+      const keys = requests.map(
+        (request) => `${request.method} ${request.route}`,
+      );
 
-    expect(requests).toHaveLength(17);
-    expect(new Set(keys).size).toBe(keys.length);
-    expect(
-      requests.filter((request) =>
-        request.folder.startsWith("Google Authentication"),
-      ),
-    ).toHaveLength(5);
-    expect(
-      requests.filter((request) => request.folder.includes("Google")),
-    ).toHaveLength(5);
-    expect(keys).toEqual(
-      expect.arrayContaining([
-        "POST /auth/signup",
-        "POST /auth/login",
-        "POST /auth/refresh",
-        "GET /auth/google/browser",
-        "GET /auth/google/callback",
-      ]),
-    );
-    expect(keys).not.toContain("GET /auth/google/result");
-    expect(
-      requests.map((request) => request.name).join("\n"),
-    ).not.toMatch(
-      /Duplicate|Invalid Login|Reject Multiple|Reject Predictable|Worker Self-Signup/iu,
-    );
+      expect(requests).toHaveLength(17);
+      expect(new Set(keys).size).toBe(keys.length);
+      expect(
+        requests.filter((request) => request.folder.includes("Google Authentication")),
+      ).toHaveLength(5);
+      expect(keys).toEqual(
+        expect.arrayContaining([
+          "POST /auth/signup",
+          "POST /auth/login",
+          "POST /auth/refresh",
+          "GET /auth/google/browser",
+          "GET /auth/google/callback",
+        ]),
+      );
+      expect(keys).not.toContain("GET /auth/google/result");
+      expect(
+        requests.map((request) => request.name).join("\n"),
+      ).not.toMatch(
+        /Duplicate|Invalid Login|Reject Multiple|Reject Predictable|Worker Self-Signup/iu,
+      );
+      for (const request of flatten(environmentFolder.item)) {
+        expect(request.response?.length ?? 0).toBeGreaterThan(0);
+      }
+    }
   });
 
   it("keeps complete saved email-only signup variants", async () => {
@@ -124,8 +129,10 @@ describe("canonical Auth Postman artifacts", () => {
       ),
     ) as PostmanDocument;
     const requests = flatten(document.item);
-    const signup = requests.find((item) => item.name === "Signup");
-    expect(signup?.response).toHaveLength(4);
+    const signups = requests.filter((item) => item.name === "Signup");
+    expect(signups).toHaveLength(2);
+    const signup = signups[0];
+    expect(signup?.response).toHaveLength(3);
 
     const variants = signup?.response?.map((example) =>
       parseObject(example.originalRequest?.body?.raw),
@@ -134,7 +141,6 @@ describe("canonical Auth Postman artifacts", () => {
       "INDIVIDUAL",
       "COMPANY",
       "ENGINEER",
-      "PROVIDER_OWNER",
     ]);
     expect(variants?.[0]).toHaveProperty("fullName");
     expect(variants?.[1]).toMatchObject({
@@ -145,14 +151,12 @@ describe("canonical Auth Postman artifacts", () => {
       fullName: "{{engineerFullName}}",
       professionalTitle: "{{professionalTitle}}",
     });
-    expect(variants?.[3]).not.toHaveProperty("fullName");
 
     const signupResponses = signup?.response?.map((example) => {
       const envelope = parseObject(example.body);
       return envelope["data"] as Record<string, unknown>;
     });
     expect(signupResponses?.map((response) => response["channel"])).toEqual([
-      "EMAIL",
       "EMAIL",
       "EMAIL",
       "EMAIL",
@@ -221,6 +225,36 @@ describe("canonical Auth Postman artifacts", () => {
       "preferencesVersion",
       "privacyPurpose",
       "privacyRequestId",
+      "baseUrl",
+      "localHostUrl",
+      "localBaseUrl",
+      "hostedHostUrl",
+      "hostedBaseUrl",
+      "providerKind",
+      "alternateProviderKind",
+      "providerId",
+      "providerVersion",
+      "providerDisplayNameAr",
+      "providerDisplayNameEn",
+      "providerDescriptionAr",
+      "providerDescriptionEn",
+      "providerOperationalEmail",
+      "providerOperationalPhone",
+      "providerWhatsApp",
+      "providerWebsite",
+      "providerLogoPath",
+      "providerCoverPath",
+      "providerGalleryImagePath",
+      "providerGalleryVideoPath",
+      "galleryItemId",
+      "providerAdminInviteEmail",
+      "providerAdminInvitationToken",
+      "invitationId",
+      "invitedAdminPhone",
+      "userId",
+      "staffReviewReason",
+      "staffRejectionReason",
+      "staffLifecycleReason",
     ]);
     expect(basename(environmentPath)).toBe(
       "Cleanora-local.postman_environment.json",

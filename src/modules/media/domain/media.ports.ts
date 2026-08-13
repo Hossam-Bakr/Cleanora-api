@@ -18,9 +18,18 @@ export interface StoreProfileImageInput {
   readonly storageKey: string;
 }
 
+export interface StoreProviderImageStorageInput
+  extends StoreProfileImageInput {
+  readonly purpose: ProviderImagePurpose;
+}
+
 /** Media-owned storage + signed delivery. Customers own association only. */
 export interface MediaStoragePort {
   storeProfileImage(input: StoreProfileImageInput): Promise<StoredMediaReference>;
+  /** Optional for customer-only storage fakes; required by production Provider image wiring. */
+  storeProviderImage?(
+    input: StoreProviderImageStorageInput,
+  ): Promise<StoredMediaReference>;
   /** Optional for customer-only storage fakes; required by production Provider video wiring. */
   storeProviderVideo?(input: StoreProviderVideoInput): Promise<StoredProviderVideoReference>;
   createAuthorizedDeliveryUrl(

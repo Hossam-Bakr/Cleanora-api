@@ -125,11 +125,19 @@ export class ProviderMediaAdapter implements ProviderMediaPort {
     }
 
     try {
-      const stored = await this.storage.storeProfileImage({
+      const storeProviderImage = this.storage.storeProviderImage;
+      if (storeProviderImage === undefined) {
+        throw new MediaError(
+          "MEDIA_PROVIDER_UNSUPPORTED",
+          "Provider image storage is unavailable",
+        );
+      }
+      const stored = await storeProviderImage.call(this.storage, {
         bytes: normalized.bytes,
         ownerUserId: input.ownerUserId,
         mediaId: input.mediaId,
         storageKey: input.storageKey,
+        purpose: input.purpose,
       });
       const expectedDimensions = PROVIDER_IMAGE_DIMENSIONS[input.purpose];
       if (

@@ -1,0 +1,93 @@
+# Cleanora R1-P02 — Authentication & Category-Aware Signup
+
+> **API version:** `/api/v1`
+> **Collection environments:** `Hosted (Not hosted yet)` and `Local`
+> **Authentication:** Bearer access token plus HttpOnly refresh-cookie flows
+
+R1-P02 documents Cleanora email/password identity, email OTP verification,
+password recovery, Google authentication, category enrollment, session
+refresh, password changes, and logout. R1-P04A category-aware signup fields are
+included because Authentication owns the atomic account-and-profile enrollment
+transaction.
+
+## Collection Structure
+
+```text
+Hosted (Not hosted yet)
+├── Email and Password
+├── Google Authentication
+└── Account and Session
+
+Local
+├── Email and Password
+├── Google Authentication
+└── Account and Session
+```
+
+Hosted requests use `{{hostUrl}}`; Local requests use `{{baseUrl}}`.
+
+## Recommended Flow
+
+```text
+1. Signup
+2. Request OTP when a resend is needed
+3. Verify OTP
+4. Login
+5. Current User
+6. Refresh Session when the access token expires
+7. Change Password or Logout when required
+```
+
+## Signup Variants
+
+The `Signup` request contains separate Saved Success Examples for each strict
+request body supported by the existing contract:
+
+- Individual
+- Company
+- Engineer
+
+`PROVIDER_OWNER` is intentionally excluded from public signup and ordinary
+category enrollment. R1-P05 grants Provider ownership only after Staff approval
+of an eligible Individual or Company Provider application.
+
+Open the appropriate Saved Example and copy its required body. Every supported
+public category currently activates through email OTP. Phone is stored as an
+unverified contact identifier.
+
+## Token and Cookie Handling
+
+Successful Login, Refresh, and verification flows capture `accessToken` or
+`challengeId` when returned. The refresh credential stays in Postman's cookie
+jar as an HttpOnly cookie and must not be copied into an environment variable.
+
+```http
+Authorization: Bearer {{accessToken}}
+```
+
+Keep `testEmail`, `testPhone`, `testPassword`, `newPassword`, `emailOtp`,
+`passwordResetCode`, `challengeId`, and `accessToken` private and empty in
+exported files.
+
+## Google Browser Operations
+
+`Start Google Browser Sign-In` and `Google Callback` are browser navigation
+contracts. Their Saved Success Examples use `302 Found`; they are documentation
+examples, not a replacement for completing the OAuth flow in the same browser
+that owns the correlation cookie.
+
+## Saved Examples
+
+Every request has at least one Saved Success Example. Requests with JSON bodies
+store the required body in `originalRequest`; bodyless GET/POST operations show
+the method, URL, headers, and representative success response or redirect.
+
+## Local URLs
+
+```text
+API:     http://localhost:8000/api/v1
+Swagger: http://localhost:8000/api/v1/docs
+```
+
+Use the R1-P02 collection before R1-P04 or R1-P05 so those collections can
+reuse the captured `accessToken`.

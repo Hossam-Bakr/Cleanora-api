@@ -26,10 +26,6 @@ describe("runtime composition", () => {
   });
 
   it("wires authentication, customers, and provider routers when AUTH_ENABLED", () => {
-    bindPrismaClient({
-      country: { findUnique: vi.fn() },
-      mediaFile: { findUnique: vi.fn() },
-    } as never);
     const connect = vi.spyOn(PrismaLifecycle.prototype, "connect");
     const environment = createTestEnvironment({
       AUTH_ENABLED: true,
