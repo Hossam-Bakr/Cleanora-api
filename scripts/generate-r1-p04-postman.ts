@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 type Header = { key: string; value: string };
@@ -57,6 +57,16 @@ function requestItem(input: RequestItemInput) {
     ...(input.capture ?? []).map((line) => `  ${line}`),
     "}",
   ];
+  const example = successExamples[input.name];
+  if (example === undefined) {
+    throw new Error(`Missing Success saved example for ${input.name}`);
+  }
+  const exampleEnvelope = {
+    success: true,
+    data: example.data,
+    requestId: "request_example_01",
+    ...(example.meta === undefined ? {} : { meta: example.meta }),
+  };
 
   return {
     name: input.name,
@@ -67,7 +77,25 @@ function requestItem(input: RequestItemInput) {
       },
     ],
     request,
-    response: [],
+    response: [
+      {
+        name: "Success",
+        originalRequest: request,
+        status:
+          example.code === 201
+            ? "Created"
+            : example.code === 204
+              ? "No Content"
+              : "OK",
+        code: example.code,
+        _postman_previewlanguage: "json",
+        header: [
+          { key: "Content-Type", value: "application/json; charset=utf-8" },
+        ],
+        cookie: [],
+        body: example.code === 204 ? "" : JSON.stringify(exampleEnvelope, null, 2),
+      },
+    ],
   };
 }
 
@@ -75,6 +103,124 @@ const captureProfileImageVersion = [
   "const version = body.data?.profileImage?.associationVersion ?? body.data?.associationVersion;",
   "if (version) pm.environment.set(\"profileImageAssociationVersion\", version);",
 ] as const;
+
+const exampleIndividual = {
+  category: "INDIVIDUAL",
+  created: true,
+  fullName: "Cleanora Individual",
+};
+const exampleCompany = {
+  category: "COMPANY",
+  created: true,
+  companyName: "Cleanora Services",
+  representativeFullName: "Cleanora Representative",
+  commercialRegistrationNumber: "CR-EXAMPLE-001",
+  taxRegistrationNumber: "TAX-EXAMPLE-001",
+};
+const exampleEngineer = {
+  category: "ENGINEER",
+  created: true,
+  fullName: "Cleanora Engineer",
+  professionalTitle: "Cleaning Engineer",
+};
+const exampleProfileImage = {
+  mediaId: "media_profile_example_01",
+  associationVersion: 2,
+  contentType: "image/webp",
+  width: 600,
+  height: 600,
+  url: "https://res.cloudinary.com/example/image/authenticated/profile.webp",
+  urlExpiresAt: "2026-08-13T10:10:00.000Z",
+};
+const exampleAddress = {
+  id: "address_example_01",
+  countryCode: "EG",
+  city: "Cairo",
+  district: "Nasr City",
+  addressText: "Example Street",
+  building: "10",
+  floor: "2",
+  notes: "Near the main entrance",
+  version: 1,
+};
+const examplePreferences = {
+  version: 2,
+  language: "EN",
+  reminders: { sms: true, push: true },
+  promotional: { sms: false, push: true },
+  mandatory: {
+    security: { sms: true, push: true },
+    activeService: { sms: true, push: true },
+  },
+};
+const examplePrivacyRequest = {
+  id: "privacy_request_example_01",
+  purpose: "EXPORT",
+  status: "PENDING",
+  requestedAt: "2026-08-13T10:00:00.000Z",
+  updatedAt: "2026-08-13T10:00:00.000Z",
+  cancelledAt: null,
+  processingAt: null,
+  terminalAt: null,
+  outcomeCode: null,
+};
+const successExamples: Record<
+  string,
+  {
+    readonly code: number;
+    readonly data: unknown;
+    readonly meta?: { readonly nextCursor: string | null };
+  }
+> = {
+  "Get Individual Profile": { code: 200, data: exampleIndividual },
+  "Put Individual Profile": { code: 200, data: exampleIndividual },
+  "Get Company Profile": { code: 200, data: exampleCompany },
+  "Put Company Profile": { code: 200, data: exampleCompany },
+  "Get Engineer Profile": { code: 200, data: exampleEngineer },
+  "Put Engineer Profile": { code: 200, data: exampleEngineer },
+  "Get Profile Image": {
+    code: 200,
+    data: { profileImage: exampleProfileImage },
+  },
+  "Upload or Replace Profile Image": {
+    code: 200,
+    data: {
+      profiles: [exampleIndividual, exampleCompany, exampleEngineer],
+      profileImage: exampleProfileImage,
+    },
+  },
+  "Delete Profile Image": {
+    code: 200,
+    data: { removed: true, associationVersion: 3 },
+  },
+  "List Addresses": { code: 200, data: [exampleAddress] },
+  "Create Address": { code: 201, data: exampleAddress },
+  "Get Address": { code: 200, data: exampleAddress },
+  "Update Address": {
+    code: 200,
+    data: { ...exampleAddress, version: 2 },
+  },
+  "Delete Address": {
+    code: 200,
+    data: { removed: true },
+  },
+  "Get Contact State": {
+    code: 200,
+    data: {
+      email: { value: "customer@example.test", verified: true },
+      phone: { value: "+201000000000", verified: false },
+    },
+  },
+  "Get Preferences": { code: 200, data: examplePreferences },
+  "Replace Preferences": { code: 200, data: examplePreferences },
+  "List Privacy Requests": { code: 200, data: [examplePrivacyRequest] },
+  "Submit Privacy Request": { code: 201, data: examplePrivacyRequest },
+  "Get Privacy Request": { code: 200, data: examplePrivacyRequest },
+  "Cancel Privacy Request": {
+    code: 200,
+    data: { ...examplePrivacyRequest, status: "CANCELLED" },
+  },
+};
 
 const collection = {
   info: {
@@ -358,10 +504,41 @@ const collection = {
   ],
 };
 
+function cloneFoldersWithUrl(
+  folders: typeof collection.item,
+  urlVariable: "hostUrl" | "baseUrl",
+): typeof collection.item {
+  return JSON.parse(
+    JSON.stringify(folders).replaceAll("{{hostUrl}}", `{{${urlVariable}}}`),
+  ) as typeof collection.item;
+}
+
 async function main(): Promise<void> {
+  const documentation = await readFile(
+    resolve("postman/readme_R1-P04.md"),
+    "utf8",
+  );
+  const exportedCollection = {
+    ...collection,
+    info: { ...collection.info, description: documentation },
+    item: [
+      {
+        name: "Hosted (Not hosted yet)",
+        description:
+          "Customer self-service requests using {{hostUrl}}. Select the hosted environment before use.",
+        item: cloneFoldersWithUrl(collection.item, "hostUrl"),
+      },
+      {
+        name: "Local",
+        description:
+          "Customer self-service requests using {{baseUrl}}. Default local API root: http://localhost:8000/api/v1.",
+        item: cloneFoldersWithUrl(collection.item, "baseUrl"),
+      },
+    ],
+  };
   await writeFile(
     resolve("postman/R1-P04-customer-self-service.postman_collection.json"),
-    `${JSON.stringify(collection, null, 2)}\n`,
+    `${JSON.stringify(exportedCollection, null, 2)}\n`,
     "utf8",
   );
 }

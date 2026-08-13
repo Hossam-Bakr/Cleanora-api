@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 type Header = { key: string; value: string };
@@ -28,7 +28,7 @@ const safeUser = {
 };
 
 function verificationChallenge(input: {
-  accountCategory: "INDIVIDUAL" | "COMPANY" | "ENGINEER" | "PROVIDER_OWNER";
+  accountCategory: "INDIVIDUAL" | "COMPANY" | "ENGINEER";
   channel: "EMAIL" | "SMS";
   maskedDestination: string;
   purpose?:
@@ -135,6 +135,25 @@ function requestItem(input: {
     body: successBody(example),
   });
   const responses = [
+    ...(input.browserOnly === true
+      ? [
+          {
+            name: "Success",
+            originalRequest: request,
+            status: "Found",
+            code: 302,
+            _postman_previewlanguage: "text",
+            header: [
+              {
+                key: "Location",
+                value: "{{frontendUrl}}/auth/google/callback?status=success",
+              },
+            ],
+            cookie: [],
+            body: "",
+          },
+        ]
+      : []),
     ...(input.example === undefined
       ? []
       : [
@@ -236,21 +255,6 @@ const collection = {
               },
               example: verificationChallenge({
                 accountCategory: "ENGINEER",
-                channel: "EMAIL",
-                maskedDestination: "cl***@example.test",
-              }),
-            },
-            {
-              name: "Success - Provider Owner (email activation)",
-              status: 202,
-              body: {
-                accountCategory: "PROVIDER_OWNER",
-                phone: "{{testPhone}}",
-                email: "{{testEmail}}",
-                password: "{{testPassword}}",
-              },
-              example: verificationChallenge({
-                accountCategory: "PROVIDER_OWNER",
                 channel: "EMAIL",
                 maskedDestination: "cl***@example.test",
               }),
@@ -461,16 +465,6 @@ const collection = {
                 maskedDestination: "cl***@example.test",
               }),
             },
-            {
-              name: "Success - Provider Owner enrollment",
-              status: 202,
-              body: { accountCategory: "PROVIDER_OWNER" },
-              example: verificationChallenge({
-                accountCategory: "PROVIDER_OWNER",
-                channel: "EMAIL",
-                maskedDestination: "cl***@example.test",
-              }),
-            },
           ],
         }),
         requestItem({
@@ -621,21 +615,84 @@ const railwayEnvironment = createEnvironment({
   swaggerUrl: "https://cleanora-production.up.railway.app/api/v1/docs",
 });
 
+function cloneFoldersWithUrl(
+  folders: typeof collection.item,
+  urlVariable: "hostUrl" | "baseUrl",
+): typeof collection.item {
+  return JSON.parse(
+    JSON.stringify(folders).replaceAll("{{hostUrl}}", `{{${urlVariable}}}`),
+  ) as typeof collection.item;
+}
+
+async function preserveExtendedEnvironmentValues<
+  T extends { values: Array<{ key: string }> },
+>(path: string, generated: T): Promise<T> {
+  try {
+    const current = JSON.parse(await readFile(path, "utf8")) as T;
+    const generatedKeys = new Set(generated.values.map((entry) => entry.key));
+    return {
+      ...generated,
+      values: [
+        ...generated.values,
+        ...current.values.filter((entry) => !generatedKeys.has(entry.key)),
+      ],
+    };
+  } catch {
+    return generated;
+  }
+}
+
 async function main(): Promise<void> {
+  const documentation = await readFile(
+    resolve("postman/readme_R1-P02.md"),
+    "utf8",
+  );
+  const exportedCollection = {
+    ...collection,
+    info: { ...collection.info, description: documentation },
+    item: [
+      {
+        name: "Hosted (Not hosted yet)",
+        description:
+          "Authentication requests using {{hostUrl}}. Select the hosted environment and configure the hosted URL before use.",
+        item: cloneFoldersWithUrl(collection.item, "hostUrl"),
+      },
+      {
+        name: "Local",
+        description:
+          "Authentication requests using {{baseUrl}}. Default local API root: http://localhost:8000/api/v1.",
+        item: cloneFoldersWithUrl(collection.item, "baseUrl"),
+      },
+    ],
+  };
+  const localEnvironmentPath = resolve(
+    "postman/Cleanora-local.postman_environment.json",
+  );
+  const railwayEnvironmentPath = resolve(
+    "postman/Cleanora-railway.postman_environment.json",
+  );
+  const completeLocalEnvironment = await preserveExtendedEnvironmentValues(
+    localEnvironmentPath,
+    localEnvironment,
+  );
+  const completeRailwayEnvironment = await preserveExtendedEnvironmentValues(
+    railwayEnvironmentPath,
+    railwayEnvironment,
+  );
   await Promise.all([
     writeFile(
       resolve("postman/R1-P02-authentication.postman_collection.json"),
-      `${JSON.stringify(collection, null, 2)}\n`,
+      `${JSON.stringify(exportedCollection, null, 2)}\n`,
       "utf8",
     ),
     writeFile(
-      resolve("postman/Cleanora-local.postman_environment.json"),
-      `${JSON.stringify(localEnvironment, null, 2)}\n`,
+      localEnvironmentPath,
+      `${JSON.stringify(completeLocalEnvironment, null, 2)}\n`,
       "utf8",
     ),
     writeFile(
-      resolve("postman/Cleanora-railway.postman_environment.json"),
-      `${JSON.stringify(railwayEnvironment, null, 2)}\n`,
+      railwayEnvironmentPath,
+      `${JSON.stringify(completeRailwayEnvironment, null, 2)}\n`,
       "utf8",
     ),
   ]);

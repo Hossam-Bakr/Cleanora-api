@@ -14,6 +14,8 @@ function createFakeSdk(options?: {
   readonly failUploadMessage?: string;
   readonly destroyResult?: string;
   readonly responseType?: string;
+  readonly imageWidth?: number;
+  readonly imageHeight?: number;
 }): CloudinarySdk {
   const failUploadMessage = options?.failUploadMessage;
   const destroyResult = options?.destroyResult ?? "ok";
@@ -59,8 +61,8 @@ function createFakeSdk(options?: {
                 format: video ? "mp4" : "webp",
                 public_id: String(uploadOptions["public_id"]),
                 bytes: Math.max(Buffer.concat(chunks).byteLength, 32),
-                width: video ? 1280 : 128,
-                height: video ? 720 : 96,
+                width: video ? 1280 : (options?.imageWidth ?? 128),
+                height: video ? 720 : (options?.imageHeight ?? 96),
               });
               done();
             },
@@ -167,6 +169,59 @@ describe("CloudinaryMediaAdapter", () => {
       stored.storageKey,
       expect.objectContaining({ resource_type: "video", format: "jpg" }),
     );
+  });
+
+  it.each([
+    ["LOGO", 600, 600],
+    ["COVER", 1600, 600],
+    ["GALLERY_IMAGE", 1200, 900],
+  ] as const)(
+    "accepts an authenticated %s image only at its purpose dimensions",
+    async (purpose, width, height) => {
+      const sdk = createFakeSdk({ imageWidth: width, imageHeight: height });
+      const adapter = new CloudinaryMediaAdapter(sdk, {
+        cloudName: "demo",
+        apiKey: "key",
+        apiSecret: SECRET,
+        folder: "cleanora/providers",
+        signedUrlTtlSeconds: 900,
+      });
+
+      await expect(
+        adapter.storeProviderImage({
+          bytes: Buffer.from("provider-image"),
+          ownerUserId: "owner-1",
+          mediaId: "media-1",
+          storageKey: "cleanora/providers/media-1",
+          purpose,
+        }),
+      ).resolves.toMatchObject({
+        width,
+        height,
+        contentType: "image/webp",
+      });
+    },
+  );
+
+  it("rejects Provider image metadata that does not match its purpose", async () => {
+    const sdk = createFakeSdk({ imageWidth: 1200, imageHeight: 600 });
+    const adapter = new CloudinaryMediaAdapter(sdk, {
+      cloudName: "demo",
+      apiKey: "key",
+      apiSecret: SECRET,
+      folder: "cleanora/providers",
+      signedUrlTtlSeconds: 900,
+    });
+
+    await expect(
+      adapter.storeProviderImage({
+        bytes: Buffer.from("provider-cover"),
+        ownerUserId: "owner-1",
+        mediaId: "media-1",
+        storageKey: "cleanora/providers/media-1",
+        purpose: "COVER",
+      }),
+    ).rejects.toMatchObject({ code: "MEDIA_PROVIDER_FAILURE" });
   });
 
   it("rejects upload responses with type upload as MEDIA_PROVIDER_FAILURE", async () => {

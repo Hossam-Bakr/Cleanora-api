@@ -6,11 +6,18 @@ import { cleanoraOpenApiDocument } from "../src/swagger/openapi.document.js";
 interface PostmanRequest {
   readonly method: string;
   readonly url: string | { readonly raw?: string };
+  readonly body?: unknown;
 }
 
 interface PostmanItem {
   readonly name: string;
   readonly request?: PostmanRequest;
+  readonly response?: readonly {
+    readonly name?: string;
+    readonly code?: number;
+    readonly body?: string;
+    readonly originalRequest?: PostmanRequest;
+  }[];
   readonly item?: readonly PostmanItem[];
 }
 
@@ -29,13 +36,6 @@ interface PostmanEnvironment {
   readonly values: readonly EnvironmentValue[];
 }
 
-function collectRequests(items: readonly PostmanItem[]): PostmanRequest[] {
-  return items.flatMap((item) => [
-    ...(item.request === undefined ? [] : [item.request]),
-    ...collectRequests(item.item ?? []),
-  ]);
-}
-
 function rawUrl(request: PostmanRequest): string {
   return typeof request.url === "string" ? request.url : (request.url.raw ?? "");
 }
@@ -43,6 +43,7 @@ function rawUrl(request: PostmanRequest): string {
 function normalizeCollectionRoute(url: string): string {
   return url
     .replace(/^\{\{hostUrl\}\}/u, "")
+    .replace(/^\{\{baseUrl\}\}/u, "")
     .replace(/\{\{([^{}]+)\}\}/gu, "{$1}");
 }
 
@@ -55,6 +56,86 @@ function runtimeCustomerOperations(): string[] {
         .map(([method]) => `${method.toUpperCase()} ${path}`),
     )
     .sort();
+}
+
+function runtimeAuthenticationOperations(): string[] {
+  return Object.entries(cleanoraOpenApiDocument.paths)
+    .filter(
+      ([path]) =>
+        path.startsWith("/auth/") && !path.startsWith("/auth/role-grants/"),
+    )
+    .flatMap(([path, pathItem]) =>
+      Object.entries(pathItem)
+        .filter(([method]) =>
+          ["get", "post", "put", "patch", "delete"].includes(method),
+        )
+        .map(([method]) => `${method.toUpperCase()} ${path}`),
+    )
+    .sort();
+}
+
+function assertMirroredEnvironments(input: {
+  readonly label: string;
+  readonly collection: PostmanCollection;
+  readonly expectedOperations: readonly string[];
+}): number {
+  const expectedFolders = ["Hosted (Not hosted yet)", "Local"];
+  assert(
+    input.collection.item.map((item) => item.name).join("|") ===
+      expectedFolders.join("|"),
+    `${input.label} must contain Hosted (Not hosted yet) and Local top-level folders`,
+  );
+  let total = 0;
+  for (const environmentFolder of input.collection.item) {
+    const requestItems = collectRequestItems(environmentFolder.item ?? []);
+    const requests = requestItems.flatMap((item) =>
+      item.request === undefined ? [] : [item.request],
+    );
+    total += requests.length;
+    const expectedUrlPrefix =
+      environmentFolder.name === "Local" ? "{{baseUrl}}" : "{{hostUrl}}";
+    for (const request of requests) {
+      assert(
+        rawUrl(request).startsWith(expectedUrlPrefix),
+        `${input.label} ${environmentFolder.name} request must start with ${expectedUrlPrefix}: ${rawUrl(request)}`,
+      );
+    }
+    const operations = requests
+      .map(
+        (request) =>
+          `${request.method.toUpperCase()} ${normalizeCollectionRoute(rawUrl(request))}`,
+      )
+      .sort();
+    assert(
+      JSON.stringify(operations) ===
+        JSON.stringify([...input.expectedOperations].sort()),
+      `${input.label} ${environmentFolder.name} operations differ from the expected contract.\nPostman: ${JSON.stringify(operations)}\nExpected: ${JSON.stringify([...input.expectedOperations].sort())}`,
+    );
+    for (const item of requestItems) {
+      const successExample = (item.response ?? []).find((example) =>
+        example.name?.startsWith("Success"),
+      );
+      assert(
+        successExample !== undefined,
+        `${input.label} ${environmentFolder.name}/${item.name} is missing a Success saved example`,
+      );
+      if (item.request?.body !== undefined) {
+        assert(
+          JSON.stringify(successExample.originalRequest?.body) ===
+            JSON.stringify(item.request.body),
+          `${input.label} ${environmentFolder.name}/${item.name} Success example must preserve the required request body`,
+        );
+      }
+    }
+  }
+  return total;
+}
+
+function collectRequestItems(items: readonly PostmanItem[]): PostmanItem[] {
+  return items.flatMap((item) => [
+    ...(item.request === undefined ? [] : [item]),
+    ...collectRequestItems(item.item ?? []),
+  ]);
 }
 
 function runtimeProviderOperations(): string[] {
@@ -102,26 +183,49 @@ async function main(): Promise<void> {
     "R1-P04 collection must use Postman collection schema v2.1.0",
   );
 
-  const collectionOperations = collectRequests(collection.item)
-    .map(
-      (request) =>
-        `${request.method.toUpperCase()} ${normalizeCollectionRoute(rawUrl(request))}`,
-    )
-    .sort();
   const runtimeOperations = runtimeCustomerOperations();
+  const r1P04RequestCount = assertMirroredEnvironments({
+    label: "R1-P04",
+    collection,
+    expectedOperations: runtimeOperations,
+  });
 
-  assert(
-    collectionOperations.length === 21,
-    `R1-P04 Postman collection must contain 21 requests; found ${collectionOperations.length}`,
+  const r1P00Collection = await parseJson<PostmanCollection>(
+    resolve(postmanDirectory, "R1-P00-foundation.postman_collection.json"),
   );
-  assert(
-    new Set(collectionOperations).size === collectionOperations.length,
-    "R1-P04 Postman collection contains duplicate method/path entries",
+  const r1P00RequestCount = assertMirroredEnvironments({
+    label: "R1-P00",
+    collection: r1P00Collection,
+    expectedOperations: [
+      "GET /system/health/live",
+      "GET /system/health/ready",
+    ],
+  });
+
+  const r1P01Collection = await parseJson<PostmanCollection>(
+    resolve(
+      postmanDirectory,
+      "R1-P01-foundation-country-configuration.postman_collection.json",
+    ),
   );
-  assert(
-    JSON.stringify(collectionOperations) === JSON.stringify(runtimeOperations),
-    `R1-P04 Postman operations differ from runtime Swagger.\nPostman: ${JSON.stringify(collectionOperations)}\nSwagger: ${JSON.stringify(runtimeOperations)}`,
+  const r1P01RequestCount = assertMirroredEnvironments({
+    label: "R1-P01",
+    collection: r1P01Collection,
+    expectedOperations: [
+      "GET /system/health/live",
+      "GET /system/health/ready",
+      "GET /system/health/database",
+    ],
+  });
+
+  const r1P02Collection = await parseJson<PostmanCollection>(
+    resolve(postmanDirectory, "R1-P02-authentication.postman_collection.json"),
   );
+  const r1P02RequestCount = assertMirroredEnvironments({
+    label: "R1-P02",
+    collection: r1P02Collection,
+    expectedOperations: runtimeAuthenticationOperations(),
+  });
 
   const serializedCollection = await readFile(collectionPath, "utf8");
   for (const forbidden of [
@@ -157,6 +261,40 @@ async function main(): Promise<void> {
     "challengeId",
     "passwordResetCode",
     "accessToken",
+    "providerAdminInvitationToken",
+  ];
+
+  const requiredProviderVariables = [
+    "baseUrl",
+    "localHostUrl",
+    "localBaseUrl",
+    "hostedHostUrl",
+    "hostedBaseUrl",
+    "providerKind",
+    "alternateProviderKind",
+    "providerId",
+    "providerVersion",
+    "providerDisplayNameAr",
+    "providerDisplayNameEn",
+    "providerDescriptionAr",
+    "providerDescriptionEn",
+    "providerOperationalEmail",
+    "providerOperationalPhone",
+    "providerWhatsApp",
+    "providerWebsite",
+    "providerLogoPath",
+    "providerCoverPath",
+    "providerGalleryImagePath",
+    "providerGalleryVideoPath",
+    "galleryItemId",
+    "providerAdminInviteEmail",
+    "providerAdminInvitationToken",
+    "invitationId",
+    "invitedAdminPhone",
+    "userId",
+    "staffReviewReason",
+    "staffRejectionReason",
+    "staffLifecycleReason",
   ];
 
   for (const file of [
@@ -170,6 +308,9 @@ async function main(): Promise<void> {
       environment.values.map((entry) => [entry.key, entry.value]),
     );
     for (const variable of requiredCustomerVariables) {
+      assert(values.has(variable), `${file} is missing ${variable}`);
+    }
+    for (const variable of requiredProviderVariables) {
       assert(values.has(variable), `${file} is missing ${variable}`);
     }
     for (const variable of secretVariables) {
@@ -187,28 +328,12 @@ async function main(): Promise<void> {
     r1P05Collection.info.schema.endsWith("/collection/v2.1.0/collection.json"),
     "R1-P05 collection must use Postman collection schema v2.1.0",
   );
-  const r1P05Requests = collectRequests(r1P05Collection.item);
-  assert(
-    r1P05Requests.length === 41,
-    `R1-P05 Postman collection must contain 41 requests; found ${r1P05Requests.length}`,
-  );
-  const r1P05CollectionOperations = r1P05Requests
-    .map(
-      (request) =>
-        `${request.method.toUpperCase()} ${normalizeCollectionRoute(rawUrl(request))}`,
-    )
-    .sort();
   const r1P05RuntimeOperations = runtimeProviderOperations();
-  assert(
-    new Set(r1P05CollectionOperations).size ===
-      r1P05CollectionOperations.length,
-    "R1-P05 Postman collection contains duplicate method/path entries",
-  );
-  assert(
-    JSON.stringify(r1P05CollectionOperations) ===
-      JSON.stringify(r1P05RuntimeOperations),
-    `R1-P05 Postman operations differ from runtime Swagger.\nPostman: ${JSON.stringify(r1P05CollectionOperations)}\nSwagger: ${JSON.stringify(r1P05RuntimeOperations)}`,
-  );
+  const r1P05RequestCount = assertMirroredEnvironments({
+    label: "R1-P05",
+    collection: r1P05Collection,
+    expectedOperations: r1P05RuntimeOperations,
+  });
   const r1P05Serialized = await readFile(r1P05CollectionPath, "utf8");
   const collectionVariables = new Map(
     (r1P05Collection.variable ?? []).map((entry) => [entry.key, entry.value]),
@@ -260,8 +385,19 @@ async function main(): Promise<void> {
     `${JSON.stringify({
       ok: true,
       jsonFiles: jsonFiles.length,
-      r1P04Requests: collectionOperations.length,
-      r1P05Requests: r1P05CollectionOperations.length,
+      r1P00Requests: r1P00RequestCount,
+      r1P01Requests: r1P01RequestCount,
+      r1P02Requests: r1P02RequestCount,
+      r1P04Requests: r1P04RequestCount,
+      requestsPerEnvironment: {
+        r1P00: r1P00RequestCount / 2,
+        r1P01: r1P01RequestCount / 2,
+        r1P02: r1P02RequestCount / 2,
+        r1P04: r1P04RequestCount / 2,
+        r1P05: r1P05RuntimeOperations.length,
+      },
+      r1P05Requests: r1P05RequestCount,
+      r1P05RequestsPerEnvironment: r1P05RuntimeOperations.length,
       runtimeParity: true,
       environments: 2,
     })}\n`,

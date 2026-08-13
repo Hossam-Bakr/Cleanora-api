@@ -7,6 +7,7 @@ import { MediaError } from "../domain/media.errors.js";
 import type {
   MediaStoragePort,
   StoreProfileImageInput,
+  StoreProviderImageStorageInput,
   StoreProviderVideoInput,
 } from "../domain/media.ports.js";
 import type {
@@ -19,6 +20,8 @@ import type {
 import {
   PROFILE_IMAGE_MAX_BYTES,
   PROFILE_IMAGE_MAX_EDGE,
+  PROVIDER_IMAGE_DIMENSIONS,
+  PROVIDER_IMAGE_MAX_BYTES,
   PROVIDER_VIDEO_MAX_BYTES,
 } from "../domain/media.types.js";
 
@@ -59,6 +62,26 @@ export class CloudinaryMediaAdapter implements MediaStoragePort {
   public async storeProfileImage(
     input: StoreProfileImageInput,
   ): Promise<StoredMediaReference> {
+    const response = await this.uploadAuthenticatedImage(input);
+    this.assertProfileImageUploadResponse(response, input.storageKey);
+    return this.toStoredImageReference(response, input.storageKey);
+  }
+
+  public async storeProviderImage(
+    input: StoreProviderImageStorageInput,
+  ): Promise<StoredMediaReference> {
+    const response = await this.uploadAuthenticatedImage(input);
+    this.assertProviderImageUploadResponse(
+      response,
+      input.storageKey,
+      input.purpose,
+    );
+    return this.toStoredImageReference(response, input.storageKey);
+  }
+
+  private async uploadAuthenticatedImage(
+    input: Pick<StoreProfileImageInput, "bytes" | "storageKey">,
+  ): Promise<UploadApiResponse> {
     let response: UploadApiResponse;
     try {
       response = await new Promise<UploadApiResponse>((resolve, reject) => {
@@ -93,12 +116,16 @@ export class CloudinaryMediaAdapter implements MediaStoragePort {
           : "Cloudinary upload failed";
       throw new MediaError("MEDIA_PROVIDER_FAILURE", message);
     }
+    return response;
+  }
 
-    this.assertUploadResponse(response, input.storageKey);
-
+  private toStoredImageReference(
+    response: UploadApiResponse,
+    storageKey: string,
+  ): StoredMediaReference {
     return {
       provider: "CLOUDINARY",
-      storageKey: input.storageKey,
+      storageKey,
       contentType: "image/webp",
       byteSize: response.bytes,
       width: response.width,
@@ -263,7 +290,7 @@ export class CloudinaryMediaAdapter implements MediaStoragePort {
     }
   }
 
-  private assertUploadResponse(
+  private assertProfileImageUploadResponse(
     response: UploadApiResponse,
     expectedPublicId: string,
   ): void {
@@ -286,6 +313,30 @@ export class CloudinaryMediaAdapter implements MediaStoragePort {
       throw new MediaError(
         "MEDIA_PROVIDER_FAILURE",
         "Cloudinary upload response failed structural validation",
+      );
+    }
+  }
+
+  private assertProviderImageUploadResponse(
+    response: UploadApiResponse,
+    expectedPublicId: string,
+    purpose: StoreProviderImageStorageInput["purpose"],
+  ): void {
+    const expectedDimensions = PROVIDER_IMAGE_DIMENSIONS[purpose];
+    if (
+      response.resource_type !== "image" ||
+      response.type !== "authenticated" ||
+      (response.format !== "webp" && response.format !== "WEBP") ||
+      response.public_id !== expectedPublicId ||
+      typeof response.bytes !== "number" ||
+      response.bytes <= 0 ||
+      response.bytes > PROVIDER_IMAGE_MAX_BYTES ||
+      response.width !== expectedDimensions.width ||
+      response.height !== expectedDimensions.height
+    ) {
+      throw new MediaError(
+        "MEDIA_PROVIDER_FAILURE",
+        "Cloudinary Provider image response failed purpose validation",
       );
     }
   }
