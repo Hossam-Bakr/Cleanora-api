@@ -16,6 +16,7 @@ const EXPECTED = [
   "r1_p04_customer_profiles_preferences_text_addresses_02_cloudinary_profile_image_storage",
   "r1_p04a_category_aware_customer_signup_verification",
   "r1_p05_provider_onboarding_profile_lifecycle",
+  "r1_p06_provider_verification_external_payout_destinations",
 ] as const;
 
 describe("clean migration exact chronology", () => {

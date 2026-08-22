@@ -7,6 +7,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { seed } from "../prisma/seed.js";
+import { PrismaPayoutRevealAuditGate } from "../src/modules/admin/infrastructure/prisma-payout-reveal-audit.gate.js";
+import { PrismaProviderPayoutRepository } from "../src/modules/providers/infrastructure/prisma-provider-payout.repository.js";
 
 const executeFile = promisify(execFile);
 const migrationNames = [
@@ -21,7 +23,8 @@ const migrationNames = [
   'r1_p04_customer_profiles_preferences_text_addresses',
   'r1_p04_customer_profiles_preferences_text_addresses_02_cloudinary_profile_image_storage',
   'r1_p04a_category_aware_customer_signup_verification',
-  'r1_p05_provider_onboarding_profile_lifecycle'
+  'r1_p05_provider_onboarding_profile_lifecycle',
+  'r1_p06_provider_verification_external_payout_destinations'
 ] as const;
 const expectedTables = [
   "currencies",
@@ -56,7 +59,30 @@ const expectedTables = [
   "provider_members",
   "provider_admin_invitations",
   "provider_gallery_items",
-  "provider_email_outbox"
+  "provider_email_outbox",
+  "sensitive_action_proof_uses",
+  "verification_document_types",
+  "verification_document_policy_versions",
+  "verification_document_policy_items",
+  "provider_policy_activation_states",
+  "provider_document_chains",
+  "provider_document_versions",
+  "provider_document_evidence",
+  "provider_document_reviews",
+  "provider_verification_history",
+  "payout_destination_types",
+  "payout_operators",
+  "payout_banks",
+  "payout_country_policies",
+  "provider_payout_destination_chains",
+  "provider_payout_identity_claims",
+  "provider_payout_lookup_fingerprints",
+  "provider_payout_destination_versions",
+  "provider_payout_decisions",
+  "provider_primary_payout_destinations",
+  "provider_payout_conflicts",
+  "provider_payout_history",
+  "provider_payout_key_rotation_runs"
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -102,6 +128,31 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "provider_admin_invitations",
     "provider_gallery_items",
     "provider_email_outbox"
+  ],
+  r1_p06_provider_verification_external_payout_destinations: [
+    "sensitive_action_proof_uses",
+    "verification_document_types",
+    "verification_document_policy_versions",
+    "verification_document_policy_items",
+    "provider_policy_activation_states",
+    "provider_document_chains",
+    "provider_document_versions",
+    "provider_document_evidence",
+    "provider_document_reviews",
+    "provider_verification_history",
+    "payout_destination_types",
+    "payout_operators",
+    "payout_banks",
+    "payout_country_policies",
+    "provider_payout_destination_chains",
+    "provider_payout_identity_claims",
+    "provider_payout_lookup_fingerprints",
+    "provider_payout_destination_versions",
+    "provider_payout_decisions",
+    "provider_primary_payout_destinations",
+    "provider_payout_conflicts",
+    "provider_payout_history",
+    "provider_payout_key_rotation_runs"
   ]
 };
 const expectedPostDeployTables = ["_prisma_migrations", ...expectedTables] as const;
@@ -448,8 +499,81 @@ export function assertAppliedMigration(
     );
   }
   for (const migrationName of migrationNames) {
-    const applied = rows.filter((row) => row.migration_name === migrationName && row.finished_at !== null && row.rolled_back_at === null);
-    if (applied.length !== 1) throw new Error(`Migration history must contain one successful ${migrationName} row; found ${String(applied.length)}`);
+    const matching = rows.filter((row) => row.migration_name === migrationName);
+    const row = matching[0];
+    if (
+      matching.length !== 1 ||
+      row === undefined ||
+      row.finished_at === null ||
+      row.rolled_back_at !== null
+    ) {
+      throw new Error(
+        `Migration history must contain exactly one successful ${migrationName} row; found ${String(matching.length)}`,
+      );
+    }
+  }
+}
+
+/** Build a Prisma Client that honors an isolated PostgreSQL proof schema. */
+export function createMigrationProofPrismaClient(
+  connectionString: string,
+): PrismaClient {
+  const schema = new URL(connectionString).searchParams.get("schema");
+  return new PrismaClient({
+    adapter: new PrismaPg(
+      { connectionString },
+      schema === null || schema.length === 0 ? undefined : { schema },
+    ),
+  });
+}
+
+/** Require an explicitly named R1-P06 disposable target for this phase proof. */
+export function assertR1P06DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+  const url = new URL(connectionString);
+  const targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  if (!/(^|[._-])r1[._-]?p06([._-]|$)/u.test(targetName.toLowerCase())) {
+    throw new Error(
+      "R1-P06 migration proof requires an explicitly named R1-P06 disposable database",
+    );
+  }
+}
+
+/** Accept only the forward-only R1-P06 table/enums/index/constraint inventory. */
+export function assertR1P06MigrationSql(sql: string): void {
+  if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/iu.test(sql)) {
+    throw new Error("R1-P06 provider-verification migration contains destructive SQL");
+  }
+  for (const table of migrationOwnedTables[
+    "r1_p06_provider_verification_external_payout_destinations"
+  ] ?? []) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P06 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 23) {
+    throw new Error("R1-P06 migration must create exactly twenty-three tables");
+  }
+  for (const required of [
+    "PROVIDER_VERIFICATION_DOCUMENT_PAGE",
+    "provider_document_versions_one_open_successor",
+    "provider_payout_destination_versions_one_open_successor",
+    "provider_payout_lookup_fingerprints_active_unique",
+    "verification_document_policy_versions_one_draft",
+    "provider_payout_conflicts_one_open_operation",
+    "MANUAL_WALLET_TRANSFER_CHECK",
+    "MANUAL_BANK_BENEFICIARY_CHECK",
+  ]) {
+    if (!sql.includes(required)) throw new Error(`R1-P06 migration is missing ${required}`);
+  }
+  if (/(?:wallet_number|holder_legal_name|\biban\b)\s+/iu.test(sql)) {
+    throw new Error("R1-P06 migration must not contain payout plaintext columns");
+  }
+  if (!sql.includes("ON DELETE RESTRICT") || /\bON DELETE CASCADE\b/iu.test(sql)) {
+    throw new Error("R1-P06 evidence foreign keys must use ON DELETE RESTRICT");
   }
 }
 
@@ -529,6 +653,10 @@ async function validateMigrationFolder(): Promise<void> {
       assertR1P05MigrationSql(sql);
       continue;
     }
+    if (migrationName === 'r1_p06_provider_verification_external_payout_destinations') {
+      assertR1P06MigrationSql(sql);
+      continue;
+    }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
       if (!sql.includes(`"${table}"`)) throw new Error(`Migration ${migrationName} is missing expected table ${table}`);
     }
@@ -551,9 +679,7 @@ async function readPublicBaseTables(
 async function assertTargetDatabaseEmpty(
   connectionString: string
 ): Promise<void> {
-  const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString })
-  });
+  const prisma = createMigrationProofPrismaClient(connectionString);
 
   try {
     assertDatabaseEmpty(await readPublicBaseTables(prisma));
@@ -562,12 +688,10 @@ async function assertTargetDatabaseEmpty(
   }
 }
 
-async function assertPostDeployState(
+export async function assertPostDeployState(
   connectionString: string
 ): Promise<void> {
-  const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString })
-  });
+  const prisma = createMigrationProofPrismaClient(connectionString);
 
   try {
     assertExactPostDeployTables(await readPublicBaseTables(prisma));
@@ -587,6 +711,7 @@ async function assertPostDeployState(
       throw new Error("Seed is not idempotent across two consecutive runs");
     }
     await probeR1P05Constraints(prisma);
+    await probeR1P06Constraints(prisma);
   } finally {
     await prisma.$disconnect();
   }
@@ -599,8 +724,10 @@ async function readSeedCounts(prisma: PrismaClient): Promise<{
   readonly privilegedReasons: number;
   readonly countries: number;
   readonly currencies: number;
+  readonly verificationDocumentTypes: number;
+  readonly payoutDestinationTypes: number;
 }> {
-  const [roles, permissions, rolePermissions, privilegedReasons, countries, currencies] =
+  const [roles, permissions, rolePermissions, privilegedReasons, countries, currencies, verificationDocumentTypes, payoutDestinationTypes] =
     await Promise.all([
       prisma.role.count(),
       prisma.permission.count(),
@@ -608,8 +735,471 @@ async function readSeedCounts(prisma: PrismaClient): Promise<{
       prisma.privilegedActionReason.count(),
       prisma.country.count(),
       prisma.currency.count(),
+      prisma.verificationDocumentType.count(),
+      prisma.payoutDestinationType.count(),
     ]);
-  return { roles, permissions, rolePermissions, privilegedReasons, countries, currencies };
+  return { roles, permissions, rolePermissions, privilegedReasons, countries, currencies, verificationDocumentTypes, payoutDestinationTypes };
+}
+
+async function probeR1P06Constraints(prisma: PrismaClient): Promise<void> {
+  await prisma.$executeRawUnsafe(`
+    DO $$
+    DECLARE
+      index_value INTEGER;
+    BEGIN
+      INSERT INTO "users" (
+        "id", "email_normalized", "email_verified_at", "account_categories",
+        "verified_categories", "updated_at"
+      ) VALUES (
+        'r1p06-proof-owner', 'r1p06-proof-owner@example.invalid',
+        CURRENT_TIMESTAMP,
+        ARRAY['PROVIDER_OWNER']::"AccountCategory"[],
+        ARRAY['PROVIDER_OWNER']::"AccountCategory"[], CURRENT_TIMESTAMP
+      );
+
+      INSERT INTO "providers" (
+        "id", "application_owner_user_id", "owner_user_id", "kind",
+        "application_status", "operational_status", "approved_at", "updated_at"
+      ) VALUES (
+        'r1p06-proof-provider', 'r1p06-proof-owner', 'r1p06-proof-owner',
+        'REGISTERED_COMPANY', 'APPROVED', 'LIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      );
+
+      INSERT INTO "provider_profiles" (
+        "id", "provider_id", "display_name_en", "country_id", "updated_at"
+      ) SELECT
+        'r1p06-proof-profile', 'r1p06-proof-provider', 'R1-P06 Proof Provider',
+        c.id, CURRENT_TIMESTAMP
+      FROM countries c WHERE c.code = 'EG';
+
+      INSERT INTO "users" (
+        "id", "email_normalized", "email_verified_at", "account_categories",
+        "verified_categories", "updated_at"
+      ) VALUES (
+        'r1p06-proof-collision-owner', 'r1p06-proof-collision-owner@example.invalid',
+        CURRENT_TIMESTAMP,
+        ARRAY['PROVIDER_OWNER']::"AccountCategory"[],
+        ARRAY['PROVIDER_OWNER']::"AccountCategory"[], CURRENT_TIMESTAMP
+      );
+
+      INSERT INTO "providers" (
+        "id", "application_owner_user_id", "owner_user_id", "kind",
+        "application_status", "operational_status", "approved_at", "updated_at"
+      ) VALUES (
+        'r1p06-proof-collision-provider', 'r1p06-proof-collision-owner',
+        'r1p06-proof-collision-owner', 'INDIVIDUAL_TEAM', 'APPROVED', 'LIVE',
+        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      );
+
+      INSERT INTO "provider_members" (
+        "id", "provider_id", "user_id", "level", "status", "enabled_at", "updated_at"
+      ) VALUES (
+        'r1p06-proof-member', 'r1p06-proof-provider', 'r1p06-proof-owner',
+        'OWNER', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      );
+
+      INSERT INTO "payout_operators" (
+        "id", "country_id", "code", "label_ar", "label_en", "updated_at"
+      ) SELECT
+        'r1p06-proof-operator', c.id, 'R1P06_PROOF_OPERATOR',
+        'Proof operator', 'Proof operator', CURRENT_TIMESTAMP
+      FROM countries c WHERE c.code = 'EG';
+
+      INSERT INTO "payout_country_policies" (
+        "id", "country_id", "allowed_destination_types", "allowed_currency_codes",
+        "calling_codes", "iban_lengths", "updated_at"
+      ) SELECT
+        'r1p06-proof-policy', c.id, ARRAY['MOBILE_WALLET']::"PayoutDestinationKind"[],
+        ARRAY['EGP'], ARRAY['20'], ARRAY[28], CURRENT_TIMESTAMP
+      FROM countries c WHERE c.code = 'EG';
+
+      FOR index_value IN 1..5 LOOP
+        INSERT INTO "provider_payout_destination_chains" (
+          "id", "provider_id", "destination_type_id", "updated_at"
+        ) SELECT
+          'r1p06-proof-chain-' || index_value, 'r1p06-proof-provider', t.id, CURRENT_TIMESTAMP
+        FROM payout_destination_types t WHERE t.code = 'MOBILE_WALLET';
+
+        INSERT INTO "provider_payout_identity_claims" (
+          "id", "provider_id", "chain_id", "kind", "country_code", "calling_code",
+          "last_four", "identifier_length", "updated_at"
+        ) VALUES (
+          'r1p06-proof-claim-' || index_value, 'r1p06-proof-provider',
+          'r1p06-proof-chain-' || index_value, 'MOBILE_WALLET', 'EG', '20',
+          lpad(index_value::text, 4, '0'), 13, CURRENT_TIMESTAMP
+        );
+
+        INSERT INTO "provider_payout_lookup_fingerprints" (
+          "id", "claim_id", "lookup_key_id", "fingerprint"
+        ) VALUES (
+          'r1p06-proof-fingerprint-' || index_value,
+          'r1p06-proof-claim-' || index_value, 'proof-lookup-key',
+          lpad(to_hex(index_value), 64, '0')
+        );
+
+        INSERT INTO "provider_payout_destination_versions" (
+          "id", "chain_id", "provider_id", "identity_claim_id", "sequence", "kind",
+          "country_id", "country_code", "operator_id", "holder_relationship",
+          "identifier_ciphertext", "identifier_nonce", "identifier_tag",
+          "identifier_encryption_key_id", "holder_name_ciphertext", "holder_name_nonce",
+          "holder_name_tag", "holder_name_encryption_key_id", "created_by_user_id",
+          "idempotency_key", "updated_at"
+        ) SELECT
+          'r1p06-proof-version-' || index_value, 'r1p06-proof-chain-' || index_value,
+          'r1p06-proof-provider', 'r1p06-proof-claim-' || index_value, 1,
+          'MOBILE_WALLET', c.id, 'EG', 'r1p06-proof-operator', 'PROVIDER_OWNER',
+          'ciphertext-' || index_value, '1234567890123456', '1234567890123456789012',
+          'proof-encryption-key', 'holder-ciphertext-' || index_value,
+          '6543210987654321', '2109876543210987654321', 'proof-encryption-key',
+          'r1p06-proof-owner', 'r1p06-proof-command-' || index_value, CURRENT_TIMESTAMP
+        FROM countries c WHERE c.code = 'EG';
+
+        UPDATE "provider_payout_destination_chains"
+        SET "current_version_id" = 'r1p06-proof-version-' || index_value
+        WHERE "id" = 'r1p06-proof-chain-' || index_value;
+      END LOOP;
+
+      INSERT INTO "provider_payout_destination_chains" (
+        "id", "provider_id", "destination_type_id", "updated_at"
+      ) SELECT
+        'r1p06-proof-collision-chain', 'r1p06-proof-collision-provider', t.id,
+        CURRENT_TIMESTAMP
+      FROM payout_destination_types t WHERE t.code = 'MOBILE_WALLET';
+
+      INSERT INTO "provider_payout_identity_claims" (
+        "id", "provider_id", "chain_id", "kind", "country_code", "calling_code",
+        "last_four", "identifier_length", "updated_at"
+      ) VALUES (
+        'r1p06-proof-collision-claim', 'r1p06-proof-collision-provider',
+        'r1p06-proof-collision-chain', 'MOBILE_WALLET', 'EG', '20', '9999', 13,
+        CURRENT_TIMESTAMP
+      );
+
+      IF (
+        SELECT count(*) FROM "provider_payout_destination_chains" c
+        JOIN "provider_payout_destination_versions" v ON v.id = c.current_version_id
+        WHERE c.provider_id = 'r1p06-proof-provider'
+          AND v.status IN ('DRAFT', 'PENDING_VERIFICATION', 'CHANGES_REQUESTED', 'APPROVED', 'REPLACEMENT_REQUESTED')
+      ) <> 5 THEN
+        RAISE EXCEPTION 'five active payout chains were not preserved';
+      END IF;
+
+      BEGIN
+        INSERT INTO "provider_payout_key_rotation_runs" (
+          "id", "purpose", "from_key_ids", "to_active_key_id", "batch_size",
+          "started_by_user_id", "operation_key", "updated_at"
+        ) VALUES (
+          'r1p06-invalid-rotation', 'ENCRYPTION', ARRAY['old'], 'new', 0,
+          'r1p06-missing-user', 'r1p06-invalid-rotation', CURRENT_TIMESTAMP
+        );
+        RAISE EXCEPTION 'provider_payout_key_rotation_runs_counters_check accepted an invalid row';
+      EXCEPTION WHEN check_violation THEN NULL;
+      END;
+
+      BEGIN
+        INSERT INTO "provider_payout_identity_claims" (
+          "id", "provider_id", "chain_id", "kind", "country_code", "calling_code",
+          "last_four", "identifier_length", "updated_at"
+        ) VALUES (
+          'r1p06-invalid-claim-shape', 'r1p06-proof-provider', 'r1p06-proof-chain-1',
+          'BANK_ACCOUNT', 'EG', '20', '9999', 28, CURRENT_TIMESTAMP
+        );
+        RAISE EXCEPTION 'provider_payout_identity_claims_mask_shape_check accepted an invalid row';
+      EXCEPTION WHEN check_violation THEN NULL;
+      END;
+
+      BEGIN
+        INSERT INTO "provider_payout_lookup_fingerprints" (
+          "id", "claim_id", "lookup_key_id", "fingerprint"
+        ) VALUES (
+          'r1p06-invalid-fingerprint-duplicate', 'r1p06-proof-collision-claim',
+          'proof-lookup-key', lpad(to_hex(1), 64, '0')
+        );
+        RAISE EXCEPTION 'cross-Provider active payout fingerprint uniqueness accepted a duplicate';
+      EXCEPTION WHEN unique_violation THEN NULL;
+      END;
+
+      BEGIN
+        INSERT INTO "provider_payout_destination_versions" (
+          "id", "chain_id", "provider_id", "identity_claim_id", "sequence", "kind",
+          "country_id", "country_code", "currency_code", "operator_id", "bank_id",
+          "holder_relationship", "identifier_ciphertext", "identifier_nonce", "identifier_tag",
+          "identifier_encryption_key_id", "holder_name_ciphertext", "holder_name_nonce",
+          "holder_name_tag", "holder_name_encryption_key_id", "created_by_user_id",
+          "idempotency_key", "updated_at"
+        ) SELECT
+          'r1p06-invalid-type-shape', 'r1p06-proof-chain-1', 'r1p06-proof-provider',
+          'r1p06-proof-claim-1', 2, 'MOBILE_WALLET', c.id, 'EG', 'EGP',
+          'r1p06-proof-operator', NULL, 'PROVIDER_OWNER', 'ciphertext',
+          '1234567890123456', '1234567890123456789012', 'proof-key', 'holder',
+          '6543210987654321', '2109876543210987654321', 'proof-key',
+          'r1p06-proof-owner', 'r1p06-invalid-type-shape', CURRENT_TIMESTAMP
+        FROM countries c WHERE c.code = 'EG';
+        RAISE EXCEPTION 'provider_payout_destination_versions_type_shape_check accepted an invalid row';
+      EXCEPTION WHEN check_violation THEN NULL;
+      END;
+
+      BEGIN
+        INSERT INTO "provider_payout_destination_versions" (
+          "id", "chain_id", "provider_id", "identity_claim_id", "sequence", "kind",
+          "country_id", "country_code", "operator_id", "holder_relationship",
+          "identifier_ciphertext", "identifier_nonce", "identifier_tag",
+          "identifier_encryption_key_id", "holder_name_ciphertext", "holder_name_nonce",
+          "holder_name_tag", "holder_name_encryption_key_id", "created_by_user_id",
+          "idempotency_key", "updated_at"
+        ) SELECT
+          'r1p06-invalid-envelope', 'r1p06-proof-chain-1', 'r1p06-proof-provider',
+          'r1p06-proof-claim-1', 2, 'MOBILE_WALLET', c.id, 'EG',
+          'r1p06-proof-operator', 'PROVIDER_OWNER', 'ciphertext', 'short',
+          'short', 'proof-key', 'holder', 'short', 'short', 'proof-key',
+          'r1p06-proof-owner', 'r1p06-invalid-envelope', CURRENT_TIMESTAMP
+        FROM countries c WHERE c.code = 'EG';
+        RAISE EXCEPTION 'provider_payout_destination_versions_envelope_check accepted an invalid row';
+      EXCEPTION WHEN check_violation THEN NULL;
+      END;
+
+      INSERT INTO "provider_payout_destination_versions" (
+        "id", "chain_id", "provider_id", "identity_claim_id", "sequence",
+        "predecessor_version_id", "kind", "country_id", "country_code", "operator_id",
+        "holder_relationship", "identifier_ciphertext", "identifier_nonce", "identifier_tag",
+        "identifier_encryption_key_id", "holder_name_ciphertext", "holder_name_nonce",
+        "holder_name_tag", "holder_name_encryption_key_id", "created_by_user_id",
+        "idempotency_key", "updated_at"
+      ) SELECT
+        'r1p06-proof-successor-1', 'r1p06-proof-chain-1', 'r1p06-proof-provider',
+        'r1p06-proof-claim-1', 2, 'r1p06-proof-version-1', 'MOBILE_WALLET', c.id,
+        'EG', 'r1p06-proof-operator', 'PROVIDER_OWNER', 'ciphertext-successor',
+        '1234567890123456', '1234567890123456789012', 'proof-key', 'holder-successor',
+        '6543210987654321', '2109876543210987654321', 'proof-key',
+        'r1p06-proof-owner', 'r1p06-proof-successor-command', CURRENT_TIMESTAMP
+      FROM countries c WHERE c.code = 'EG';
+
+      BEGIN
+        INSERT INTO "provider_payout_destination_versions" (
+          "id", "chain_id", "provider_id", "identity_claim_id", "sequence",
+          "predecessor_version_id", "kind", "country_id", "country_code", "operator_id",
+          "holder_relationship", "identifier_ciphertext", "identifier_nonce", "identifier_tag",
+          "identifier_encryption_key_id", "holder_name_ciphertext", "holder_name_nonce",
+          "holder_name_tag", "holder_name_encryption_key_id", "created_by_user_id",
+          "idempotency_key", "updated_at"
+        ) SELECT
+          'r1p06-invalid-second-successor', 'r1p06-proof-chain-1', 'r1p06-proof-provider',
+          'r1p06-proof-claim-1', 3, 'r1p06-proof-version-1', 'MOBILE_WALLET', c.id,
+          'EG', 'r1p06-proof-operator', 'PROVIDER_OWNER', 'ciphertext-second',
+          '1234567890123456', '1234567890123456789012', 'proof-key', 'holder-second',
+          '6543210987654321', '2109876543210987654321', 'proof-key',
+          'r1p06-proof-owner', 'r1p06-invalid-second-successor', CURRENT_TIMESTAMP
+        FROM countries c WHERE c.code = 'EG';
+        RAISE EXCEPTION 'one-open-successor uniqueness accepted a second successor';
+      EXCEPTION WHEN unique_violation THEN NULL;
+      END;
+
+      INSERT INTO "provider_primary_payout_destinations" (
+        "provider_id", "destination_version_id", "selected_by_user_id",
+        "selection_reason_code", "updated_at"
+      ) VALUES (
+        'r1p06-proof-provider', 'r1p06-proof-version-1', 'r1p06-proof-owner',
+        'PROOF_PRIMARY', CURRENT_TIMESTAMP
+      );
+
+      BEGIN
+        INSERT INTO "provider_primary_payout_destinations" (
+          "provider_id", "destination_version_id", "selected_by_user_id",
+          "selection_reason_code", "updated_at"
+        ) VALUES (
+          'r1p06-proof-provider', 'r1p06-proof-version-2', 'r1p06-proof-owner',
+          'PROOF_SECOND_PRIMARY', CURRENT_TIMESTAMP
+        );
+        RAISE EXCEPTION 'one-primary uniqueness accepted a second primary';
+      EXCEPTION WHEN unique_violation THEN NULL;
+      END;
+
+      INSERT INTO "provider_payout_history" (
+        "id", "provider_id", "event", "actor_type", "operation_key"
+      ) VALUES (
+        'r1p06-proof-history', 'r1p06-proof-provider', 'DESTINATION_DRAFT_CREATED',
+        'USER', 'r1p06-proof-operation'
+      );
+
+      BEGIN
+        INSERT INTO "provider_payout_history" (
+          "id", "provider_id", "event", "actor_type", "operation_key"
+        ) VALUES (
+          'r1p06-invalid-duplicate-operation', 'r1p06-proof-provider',
+          'DESTINATION_DRAFT_CREATED', 'USER', 'r1p06-proof-operation'
+        );
+        RAISE EXCEPTION 'operation idempotency uniqueness accepted a duplicate';
+      EXCEPTION WHEN unique_violation THEN NULL;
+      END;
+
+      BEGIN
+        INSERT INTO "provider_document_reviews" (
+          "id", "provider_id", "document_version_id", "outcome", "reason",
+          "actor_user_id", "expected_document_version", "operation_key"
+        ) VALUES (
+          'r1p06-invalid-review', 'missing-provider', 'missing-version', 'REJECT', ' ',
+          'missing-user', 1, 'r1p06-invalid-review'
+        );
+        RAISE EXCEPTION 'provider_document_reviews_reason_check accepted an invalid row';
+      EXCEPTION WHEN check_violation THEN NULL;
+      END;
+
+    END $$;
+  `);
+
+  try {
+    const [destinationType, country] = await Promise.all([
+      prisma.payoutDestinationType.findUniqueOrThrow({
+        where: { code: "MOBILE_WALLET" },
+        select: { id: true },
+      }),
+      prisma.country.findUniqueOrThrow({
+        where: { code: "EG" },
+        select: { id: true },
+      }),
+    ]);
+    const repository = new PrismaProviderPayoutRepository(
+      prisma,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      () => ({
+        readLegalNameFacts: async () => ({
+          legalEntityName: "R1-P06 Proof Provider",
+          ownerLegalName: "R1-P06 Proof Owner",
+        }),
+      }),
+    );
+    let slotLimitError: unknown;
+    try {
+      await repository.createDraft({
+        ids: {
+          chainId: "r1p06-proof-chain-6",
+          claimId: "r1p06-proof-claim-6",
+          destinationVersionId: "r1p06-proof-version-6",
+        },
+        providerId: "r1p06-proof-provider",
+        actorUserId: "r1p06-proof-owner",
+        destinationTypeId: destinationType.id,
+        kind: "MOBILE_WALLET",
+        countryId: country.id,
+        countryCode: "EG",
+        currencyCode: null,
+        operatorId: "r1p06-proof-operator",
+        bankId: null,
+        holderRelationship: "PROVIDER_OWNER",
+        expectedHolderLegalName: "R1-P06 Proof Owner",
+        protectedHolderMatches: () => true,
+        identifierEnvelope: {
+          ciphertext: "r1p06-proof-sixth-ciphertext",
+          nonce: "1234567890123456",
+          authenticationTag: "1234567890123456789012",
+          encryptionKeyId: "proof-encryption-key",
+        },
+        holderEnvelope: {
+          ciphertext: "r1p06-proof-sixth-holder",
+          nonce: "6543210987654321",
+          authenticationTag: "2109876543210987654321",
+          encryptionKeyId: "proof-encryption-key",
+        },
+        maskFacts: {
+          callingCode: "20",
+          ibanCountryPrefix: null,
+          lastFour: "0006",
+          identifierLength: 13,
+        },
+        fingerprints: [{
+          lookupKeyId: "proof-lookup-key",
+          fingerprint: "0000000000000000000000000000000000000000000000000000000000000006",
+        }],
+        commandId: "r1p06-proof-sixth-command",
+        requestId: "r1p06-proof-sixth-request",
+      });
+    } catch (error: unknown) {
+      slotLimitError = error;
+    }
+    if (!(slotLimitError instanceof Error) || slotLimitError.message !== "PAYOUT_DESTINATION_LIMIT_REACHED") {
+      throw new Error("Live payout repository did not reject the sixth active destination slot");
+    }
+
+    const revealActor = await prisma.user.create({
+      data: {
+        id: "r1p06-proof-reveal-actor",
+        emailNormalized: "r1p06-proof-reveal-actor@example.invalid",
+        accountCategories: [],
+        verifiedCategories: [],
+        status: "ACTIVE",
+      },
+    });
+    const gate = new PrismaPayoutRevealAuditGate(prisma);
+    const attempts = await Promise.all(
+      Array.from({ length: 6 }, (_, index) =>
+        gate.commitAcceptedReveal({
+          actorUserId: revealActor.id,
+          providerId: "r1p06-proof-reveal-provider",
+          destinationVersionId: `r1p06-proof-reveal-destination-${index}`,
+          expectedVersion: 1,
+          purpose: "MANUAL_PAYOUT_DESTINATION_VERIFICATION",
+          reasonCode: "MANUAL_VERIFICATION_PREPARATION",
+          requestId: `r1p06-proof-reveal-request-${index}`,
+          encryptionKeyIds: ["proof-encryption-key"],
+          lookupKeyIds: ["proof-lookup-key"],
+          now: new Date(),
+        }),
+      ),
+    );
+    if (attempts.filter((attempt) => attempt.accepted).length !== 5) {
+      throw new Error("Live reveal serialization did not accept exactly five attempts");
+    }
+    if (attempts.filter((attempt) => !attempt.accepted).length !== 1) {
+      throw new Error("Live reveal serialization did not reject exactly one attempt");
+    }
+    const [accepted, denied] = await Promise.all([
+      prisma.auditLog.count({
+        where: { actorId: revealActor.id, action: "PROVIDER_PAYOUT_REVEAL_ACCEPTED" },
+      }),
+      prisma.auditLog.count({
+        where: { actorId: revealActor.id, action: "PROVIDER_PAYOUT_REVEAL_DENIED" },
+      }),
+    ]);
+    if (accepted !== 5 || denied !== 1) {
+      throw new Error("Live reveal serialization audit evidence count is invalid");
+    }
+  } finally {
+    await prisma.$executeRawUnsafe(`
+      DELETE FROM "audit_logs" WHERE "actor_id" = 'r1p06-proof-reveal-actor';
+      DELETE FROM "provider_primary_payout_destinations" WHERE "provider_id" = 'r1p06-proof-provider';
+      DELETE FROM "provider_payout_conflicts" WHERE "provider_id" = 'r1p06-proof-provider';
+      DELETE FROM "provider_payout_decisions" WHERE "provider_id" = 'r1p06-proof-provider';
+      DELETE FROM "provider_payout_history" WHERE "provider_id" = 'r1p06-proof-provider';
+      UPDATE "provider_payout_destination_chains" SET "current_version_id" = NULL,
+        "effective_approved_version_id" = NULL
+        WHERE "provider_id" = 'r1p06-proof-provider';
+      DELETE FROM "provider_payout_destination_versions"
+        WHERE "provider_id" = 'r1p06-proof-provider'
+          AND "predecessor_version_id" IS NOT NULL;
+      DELETE FROM "provider_payout_destination_versions" WHERE "provider_id" = 'r1p06-proof-provider';
+      DELETE FROM "provider_payout_lookup_fingerprints"
+        WHERE "claim_id" IN (
+          SELECT "id" FROM "provider_payout_identity_claims"
+          WHERE "provider_id" = 'r1p06-proof-provider'
+        );
+      DELETE FROM "provider_payout_identity_claims" WHERE "provider_id" = 'r1p06-proof-provider';
+      DELETE FROM "provider_payout_destination_chains" WHERE "provider_id" = 'r1p06-proof-provider';
+      DELETE FROM "provider_payout_identity_claims" WHERE "provider_id" = 'r1p06-proof-collision-provider';
+      DELETE FROM "provider_payout_destination_chains" WHERE "provider_id" = 'r1p06-proof-collision-provider';
+      DELETE FROM "payout_country_policies" WHERE "id" = 'r1p06-proof-policy';
+      DELETE FROM "payout_operators" WHERE "id" = 'r1p06-proof-operator';
+      DELETE FROM "provider_members" WHERE "provider_id" = 'r1p06-proof-provider';
+      DELETE FROM "provider_profiles" WHERE "provider_id" = 'r1p06-proof-provider';
+      DELETE FROM "providers" WHERE "id" = 'r1p06-proof-provider';
+      DELETE FROM "providers" WHERE "id" = 'r1p06-proof-collision-provider';
+      DELETE FROM "users" WHERE "id" IN (
+        'r1p06-proof-owner', 'r1p06-proof-collision-owner', 'r1p06-proof-reveal-actor'
+      );
+    `);
+  }
 }
 
 async function probeR1P05Constraints(prisma: PrismaClient): Promise<void> {
@@ -703,7 +1293,9 @@ async function run(): Promise<void> {
   await validateMigrationFolder();
   console.info(`Validated migration folders: ${migrationNames.join(', ')}`);
   console.info(`Expected product tables: ${expectedTables.join(', ')}`);
-  console.info("SQL review: no DROP TABLE / TRUNCATE / DELETE FROM detected");
+  console.info(
+    "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
+  );
 
   const configuredConnectionString = process.env["TEST_MIGRATION_DATABASE_URL"];
   if (configuredConnectionString === undefined || configuredConnectionString.length === 0) {
@@ -712,9 +1304,9 @@ async function run(): Promise<void> {
     );
   }
 
-  assertSafeCleanTestDatabaseUrl(configuredConnectionString);
+  assertR1P06DisposableDatabaseUrl(configuredConnectionString);
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p05_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p06_proof_${process.pid}_${Date.now()}`;
   proofUrl.searchParams.set("schema", proofSchema);
   proofUrl.searchParams.set("options", `-c search_path=${proofSchema}`);
   const connectionString = proofUrl.toString();
@@ -737,7 +1329,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact tables, full history, double-seed idempotency, and live R1-P05 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact tables, full history, double-seed idempotency, and live R1-P05/R1-P06 constraint probes.`,
   );
 }
 

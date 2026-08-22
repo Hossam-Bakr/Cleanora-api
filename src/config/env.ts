@@ -153,6 +153,11 @@ const environmentSchema = z
     PROVIDER_GALLERY_IMAGE_MAX_COUNT: optionalPositiveIntegerSchema,
     PROVIDER_GALLERY_VIDEO_MAX_COUNT: optionalPositiveIntegerSchema,
     PROVIDER_MIN_READY_GALLERY_IMAGES: optionalPositiveIntegerSchema,
+    PAYOUT_DATA_ENCRYPTION_KEYS_JSON: optionalTextSchema,
+    PAYOUT_DATA_ENCRYPTION_ACTIVE_KEY_ID: optionalTextSchema,
+    PAYOUT_LOOKUP_HMAC_KEYS_JSON: optionalTextSchema,
+    PAYOUT_LOOKUP_HMAC_ACTIVE_KEY_ID: optionalTextSchema,
+    PROVIDER_VERIFICATION_SCANNER_PROVIDER: optionalTextSchema,
     SHUTDOWN_TIMEOUT_MS: z.coerce
       .number()
       .int()
@@ -356,6 +361,37 @@ export interface ProviderRuntimeConfig {
   readonly galleryImageMaxCount: number;
   readonly galleryVideoMaxCount: number;
   readonly minReadyGalleryImages: number;
+}
+
+export type R1P06RuntimeEnvironment = AppEnvironment & {
+  readonly PAYOUT_DATA_ENCRYPTION_KEYS_JSON: string;
+  readonly PAYOUT_DATA_ENCRYPTION_ACTIVE_KEY_ID: string;
+  readonly PAYOUT_LOOKUP_HMAC_KEYS_JSON: string;
+  readonly PAYOUT_LOOKUP_HMAC_ACTIVE_KEY_ID: string;
+  readonly PROVIDER_VERIFICATION_SCANNER_PROVIDER: string;
+};
+
+export function assertR1P06RuntimeEnvironment(
+  environment: AppEnvironment,
+): asserts environment is R1P06RuntimeEnvironment {
+  const required = [
+    environment.PAYOUT_DATA_ENCRYPTION_KEYS_JSON,
+    environment.PAYOUT_DATA_ENCRYPTION_ACTIVE_KEY_ID,
+    environment.PAYOUT_LOOKUP_HMAC_KEYS_JSON,
+    environment.PAYOUT_LOOKUP_HMAC_ACTIVE_KEY_ID,
+    environment.PROVIDER_VERIFICATION_SCANNER_PROVIDER,
+  ];
+  if (required.some((value) => value === undefined || value.trim().length === 0)) {
+    throw new Error("R1-P06 payout keys and verification scanner configuration are required");
+  }
+  const scannerConfiguration = environment.PROVIDER_VERIFICATION_SCANNER_PROVIDER;
+  if (scannerConfiguration === undefined) throw new Error("PROVIDER_VERIFICATION_SCANNER_PROVIDER is required");
+  let scanner: URL;
+  try { scanner = new URL(scannerConfiguration); }
+  catch { throw new Error("PROVIDER_VERIFICATION_SCANNER_PROVIDER must be a clamav URL"); }
+  if (scanner.protocol !== "clamav:" || scanner.hostname.length === 0 || scanner.port.length === 0) {
+    throw new Error("PROVIDER_VERIFICATION_SCANNER_PROVIDER must be a clamav URL with an explicit port");
+  }
 }
 
 /**

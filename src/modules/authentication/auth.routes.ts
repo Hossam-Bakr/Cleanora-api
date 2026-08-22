@@ -14,6 +14,7 @@ import {
   otpRequestSchema,
   otpVerifySchema,
   resetSchema,
+  sensitiveActionProofSchema,
   signupSchema,
 } from "./auth.schema.js";
 import type { GoogleAuthenticationService } from "./google-auth.service.js";
@@ -208,6 +209,14 @@ export function createAuthenticationRouter(
     trustedOrigin,
     validateRequest({ body: changeSchema.shape.body }),
     controller.change,
+  );
+  router.post(
+    "/sensitive-action-proofs",
+    authenticateAccess,
+    requireFullAuthentication,
+    trustedOrigin,
+    validateRequest({ body: sensitiveActionProofSchema.shape.body }),
+    controller.issueSensitiveActionProof,
   );
   router.get(
     "/google",

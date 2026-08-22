@@ -51,6 +51,17 @@ export interface ProviderProjectionServiceDependencies {
   readonly mediaReader: ProviderMediaReaderPort;
   readonly activeCountries: ActiveCountryReaderPort;
   readonly denialAudit: ProviderDenialAuditPort;
+  readonly verificationFacts?: {
+    read(provider: ProviderRecord): Promise<{
+      readonly documentsVerified: {
+        readonly applicable: boolean;
+        readonly status: "NOT_REQUIRED" | "NOT_STARTED" | "BLOCKED" | "SATISFIED";
+        readonly satisfied: boolean;
+        readonly blockerCodes: readonly string[];
+      };
+      readonly payoutDestinationReady: boolean;
+    }>;
+  };
 }
 
 export interface ProviderProjectionReaders {
@@ -288,7 +299,7 @@ export class ProviderProjectionService {
       ...input,
       action: "providers.settings.get",
     });
-    const { completion, mediaUsage } = await this.computeProjections(provider);
+    const { completion, readiness, mediaUsage } = await this.computeProjections(provider);
     const contact = await this.dependencies.providers.getContact(provider.id);
     const members = await this.dependencies.providers.listMembers(provider.id);
     const activeAdminCount = members.filter(
@@ -315,6 +326,9 @@ export class ProviderProjectionService {
       canManageMembers: canManageProviderMembers(facts),
       applicationStatus: provider.applicationStatus,
       operationalStatus: provider.operationalStatus,
+      documentsVerifiedStatus: readiness.gates.find((gate) => gate.key === "documentsVerified")?.status ?? "NOT_STARTED",
+      documentsVerifiedSatisfied: readiness.gates.find((gate) => gate.key === "documentsVerified")?.satisfied ?? false,
+      payoutDestinationReady: readiness.gates.find((gate) => gate.key === "payoutDestinationReady")?.satisfied ?? false,
     });
   }
 
@@ -420,11 +434,13 @@ export class ProviderProjectionService {
       readerOverrides,
     );
     const completion = calculateProfileCompletion(collected.facts);
+    const verification = await this.dependencies.verificationFacts?.read(provider);
     const readiness = calculateMarketplaceReadiness({
       kind: provider.kind,
       applicationStatus: provider.applicationStatus,
       operationalStatus: provider.operationalStatus,
       profileCompletionPercentage: completion.percentage,
+      ...(verification === undefined ? {} : verification),
     });
 
     return {

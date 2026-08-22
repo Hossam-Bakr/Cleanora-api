@@ -46,11 +46,14 @@ Precedence:
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
 
-**Live pointer (2026-08-11):** `R1-P05 — Provider Onboarding, Profile & Lifecycle`
-is **Complete** (T001–T159). Independent review returned PASS and human
-completion authorization is recorded. The next phase is not activated, and no
-deployment or production migration occurred. See `docs/product/current.md` and
-`specs/R1-P05-provider-onboarding-profile-lifecycle/completion-report.md`.
+**Live pointer (2026-08-14):** `R1-P06 — Provider Verification & External
+Payout Destinations` is **Complete** (T001–T137). Independent implementation
+review and all evidence gates passed, including explicitly approved disposable
+clean-install and populated R1-P05-upgrade proofs, and human completion
+authorization is recorded. No phase is active; R1-P07 is not activated. No Git
+action, deployment, production migration, or real payout execution was
+authorized by completion. See `docs/product/current.md` and
+`specs/R1-P06-provider-verification-external-payout-destinations/completion-report.md`.
 
 ## Current backend navigation
 

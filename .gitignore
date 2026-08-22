@@ -25,3 +25,11 @@ Thumbs.db
 .runtime-smoke/
 .npm-cache-local/
 railway.exampleRailway.env
+
+# Disposable local database proofs, generated render scratch, and Python cache.
+# Canonical validation evidence belongs in docs/specs; retained raw proof files
+# stay on the developer host and must never be staged.
+.tmp/
+tmp/
+__pycache__/
+*.py[cod]

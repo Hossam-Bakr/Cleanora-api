@@ -12,6 +12,10 @@ type DenialAuditInput = {
   readonly context?: Readonly<Record<string, DenialAuditContextValue>>;
 };
 
+export type R1P06DeniedErrorCode =
+  | "PROVIDER_SCOPE_DENIED"
+  | "PROVIDER_NOT_APPROVED";
+
 /**
  * Consistent cross-provider and unauthorized-access denial audit (FR-052,
  * FR-053, FR-085, FR-086). Appends a minimized audit row, then throws the
@@ -28,6 +32,25 @@ export class ProviderDenialAuditService {
   public async denyAccess(input: DenialAuditInput): Promise<never> {
     await this.append(input, "DENIED");
     throw providersError("PROVIDER_ACCESS_DENIED");
+  }
+
+  /**
+   * R1-P06 denial evidence for Provider verification and payout operations.
+   * The audit row deliberately identifies only the Provider boundary and safe
+   * operation metadata; document identifiers, payout values, masks, encrypted
+   * envelopes, lookup fingerprints, and holder names are never accepted here.
+   */
+  public async denyR1P06(input: DenialAuditInput & {
+    readonly publicErrorCode: R1P06DeniedErrorCode;
+  }): Promise<never> {
+    await this.append(
+      {
+        ...input,
+        reason: input.reason ?? input.publicErrorCode,
+      },
+      "DENIED",
+    );
+    throw new Error(input.publicErrorCode);
   }
 
   public async denyEligibility(input: {

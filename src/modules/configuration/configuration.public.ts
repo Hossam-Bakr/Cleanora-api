@@ -7,6 +7,26 @@ import { createPrismaActiveCountryReader } from "./infrastructure/prisma-active-
  */
 export const CONFIGURATION_PUBLIC_CONTRACT = "configuration.public" as const;
 
+export interface ActiveCountryAndCurrencyReader {
+  readCountry(input: {
+    readonly countryCode: string;
+    readonly transaction?: unknown;
+  }): Promise<{
+    readonly countryId: string;
+    readonly countryCode: string;
+    readonly active: boolean;
+    readonly callingCodes: readonly string[];
+  } | null>;
+  readCurrency(input: {
+    readonly currencyCode: string;
+    readonly transaction?: unknown;
+  }): Promise<{
+    readonly currencyId: string;
+    readonly currencyCode: string;
+    readonly active: boolean;
+  } | null>;
+}
+
 export interface ActiveCountry {
   readonly id: string;
   readonly code: string;

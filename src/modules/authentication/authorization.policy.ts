@@ -6,6 +6,23 @@ import type {
   ScopeRule,
 } from "./domain/authorization.types.js";
 
+export const R1_P06_STAFF_PERMISSIONS = [
+  "providers.verification.documents.review",
+  "providers.verification.policies.manage",
+  "providers.payout-destinations.verify",
+] as const;
+
+export function assertR1P06StaffPermission(input: {
+  readonly accountActive: boolean;
+  readonly staffAdminEnabled: boolean;
+  readonly permissionCodes: readonly string[];
+  readonly requiredPermission: (typeof R1_P06_STAFF_PERMISSIONS)[number];
+}): void {
+  if (!input.accountActive || !input.staffAdminEnabled || !input.permissionCodes.includes(input.requiredPermission)) {
+    throw new Error("PROVIDER_SCOPE_DENIED");
+  }
+}
+
 /**
  * Pure ownership and scope rules. These functions never read the database and
  * never trust a client-supplied claim: every fact is established by the server

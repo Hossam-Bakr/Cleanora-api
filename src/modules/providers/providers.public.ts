@@ -11,6 +11,18 @@ import {
 
 export const PROVIDERS_PUBLIC_CONTRACT = "providers.public";
 
+export interface ProviderR1P06ReadinessFacts {
+  readonly providerId: string;
+  readonly documentsVerified: {
+    readonly applicable: boolean;
+    readonly status: "NOT_REQUIRED" | "NOT_STARTED" | "BLOCKED" | "SATISFIED";
+    readonly satisfied: boolean;
+    readonly blockerCodes: readonly string[];
+  };
+  readonly payoutDestinationReady: boolean;
+  readonly verificationBadge: "NOT_ELIGIBLE" | "NOT_EARNED" | "EARNED";
+}
+
 export type ProviderApplicationStatus =
   | "DRAFT"
   | "PENDING_REVIEW"

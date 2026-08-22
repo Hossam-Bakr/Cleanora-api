@@ -13,6 +13,13 @@ export interface ProviderReadinessFacts {
   readonly applicationStatus: ProviderApplicationStatus;
   readonly operationalStatus: ProviderOperationalStatus;
   readonly profileCompletionPercentage: number;
+  readonly documentsVerified?: {
+    readonly applicable: boolean;
+    readonly status: "NOT_REQUIRED" | "NOT_STARTED" | "BLOCKED" | "SATISFIED";
+    readonly satisfied: boolean;
+    readonly blockerCodes: readonly string[];
+  };
+  readonly payoutDestinationReady?: boolean;
 }
 
 function gate(input: {
@@ -28,7 +35,18 @@ function gate(input: {
 
 function documentsVerifiedGate(
   kind: ProviderKind,
+  current?: ProviderReadinessFacts["documentsVerified"],
 ): MarketplaceReadinessGate {
+  if (current !== undefined) {
+    return gate({
+      key: "documentsVerified",
+      applicable: current.applicable,
+      status: current.status,
+      satisfied: current.satisfied,
+      blockerCodes: current.blockerCodes,
+      owningPhase: "R1-P06",
+    });
+  }
   if (kind === "INDIVIDUAL_TEAM") {
     return gate({
       key: "documentsVerified",
@@ -91,12 +109,17 @@ export function calculateMarketplaceReadiness(
       blockerCodes: applicationApproved ? [] : ["APPLICATION_NOT_APPROVED"],
       owningPhase: "R1-P05",
     }),
-    documentsVerified: documentsVerifiedGate(facts.kind),
-    payoutDestinationReady: laterPhaseGate(
-      "payoutDestinationReady",
-      "R1-P06",
-      "PAYOUT_DEFERRED_R1_P06",
-    ),
+    documentsVerified: documentsVerifiedGate(facts.kind, facts.documentsVerified),
+    payoutDestinationReady: facts.payoutDestinationReady === undefined
+      ? laterPhaseGate("payoutDestinationReady", "R1-P06", "PAYOUT_DEFERRED_R1_P06")
+      : gate({
+          key: "payoutDestinationReady",
+          applicable: true,
+          status: facts.payoutDestinationReady ? "SATISFIED" : "BLOCKED",
+          satisfied: facts.payoutDestinationReady,
+          blockerCodes: facts.payoutDestinationReady ? [] : ["PAYOUT_PRIMARY_APPROVED_REQUIRED"],
+          owningPhase: "R1-P06",
+        }),
     workersReady: laterPhaseGate(
       "workersReady",
       "R1-P07",

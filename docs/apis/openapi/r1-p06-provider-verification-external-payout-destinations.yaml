@@ -1,0 +1,72 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P06 Provider Verification API
+  version: 1.0.0
+  description: Implemented R1-P06 contract. Every path item is sourced from the canonical phase contract.
+servers:
+  - url: /api/v1
+paths:
+  /auth/sensitive-action-proofs:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1auth~1sensitive-action-proofs'
+  /providers/{providerId}/verification:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification'
+  /providers/{providerId}/verification/document-requirements:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification~1document-requirements'
+  /providers/{providerId}/verification/documents:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification~1documents'
+  /providers/{providerId}/verification/documents/{documentVersionId}:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification~1documents~1{documentVersionId}'
+  /providers/{providerId}/verification/documents/{documentVersionId}/evidence:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification~1documents~1{documentVersionId}~1evidence'
+  /providers/{providerId}/verification/documents/{documentVersionId}/evidence/{evidenceId}:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification~1documents~1{documentVersionId}~1evidence~1{evidenceId}'
+  /providers/{providerId}/verification/documents/{documentVersionId}/evidence-order:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification~1documents~1{documentVersionId}~1evidence-order'
+  /providers/{providerId}/verification/documents/{documentVersionId}/submit:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification~1documents~1{documentVersionId}~1submit'
+  /providers/{providerId}/verification/documents/{documentVersionId}/successors:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification~1documents~1{documentVersionId}~1successors'
+  /providers/{providerId}/verification/history:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1verification~1history'
+  /staff/providers/verification/document-types:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1verification~1document-types'
+  /staff/providers/verification/document-policies:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1verification~1document-policies'
+  /staff/providers/verification/document-policies/{policyVersionId}:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1verification~1document-policies~1{policyVersionId}'
+  /staff/providers/verification/document-policies/{policyVersionId}/publish:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1verification~1document-policies~1{policyVersionId}~1publish'
+  /staff/providers/verification/documents:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1verification~1documents'
+  /staff/providers/{providerId}/verification/documents/{documentVersionId}:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1{providerId}~1verification~1documents~1{documentVersionId}'
+  /staff/providers/{providerId}/verification/documents/{documentVersionId}/decisions:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1{providerId}~1verification~1documents~1{documentVersionId}~1decisions'
+  /providers/{providerId}/payout-destination-options:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1payout-destination-options'
+  /providers/{providerId}/payout-destinations:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1payout-destinations'
+  /providers/{providerId}/payout-destinations/{destinationVersionId}:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1payout-destinations~1{destinationVersionId}'
+  /providers/{providerId}/payout-destinations/{destinationVersionId}/submit:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1payout-destinations~1{destinationVersionId}~1submit'
+  /providers/{providerId}/payout-destinations/{destinationVersionId}/successors:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1payout-destinations~1{destinationVersionId}~1successors'
+  /providers/{providerId}/payout-destinations/{destinationVersionId}/remove:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1payout-destinations~1{destinationVersionId}~1remove'
+  /providers/{providerId}/payout-destinations/primary:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1payout-destinations~1primary'
+  /providers/{providerId}/payout-destination-history:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1providers~1{providerId}~1payout-destination-history'
+  /staff/providers/payout-destinations:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1payout-destinations'
+  /staff/providers/{providerId}/payout-destinations/{destinationVersionId}:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1{providerId}~1payout-destinations~1{destinationVersionId}'
+  /staff/providers/{providerId}/payout-destinations/{destinationVersionId}/reveal:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1{providerId}~1payout-destinations~1{destinationVersionId}~1reveal'
+  /staff/providers/{providerId}/payout-destinations/{destinationVersionId}/decisions:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1{providerId}~1payout-destinations~1{destinationVersionId}~1decisions'
+  /staff/providers/payout-destination-conflicts:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1payout-destination-conflicts'
+  /staff/providers/{providerId}/payout-destination-conflicts/{conflictId}/resolve:
+    $ref: '../../../specs/R1-P06-provider-verification-external-payout-destinations/contracts/provider-verification-api.openapi.yaml#/paths/~1staff~1providers~1{providerId}~1payout-destination-conflicts~1{conflictId}~1resolve'

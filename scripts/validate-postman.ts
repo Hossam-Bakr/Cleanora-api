@@ -2,6 +2,8 @@ import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { cleanoraOpenApiDocument } from "../src/swagger/openapi.document.js";
+import { loadR1P06OpenApiSource, r1P06OperationInventory } from "../src/swagger/r1-p06-openapi.paths.js";
+import { R1_P05_IMPLEMENTED_OPERATIONS } from "../src/swagger/r1-p05-openapi.paths.js";
 
 interface PostmanRequest {
   readonly method: string;
@@ -62,7 +64,9 @@ function runtimeAuthenticationOperations(): string[] {
   return Object.entries(cleanoraOpenApiDocument.paths)
     .filter(
       ([path]) =>
-        path.startsWith("/auth/") && !path.startsWith("/auth/role-grants/"),
+        path.startsWith("/auth/") &&
+        !path.startsWith("/auth/role-grants/") &&
+        path !== "/auth/sensitive-action-proofs",
     )
     .flatMap(([path, pathItem]) =>
       Object.entries(pathItem)
@@ -139,21 +143,7 @@ function collectRequestItems(items: readonly PostmanItem[]): PostmanItem[] {
 }
 
 function runtimeProviderOperations(): string[] {
-  return Object.entries(cleanoraOpenApiDocument.paths)
-    .filter(
-      ([path]) =>
-        path.startsWith("/providers") ||
-        path.startsWith("/provider-admin-invitations") ||
-        path.startsWith("/staff/providers"),
-    )
-    .flatMap(([path, pathItem]) =>
-      Object.entries(pathItem)
-        .filter(([method]) =>
-          ["get", "post", "put", "patch", "delete"].includes(method),
-        )
-        .map(([method]) => `${method.toUpperCase()} ${path}`),
-    )
-    .sort();
+  return [...R1_P05_IMPLEMENTED_OPERATIONS].sort();
 }
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -381,6 +371,34 @@ async function main(): Promise<void> {
     );
   }
 
+  const r1P06CollectionPath = resolve(
+    postmanDirectory,
+    "Cleanora-R1-P06.postman_collection.json",
+  );
+  const r1P06Collection = await parseJson<PostmanCollection>(r1P06CollectionPath);
+  assert(
+    r1P06Collection.info.schema.endsWith("/collection/v2.1.0/collection.json"),
+    "R1-P06 collection must use Postman collection schema v2.1.0",
+  );
+  const r1P06RuntimeOperations = r1P06OperationInventory(loadR1P06OpenApiSource().paths ?? {});
+  const r1P06RequestCount = assertMirroredEnvironments({
+    label: "R1-P06",
+    collection: r1P06Collection,
+    expectedOperations: r1P06RuntimeOperations,
+  });
+  const r1P06Serialized = await readFile(r1P06CollectionPath, "utf8");
+  const r1P06Variables = new Map((r1P06Collection.variable ?? []).map((entry) => [entry.key, entry.value]));
+  for (const secretVariable of ["accessToken", "currentPassword", "sensitiveActionProof", "revealAttemptId", "verificationEvidenceFile"]) {
+    assert(r1P06Variables.get(secretVariable) === "", `R1-P06 collection must export ${secretVariable} empty`);
+  }
+  const r1P06Referenced = new Set([...r1P06Serialized.matchAll(/\{\{([^{}]+)\}\}/gu)].map((match) => match[1]!));
+  const r1P06Undefined = [...r1P06Referenced].filter((key) => !r1P06Variables.has(key) && key !== "$guid");
+  assert(r1P06Undefined.length === 0, `R1-P06 collection leaves variables undefined: ${r1P06Undefined.join(", ")}`);
+  assert(r1P06Serialized.includes("body.error.statusCode"), "R1-P06 tests must validate error-envelope statusCode");
+  for (const forbidden of ["CLOUDINARY_API_SECRET", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "DATABASE_URL", "Bearer eyJ", "SMTP_PASSWORD", "PAYOUT_DATA_ENCRYPTION_KEYS_JSON", "PAYOUT_LOOKUP_HMAC_KEYS_JSON"]) {
+    assert(!r1P06Serialized.includes(forbidden), `R1-P06 collection contains forbidden secret material: ${forbidden}`);
+  }
+
   process.stdout.write(
     `${JSON.stringify({
       ok: true,
@@ -395,9 +413,12 @@ async function main(): Promise<void> {
         r1P02: r1P02RequestCount / 2,
         r1P04: r1P04RequestCount / 2,
         r1P05: r1P05RuntimeOperations.length,
+        r1P06: r1P06RuntimeOperations.length,
       },
       r1P05Requests: r1P05RequestCount,
       r1P05RequestsPerEnvironment: r1P05RuntimeOperations.length,
+      r1P06Requests: r1P06RequestCount,
+      r1P06RequestsPerEnvironment: r1P06RuntimeOperations.length,
       runtimeParity: true,
       environments: 2,
     })}\n`,

@@ -33,6 +33,7 @@ import {
   PROVIDER_VIDEO_MAX_WIDTH,
   providerOwnerTypeForImagePurpose,
 } from "./domain/media.types.js";
+import { assertEvidenceSet } from "./domain/provider-verification-evidence.policy.js";
 
 export type {
   DeliveryUrl,
@@ -67,6 +68,7 @@ export {
   PROVIDER_VIDEO_MAX_HEIGHT,
   PROVIDER_VIDEO_MAX_WIDTH,
   providerOwnerTypeForImagePurpose,
+  assertEvidenceSet as assertProviderVerificationEvidenceSet,
 };
 
 /**
@@ -124,3 +126,63 @@ export interface ProviderMediaStatusReader {
  * `domain/` or `infrastructure/`.
  */
 export const MEDIA_PUBLIC_CONTRACT = "media.public" as const;
+
+export type ProviderVerificationEvidencePurpose =
+  | "PROVIDER_DOCUMENT_MANAGEMENT"
+  | "STAFF_DOCUMENT_REVIEW";
+
+export interface ProviderVerificationEvidenceReceipt {
+  readonly mediaFileId: string;
+  readonly providerId: string;
+  readonly documentVersionId: string;
+  readonly state: "PROCESSING" | "READY" | "FAILED";
+  readonly canonicalContentType: "application/pdf" | "image/jpeg" | "image/png";
+  readonly byteSize: number;
+  readonly pageCount: number | null;
+  readonly safeReceiptId: string;
+}
+
+export interface ProviderVerificationEvidencePort {
+  reserve(input: {
+    readonly ownerUserId: string;
+    readonly providerId: string;
+    readonly documentVersionId: string;
+    readonly originalExtension: ".pdf" | ".jpg" | ".jpeg" | ".png";
+    readonly declaredContentType: string;
+    readonly byteSize: number;
+  }): Promise<{ readonly mediaFileId: string; readonly state: "PROCESSING" }>;
+  ingest(input: {
+    readonly ownerUserId: string;
+    readonly providerId: string;
+    readonly documentVersionId: string;
+    readonly originalExtension: ".pdf" | ".jpg" | ".jpeg" | ".png";
+    readonly declaredContentType: string;
+    readonly bytes: Buffer;
+  }): Promise<ProviderVerificationEvidenceReceipt>;
+  readValidationReceipt(mediaFileId: string): Promise<ProviderVerificationEvidenceReceipt | null>;
+  issuePrivateDelivery(input: {
+    readonly mediaFileId: string;
+    readonly providerId: string;
+    readonly documentVersionId: string;
+    readonly purpose: ProviderVerificationEvidencePurpose;
+    readonly actorUserId: string;
+  }): Promise<{ readonly url: string; readonly expiresAt: Date }>;
+  requestCleanup(input: { readonly mediaFileId: string; readonly safeReasonCode: string }): Promise<void>;
+}
+
+export interface TransactionalProviderVerificationEvidenceAuthorizer {
+  allReady(input: {
+    readonly providerId: string;
+    readonly documentVersionId: string;
+    readonly evidence: readonly {
+      readonly mediaFileId: string;
+      readonly canonicalContentType: "application/pdf" | "image/jpeg" | "image/png";
+      readonly byteSize: number;
+      readonly pageCount: number | null;
+    }[];
+  }): Promise<boolean>;
+}
+
+export type TransactionalProviderVerificationEvidenceAuthorizerFactory = (
+  transaction: unknown,
+) => TransactionalProviderVerificationEvidenceAuthorizer;

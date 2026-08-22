@@ -22,6 +22,17 @@ const OUTBOX_SELECT = {
   recipientUserId: true,
   reviewCycle: true,
   statusHistoryId: true,
+  verificationHistoryId: true,
+  payoutHistoryId: true,
+  payoutHistory: {
+    select: {
+      event: true,
+      toStatus: true,
+      reasonCode: true,
+      safeMask: true,
+      destinationVersion: { select: { kind: true } },
+    },
+  },
   idempotencyKey: true,
   attemptCount: true,
   nextAttemptAt: true,
@@ -41,7 +52,20 @@ function assertClosedTemplate(template: ProviderEmailTemplate): void {
 function mapOutbox(
   row: Prisma.ProviderEmailOutboxGetPayload<{ select: typeof OUTBOX_SELECT }>,
 ): ProviderEmailOutboxRecord {
-  return { ...row };
+  const { payoutHistory, ...record } = row;
+  const destinationType = payoutHistory?.destinationVersion?.kind;
+  const payoutNotification =
+    payoutHistory === null ||
+    destinationType === undefined ||
+    payoutHistory.safeMask === null
+      ? null
+      : {
+          destinationType,
+          mask: payoutHistory.safeMask,
+          status: payoutHistory.toStatus ?? payoutHistory.event,
+          reason: payoutHistory.reasonCode ?? payoutHistory.event,
+        };
+  return { ...record, payoutNotification };
 }
 
 /**
@@ -68,6 +92,8 @@ export class PrismaProviderEmailOutboxRepository
         recipientUserId: input.recipientUserId,
         reviewCycle: input.reviewCycle ?? null,
         statusHistoryId: input.statusHistoryId ?? null,
+        verificationHistoryId: input.verificationHistoryId ?? null,
+        payoutHistoryId: input.payoutHistoryId ?? null,
         idempotencyKey: input.idempotencyKey,
         nextAttemptAt: input.nextAttemptAt ?? new Date(),
         status: "PENDING",

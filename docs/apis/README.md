@@ -10,6 +10,7 @@ API documentation is organized by roadmap phase.
 | R1-P02 Google frontend | [Google sign-in frontend integration](google-sign-in-frontend.md) | Implemented; phase Complete |
 | R1-P03A staff-admin role commands | [OpenAPI staff-admin role management](openapi/r1-p03a-staff-admin-role-management.yaml) | Implemented under DEC-030 |
 | R1-P03A owner staff-admin provisioning | [OpenAPI owner staff-admins](openapi/r1-p03a-owner-staff-admins.yaml) | Implemented under DEC-030 |
+| R1-P06 Provider verification and external payout destinations | [OpenAPI Provider verification and payout destinations](openapi/r1-p06-provider-verification-external-payout-destinations.yaml) | Implemented; phase Complete |
 | Runtime API reference | [Interactive Swagger documentation](../swagger/README.md) | Implemented at `/api/v1/docs` |
 
 Every document must state whether an endpoint is `Implemented`, `Prepared`, or
@@ -17,3 +18,6 @@ Every document must state whether an endpoint is `Implemented`, `Prepared`, or
 
 All responses follow `docs/standards/api-response-and-errors.md`.
 Importable collections and the local environment are under `postman/`.
+The phase-owned R1-P06 collection destination is
+`postman/Cleanora-R1-P06.postman_collection.json`; it contains synthetic,
+masked examples only, and generation plus validation pass with runtime parity.
