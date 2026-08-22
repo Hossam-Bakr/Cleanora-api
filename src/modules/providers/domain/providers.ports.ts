@@ -254,6 +254,8 @@ export interface CreateEmailOutboxIntentInput {
   readonly idempotencyKey: string;
   readonly reviewCycle?: number | null;
   readonly statusHistoryId?: string | null;
+  readonly verificationHistoryId?: string | null;
+  readonly payoutHistoryId?: string | null;
   readonly nextAttemptAt?: Date | null;
 }
 

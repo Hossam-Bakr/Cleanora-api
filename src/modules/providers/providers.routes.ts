@@ -43,6 +43,52 @@ import {
   staffApplicationsQuery,
   submitProviderApplicationBody,
 } from "./providers.schema.js";
+import {
+  createProviderVerificationController,
+  createStaffProviderVerificationController,
+  type ProviderVerificationControllerDependencies,
+  type StaffProviderVerificationControllerDependencies,
+} from "./provider-verification.controller.js";
+import {
+  documentEvidenceMutationBody,
+  documentEvidenceOrderBody,
+  documentEvidenceParams,
+  documentDecisionBody,
+  documentHistoryQuery,
+  documentPolicyDraftBody,
+  documentPolicyPublishBody,
+  documentPolicyReplaceBody,
+  documentVersionParams,
+  policyVersionParams,
+  verificationDocumentDraftBody,
+  verificationDocumentUpdateBody,
+  versionCommandBody,
+} from "./provider-verification.schema.js";
+import {
+  providerVerificationEvidenceMulterErrorHandler,
+  providerVerificationEvidenceUpload,
+  requireVerificationEvidenceFields,
+} from "./provider-verification-evidence.multer.js";
+import {
+  createProviderPayoutController,
+  createStaffProviderPayoutController,
+  type ProviderPayoutControllerDependencies,
+  type StaffProviderPayoutControllerDependencies,
+} from "./provider-payout.controller.js";
+import {
+  payoutConflictParams,
+  payoutConflictResolutionBody,
+  payoutCursorQuery,
+  payoutDecisionBody,
+  payoutDestinationParams,
+  payoutDraftBody,
+  payoutPrimaryBody,
+  payoutRemoveBody,
+  payoutRevealBody,
+  payoutSubmitBody,
+  payoutSuccessorBody,
+  payoutUpdateBody,
+} from "./provider-payout.schema.js";
 
 /** Bounded invitation token-route limits (FR-059, FR-086). */
 export const PROVIDER_INVITATION_RATE_LIMITS = {
@@ -59,6 +105,8 @@ export const PROVIDER_INVITATION_RATE_LIMITS = {
 export function createProvidersRouter(
   dependencies: ProvidersControllerDependencies & {
     readonly authenticateAccess: RequestHandler;
+    readonly verification?: ProviderVerificationControllerDependencies;
+    readonly payout?: ProviderPayoutControllerDependencies;
   },
 ): Router {
   const controller = createProvidersController(dependencies);
@@ -125,6 +173,36 @@ export function createProvidersRouter(
     validateRequest({ params: providerIdParams }),
     controller.getSettings,
   );
+
+  if (dependencies.verification !== undefined) {
+    const verification = createProviderVerificationController(dependencies.verification);
+    router.get("/:providerId/verification", validateRequest({ params: providerIdParams }), verification.getOverview);
+    router.get("/:providerId/verification/document-requirements", validateRequest({ params: providerIdParams }), verification.getRequirements);
+    router.get("/:providerId/verification/documents", validateRequest({ params: providerIdParams, query: documentHistoryQuery }), verification.listDocuments);
+    router.post("/:providerId/verification/documents", validateRequest({ params: providerIdParams, body: verificationDocumentDraftBody }), verification.createDocument);
+    router.get("/:providerId/verification/documents/:documentVersionId", validateRequest({ params: documentVersionParams }), verification.getDocument);
+    router.put("/:providerId/verification/documents/:documentVersionId", validateRequest({ params: documentVersionParams, body: verificationDocumentUpdateBody }), verification.updateDocument);
+    router.post("/:providerId/verification/documents/:documentVersionId/evidence", validateRequest({ params: documentVersionParams }), providerVerificationEvidenceUpload, requireVerificationEvidenceFields, verification.addEvidence, providerVerificationEvidenceMulterErrorHandler);
+    router.delete("/:providerId/verification/documents/:documentVersionId/evidence/:evidenceId", validateRequest({ params: documentEvidenceParams, body: documentEvidenceMutationBody }), verification.removeEvidence);
+    router.put("/:providerId/verification/documents/:documentVersionId/evidence-order", validateRequest({ params: documentVersionParams, body: documentEvidenceOrderBody }), verification.reorderEvidence);
+    router.post("/:providerId/verification/documents/:documentVersionId/submit", validateRequest({ params: documentVersionParams, body: versionCommandBody }), verification.submitDocument);
+    router.post("/:providerId/verification/documents/:documentVersionId/successors", validateRequest({ params: documentVersionParams, body: versionCommandBody }), verification.createSuccessor);
+    router.get("/:providerId/verification/history", validateRequest({ params: providerIdParams, query: documentHistoryQuery }), verification.listHistory);
+  }
+
+  if (dependencies.payout !== undefined) {
+    const payout = createProviderPayoutController(dependencies.payout);
+    router.get("/:providerId/payout-destination-options", validateRequest({ params: providerIdParams }), payout.options);
+    router.get("/:providerId/payout-destinations", validateRequest({ params: providerIdParams, query: payoutCursorQuery }), payout.list);
+    router.post("/:providerId/payout-destinations", validateRequest({ params: providerIdParams, body: payoutDraftBody }), payout.create);
+    router.get("/:providerId/payout-destinations/:destinationVersionId", validateRequest({ params: payoutDestinationParams }), payout.detail);
+    router.put("/:providerId/payout-destinations/:destinationVersionId", validateRequest({ params: payoutDestinationParams, body: payoutUpdateBody }), payout.update);
+    router.post("/:providerId/payout-destinations/:destinationVersionId/submit", validateRequest({ params: payoutDestinationParams, body: payoutSubmitBody }), payout.submit);
+    router.post("/:providerId/payout-destinations/:destinationVersionId/successors", validateRequest({ params: payoutDestinationParams, body: payoutSuccessorBody }), payout.successor);
+    router.post("/:providerId/payout-destinations/:destinationVersionId/remove", validateRequest({ params: payoutDestinationParams, body: payoutRemoveBody }), payout.remove);
+    router.put("/:providerId/payout-destinations/primary", validateRequest({ params: providerIdParams, body: payoutPrimaryBody }), payout.setPrimary);
+    router.get("/:providerId/payout-destination-history", validateRequest({ params: providerIdParams, query: payoutCursorQuery }), payout.history);
+  }
 
   router.get(
     "/:providerId/media",
@@ -262,11 +340,35 @@ export function createProvidersRouter(
 export function createStaffProvidersRouter(
   dependencies: StaffProvidersControllerDependencies & {
     readonly authenticateAccess: RequestHandler;
+    readonly verification?: StaffProviderVerificationControllerDependencies;
+    readonly payout?: StaffProviderPayoutControllerDependencies;
   },
 ): Router {
   const controller = createStaffProvidersController(dependencies);
   const router = Router();
   router.use(dependencies.authenticateAccess);
+
+  if (dependencies.verification !== undefined) {
+    const verification = createStaffProviderVerificationController(dependencies.verification);
+    router.get("/verification/documents", validateRequest({ query: documentHistoryQuery }), verification.listQueue);
+    router.get("/:providerId/verification/documents/:documentVersionId", validateRequest({ params: documentVersionParams }), verification.dossier);
+    router.post("/:providerId/verification/documents/:documentVersionId/decisions", validateRequest({ params: documentVersionParams, body: documentDecisionBody }), verification.decide);
+    router.get("/verification/document-types", verification.listTypes);
+    router.get("/verification/document-policies", validateRequest({ query: documentHistoryQuery }), verification.listPolicies);
+    router.post("/verification/document-policies", validateRequest({ body: documentPolicyDraftBody }), verification.createPolicy);
+    router.put("/verification/document-policies/:policyVersionId", validateRequest({ params: policyVersionParams, body: documentPolicyReplaceBody }), verification.replacePolicy);
+    router.post("/verification/document-policies/:policyVersionId/publish", validateRequest({ params: policyVersionParams, body: documentPolicyPublishBody }), verification.publishPolicy);
+  }
+
+  if (dependencies.payout !== undefined) {
+    const payout = createStaffProviderPayoutController(dependencies.payout);
+    router.get("/payout-destinations", validateRequest({ query: payoutCursorQuery }), payout.queue);
+    router.get("/:providerId/payout-destinations/:destinationVersionId", validateRequest({ params: payoutDestinationParams }), payout.dossier);
+    router.post("/:providerId/payout-destinations/:destinationVersionId/reveal", validateRequest({ params: payoutDestinationParams, body: payoutRevealBody }), payout.reveal);
+    router.post("/:providerId/payout-destinations/:destinationVersionId/decisions", validateRequest({ params: payoutDestinationParams, body: payoutDecisionBody }), payout.decide);
+    router.get("/payout-destination-conflicts", validateRequest({ query: payoutCursorQuery }), payout.conflicts);
+    router.post("/:providerId/payout-destination-conflicts/:conflictId/resolve", validateRequest({ params: payoutConflictParams, body: payoutConflictResolutionBody }), payout.resolveConflict);
+  }
 
   router.get(
     "/applications",

@@ -84,7 +84,7 @@ export interface DenialAuditWriter {
 }
 
 const protectedContentKeyPattern =
-  /(address|email|phone|image|profile|street|postal|export|contact|fullName|displayName)/iu;
+  /(address|email|phone|image|profile|street|postal|export|contact|fullName|displayName|wallet|iban|holder|documentNumber|issuerName|legalName|ciphertext|nonce|authenticationTag|fingerprint|storageKey|deliveryUrl|revealedValue)/iu;
 
 function containsProtectedContentKey(value: unknown): boolean {
   if (Array.isArray(value)) {
@@ -101,7 +101,7 @@ function containsProtectedContentKey(value: unknown): boolean {
 }
 
 const secretKeyPattern =
-  /(secret|password|credential|token|api[_-]?key|cookie|otp)/iu;
+  /(secret|password|credential|token|api[_-]?key|cookie|otp|encryptionKey|hmacKey|rawProof|stepUpProof|reauthenticationProof)/iu;
 
 function containsSecretLikeKey(value: unknown): boolean {
   if (Array.isArray(value)) {
@@ -112,7 +112,8 @@ function containsSecretLikeKey(value: unknown): boolean {
   }
   return Object.entries(value).some(
     ([key, nestedValue]) =>
-      secretKeyPattern.test(key) || containsSecretLikeKey(nestedValue),
+      (!/^(?:encryption|lookup)KeyIds?$/u.test(key) && secretKeyPattern.test(key)) ||
+      containsSecretLikeKey(nestedValue),
   );
 }
 
@@ -132,7 +133,8 @@ export function assertSafeAuditInput(input: WriteAuditInput): void {
   if (
     input.action.trim().length === 0 ||
     input.targetType.trim().length === 0 ||
-    containsSecretLikeKey(input.context)
+    containsSecretLikeKey(input.context) ||
+    containsProtectedContentKey(input.context)
   ) {
     throw auditInputInvalid();
   }

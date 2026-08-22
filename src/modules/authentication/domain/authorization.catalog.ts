@@ -65,6 +65,18 @@ export const AUTHORIZATION_PERMISSIONS: readonly PermissionDefinitionSeed[] = [
     code: "providers.lifecycle.manage",
     name: "Manage provider operational lifecycle",
   },
+  {
+    code: "providers.verification.documents.review",
+    name: "Review provider verification documents",
+  },
+  {
+    code: "providers.verification.policies.manage",
+    name: "Manage provider verification policies",
+  },
+  {
+    code: "providers.payout-destinations.verify",
+    name: "Verify provider payout destinations",
+  },
 ];
 
 /**
@@ -85,6 +97,9 @@ export const ROLE_PERMISSION_MAP: Readonly<
     "privacy.requests.reassign",
     "providers.applications.review",
     "providers.lifecycle.manage",
+    "providers.verification.documents.review",
+    "providers.verification.policies.manage",
+    "providers.payout-destinations.verify",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],
@@ -268,6 +283,30 @@ const PROVIDER_STAFF_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
   {
     operationId: "providers.lifecycle.manage",
     permissionCode: "providers.lifecycle.manage",
+    ownership: "NONE",
+    scope: "GLOBAL",
+    privileged: false,
+    publicHttp: false,
+  },
+  {
+    operationId: "providers.verification.documents.review",
+    permissionCode: "providers.verification.documents.review",
+    ownership: "NONE",
+    scope: "GLOBAL",
+    privileged: false,
+    publicHttp: false,
+  },
+  {
+    operationId: "providers.verification.policies.manage",
+    permissionCode: "providers.verification.policies.manage",
+    ownership: "NONE",
+    scope: "GLOBAL",
+    privileged: false,
+    publicHttp: false,
+  },
+  {
+    operationId: "providers.payout-destinations.verify",
+    permissionCode: "providers.payout-destinations.verify",
     ownership: "NONE",
     scope: "GLOBAL",
     privileged: false,

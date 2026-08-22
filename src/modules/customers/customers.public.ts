@@ -5,6 +5,21 @@
  */
 export const CUSTOMERS_PUBLIC_CONTRACT = "customers.public" as const;
 
+export interface ProviderPayoutHolderAuthorityReader {
+  readLegalNameFacts(input: {
+    readonly providerKind: "INDIVIDUAL_TEAM" | "REGISTERED_COMPANY";
+    readonly applicationOwnerUserId: string;
+    readonly activeOwnerUserId: string;
+  }): Promise<{
+    readonly legalEntityName: string | null;
+    readonly ownerLegalName: string | null;
+  }>;
+}
+
+export type TransactionalProviderPayoutHolderAuthorityReaderFactory = (
+  transaction: unknown,
+) => ProviderPayoutHolderAuthorityReader;
+
 /** Provider-applicant categories that Customers may resolve for R1-P05. */
 export type ProviderApplicantCategory = "INDIVIDUAL" | "COMPANY";
 
@@ -37,6 +52,14 @@ export interface ProviderApplicantProfileReader {
 }
 
 import { createPrismaProviderApplicantProfileReader } from "./infrastructure/prisma-provider-applicant-profile.reader.js";
+import { createPrismaProviderPayoutHolderAuthorityReader } from "./infrastructure/prisma-provider-payout-holder.reader.js";
+
+/** Customers-owned payout-holder authority reader with an optional transaction context. */
+export function createProviderPayoutHolderAuthorityReader(
+  transaction?: unknown,
+): ProviderPayoutHolderAuthorityReader {
+  return createPrismaProviderPayoutHolderAuthorityReader(transaction);
+}
 
 /**
  * Customers-owned factory. Implementation lives in infrastructure so this

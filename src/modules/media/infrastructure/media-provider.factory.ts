@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { randomUUID } from "node:crypto";
 
 import type { AppEnvironment } from "../../../config/env.js";
 import { MediaError } from "../domain/media.errors.js";
@@ -6,6 +7,8 @@ import type { MediaStoragePort, ProviderMediaPort } from "../domain/media.ports.
 import type {
   MediaPendingUploadPort,
   ProviderMediaStatusReader,
+  ProviderVerificationEvidencePort,
+  TransactionalProviderVerificationEvidenceAuthorizerFactory,
 } from "../media.public.js";
 import {
   CloudinaryMediaAdapter,
@@ -16,6 +19,11 @@ import { MediaCleanupService } from "./media-cleanup.service.js";
 import { PrismaMediaRepository } from "./prisma-media.repository.js";
 import { ProviderMediaAdapter } from "./provider-media.adapter.js";
 import { SharpProviderImageProcessor } from "./sharp-provider-image.processor.js";
+import {
+  inspectVerificationEvidence,
+  ProviderVerificationEvidenceAdapter,
+  type VerificationMalwareScanner,
+} from "./provider-verification-evidence.adapter.js";
 
 export interface MediaProviderSelection {
   readonly storage: MediaStoragePort;
@@ -165,3 +173,128 @@ export function createProviderMediaStatusReader(
     },
   };
 }
+
+/** Media-owned R1-P06 private evidence pipeline. */
+export function createProviderVerificationEvidencePort(input: {
+  readonly environment: AppEnvironment;
+  readonly scanner: VerificationMalwareScanner;
+  readonly database?: unknown;
+  readonly sdk?: CloudinarySdk;
+}): ProviderVerificationEvidencePort {
+  const selection = createMediaStoragePort(input.environment, input.sdk ?? cloudinary);
+  if (!(selection.storage instanceof CloudinaryMediaAdapter)) {
+    throw new Error("R1-P06 verification evidence requires the configured Cloudinary adapter");
+  }
+  const storage = selection.storage;
+  const repository = new PrismaMediaRepository(
+    input.database as ConstructorParameters<typeof PrismaMediaRepository>[0],
+  );
+  const folder = `${input.environment.CLOUDINARY_PROFILE_IMAGE_FOLDER ?? "cleanora-providers"}/verification-evidence`;
+  const reserve = async (
+    value: Parameters<ProviderVerificationEvidencePort["reserve"]>[0],
+  ) => {
+    const mediaFileId = randomUUID();
+    await repository.reserveVerificationEvidence({
+      id: mediaFileId,
+      ownerUserId: value.ownerUserId,
+      providerId: value.providerId,
+      documentVersionId: value.documentVersionId,
+      storageProvider: "CLOUDINARY",
+      storageKey: createOpaqueCloudinaryPublicId(folder),
+      contentType: value.declaredContentType,
+      byteSize: value.byteSize,
+      width: null,
+      height: null,
+    });
+    return { mediaFileId, state: "PROCESSING" as const };
+  };
+  return new ProviderVerificationEvidenceAdapter({
+    reserve,
+    async ingest(value) {
+      const reservation = await reserve({ ...value, byteSize: value.bytes.length });
+      try {
+        const inspected = await inspectVerificationEvidence({
+          buffer: value.bytes,
+          extension: value.originalExtension,
+          declaredContentType: value.declaredContentType,
+          scanner: input.scanner,
+        });
+        const row = await repository.findById(reservation.mediaFileId);
+        if (row === null) throw new Error("MEDIA_VERIFICATION_STATE_CONFLICT");
+        const stored = await storage.storeProviderVerificationEvidence({
+          bytes: inspected.normalized,
+          storageKey: row.storageKey,
+          canonicalContentType: inspected.canonicalContentType,
+          originalExtension: value.originalExtension,
+        });
+        await repository.markVerificationEvidenceReady({
+          mediaFileId: row.id,
+          canonicalContentType: inspected.canonicalContentType,
+          // Limits and Provider evidence aggregates are based on the bytes the
+          // caller supplied, not a potentially smaller normalized derivative.
+          byteSize: value.bytes.length,
+          width: stored.width > 0 ? stored.width : null,
+          height: stored.height > 0 ? stored.height : null,
+          pageCount: inspected.pageCount,
+        });
+        const receipt = await repository.readVerificationEvidenceReceipt(row.id);
+        if (receipt === null) throw new Error("MEDIA_VERIFICATION_STATE_CONFLICT");
+        return receipt;
+      } catch (error) {
+        await repository.markVerificationEvidenceFailed(reservation.mediaFileId);
+        throw error;
+      }
+    },
+    readValidationReceipt(mediaFileId) {
+      return repository.readVerificationEvidenceReceipt(mediaFileId);
+    },
+    async issuePrivateDelivery(value) {
+      const row = await repository.findById(value.mediaFileId);
+      if (
+        row === null ||
+        row.ownerType !== "PROVIDER_VERIFICATION_DOCUMENT_PAGE" ||
+        row.verificationProviderId !== value.providerId ||
+        row.verificationDocumentVersionId !== value.documentVersionId ||
+        row.status !== "READY" ||
+        !["application/pdf", "image/jpeg", "image/png"].includes(row.contentType)
+      ) throw new Error("DOCUMENT_EVIDENCE_NOT_READY");
+      const expiresAt = new Date(Date.now() + selection.signedUrlTtlSeconds * 1000);
+      return storage.createProviderVerificationEvidenceDelivery({
+        storageKey: row.storageKey,
+        contentType: row.contentType as "application/pdf" | "image/jpeg" | "image/png",
+        expiresAt,
+      });
+    },
+    async requestCleanup(value) {
+      await repository.markPendingDelete(value.mediaFileId);
+    },
+  });
+}
+
+/** Media-owned exact receipt recheck for Provider transaction commits. */
+export const createTransactionalProviderVerificationEvidenceAuthorizer:
+  TransactionalProviderVerificationEvidenceAuthorizerFactory = (transaction) => {
+    const repository = new PrismaMediaRepository(
+      transaction as ConstructorParameters<typeof PrismaMediaRepository>[0],
+    );
+    return {
+      async allReady(input) {
+        if (input.evidence.length === 0) return false;
+        const receipts = await Promise.all(
+          input.evidence.map((item) =>
+            repository.readVerificationEvidenceReceipt(item.mediaFileId),
+          ),
+        );
+        return receipts.every((receipt, index) => {
+          const expected = input.evidence[index];
+          return expected !== undefined &&
+            receipt?.state === "READY" &&
+            receipt.providerId === input.providerId &&
+            receipt.documentVersionId === input.documentVersionId &&
+            receipt.canonicalContentType === expected.canonicalContentType &&
+            receipt.byteSize === expected.byteSize &&
+            receipt.pageCount === expected.pageCount;
+        });
+      },
+    };
+  };

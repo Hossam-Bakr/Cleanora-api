@@ -177,3 +177,20 @@ export const changeSchema = z.object({
     })
     .strict(),
 });
+
+export const sensitiveActionProofSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(1).max(128),
+    purpose: z.enum([
+      "PROVIDER_PAYOUT_SUBMIT",
+      "PROVIDER_PAYOUT_SUCCESSOR_SUBMIT",
+      "PROVIDER_PAYOUT_PRIMARY_CHANGE",
+      "PROVIDER_PAYOUT_WITHDRAW",
+      "PROVIDER_PAYOUT_REMOVE",
+      "STAFF_PAYOUT_REVEAL",
+    ]),
+    providerId: z.string().min(1).max(64),
+    destinationVersionId: z.string().min(1).max(64),
+    requestId: z.string().uuid(),
+  }).strict(),
+});

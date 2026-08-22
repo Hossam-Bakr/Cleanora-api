@@ -1,0 +1,912 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P06 Provider Verification API
+  version: 1.0.0
+  description: >-
+    Implemented contract for protected Provider verification and external payout
+    destination management. It does not implement payout execution, settlement,
+    public browsing, or ownership-evidence upload for payout destinations.
+servers:
+  - url: /api/v1
+tags:
+  - name: Sensitive Action Proofs
+  - name: Provider Verification
+  - name: Staff Verification
+  - name: Provider Payout
+  - name: Staff Payout
+security:
+  - bearerAuth: []
+paths:
+  /auth/sensitive-action-proofs:
+    post:
+      tags: [Sensitive Action Proofs]
+      operationId: issueProviderSensitiveActionProof
+      description: Issues one short-lived, one-use, exact actor/session/purpose/provider/destination/request proof after current-password verification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SensitiveActionProofInput'}
+      responses:
+        '201':
+          description: One-use proof issued after current-password verification.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: 'no-store, private'}
+            Pragma:
+              schema: {type: string, const: no-cache}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '401': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification:
+    get:
+      tags: [Provider Verification]
+      operationId: getProviderVerificationOverview
+      parameters: [$ref: '#/components/parameters/ProviderId']
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '404': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification/document-requirements:
+    get:
+      tags: [Provider Verification]
+      operationId: getProviderDocumentRequirements
+      parameters: [$ref: '#/components/parameters/ProviderId']
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification/documents:
+    get:
+      tags: [Provider Verification]
+      operationId: listProviderDocuments
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/Failure'}
+    post:
+      tags: [Provider Verification]
+      operationId: createProviderDocumentDraft
+      parameters: [$ref: '#/components/parameters/ProviderId']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DocumentDraftInput'}
+      responses:
+        '201': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+        '422': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification/documents/{documentVersionId}:
+    get:
+      tags: [Provider Verification]
+      operationId: getProviderDocumentVersion
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DocumentVersionId'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/Failure'}
+    put:
+      tags: [Provider Verification]
+      operationId: replaceProviderDocumentDraft
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DocumentVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DocumentDraftReplaceInput'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+        '422': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification/documents/{documentVersionId}/evidence:
+    post:
+      tags: [Provider Verification]
+      operationId: uploadProviderDocumentEvidence
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DocumentVersionId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [file, position, expectedVersion, commandId]
+              properties:
+                file: {type: string, format: binary}
+                position: {type: integer, minimum: 0, maximum: 9}
+                expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+                commandId: {$ref: '#/components/schemas/CommandId'}
+      responses:
+        '202': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+        '413': {$ref: '#/components/responses/Failure'}
+        '415': {$ref: '#/components/responses/Failure'}
+        '422': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification/documents/{documentVersionId}/evidence/{evidenceId}:
+    delete:
+      tags: [Provider Verification]
+      operationId: removeProviderDocumentEvidence
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DocumentVersionId'
+        - $ref: '#/components/parameters/EvidenceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification/documents/{documentVersionId}/evidence-order:
+    put:
+      tags: [Provider Verification]
+      operationId: reorderProviderDocumentEvidence
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DocumentVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [evidenceIds, expectedVersion, commandId]
+              properties:
+                evidenceIds:
+                  type: array
+                  minItems: 1
+                  maxItems: 10
+                  uniqueItems: true
+                  items: {type: string, minLength: 1}
+                expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+                commandId: {$ref: '#/components/schemas/CommandId'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification/documents/{documentVersionId}/submit:
+    post:
+      tags: [Provider Verification]
+      operationId: submitProviderDocumentVersion
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DocumentVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+        '422': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification/documents/{documentVersionId}/successors:
+    post:
+      tags: [Provider Verification]
+      operationId: createProviderDocumentSuccessor
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DocumentVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionCommand'}
+      responses:
+        '201': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/verification/history:
+    get:
+      tags: [Provider Verification]
+      operationId: listProviderVerificationHistory
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+  /staff/providers/verification/document-types:
+    get:
+      tags: [Staff Verification]
+      operationId: listVerificationDocumentTypes
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+  /staff/providers/verification/document-policies:
+    get:
+      tags: [Staff Verification]
+      operationId: listVerificationDocumentPolicies
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    post:
+      tags: [Staff Verification]
+      operationId: createVerificationDocumentPolicyDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PolicyDraftInput'}
+      responses:
+        '201': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /staff/providers/verification/document-policies/{policyVersionId}:
+    put:
+      tags: [Staff Verification]
+      operationId: replaceVerificationDocumentPolicyDraft
+      parameters:
+        - $ref: '#/components/parameters/PolicyVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PolicyDraftReplaceInput'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /staff/providers/verification/document-policies/{policyVersionId}/publish:
+    post:
+      tags: [Staff Verification]
+      operationId: publishVerificationDocumentPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReasonedVersionCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /staff/providers/verification/documents:
+    get:
+      tags: [Staff Verification]
+      operationId: listStaffDocumentReviewQueue
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+  /staff/providers/{providerId}/verification/documents/{documentVersionId}:
+    get:
+      tags: [Staff Verification]
+      operationId: getStaffDocumentDossier
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DocumentVersionId'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/Failure'}
+  /staff/providers/{providerId}/verification/documents/{documentVersionId}/decisions:
+    post:
+      tags: [Staff Verification]
+      operationId: decideProviderDocumentVersion
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DocumentVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DocumentDecisionInput'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/payout-destination-options:
+    get:
+      tags: [Provider Payout]
+      operationId: getProviderPayoutDestinationOptions
+      parameters: [$ref: '#/components/parameters/ProviderId']
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+  /providers/{providerId}/payout-destinations:
+    get:
+      tags: [Provider Payout]
+      operationId: listProviderPayoutDestinations
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+    post:
+      tags: [Provider Payout]
+      operationId: createProviderPayoutDestination
+      parameters: [$ref: '#/components/parameters/ProviderId']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/MobileWalletDraftInput'
+                - $ref: '#/components/schemas/BankAccountDraftInput'
+              discriminator: {propertyName: type}
+      responses:
+        '201': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+        '422': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/payout-destinations/{destinationVersionId}:
+    get:
+      tags: [Provider Payout]
+      operationId: getProviderPayoutDestination
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DestinationVersionId'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/Failure'}
+    put:
+      tags: [Provider Payout]
+      operationId: replaceProviderPayoutDestinationDraft
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DestinationVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/MobileWalletDraftReplaceInput'
+                - $ref: '#/components/schemas/BankAccountDraftReplaceInput'
+              discriminator: {propertyName: type}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/payout-destinations/{destinationVersionId}/submit:
+    post:
+      tags: [Provider Payout]
+      operationId: submitProviderPayoutDestination
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DestinationVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReauthenticatedVersionCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/payout-destinations/{destinationVersionId}/successors:
+    post:
+      tags: [Provider Payout]
+      operationId: createProviderPayoutDestinationSuccessor
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DestinationVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/MobileWalletSuccessorInput'
+                - $ref: '#/components/schemas/BankAccountSuccessorInput'
+              discriminator: {propertyName: type}
+      responses:
+        '201': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/payout-destinations/{destinationVersionId}/remove:
+    post:
+      tags: [Provider Payout]
+      operationId: removeProviderPayoutDestination
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DestinationVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RemoveDestinationInput'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/payout-destinations/primary:
+    put:
+      tags: [Provider Payout]
+      operationId: selectProviderPrimaryPayoutDestination
+      parameters: [$ref: '#/components/parameters/ProviderId']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SelectPrimaryInput'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/payout-destination-history:
+    get:
+      tags: [Provider Payout]
+      operationId: listProviderPayoutDestinationHistory
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+  /staff/providers/payout-destinations:
+    get:
+      tags: [Staff Payout]
+      operationId: listStaffPayoutReviewQueue
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+  /staff/providers/{providerId}/payout-destinations/{destinationVersionId}:
+    get:
+      tags: [Staff Payout]
+      operationId: getStaffPayoutSafeDossier
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DestinationVersionId'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '404': {$ref: '#/components/responses/Failure'}
+  /staff/providers/{providerId}/payout-destinations/{destinationVersionId}/reveal:
+    post:
+      tags: [Staff Payout]
+      operationId: revealPendingPayoutDestination
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DestinationVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RevealInput'}
+      responses:
+        '200':
+          description: One non-cacheable plaintext response after accepted audit commit.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: 'no-store, private'}
+            Pragma:
+              schema: {type: string, const: no-cache}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RevealSuccessEnvelope'}
+        '409': {$ref: '#/components/responses/Failure'}
+        '429': {$ref: '#/components/responses/Failure'}
+        '503': {$ref: '#/components/responses/Failure'}
+  /staff/providers/{providerId}/payout-destinations/{destinationVersionId}/decisions:
+    post:
+      tags: [Staff Payout]
+      operationId: decideProviderPayoutDestination
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/DestinationVersionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PayoutDecisionInput'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /staff/providers/payout-destination-conflicts:
+    get:
+      tags: [Staff Payout]
+      operationId: listPayoutDestinationConflicts
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+  /staff/providers/{providerId}/payout-destination-conflicts/{conflictId}/resolve:
+    post:
+      tags: [Staff Payout]
+      operationId: resolvePayoutDestinationConflict
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - name: conflictId
+          in: path
+          required: true
+          schema: {type: string, minLength: 1}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConflictResolutionInput'}
+      responses:
+        '200': {$ref: '#/components/responses/Success'}
+        '409': {$ref: '#/components/responses/Failure'}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    ProviderId:
+      name: providerId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    DocumentVersionId:
+      name: documentVersionId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    DestinationVersionId:
+      name: destinationVersionId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    EvidenceId:
+      name: evidenceId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    PolicyVersionId:
+      name: policyVersionId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema: {type: string, minLength: 1}
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+  schemas:
+    CommandId: {type: string, format: uuid}
+    PositiveVersion: {type: integer, minimum: 1}
+    CountryCode: {type: string, pattern: '^[A-Z]{2}$'}
+    MeaningfulReason: {type: string, minLength: 10, maxLength: 1000}
+    SensitiveActionProofInput:
+      type: object
+      additionalProperties: false
+      required: [currentPassword, purpose, providerId, destinationVersionId, requestId]
+      properties:
+        currentPassword: {type: string, minLength: 1, maxLength: 128, writeOnly: true}
+        purpose:
+          type: string
+          enum: [PROVIDER_PAYOUT_SUBMIT, PROVIDER_PAYOUT_SUCCESSOR_SUBMIT, PROVIDER_PAYOUT_PRIMARY_CHANGE, PROVIDER_PAYOUT_WITHDRAW, PROVIDER_PAYOUT_REMOVE, STAFF_PAYOUT_REVEAL]
+        providerId: {type: string, minLength: 1, maxLength: 64}
+        destinationVersionId: {type: string, minLength: 1, maxLength: 64}
+        requestId: {type: string, format: uuid}
+    VersionCommand:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, commandId]
+      properties:
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    ReasonedVersionCommand:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, commandId, reason]
+      properties:
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+        reason: {$ref: '#/components/schemas/MeaningfulReason'}
+    DocumentDraftInput:
+      type: object
+      additionalProperties: false
+      required: [typeCode, countryCode, documentNumber, legalName, issuerName, issueDate, commandId]
+      properties:
+        typeCode: {type: string, pattern: '^[A-Z][A-Z0-9_]{1,63}$'}
+        countryCode: {$ref: '#/components/schemas/CountryCode'}
+        documentNumber: {type: string, minLength: 1, maxLength: 300}
+        legalName: {type: string, minLength: 2, maxLength: 300}
+        issuerName: {type: string, minLength: 2, maxLength: 300}
+        issueDate: {type: string, format: date}
+        expiresAt: {type: [string, 'null'], format: date}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    DocumentDraftReplaceInput:
+      type: object
+      additionalProperties: false
+      required: [countryCode, documentNumber, legalName, issuerName, issueDate, expectedVersion, commandId]
+      properties:
+        countryCode: {$ref: '#/components/schemas/CountryCode'}
+        documentNumber: {type: string, minLength: 1, maxLength: 300}
+        legalName: {type: string, minLength: 2, maxLength: 300}
+        issuerName: {type: string, minLength: 2, maxLength: 300}
+        issueDate: {type: string, format: date}
+        expiresAt: {type: [string, 'null'], format: date}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    PolicyItemInput:
+      type: object
+      additionalProperties: false
+      required: [documentTypeCode, isRequired, isActive, position, fieldRules]
+      properties:
+        documentTypeCode: {type: string}
+        isRequired: {type: boolean}
+        isActive: {type: boolean}
+        position: {type: integer, minimum: 0}
+        fieldRules:
+          type: object
+          additionalProperties: false
+          required: [schemaVersion, requiredMetadata, issueDate, expiresAt, evidence]
+          properties:
+            schemaVersion: {type: integer, const: 1}
+            requiredMetadata:
+              type: array
+              prefixItems:
+                - {type: string, const: countryCode}
+                - {type: string, const: documentNumber}
+                - {type: string, const: legalName}
+                - {type: string, const: issuerName}
+                - {type: string, const: issueDate}
+              minItems: 5
+              maxItems: 5
+            issueDate: {type: string, const: NOT_FUTURE}
+            expiresAt: {type: string, const: OPTIONAL_AFTER_ISSUE_DATE}
+            evidence:
+              type: array
+              prefixItems:
+                - {type: string, const: PDF}
+                - {type: string, const: IMAGE_SET}
+              minItems: 2
+              maxItems: 2
+    PolicyDraftInput:
+      type: object
+      additionalProperties: false
+      required: [countryCode, providerKind, effectiveAt, items, commandId]
+      properties:
+        countryCode: {$ref: '#/components/schemas/CountryCode'}
+        providerKind: {type: string, enum: [REGISTERED_COMPANY]}
+        effectiveAt: {type: string, format: date-time}
+        items:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/PolicyItemInput'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    PolicyDraftReplaceInput:
+      type: object
+      additionalProperties: false
+      required: [effectiveAt, items, expectedVersion, commandId]
+      properties:
+        effectiveAt: {type: string, format: date-time}
+        items:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/PolicyItemInput'}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    DocumentDecisionInput:
+      type: object
+      additionalProperties: false
+      required: [outcome, reason, expectedVersion, commandId]
+      properties:
+        outcome: {type: string, enum: [APPROVE, REJECT, REQUEST_REPLACEMENT, INVALIDATE]}
+        reason: {$ref: '#/components/schemas/MeaningfulReason'}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    PayoutDraftCommon:
+      type: object
+      required: [type, countryCode, holderLegalName, holderRelationship, commandId]
+      properties:
+        type: {type: string}
+        countryCode: {$ref: '#/components/schemas/CountryCode'}
+        holderLegalName: {type: string, minLength: 2, maxLength: 300}
+        holderRelationship: {type: string, enum: [PROVIDER_LEGAL_ENTITY, PROVIDER_OWNER]}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    MobileWalletDraftInput:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: '#/components/schemas/PayoutDraftCommon'
+        - type: object
+          required: [walletNumber, operatorCode]
+          properties:
+            type: {type: string, const: MOBILE_WALLET}
+            walletNumber: {type: string, pattern: '^\+[1-9][0-9\s()-]{5,20}$'}
+            operatorCode: {type: string, minLength: 1, maxLength: 64}
+    BankAccountDraftInput:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: '#/components/schemas/PayoutDraftCommon'
+        - type: object
+          required: [currencyCode, bankCode, iban]
+          properties:
+            type: {type: string, const: BANK_ACCOUNT}
+            currencyCode: {type: string, pattern: '^[A-Z]{3}$'}
+            bankCode: {type: string, minLength: 1, maxLength: 64}
+            iban: {type: string, minLength: 15, maxLength: 64}
+    MobileWalletDraftReplaceInput:
+      type: object
+      additionalProperties: false
+      required: [type, countryCode, walletNumber, operatorCode, holderLegalName, holderRelationship, expectedVersion, commandId]
+      properties:
+        type: {type: string, const: MOBILE_WALLET}
+        countryCode: {$ref: '#/components/schemas/CountryCode'}
+        walletNumber: {type: string, pattern: '^\+[1-9][0-9\s()-]{5,20}$'}
+        operatorCode: {type: string, minLength: 1, maxLength: 64}
+        holderLegalName: {type: string, minLength: 2, maxLength: 300}
+        holderRelationship: {type: string, enum: [PROVIDER_LEGAL_ENTITY, PROVIDER_OWNER]}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    BankAccountDraftReplaceInput:
+      type: object
+      additionalProperties: false
+      required: [type, countryCode, currencyCode, bankCode, iban, holderLegalName, holderRelationship, expectedVersion, commandId]
+      properties:
+        type: {type: string, const: BANK_ACCOUNT}
+        countryCode: {$ref: '#/components/schemas/CountryCode'}
+        currencyCode: {type: string, pattern: '^[A-Z]{3}$'}
+        bankCode: {type: string, minLength: 1, maxLength: 64}
+        iban: {type: string, minLength: 15, maxLength: 64}
+        holderLegalName: {type: string, minLength: 2, maxLength: 300}
+        holderRelationship: {type: string, enum: [PROVIDER_LEGAL_ENTITY, PROVIDER_OWNER]}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    MobileWalletSuccessorInput:
+      type: object
+      additionalProperties: false
+      required: [type, countryCode, walletNumber, operatorCode, holderLegalName, holderRelationship, expectedVersion, commandId]
+      properties:
+        type: {type: string, const: MOBILE_WALLET}
+        countryCode: {$ref: '#/components/schemas/CountryCode'}
+        walletNumber: {type: string, pattern: '^\+[1-9][0-9\s()-]{5,20}$'}
+        operatorCode: {type: string, minLength: 1, maxLength: 64}
+        holderLegalName: {type: string, minLength: 2, maxLength: 300}
+        holderRelationship: {type: string, enum: [PROVIDER_LEGAL_ENTITY, PROVIDER_OWNER]}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    BankAccountSuccessorInput:
+      type: object
+      additionalProperties: false
+      required: [type, countryCode, currencyCode, bankCode, iban, holderLegalName, holderRelationship, expectedVersion, commandId]
+      properties:
+        type: {type: string, const: BANK_ACCOUNT}
+        countryCode: {$ref: '#/components/schemas/CountryCode'}
+        currencyCode: {type: string, pattern: '^[A-Z]{3}$'}
+        bankCode: {type: string, minLength: 1, maxLength: 64}
+        iban: {type: string, minLength: 15, maxLength: 64}
+        holderLegalName: {type: string, minLength: 2, maxLength: 300}
+        holderRelationship: {type: string, enum: [PROVIDER_LEGAL_ENTITY, PROVIDER_OWNER]}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    ReauthenticatedVersionCommand:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, commandId, reauthenticationProof]
+      properties:
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+        reauthenticationProof: {type: string, minLength: 16, maxLength: 4096, writeOnly: true}
+    RemoveDestinationInput:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, expectedPrimaryVersion, acknowledgeReadinessLoss, reason, reauthenticationProof, commandId]
+      properties:
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedPrimaryVersion: {type: integer, minimum: 0}
+        replacementPrimaryDestinationVersionId: {type: [string, 'null']}
+        acknowledgeReadinessLoss: {type: boolean}
+        reason: {$ref: '#/components/schemas/MeaningfulReason'}
+        reauthenticationProof: {type: string, minLength: 16, maxLength: 4096, writeOnly: true}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    SelectPrimaryInput:
+      type: object
+      additionalProperties: false
+      required: [destinationVersionId, expectedDestinationVersion, expectedPrimaryVersion, reauthenticationProof, commandId]
+      properties:
+        destinationVersionId: {type: string, minLength: 1}
+        expectedDestinationVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedPrimaryVersion: {type: integer, minimum: 0}
+        reauthenticationProof: {type: string, minLength: 16, maxLength: 4096, writeOnly: true}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    RevealInput:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, purpose, reason, stepUpProof, commandId]
+      properties:
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        purpose: {type: string, const: MANUAL_PAYOUT_DESTINATION_VERIFICATION}
+        reason: {$ref: '#/components/schemas/MeaningfulReason'}
+        stepUpProof: {type: string, minLength: 16, maxLength: 4096, writeOnly: true}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    PayoutDecisionInput:
+      type: object
+      additionalProperties: false
+      required: [outcome, verificationMethod, reasonCode, verificationNote, acceptedRevealAttemptId, expectedVersion, commandId]
+      properties:
+        outcome: {type: string, enum: [APPROVE, REJECT, REQUEST_CHANGES, REQUEST_REPLACEMENT, INVALIDATE]}
+        verificationMethod: {type: string, enum: [MANUAL_WALLET_TRANSFER_CHECK, MANUAL_BANK_BENEFICIARY_CHECK]}
+        reasonCode: {type: string, pattern: '^[A-Z][A-Z0-9_]{1,63}$'}
+        verificationNote: {$ref: '#/components/schemas/MeaningfulReason'}
+        acceptedRevealAttemptId: {type: [string, 'null'], minLength: 1}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    ConflictResolutionInput:
+      type: object
+      additionalProperties: false
+      required: [outcome, reason, expectedVersion, commandId]
+      properties:
+        outcome: {type: string, enum: [CANDIDATE_REJECTED, RESOLVED_AFTER_RELEASE]}
+        reason: {$ref: '#/components/schemas/MeaningfulReason'}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        commandId: {$ref: '#/components/schemas/CommandId'}
+    SuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data: {}
+        requestId: {type: string}
+        meta: {type: object}
+    FailureEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, error, requestId]
+      properties:
+        success: {type: boolean, const: false}
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, statusCode, message]
+          properties:
+            code: {type: string}
+            statusCode: {type: integer, minimum: 400, maximum: 599}
+            message: {type: string}
+            details: {}
+        requestId: {type: string}
+    RevealSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          additionalProperties: false
+          required: [destinationVersionId, type, fullIdentifier, holderLegalName, authoritativeHolderLegalName, holderRelationship, revealAttemptId]
+          properties:
+            destinationVersionId: {type: string}
+            type: {type: string, enum: [MOBILE_WALLET, BANK_ACCOUNT]}
+            fullIdentifier:
+              type: string
+              description: One-response plaintext; never cached, logged, audited, exported, or returned outside this exact pending-version reveal.
+            holderLegalName:
+              type: string
+              description: One-response plaintext for the same verification purpose; never cached, logged, audited, exported, or returned in ordinary views.
+            authoritativeHolderLegalName:
+              type: string
+              description: Current Customers-authoritative legal name selected by holderRelationship for this one verification response; never returned in ordinary views.
+            holderRelationship: {type: string, enum: [PROVIDER_LEGAL_ENTITY, PROVIDER_OWNER]}
+            revealAttemptId: {type: string}
+        requestId: {type: string}
+  responses:
+    Success:
+      description: Successful protected operation.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+          example:
+            success: true
+            data: {status: ACCEPTED}
+            requestId: 00000000-0000-4000-8000-000000000006
+    Failure:
+      description: Safe failure with no sensitive values or foreign-scope disclosure.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/FailureEnvelope'}
+          example:
+            success: false
+            error: {code: PAYOUT_DESTINATION_STATE_CONFLICT, statusCode: 409, message: The payout destination state changed.}
+            requestId: 00000000-0000-4000-8000-000000000006

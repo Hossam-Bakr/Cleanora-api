@@ -59,6 +59,20 @@ function templateSubject(
       return "Your Cleanora Provider account was suspended";
     case "REINSTATED":
       return "Your Cleanora Provider account was reinstated";
+    case "VERIFICATION_DOCUMENT_SUBMITTED":
+      return "Your Cleanora verification document was submitted";
+    case "VERIFICATION_DOCUMENT_DECIDED":
+      return "Your Cleanora verification document was reviewed";
+    case "PAYOUT_DESTINATION_SUBMITTED":
+      return "Your Cleanora payout destination was submitted";
+    case "PAYOUT_DESTINATION_DECIDED":
+      return "Your Cleanora payout destination was reviewed";
+    case "PAYOUT_PRIMARY_CHANGED":
+      return "Your Cleanora primary payout destination changed";
+    case "PAYOUT_DESTINATION_REMOVED":
+      return "Your Cleanora payout destination was removed";
+    case "PAYOUT_SUCCESSOR_APPROVED":
+      return "Your Cleanora replacement payout destination was approved";
   }
 }
 
@@ -79,8 +93,40 @@ function nextAttemptAfterFailure(
   };
 }
 
+const PAYOUT_EMAIL_TEMPLATES = new Set<ProviderEmailOutboxRecord["template"]>([
+  "PAYOUT_DESTINATION_SUBMITTED",
+  "PAYOUT_DESTINATION_DECIDED",
+  "PAYOUT_PRIMARY_CHANGED",
+  "PAYOUT_DESTINATION_REMOVED",
+  "PAYOUT_SUCCESSOR_APPROVED",
+]);
+
+function deliveryVariables(intent: ProviderEmailOutboxRecord): Readonly<Record<string, string>> {
+  if (PAYOUT_EMAIL_TEMPLATES.has(intent.template)) {
+    if (intent.payoutNotification === null) {
+      throw Object.assign(new Error("Payout notification facts are unavailable."), {
+        code: "PAYOUT_EMAIL_FACTS_UNAVAILABLE",
+      });
+    }
+    return {
+      destinationType: intent.payoutNotification.destinationType,
+      mask: intent.payoutNotification.mask,
+      status: intent.payoutNotification.status,
+      reason: intent.payoutNotification.reason,
+    };
+  }
+  return {
+    template: intent.template,
+    subject: templateSubject(intent.template),
+    providerId: intent.providerId,
+    ...(intent.reviewCycle === null
+      ? {}
+      : { reviewCycle: String(intent.reviewCycle) }),
+  };
+}
+
 /**
- * Bounded in-process dispatcher for the six mandatory Provider templates.
+ * Bounded in-process dispatcher for the closed Provider template catalog.
  * Invitation email is intentionally excluded and must never enter this path.
  */
 export class ProviderEmailDispatcher {
@@ -167,14 +213,7 @@ export class ProviderEmailDispatcher {
         template: intent.template,
         to: recipientEmail,
         locale: "AR",
-        variables: {
-          template: intent.template,
-          subject: templateSubject(intent.template),
-          providerId: intent.providerId,
-          ...(intent.reviewCycle === null
-            ? {}
-            : { reviewCycle: String(intent.reviewCycle) }),
-        },
+        variables: deliveryVariables(intent),
         idempotencyKey: intent.idempotencyKey,
       });
 

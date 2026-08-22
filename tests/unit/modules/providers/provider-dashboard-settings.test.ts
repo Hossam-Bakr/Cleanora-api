@@ -177,6 +177,9 @@ describe("US9 dashboard next-action and settings (T099)", () => {
       applicationStatus: "DRAFT",
       operationalStatus: "INACTIVE",
       providerId: "provider-1",
+      documentsVerifiedStatus: "BLOCKED",
+      documentsVerifiedSatisfied: false,
+      payoutDestinationReady: false,
     });
 
     expect(settings).toMatchObject({
@@ -201,6 +204,15 @@ describe("US9 dashboard next-action and settings (T099)", () => {
         pendingInvitationCount: 0,
         canManage: false,
       },
+      verification: {
+        status: "BLOCKED",
+        satisfied: false,
+        href: "/providers/provider-1/verification",
+      },
+      payoutDestinations: {
+        ready: false,
+        href: "/providers/provider-1/payout-destinations",
+      },
       statusHistory: {
         applicationStatus: "DRAFT",
         operationalStatus: "INACTIVE",
@@ -223,10 +235,12 @@ describe("US9 dashboard next-action and settings (T099)", () => {
         "media",
         "members",
         "notifications",
+        "payoutDestinations",
         "privacy",
         "privateContacts",
         "profile",
         "statusHistory",
+        "verification",
       ].sort(),
     );
   });

@@ -89,7 +89,6 @@ Premium status may affect sorting, but must not bypass eligibility.
 ### 4.1 System roles
 
 - `CUSTOMER`
-- `PROVIDER_OWNER`
 - `WORKER`
 - `MARKETER`
 - `ADMIN`
@@ -141,13 +140,14 @@ These are entry surfaces over one identity system, not separate authentication s
 
 #### Provider owner
 
-- `PROVIDER_OWNER` is not a public signup or ordinary self-enrollment choice.
+- There is no `PROVIDER_OWNER` account category or global role.
 - A verified Individual or Company first completes the matching customer
   profile and applies to become a provider.
-- Staff-admin approval grants the internal verified `PROVIDER_OWNER` category,
-  the provider-admin authority, and the provider's OWNER membership together.
-- A legacy user who holds only `PROVIDER_OWNER` must first enroll and verify an
-  eligible Individual or Company category before applying.
+- Provider ownership and administration are represented by Provider-domain
+  `OWNER` and `ADMIN` membership for the exact Provider.
+- Staff-admin application approval grants the accepted applicant active
+  Provider `OWNER` membership. Any general Provider access capability remains
+  separate from ownership and never replaces exact Provider membership.
 
 #### Worker
 

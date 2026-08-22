@@ -35,6 +35,11 @@ export function createTestEnvironment(
     GOOGLE_REDIRECT_URI: "http://localhost:8000/api/v1/auth/google/callback",
     GOOGLE_FRONTEND_CALLBACK_URI: "http://localhost:5173/auth/google/callback",
     OWNER_ADMIN_API_ENABLED: false,
+    PAYOUT_DATA_ENCRYPTION_KEYS_JSON: JSON.stringify({ "enc-test-v1": Buffer.alloc(32, 11).toString("base64") }),
+    PAYOUT_DATA_ENCRYPTION_ACTIVE_KEY_ID: "enc-test-v1",
+    PAYOUT_LOOKUP_HMAC_KEYS_JSON: JSON.stringify({ "lookup-test-v1": Buffer.alloc(32, 29).toString("base64") }),
+    PAYOUT_LOOKUP_HMAC_ACTIVE_KEY_ID: "lookup-test-v1",
+    PROVIDER_VERIFICATION_SCANNER_PROVIDER: "clamav://127.0.0.1:3310",
     SHUTDOWN_TIMEOUT_MS: 10_000,
     REQUEST_BODY_LIMIT: "1mb",
     ...overrides

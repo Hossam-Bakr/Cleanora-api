@@ -53,6 +53,13 @@ export const PROVIDER_EMAIL_TEMPLATES = [
   "REJECTED",
   "SUSPENDED",
   "REINSTATED",
+  "VERIFICATION_DOCUMENT_SUBMITTED",
+  "VERIFICATION_DOCUMENT_DECIDED",
+  "PAYOUT_DESTINATION_SUBMITTED",
+  "PAYOUT_DESTINATION_DECIDED",
+  "PAYOUT_PRIMARY_CHANGED",
+  "PAYOUT_DESTINATION_REMOVED",
+  "PAYOUT_SUCCESSOR_APPROVED",
 ] as const;
 export type ProviderEmailTemplate = (typeof PROVIDER_EMAIL_TEMPLATES)[number];
 
@@ -236,6 +243,14 @@ export interface ProviderEmailOutboxRecord {
   readonly recipientUserId: string;
   readonly reviewCycle: number | null;
   readonly statusHistoryId: string | null;
+  readonly verificationHistoryId: string | null;
+  readonly payoutHistoryId: string | null;
+  readonly payoutNotification: {
+    readonly destinationType: "MOBILE_WALLET" | "BANK_ACCOUNT";
+    readonly mask: string;
+    readonly status: string;
+    readonly reason: string;
+  } | null;
   readonly idempotencyKey: string;
   readonly attemptCount: number;
   readonly nextAttemptAt: Date | null;

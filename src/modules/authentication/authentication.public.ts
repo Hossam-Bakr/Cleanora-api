@@ -35,6 +35,75 @@ export {
  */
 export const AUTHENTICATION_PUBLIC_CONTRACT = "authentication.public" as const;
 
+export type AuthenticationProofPurpose =
+  | "PROVIDER_PAYOUT_SUBMIT"
+  | "PROVIDER_PAYOUT_SUCCESSOR_SUBMIT"
+  | "PROVIDER_PAYOUT_PRIMARY_CHANGE"
+  | "PROVIDER_PAYOUT_WITHDRAW"
+  | "PROVIDER_PAYOUT_REMOVE"
+  | "STAFF_PAYOUT_REVEAL";
+
+export interface RecentAuthenticationProofVerifier {
+  verify(input: {
+    readonly principalUserId: string;
+    readonly sessionId: string;
+    readonly opaqueProof: string;
+    readonly purpose: AuthenticationProofPurpose;
+    readonly providerId: string;
+    readonly destinationVersionId: string;
+    readonly requestId: string;
+    readonly maximumAgeSeconds: 600 | 300;
+  }): Promise<{
+    readonly actorUserId: string;
+    readonly sessionId: string;
+    readonly authenticatedAt: Date;
+    readonly expiresAt: Date;
+    readonly proofId: string;
+  }>;
+}
+
+export interface StaffCapabilityAuthorizer {
+  authorize(input: {
+    readonly principal: AuthenticationPrincipal;
+    readonly requiredPermission:
+      | "providers.verification.documents.review"
+      | "providers.verification.policies.manage"
+      | "providers.payout-destinations.verify";
+  }): Promise<{ readonly actorUserId: string; readonly active: true }>;
+}
+
+export type R1P06StaffPermissionCode =
+  | "providers.verification.documents.review"
+  | "providers.verification.policies.manage"
+  | "providers.payout-destinations.verify";
+
+/** Transaction-bound Authentication permission read for high-risk R1-P06 commits. */
+export interface TransactionalStaffPermissionAuthorizer {
+  authorize(actorUserId: string, permission: R1P06StaffPermissionCode): Promise<boolean>;
+}
+
+export type TransactionalStaffPermissionAuthorizerFactory = (
+  transaction: unknown,
+) => TransactionalStaffPermissionAuthorizer;
+
+/** Transaction-bound recheck of an already consumed one-use proof. */
+export interface TransactionalAuthenticationProofUseAuthorizer {
+  assertConsumed(input: {
+    readonly proofId: string;
+    readonly actorUserId: string;
+    readonly purpose: AuthenticationProofPurpose;
+    readonly providerId: string;
+    readonly destinationVersionId: string;
+    readonly requestId: string;
+    readonly maximumAgeSeconds: 600 | 300;
+    readonly now: Date;
+  }): Promise<boolean>;
+}
+
+export type TransactionalAuthenticationProofUseAuthorizerFactory = (
+  transaction: unknown,
+) => TransactionalAuthenticationProofUseAuthorizer;
+
 export interface ProtectedOperationAuthorizer {
   authorizeProtectedOperation(
     input: AuthorizeProtectedOperationInput,

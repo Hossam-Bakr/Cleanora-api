@@ -37,6 +37,9 @@ function memoryIntent(
     recipientUserId: "user-1",
     reviewCycle: 1,
     statusHistoryId: "history-1",
+    verificationHistoryId: null,
+    payoutHistoryId: null,
+    payoutNotification: null,
     idempotencyKey: "provider:provider-1:APPROVED:cycle:1",
     attemptCount: 0,
     nextAttemptAt: now,
@@ -66,7 +69,7 @@ describe("Provider email outbox dispatcher policy (T145)", () => {
     stop();
   });
 
-  it("defines exactly six mandatory templates and fixed retry delays", () => {
+  it("defines the closed Provider template catalog and fixed retry delays", () => {
     expect([...PROVIDER_EMAIL_TEMPLATES]).toEqual([
       "APPLICATION_SUBMITTED",
       "CHANGES_REQUESTED",
@@ -74,6 +77,13 @@ describe("Provider email outbox dispatcher policy (T145)", () => {
       "REJECTED",
       "SUSPENDED",
       "REINSTATED",
+      "VERIFICATION_DOCUMENT_SUBMITTED",
+      "VERIFICATION_DOCUMENT_DECIDED",
+      "PAYOUT_DESTINATION_SUBMITTED",
+      "PAYOUT_DESTINATION_DECIDED",
+      "PAYOUT_PRIMARY_CHANGED",
+      "PAYOUT_DESTINATION_REMOVED",
+      "PAYOUT_SUCCESSOR_APPROVED",
     ]);
     expect(PROVIDER_EMAIL_TEMPLATES).not.toContain("INVITATION");
     expect([...PROVIDER_EMAIL_RETRY_DELAYS_MS]).toEqual([
@@ -238,6 +248,47 @@ describe("Provider email outbox dispatcher policy (T145)", () => {
     const result = await dispatcher.dispatchDueBatch();
     expect(result.failed).toBe(1);
     expect(failedCode).toBe("PROVIDER_EMAIL_TEMPLATE_EXCLUDED");
+  });
+
+  it("delivers payout notifications with only type, mask, status, and safe reason", async () => {
+    const sendTemplate = vi.fn(async () => undefined);
+    const stored = memoryIntent({
+      template: "PAYOUT_DESTINATION_DECIDED",
+      payoutHistoryId: "payout-history-1",
+      payoutNotification: {
+        destinationType: "MOBILE_WALLET",
+        mask: "+20••••••5678",
+        status: "APPROVED",
+        reason: "VERIFIED_MATCH",
+      },
+    });
+    const dispatcher = new ProviderEmailDispatcher({
+      outbox: {
+        async insertIntent() { return stored; },
+        async findByIdempotencyKey() { return stored; },
+        async claimBatch() { return [{ ...stored, status: "SENDING" }]; },
+        async markSent(input) { return { ...stored, status: "SENT", sentAt: input.sentAt }; },
+        async markRetryOrFailed() { throw new Error("unexpected failure"); },
+      },
+      identityReader: {
+        async getEligibilityFacts() { return null; },
+        async getAuthoritativeEmail() { return "owner@example.com"; },
+        async findByEmailNormalized() { return null; },
+      },
+      emailDelivery: { sendTemplate },
+      config: { batchSize: 1, leaseSeconds: 30 },
+      now: () => new Date("2026-08-14T12:00:00.000Z"),
+    });
+
+    await expect(dispatcher.dispatchDueBatch()).resolves.toMatchObject({ sent: 1 });
+    expect(sendTemplate).toHaveBeenCalledWith(expect.objectContaining({
+      variables: {
+        destinationType: "MOBILE_WALLET",
+        mask: "+20••••••5678",
+        status: "APPROVED",
+        reason: "VERIFIED_MATCH",
+      },
+    }));
   });
 });
 

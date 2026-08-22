@@ -1,0 +1,80 @@
+import { defineConfig } from "vitest/config";
+
+/**
+ * R1-P06 phase-owned deterministic and application-layer coverage. Database
+ * repositories remain in the disposable-database T131 gate; Express wiring,
+ * generated Prisma code, real external-I/O adapters, and documentation tooling
+ * retain their dedicated contract/integration gates.
+ */
+export default defineConfig({
+  resolve: {
+    conditions: ["development"],
+    dedupe: ["vitest", "@vitest/runner", "@vitest/expect", "@vitest/utils"],
+  },
+  test: {
+    environment: "node",
+    globals: true,
+    fileParallelism: false,
+    maxWorkers: 1,
+    pool: "forks",
+    include: [
+      "tests/unit/providers/r1-p06-*.test.ts",
+      "tests/unit/providers/us{1,2,3,4,5,6,7,8,9,10}-*.test.ts",
+      "tests/unit/media/r1-p06-*.test.ts",
+      "tests/integration/providers/r1-p06-*.test.ts",
+      "tests/integration/admin/r1-p06-*.test.ts",
+      "tests/integration/database/r1-p06-*.test.ts",
+    ],
+    restoreMocks: true,
+    clearMocks: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "json-summary"],
+      reportsDirectory: "coverage/r1-p06",
+      reportOnFailure: true,
+      include: [
+        "src/config/payout-data-keys.ts",
+        "src/modules/media/domain/provider-verification-evidence.policy.ts",
+        "src/modules/media/infrastructure/provider-verification-evidence.adapter.ts",
+        "src/modules/providers/domain/payout-destination.policy.ts",
+        "src/modules/providers/domain/provider-document-continuity.policy.ts",
+        "src/modules/providers/domain/provider-document-metadata.policy.ts",
+        "src/modules/providers/domain/provider-document-policy.policy.ts",
+        "src/modules/providers/domain/provider-payout-primary.policy.ts",
+        "src/modules/providers/domain/provider-verification.catalog.ts",
+        "src/modules/providers/domain/provider-verification.lifecycle.ts",
+        "src/modules/providers/domain/provider-verification.policy.ts",
+        "src/modules/providers/domain/r1-p06.cursor.ts",
+        "src/modules/providers/domain/r1-p06.errors.ts",
+        "src/modules/providers/infrastructure/payout-data-crypto.adapter.ts",
+        "src/modules/providers/provider-denial-audit.service.ts",
+        "src/modules/providers/provider-document.service.ts",
+        "src/modules/providers/provider-document-expiry.sweep.ts",
+        "src/modules/providers/provider-document-policy.service.ts",
+        "src/modules/providers/provider-document-review.service.ts",
+        "src/modules/providers/provider-document-review-query.service.ts",
+        "src/modules/providers/provider-payout-conflict.service.ts",
+        "src/modules/providers/provider-payout-destination.service.ts",
+        "src/modules/providers/provider-payout-history.service.ts",
+        "src/modules/providers/provider-payout-key-rotation.service.ts",
+        "src/modules/providers/provider-payout-primary.service.ts",
+        "src/modules/providers/provider-payout-reveal.service.ts",
+        "src/modules/providers/provider-payout-review-query.service.ts",
+        "src/modules/providers/provider-payout-verification.service.ts",
+        "src/modules/providers/provider-policy-activation.sweep.ts",
+        "src/modules/providers/provider-payout.dto.ts",
+        "src/modules/providers/provider-payout.schema.ts",
+        "src/modules/providers/provider-verification.dto.ts",
+        "src/modules/providers/provider-verification.schema.ts",
+        "src/modules/providers/provider-verification-history.service.ts",
+        "src/modules/providers/provider-verification-query.service.ts",
+      ],
+      thresholds: {
+        branches: 75.01,
+        functions: 75.01,
+        lines: 75.01,
+        statements: 75.01,
+      },
+    },
+  },
+});

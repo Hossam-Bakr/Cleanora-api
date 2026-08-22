@@ -35,6 +35,24 @@ export interface CloudinaryMediaConfig {
 
 export type CloudinarySdk = typeof CloudinaryV2;
 
+export interface StoreProviderVerificationEvidenceInput {
+  readonly bytes: Buffer;
+  readonly storageKey: string;
+  readonly canonicalContentType: "application/pdf" | "image/jpeg" | "image/png";
+  readonly originalExtension: ".pdf" | ".jpg" | ".jpeg" | ".png";
+}
+
+export interface StoredProviderVerificationEvidenceReference {
+  readonly provider: "CLOUDINARY";
+  readonly storageKey: string;
+  readonly contentType: "application/pdf" | "image/jpeg" | "image/png";
+  readonly byteSize: number;
+  readonly width: number;
+  readonly height: number;
+  readonly uploadResourceType: "image" | "raw";
+  readonly uploadType: "authenticated";
+}
+
 function redactSecrets(message: string, secret: string): string {
   if (secret.length === 0) {
     return message;
@@ -77,6 +95,80 @@ export class CloudinaryMediaAdapter implements MediaStoragePort {
       input.purpose,
     );
     return this.toStoredImageReference(response, input.storageKey);
+  }
+
+  /**
+   * Store already-inspected R1-P06 evidence as authenticated private media.
+   * JPEG deliberately accepts both `.jpg` and `.jpeg`; extension never changes
+   * the canonical `image/jpeg` receipt.
+   */
+  public async storeProviderVerificationEvidence(
+    input: StoreProviderVerificationEvidenceInput,
+  ): Promise<StoredProviderVerificationEvidenceReference> {
+    const allowed =
+      (input.canonicalContentType === "image/jpeg" && [".jpg", ".jpeg"].includes(input.originalExtension)) ||
+      (input.canonicalContentType === "image/png" && input.originalExtension === ".png") ||
+      (input.canonicalContentType === "application/pdf" && input.originalExtension === ".pdf");
+    if (!allowed) throw new MediaError("MEDIA_IMAGE_INVALID", "Verification evidence extension does not match validated content");
+    const resourceType = input.canonicalContentType === "application/pdf" ? "raw" : "image";
+    const format = input.canonicalContentType === "image/jpeg" ? "jpg" : input.canonicalContentType === "image/png" ? "png" : "pdf";
+    let response: UploadApiResponse;
+    try {
+      response = await new Promise<UploadApiResponse>((resolve, reject) => {
+        const stream = this.sdk.uploader.upload_stream({
+          resource_type: resourceType,
+          type: "authenticated",
+          public_id: input.storageKey,
+          format,
+          overwrite: false,
+          unique_filename: false,
+          use_filename: false,
+        }, (error, result) => {
+          if (error !== undefined || result === undefined) {
+            reject(new Error(error?.message ?? "Cloudinary verification evidence upload returned no result"));
+            return;
+          }
+          resolve(result);
+        });
+        Readable.from(input.bytes).pipe(stream);
+      });
+    } catch (error) {
+      const message = error instanceof Error
+        ? redactSecrets(error.message, this.config.apiSecret)
+        : "Cloudinary verification evidence upload failed";
+      throw new MediaError("MEDIA_PROVIDER_FAILURE", message);
+    }
+    if (
+      response.type !== "authenticated" ||
+      response.resource_type !== resourceType ||
+      response.public_id !== input.storageKey ||
+      typeof response.bytes !== "number" || response.bytes <= 0
+    ) throw new MediaError("MEDIA_PROVIDER_FAILURE", "Cloudinary verification evidence response failed structural validation");
+    return {
+      provider: "CLOUDINARY",
+      storageKey: input.storageKey,
+      contentType: input.canonicalContentType,
+      byteSize: response.bytes,
+      width: typeof response.width === "number" ? response.width : 0,
+      height: typeof response.height === "number" ? response.height : 0,
+      uploadResourceType: resourceType === "image" ? "image" : "raw",
+      uploadType: "authenticated",
+    };
+  }
+
+  public createProviderVerificationEvidenceDelivery(input: {
+    readonly storageKey: string;
+    readonly contentType: "application/pdf" | "image/jpeg" | "image/png";
+    readonly expiresAt: Date;
+  }): { readonly url: string; readonly expiresAt: Date } {
+    const url = this.sdk.url(input.storageKey, {
+      resource_type: input.contentType === "application/pdf" ? "raw" : "image",
+      type: "authenticated",
+      sign_url: true,
+      secure: true,
+      expires_at: Math.floor(input.expiresAt.getTime() / 1000),
+    });
+    return { url, expiresAt: input.expiresAt };
   }
 
   private async uploadAuthenticatedImage(

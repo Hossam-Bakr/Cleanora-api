@@ -322,6 +322,26 @@ export function createAuthenticationController(
       next(error);
     }
   };
+  /** Issue one opaque, request/purpose-bound, one-use R1-P06 proof after password re-authentication. */
+  const issueSensitiveActionProof: RequestHandler = async (request, response, next) => {
+    try {
+      const result = await service.issueSensitiveActionProof(
+        principal(response),
+        request.body.currentPassword,
+        {
+          purpose: request.body.purpose,
+          providerId: request.body.providerId,
+          destinationVersionId: request.body.destinationVersionId,
+          requestId: request.body.requestId,
+        },
+      );
+      response.setHeader("Cache-Control", "no-store, private");
+      response.setHeader("Pragma", "no-cache");
+      sendSuccess(request, response, 201, result);
+    } catch (error) {
+      next(error);
+    }
+  };
   /** @desc Start Google sign-in 
    * @route GET /api/v1/auth/google
    *  @access Public 
@@ -458,6 +478,7 @@ export function createAuthenticationController(
     forgot,
     reset,
     change,
+    issueSensitiveActionProof,
     googleStart,
     googleBrowserStart,
     googleCallback,

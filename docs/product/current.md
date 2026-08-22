@@ -3,15 +3,83 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `R1-P05 — Provider Onboarding, Profile & Lifecycle` |
-| Status | `Complete — T001–T159 closed; independent review PASS; next phase not activated` |
-| Backend Branch | `No active phase branch` |
-| Frontend Branch | `Not created — backend UX contract only` |
-| Backend Owner | `Implementation and independent review complete` |
+| Current Phase | `None — R1-P06 is Complete; R1-P07 is not activated` |
+| Status | `No active phase — awaiting separate human authorization for any next-phase preparation or activation` |
+| Backend Branch | `codex/r1-p06-provider-verification-payout-destinations` — created from current `origin/main` for the explicitly authorized R1-P06 commit-and-push handoff; merge and deployment remain unauthorized |
+| Frontend Branch | `Not created — R1-P06 supplied a backend UX contract only` |
+| Backend Owner | `Unassigned — R1-P06 implementation and closure are complete` |
 | Frontend Owner | `Not assigned — no frontend application exists` |
-| Started At | `2026-08-10` (R1-P05) |
-| Completed At | `2026-08-11` |
-| Last Updated | `2026-08-11` (T001–T159 closed; next phase not activated; no deployment/production migration) |
+| Started At | `Not started for a next phase` |
+| Completed At | `2026-08-14` (R1-P06) |
+| Last Updated | `2026-08-22` (R1-P06 remains Complete; the owner explicitly authorized its guarded commit-and-push handoff, and the dedicated backend feature branch was created from current `origin/main`; merge, deployment, production migration, payout execution, destructive cleanup, and R1-P07 action remain unauthorized) |
+
+## Most recently completed phase — R1-P06
+
+R1-P06 (`Provider Verification & External Payout Destinations`) is **Complete**
+as of `2026-08-14`, by explicit human-owner approval:
+
+```text
+I approve R1-P06 — Provider Verification & External Payout Destinations as Complete.
+```
+
+Clarification, planning, checklists, continuous tasks T001–T137, analysis and
+remediation, implementation, focused tests, phase-scoped coverage, API/runtime
+artifacts, final review, and every evidence gate passed before approval. The
+explicitly approved disposable local PostgreSQL target proved chronological
+clean installation and populated R1-P05 upgrade compatibility in separate
+isolated schemas, including exact tables and migration history, preserved
+Provider relations, double-seed idempotency, live constraints, five-destination
+enforcement, and six-request reveal serialization. The temporary proof server
+is stopped and the installed PostgreSQL service was not modified.
+
+No phase is active after this closure. The completion decision does not
+authorize Git actions, deployment, production configuration or migration, real
+external wallet or bank operations, destructive cleanup, next-phase
+preparation, or R1-P07 activation.
+
+The phase verifies Registered Company provider documents and collects approved
+external Mobile Wallet or Bank Account payout destinations without creating an
+internal Cleanora wallet, stored balance, settlement schedule, or payout
+execution behavior. `INDIVIDUAL_TEAM` requires no verification documents.
+The Mobile Wallet decision now requires an Owner-entered country-scoped E.164
+destination, manual Staff holder-name verification outside Cleanora, masked
+ordinary views, and an active approved version for readiness; it expressly
+requires no uploaded ownership-evidence file and no automated transfer.
+The Bank Account decision now requires an Owner-entered IBAN-first destination
+using the authoritative country, configured payout currency, and active country-
+scoped bank, followed by manual Staff beneficiary-name verification outside
+Cleanora. It likewise requires no ownership-evidence upload or automated
+transfer, and ordinary views expose only a masked IBAN.
+All recoverable payout identifiers and holder legal names use the approved
+AES-256-GCM-at-rest contract and a separate HMAC-SHA-256 lookup key ring.
+Provider identifiers are write-only and exactly masked after write; full values
+are available only to a capable active Staff Admin for one exact pending-version
+verification purpose after a five-minute step-up, reason, audit-before-return,
+and per-actor rate-limit check. Release 1 key rings are externally supplied and
+fail closed; rotation is resumable and key retirement requires verified zero
+references plus explicit human approval. Private document files remain Media-
+owned.
+
+Canonical artifacts for this completed phase:
+
+- `specs/R1-P06-provider-verification-external-payout-destinations/activation.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/spec.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/plan.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/research.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/data-model.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/contracts/`
+- `specs/R1-P06-provider-verification-external-payout-destinations/security-design.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/ux-design.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/migration-plan.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/test-strategy.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/operations-runbook.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/checklists/`
+- `specs/R1-P06-provider-verification-external-payout-destinations/tasks.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/implementation-prompt.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/implementation-summary.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/implementation-review-report.md`
+- `specs/R1-P06-provider-verification-external-payout-destinations/completion-report.md`
+- DEC-037
 
 ## Completed phase — R1-P05
 
@@ -19,12 +87,14 @@ R1-P05 (`Provider Onboarding, Profile & Lifecycle`) is **Complete**.
 R1-P03, its roadmap dependency, is Complete, and R1-P04A was completed before
 this activation.
 
-**Implementation status:** Spec Kit planning (`clarify` / `plan` / `tasks` /
+**Historical completion status:** Spec Kit planning (`clarify` / `plan` / `tasks` /
 `analyze`) completed earlier. Implementation and closure tasks T001–T159 are
 checked with recorded evidence in the feature directory. Independent review
-returned **PASS**, and human completion authorization is recorded. The next
-phase is **not** activated. No commit/push/merge/deploy or production migration
-was authorized by this completion run.
+returned **PASS**, and human completion authorization is recorded. R1-P06 was
+initially activated for specification preparation on `2026-08-13`; its
+documentation-only workflow was subsequently expanded through clarification,
+planning, tasks, analysis, and handoff. No deployment or production migration
+was authorized by the R1-P05 completion run.
 
 Canonical artifacts:
 

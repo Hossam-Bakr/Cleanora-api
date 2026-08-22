@@ -8,7 +8,9 @@ import {
   assertDatabaseEmpty,
   assertExactPostDeployTables,
   assertForwardMigrationSql,
-  assertSafeCleanTestDatabaseUrl
+  assertR1P06DisposableDatabaseUrl,
+  assertSafeCleanTestDatabaseUrl,
+  createMigrationProofPrismaClient,
 } from "../../scripts/validate-clean-migration.js";
 
 const migrationDirectory = join(
@@ -62,6 +64,38 @@ describe("R1-P01 migration boundary", () => {
     ).not.toThrow();
   });
 
+  it("requires the current phase proof target to name R1-P06 explicitly", () => {
+    expect(() =>
+      assertR1P06DisposableDatabaseUrl(
+        "postgresql://cleanora:secret@127.0.0.1/cleanora_r1_p06_local_test",
+        "test",
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertR1P06DisposableDatabaseUrl(
+        "postgresql://cleanora:secret@db.example.com/cleanora_r1-p06_proof",
+        "test",
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertR1P06DisposableDatabaseUrl(
+        "postgresql://cleanora:secret@127.0.0.1/cleanora_r1_p04_clean_proof",
+        "test",
+      ),
+    ).toThrow(/explicitly named R1-P06/u);
+  });
+
+  it("constructs a schema-aware Prisma proof client for isolated schemas", async () => {
+    const schemaAware = createMigrationProofPrismaClient(
+      "postgresql://cleanora:secret@127.0.0.1/cleanora_r1_p06_local_test?schema=r1_p06_isolated",
+    );
+    const baseSchema = createMigrationProofPrismaClient(
+      "postgresql://cleanora:secret@127.0.0.1/cleanora_r1_p06_local_test",
+    );
+    await expect(schemaAware.$disconnect()).resolves.toBeUndefined();
+    await expect(baseSchema.$disconnect()).resolves.toBeUndefined();
+  });
+
   it("requires the exact R1-P01 post-deploy table inventory", () => {
     const expected = [
       "_prisma_migrations",
@@ -99,6 +133,29 @@ describe("R1-P01 migration boundary", () => {
       "provider_admin_invitations",
       "provider_gallery_items",
       "provider_email_outbox",
+      "sensitive_action_proof_uses",
+      "verification_document_types",
+      "verification_document_policy_versions",
+      "verification_document_policy_items",
+      "provider_policy_activation_states",
+      "provider_document_chains",
+      "provider_document_versions",
+      "provider_document_evidence",
+      "provider_document_reviews",
+      "provider_verification_history",
+      "payout_destination_types",
+      "payout_operators",
+      "payout_banks",
+      "payout_country_policies",
+      "provider_payout_destination_chains",
+      "provider_payout_identity_claims",
+      "provider_payout_lookup_fingerprints",
+      "provider_payout_destination_versions",
+      "provider_payout_decisions",
+      "provider_primary_payout_destinations",
+      "provider_payout_conflicts",
+      "provider_payout_history",
+      "provider_payout_key_rotation_runs",
     );
     expect(() => assertExactPostDeployTables(expected)).not.toThrow();
     expect(() =>
@@ -110,8 +167,7 @@ describe("R1-P01 migration boundary", () => {
   });
 
   it("requires one successfully applied phase-owned migration history row", () => {
-    expect(() =>
-      assertAppliedMigration([
+    const successfulRows = [
         {
           migration_name: "r1_p01_foundation_country_configuration",
           finished_at: new Date(),
@@ -172,9 +228,22 @@ describe("R1-P01 migration boundary", () => {
           migration_name: "r1_p05_provider_onboarding_profile_lifecycle",
           finished_at: new Date(),
           rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p06_provider_verification_external_payout_destinations",
+          finished_at: new Date(),
+          rolled_back_at: null
         }
-      ])
-    ).not.toThrow();
+      ];
+    expect(() => assertAppliedMigration(successfulRows)).not.toThrow();
+    expect(() => assertAppliedMigration([
+      ...successfulRows,
+      { ...successfulRows[0]!, finished_at: null },
+    ])).toThrow(/exactly one successful/u);
+    expect(() => assertAppliedMigration([
+      ...successfulRows,
+      { ...successfulRows[0]!, rolled_back_at: new Date() },
+    ])).toThrow(/exactly one successful/u);
     expect(() => assertAppliedMigration([])).toThrow(/migration history/i);
   });
 });

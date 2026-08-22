@@ -55,6 +55,15 @@ export interface ProviderSettingsProjection {
     readonly canManage: boolean;
     readonly href: string;
   };
+  readonly verification: {
+    readonly status: "NOT_REQUIRED" | "NOT_STARTED" | "BLOCKED" | "SATISFIED";
+    readonly satisfied: boolean;
+    readonly href: string;
+  };
+  readonly payoutDestinations: {
+    readonly ready: boolean;
+    readonly href: string;
+  };
   readonly statusHistory: {
     readonly applicationStatus: ProviderApplicationStatus;
     readonly operationalStatus: ProviderOperationalStatus;
@@ -150,6 +159,9 @@ export function buildProviderSettingsProjection(input: {
   readonly canManageMembers: boolean;
   readonly applicationStatus: ProviderApplicationStatus;
   readonly operationalStatus: ProviderOperationalStatus;
+  readonly documentsVerifiedStatus?: "NOT_REQUIRED" | "NOT_STARTED" | "BLOCKED" | "SATISFIED";
+  readonly documentsVerifiedSatisfied?: boolean;
+  readonly payoutDestinationReady?: boolean;
 }): ProviderSettingsProjection {
   const base = `/providers/${input.providerId}`;
   return {
@@ -175,6 +187,15 @@ export function buildProviderSettingsProjection(input: {
       pendingInvitationCount: input.pendingInvitationCount,
       canManage: input.canManageMembers,
       href: `${base}/members`,
+    },
+    verification: {
+      status: input.documentsVerifiedStatus ?? "NOT_STARTED",
+      satisfied: input.documentsVerifiedSatisfied ?? false,
+      href: `${base}/verification`,
+    },
+    payoutDestinations: {
+      ready: input.payoutDestinationReady ?? false,
+      href: `${base}/payout-destinations`,
     },
     statusHistory: {
       applicationStatus: input.applicationStatus,

@@ -948,17 +948,20 @@ remain separately controlled actions.
 ## DEC-036 — Application-based provider ownership and kind-specific readiness
 
 **Date:** 2026-08-10
-**Status:** Approved by human owner for R1-P05; implementation and internal validation recorded 2026-08-11 — independent review (T158) and human Complete approval (T159) still pending; phase not formally Complete; next phase not activated; no deployment or production migration
+**Status:** Approved and Complete — implementation, independent review PASS
+(T158), and human completion authorization (T159) recorded 2026-08-11; R1-P06
+subsequently activated for specification preparation only on 2026-08-13; no
+deployment or production migration
 
 This decision activates R1-P05 for specification preparation and supersedes
 the direct Provider Owner signup and self-enrollment direction in DEC-034 and
 DEC-035. It does not alter R1-P04A's historical delivered behavior; the runtime
 change belongs to the separately authorized R1-P05 implementation workflow.
 
-**Implementation note (2026-08-11):** R1-P05 implementation tasks through T157
-are checked with evidence in
+**Completion note (2026-08-11):** R1-P05 tasks T001–T159 are checked with
+evidence in
 `specs/R1-P05-provider-onboarding-profile-lifecycle/completion-report.md`.
-T158 independent review and T159 human Complete approval remain open.
+Independent review returned PASS and the human owner approved completion.
 
 ### Provider identity and kinds
 
@@ -1123,3 +1126,406 @@ T158 independent review and T159 human Complete approval remain open.
   before implementation. No product code, Prisma/schema/migration execution,
   implementation tests, Git actions, deployment, or production operations are
   authorized by that planning continuation.
+
+---
+
+## DEC-037 — Provider verification and external payout-destination baseline
+
+**Date:** 2026-08-13
+**Status:** Approved baseline; R1-P06 clarification and the authorized
+documentation workflow completed analyze-clean on 2026-08-13 with an
+implementation handoff prepared. Implementation, Prisma changes, migrations,
+tests, database operations, Git actions, deployment, and production operations
+remain separately controlled
+
+This decision activates R1-P06 for specification preparation and resolves the
+approved product baseline for Provider verification and external payout
+destinations. R1-P06 collects and verifies external settlement destinations; it
+does not move money, execute payouts, or create a Cleanora-held balance.
+
+### Provider identity and applicability
+
+- There is no `PROVIDER_OWNER` account category or global role in the approved
+  product model. Provider-domain `OWNER` and `ADMIN` membership represent
+  Provider ownership and administration. This supersedes DEC-036 only where
+  DEC-036 described granting or depending on `PROVIDER_OWNER`; R1-P05's
+  historical implementation evidence remains unchanged.
+- An ordinary Individual account may apply as `INDIVIDUAL_TEAM`. This kind does
+  not require registered-company documents.
+- A legal Company signs up as a Company and separately applies as
+  `REGISTERED_COMPANY`. Company account identity and Provider-domain identity
+  remain separate.
+- R1-P06 must not introduce a separate Service Provider account type or make a
+  legal Company sign up as an Individual.
+
+### Document-verification baseline
+
+- `INDIVIDUAL_TEAM` has no provider-document requirement. Its
+  `documentsVerified` gate is `NOT_REQUIRED`, is treated as satisfied, and does
+  not reduce `profileCompletion`.
+- The initial `REGISTERED_COMPANY` checklist contains exactly two required,
+  configurable document types:
+  - Commercial Registration — stable code `COMMERCIAL_REGISTRATION`.
+  - Tax Registration, Tax Card, or Tax Certificate — stable code
+    `TAX_REGISTRATION`.
+- Document types remain configurable rather than hard-coded entirely into
+  business behavior. The configuration authority, country-and-kind policy
+  versioning, effects on existing Providers, metadata fields, upload policy,
+  expiry rules, and review transitions are resolved below and must be applied
+  exactly as recorded.
+- R1-P06 owns Provider-document associations, review workflow, verification
+  state, verification history, and verification-badge truth. Media continues to
+  own file/storage lifecycle and must be used through an explicit public
+  contract.
+
+### External payout-destination baseline
+
+- R1-P06 supports exactly two external destination types:
+  - Mobile Wallet — stable code `MOBILE_WALLET`.
+  - Bank Account — stable code `BANK_ACCOUNT`.
+- Card payout destinations and InstaPay integration are excluded from R1-P06.
+- Cleanora stored-value wallets, reusable balances, wallet top-ups, internal
+  account balances, and ledger balances are prohibited. A Mobile Wallet is an
+  external settlement destination, never a Cleanora-held balance.
+- The Mobile Wallet and IBAN-first Bank Account field schemas, manual Staff
+  verification without uploaded ownership evidence, duplicate identities,
+  masking boundaries, and readiness prerequisites are resolved in the
+  clarification decisions below. The destination lifecycle, primary policy,
+  re-authentication, notifications, and complete sensitive-data contract are
+  also resolved below; no material R1-P06 clarification decision remains open.
+- OQ-011 is partially resolved: supported R1-P06 destination types are fixed,
+  while the exact payout and settlement schedule remains open for the later
+  payout-execution phase.
+
+### Clarification decisions — 2026-08-13
+
+- An active Provider `OWNER` or `ADMIN` with active exact-Provider membership
+  may create document drafts, enter metadata, upload, submit, replace, and view
+  that Provider's documents and history.
+- Only an active `STAFF_ADMIN` may approve, reject, request replacement,
+  invalidate, or otherwise decide Provider-document verification. Provider
+  `OWNER` and `ADMIN` members cannot review their own evidence.
+- Every privileged Staff document decision requires a meaningful non-empty
+  reason and immutable evidence of the actor, timestamp, target document
+  version, outcome, and safe audit/history meaning.
+- Only an active exact-Provider `OWNER` may create, update, replace, remove, or
+  select the primary payout destination. An active exact-Provider `ADMIN` may
+  view masked destination status but cannot mutate sensitive destination details
+  or primary truth.
+- Only an active `STAFF_ADMIN` may verify, reject, or invalidate a payout
+  destination. Every such decision requires a meaningful non-empty reason and
+  immutable evidence of actor, timestamp, target destination version, outcome,
+  and safe audit/history meaning.
+- Provider-specific R1-P06 document and payout-destination records cannot be
+  created, submitted, reviewed, or mutated while the Provider application is
+  `DRAFT`, `PENDING_REVIEW`, `CHANGES_REQUESTED`, or terminal `REJECTED`.
+- After application `APPROVED`, authorized document and payout-destination work
+  may progress independently; neither R1-P06 readiness gate is a prerequisite
+  for beginning work on the other.
+- If the approved Provider later becomes operationally `SUSPENDED`, authorized
+  remediation and Staff review remain available. R1-P06 readiness still cannot
+  grant operational or public eligibility.
+- The launch Egypt (`EG`) policy for `REGISTERED_COMPANY` contains exactly
+  `COMMERCIAL_REGISTRATION` and `TAX_REGISTRATION`, both active and required.
+  Country validity remains Configuration-owned and business behavior must not
+  hard-code Egypt.
+- Only an active `STAFF_ADMIN` may create or edit a draft document-policy
+  version and publish it with a meaningful non-empty reason. A published version
+  is immutable, effective-dated, and preserves its actor, timestamp, exact
+  version, and safe before/after audit meaning.
+- Once a published policy version becomes effective, every approved Provider in
+  its country-and-kind scope is re-evaluated against it. Eligible evidence for
+  an unchanged stable type may continue to satisfy it; a newly required type may
+  make readiness incomplete, and a retired requirement stops blocking current
+  readiness. Historical policy versions, evidence, decisions, and prior
+  readiness meaning remain preserved.
+- Both launch document types require `countryCode`, `documentNumber`,
+  `legalName`, `issuerName`, and `issueDate`; `expiresAt` is optional. The
+  country must equal the Provider's authoritative active country, issue date
+  cannot be in the future, and an entered expiry must be later than issue date.
+  Omitted expiry means no automatic expiration.
+- Evidence must represent the complete document. Ordered additional private
+  JPEG/PNG pages are allowed within the approved 10-page, 5-MiB-per-page, and
+  20-MiB-aggregate image limits. Every submission snapshots the policy-version
+  metadata rules under which it was validated so later changes do not rewrite
+  historical meaning.
+- One document version uses exactly one format: either one validated PDF of at
+  most 15 MiB and 10 pages, or 1–10 ordered validated JPEG/PNG images, each at
+  most 5 MiB and at most 20 MiB in aggregate. `image/jpeg` explicitly includes
+  `.jpg` and `.jpeg`; `image/png` includes `.png`. PDF and image evidence cannot
+  be mixed.
+- Media verifies signatures and decoded content rather than trusting filenames
+  or declared MIME. Malformed, encrypted/password-protected, active-content,
+  executable, mismatched, unsafe, or over-limit content is rejected; malware
+  scanning, image-orientation normalization, and unsafe metadata removal occur
+  before `READY`.
+- Drafts may reference `PENDING_UPLOAD` or `PROCESSING` evidence, but submission,
+  review, and verification credit require every ordered item to be `READY`.
+  Failed, missing, deleted, or reordered evidence creates no partial Provider
+  truth. The R1-P06 Media public contract and its Cloudinary adapter must later
+  support validated `image/jpeg` for both `.jpg` and `.jpeg` as documentation-
+  planned implementation work; no adapter code is changed in this run.
+- Document versions use only `DRAFT`, `SUBMITTED`, `APPROVED`, `REJECTED`,
+  `REPLACEMENT_REQUESTED`, `EXPIRED`, `INVALIDATED`, and `SUPERSEDED`. Submitted
+  metadata and evidence are immutable; every correction, resubmission, renewal,
+  or replacement creates a linked successor, and ordinary hard deletion is
+  prohibited.
+- A voluntary successor leaves a still-valid, unchallenged approved predecessor
+  effective during review. Successor approval atomically makes it effective and
+  supersedes that predecessor. Rejection of a voluntary successor leaves the
+  valid predecessor effective.
+- Staff replacement request or invalidation and authoritative expiry immediately
+  remove the predecessor's verification credit. A challenged, expired, or
+  invalidated version stays non-effective while any successor is reviewed.
+- Every lifecycle command targets the exact expected version. Matching retries
+  are idempotent, stale or competing commands conflict safely, and immutable
+  review/domain history preserves every transition and reason.
+- Protected badge truth uses `NOT_ELIGIBLE`, `NOT_EARNED`, and `EARNED`.
+  `INDIVIDUAL_TEAM` is always `NOT_ELIGIBLE` even though its document gate is
+  `NOT_REQUIRED` and satisfied. Only an approved `REGISTERED_COMPANY` is badge-
+  eligible.
+- An eligible Company's badge is derived as `EARNED` exactly while every active
+  required document type under the current policy has effective approved
+  evidence. Staff replacement request, invalidation, expiry, or a new unmet
+  requirement removes it immediately; a voluntary successor preserves it only
+  while its valid unchallenged predecessor remains effective.
+- Operational `SUSPENDED` status does not rewrite document-verification or badge
+  truth, but operational and public eligibility remain denied. R1-P12 owns any
+  later anonymous badge rendering; R1-P06 exposes protected truth only.
+- Only an active exact-Provider `OWNER` may create or update a Mobile Wallet
+  payout-destination draft. It requires the Provider's authoritative active
+  `countryCode`, the wallet number normalized to E.164, an `operatorCode`
+  selected from the active country-scoped payout-operator registry, the wallet
+  holder's full legal name, and relationship `PROVIDER_LEGAL_ENTITY` or
+  `PROVIDER_OWNER`.
+- The operator is neither inferred from the phone prefix nor entered as free
+  text. The wallet number need not match the Owner's Authentication phone and
+  `phoneVerified` is not required because SMS phone verification remains
+  deferred.
+- R1-P06 does not request, accept, or require a Mobile Wallet ownership/control-
+  evidence file, screenshot, statement, contract, or other proof-of-ownership
+  document.
+- Submitting a Mobile Wallet makes the exact version `PENDING_VERIFICATION` and
+  does not satisfy `payoutDestinationReady`. Only an active `STAFF_ADMIN` may
+  approve, reject, or request correction or replacement.
+- Before approval, the Staff Admin manually starts—but does not complete—an
+  external wallet transfer attempt or beneficiary lookup and compares the
+  displayed registered holder name with the Provider's authoritative legal-
+  entity name for `PROVIDER_LEGAL_ENTITY`, or the exact active Owner's
+  authoritative legal name for `PROVIDER_OWNER`. A mismatch or unverifiable
+  name requires rejection or correction/replacement, not approval.
+- The manual verification procedure does not authorize payout execution,
+  automated verification money, a wallet-transfer API integration, a completed
+  transfer, or an actual settlement record in R1-P06.
+- Every Mobile Wallet Staff decision requires a meaningful non-empty reason or
+  verification note, Staff actor ID, timestamp, exact payout-destination
+  version, verification method such as `MANUAL_WALLET_TRANSFER_CHECK`, immutable
+  lifecycle and decision history, and safe audit evidence. No uploaded
+  ownership-evidence file is part of that decision.
+- Every Mobile Wallet command uses an exact expected version. Matching retries
+  are idempotent, while stale or competing commands conflict without partial
+  destination, decision, history, audit, or readiness truth.
+- Mobile Wallet uniqueness uses authoritative `countryCode` plus normalized
+  E.164 number independently of `operatorCode`. A duplicate is prohibited
+  within one Provider, and a concurrent cross-Provider claim is blocked pending
+  active-`STAFF_ADMIN` resolution.
+- After submission, ordinary Provider-facing responses, lists, and history show
+  only a masked wallet number. The full number may be accessed only in the
+  narrowly authorized Staff verification workflow and never appears in logs,
+  audit payloads, generic history, ordinary responses, errors, or public
+  responses.
+- Only a current active `APPROVED` destination can satisfy
+  `payoutDestinationReady`. Draft, submitted, `PENDING_VERIFICATION`, rejected,
+  invalidated, removed, and replaced-but-not-approved destinations do not
+  satisfy the gate.
+- Only an active exact-Provider `OWNER` may create or update an IBAN-first Bank
+  Account payout-destination draft. It requires the Provider's authoritative
+  active `countryCode`, configured payout `currencyCode` (`EGP` for the launch
+  `EG` policy), active country-scoped `bankCode`, normalized IBAN, holder full
+  legal name, and relationship `PROVIDER_LEGAL_ENTITY` or `PROVIDER_OWNER`.
+- Bank name is resolved from `bankCode`. The launch IBAN-first contract does not
+  request a separate domestic account number, branch, or caller-entered
+  SWIFT/BIC when the IBAN and bank registry provide the required identity.
+- R1-P06 does not request, accept, or require a Bank Account bank statement,
+  account certificate, cheque image, contract, screenshot, or other uploaded
+  ownership/control-evidence document.
+- Submitting a Bank Account makes the exact version `PENDING_VERIFICATION` and
+  does not satisfy `payoutDestinationReady`. Only an active `STAFF_ADMIN` may
+  approve, reject, or request correction or replacement.
+- Before approval, the Staff Admin manually performs a beneficiary lookup or
+  starts—but does not complete—a bank transfer and compares the displayed
+  beneficiary name with the Provider's authoritative legal-entity name for
+  `PROVIDER_LEGAL_ENTITY`, or the exact active Owner's authoritative legal name
+  for `PROVIDER_OWNER`. A mismatch or unverifiable name requires rejection or
+  correction/replacement, not approval.
+- The manual Bank Account verification procedure does not authorize automated
+  beneficiary lookup, verification-money movement, bank-transfer API
+  integration, a completed transfer, or an actual settlement record in R1-P06.
+- Every Bank Account Staff decision requires a meaningful non-empty reason or
+  verification note, Staff actor ID, timestamp, exact payout-destination
+  version, verification method such as `MANUAL_BANK_BENEFICIARY_CHECK`,
+  immutable lifecycle and decision history, and safe audit evidence without an
+  uploaded ownership-evidence file.
+- Every Bank Account command uses an exact expected version. Matching retries
+  are idempotent, while stale or competing commands conflict without partial
+  destination, decision, history, audit, or readiness truth.
+- Normalized IBAN is the Bank Account duplicate identity. A duplicate is
+  prohibited within one Provider, and a concurrent cross-Provider claim is
+  blocked pending active-`STAFF_ADMIN` resolution.
+- After submission, ordinary Provider-facing responses, lists, and history show
+  only a masked IBAN. The full IBAN may be accessed only in the narrowly
+  authorized Staff verification workflow and never appears in logs, audit
+  payloads, generic history, ordinary responses, errors, or public responses.
+- Only a current active `APPROVED` Bank Account can satisfy
+  `payoutDestinationReady`; all other Bank Account states cannot.
+- One Provider may have at most five active payout-destination chains across
+  both approved destination types in any combination. Retained terminal history
+  does not count against this limit, and each chain may have only one open
+  successor.
+- Destination versions use exactly `DRAFT`, `PENDING_VERIFICATION`,
+  `CHANGES_REQUESTED`, `APPROVED`, `REJECTED`, `REPLACEMENT_REQUESTED`,
+  `INVALIDATED`, `SUPERSEDED`, and `REMOVED`. The approved actor-by-state
+  transition matrix in the R1-P06 specification is closed; rejected,
+  invalidated, superseded, and removed versions are terminal.
+- Submitted destination details are immutable. Corrections and replacements
+  create linked successor drafts, and ordinary hard deletion is prohibited.
+- A voluntary successor preserves its approved unchallenged predecessor and
+  primary status through review. Successor approval atomically supersedes it and
+  inherits primary; successor rejection or changes requested leaves it
+  effective.
+- A Staff replacement request or invalidation removes the challenged approved
+  destination's readiness credit and primary status immediately. No unrelated
+  destination is auto-promoted; approved linked successor restoration may
+  inherit the chain's former primary status.
+- At most one global primary exists across both destination types, and
+  `payoutDestinationReady` requires it to be current, active, and `APPROVED`.
+  The first approval initializes primary; later unrelated approvals do not
+  replace it automatically, and only the active exact-Provider `OWNER` selects
+  another approved primary.
+- Removing a primary while another approved destination exists requires atomic
+  replacement-primary selection. The Owner may remove the last approved primary
+  only with explicit acknowledgement and valid recent re-authentication, which
+  clears primary and readiness. Staff invalidation is never blocked by missing
+  alternatives and never triggers automatic failover.
+- Owner initial submission, successor submission, primary change, withdrawal,
+  and removal require an Authentication-owned re-authentication proof no older
+  than 10 minutes. Masked reads and draft editing require only the active
+  authorized session.
+- Every transition uses exact expected versions, idempotent matching retries,
+  safe conflicts, immutable domain history, and privileged audit where
+  applicable.
+- Submission creates one Staff review-queue effect and one durable idempotent
+  localized-template email intent to the exact active Owner. Every Staff
+  decision, primary change, removal, and successor approval/supersession creates
+  one corresponding Owner email intent.
+- Destination notifications contain only type, masked identifier, safe status,
+  and safe reason. Delivery is asynchronous with durable retry; failure never
+  rolls back, duplicates, or rewrites accepted business truth.
+- Every recoverable full payout identifier and destination-holder legal name is
+  encrypted before database persistence with AES-256-GCM, a unique random nonce
+  per protected field, and authenticated context binding Provider ID,
+  destination ID, exact version, type, field name, and encryption-key version.
+  Persistence retains the ciphertext envelope, non-secret key ID, approved safe
+  display suffix, and separately allowed routing/status facts, never plaintext
+  protected values.
+- Equality and deduplication use a separate versioned HMAC-SHA-256 lookup key
+  ring over the domain-separated canonical identity
+  `MOBILE_WALLET | countryCode | normalized E.164` or
+  `BANK_ACCOUNT | normalized IBAN`. Lookup fingerprints exist only for equality
+  and duplicate enforcement, never use encryption keys, and never appear in
+  responses, logs, history, or audit evidence.
+- Provider payout identifiers are write-only. Create/update responses and all
+  later reads including `DRAFT` are masked; changes require complete re-entry.
+  The active exact-Provider `OWNER` may see the configured bank/operator label,
+  holder relationship, and current holder legal name in the authorized current-
+  management view, but never the full identifier. `ADMIN` receives only type,
+  approved mask, status, primary truth, and safe timestamps, with no holder
+  name.
+- Mobile Wallet masks preserve `+` and the country calling code, mask every
+  national digit except the final four, and display those four. IBAN masks
+  preserve only the two-letter country prefix and final four, replace every
+  intervening alphanumeric with `•`, and group in blocks of four. Holder legal
+  name is either shown in full for an expressly authorized management or
+  verification purpose or omitted; it is never partially masked.
+- Full identifier and holder-name reveal is allowed only to an active
+  `STAFF_ADMIN` with explicit payout-verification capability for one exact
+  `PENDING_VERIFICATION` version, an Authentication-owned step-up no more than
+  five minutes old, a meaningful reason, and a purpose-bound grant scoped to
+  actor, Provider, destination version, and request. Responses are non-cacheable
+  and expire with that purpose. Bulk reveal/export, reusable grants, Provider
+  reveal, and approved/terminal browsing are prohibited.
+- Every allowed or denied reveal attempt creates safe audit evidence containing
+  actor, target Provider and exact destination version, purpose, reason,
+  timestamp, request ID, outcome, and applicable key versions, but never
+  plaintext, ciphertext, nonce, tag, lookup fingerprint, or key material. An
+  accepted audit must persist before plaintext is returned; audit, key,
+  decryption, authorization, step-up, or rate-limit failure fails closed.
+  Accepted reveals are limited to five per Staff actor per rolling 10-minute
+  window, and retries cannot bypass that limit.
+- Release 1 declares separate externally supplied versioned key rings through
+  `PAYOUT_DATA_ENCRYPTION_KEYS_JSON`,
+  `PAYOUT_DATA_ENCRYPTION_ACTIVE_KEY_ID`,
+  `PAYOUT_LOOKUP_HMAC_KEYS_JSON`, and
+  `PAYOUT_LOOKUP_HMAC_ACTIVE_KEY_ID`. Decoded keys are independent and at least
+  32 bytes, active key IDs are distinct, and no default exists. Startup and
+  readiness fail closed for missing or malformed configuration, cross-purpose
+  reuse, invalid active keys, or inability to cover retained versions.
+- Rotation activates new encryption and lookup keys for new writes, keeps prior
+  keys decrypt/compare-only, checks duplicates across every enabled lookup-key
+  version, and uses bounded resumable re-encryption and re-fingerprinting. A key
+  retires only after zero retained references are verified and a human
+  explicitly approves the operation. Missing historical keys never cause
+  ciphertext, fingerprints, or stored masks to be returned as plaintext.
+- Cloud secret-manager integration remains deferred to Release 3. Private
+  verification-document bytes, storage, processing, keys, and delivery remain
+  Media-owned and outside this payout-data security contract.
+
+### Privacy, review, readiness, and phase boundary
+
+- Private Provider contacts, verification documents, and full payout details
+  must never appear on public Provider profiles. Storage keys, raw tokens,
+  private documents, and full sensitive payout identifiers must not appear in
+  public interfaces or general logs.
+- R1-P05 application review remains active-`staff_admin`-only. R1-P06 document
+  review is also active-`staff_admin`-only under the clarification decision
+  above. R1-P06 payout-destination verification is likewise active-
+  `staff_admin`-only, while sensitive destination mutation and primary selection
+  are active exact-Provider-`OWNER`-only.
+- R1-P06 may satisfy only `documentsVerified` and
+  `payoutDestinationReady`. It must preserve the separation between
+  `profileCompletion` and `marketplaceReadiness`, and it cannot make a Provider
+  operationally `LIVE` or publicly browseable. Provider-specific R1-P06 work
+  begins only after application approval, the two owned gates progress
+  independently, and operational suspension preserves authorized remediation
+  without restoring operational or public eligibility.
+- Cross-provider reads fail closed without leaking another Provider's existence
+  or private data. Every privileged document decision preserves actor, a
+  meaningful non-empty reason, timestamp, target document version, and immutable
+  audit/history evidence. Every privileged payout-verification decision
+  preserves equivalent reasoned evidence against the exact destination version;
+  Owner destination mutations preserve safe actor/action/time and before/after
+  evidence without full sensitive values.
+- R1-P06 excludes application creation/approval, provider profile/media/gallery
+  behavior completed by R1-P05, workers/teams, services/pricing, coverage,
+  availability, capacity, final marketplace eligibility, anonymous Browse,
+  booking/customer payments, actual payout execution, settlement scheduling,
+  deployment, and production configuration.
+
+### Documentation workflow result
+
+- Clarification records all 12 owner-approved decisions with no material open
+  product question.
+- The technical plan, research, data model, public/API/transaction contracts,
+  migration, security, UX, test, operations, and quickstart artifacts are
+  complete and constitution-aligned.
+- The mandatory after-plan and after-tasks Companion captures succeeded; all 25
+  general and 80 focused specification-quality checklist items pass.
+- `tasks.md` contains continuous T001–T137 across all 10 user stories with
+  independent test criteria. The second cross-artifact analysis pass reports no
+  remaining inconsistency, ambiguity, constitution conflict, or coverage gap.
+- The implementation prompt is a handoff only. No implementation task, product
+  code/test, Prisma/schema edit, migration, database operation, Git action,
+  deployment, production configuration, or R1-P07 work was authorized or run.
+
+OQ-007 is resolved by this decision. OQ-009 remains open and out of scope.
+OQ-011 remains open only for payout and settlement scheduling.

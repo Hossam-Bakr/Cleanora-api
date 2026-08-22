@@ -11,10 +11,9 @@
 | OQ-004 | Additional charges after work starts and customer approval UX | Orders, payment | Do not allow automatic unapproved price increases |
 | OQ-005 | Detailed review dimensions, publishing rules, editing window, and advanced moderation | Ratings/reviews | Release 1 implements basic provider/team rating plus written review |
 | OQ-006 | In-order chat versus structured status-only communication | Orders, notifications | No free chat in the current roadmap |
-| OQ-007 | Exact `REGISTERED_COMPANY` provider-document checklist required for R1-P06 verification | Provider verification | `INDIVIDUAL_TEAM` requires no documents. R1-P06 must use configurable document types for `REGISTERED_COMPANY`; the final required seed list needs product approval. This does not block R1-P05 specification or implementation. |
 | OQ-008 | Coupon/promo stacking with marketer commission and deposit | Growth, ledger | Coupons excluded until approved |
 | OQ-009 | Exact InstaPay technical workflow | Payments | Keep payment-method abstraction; do not invent integration behavior |
 | OQ-010 | Final booking/order enum names and emergency modeling | Booking, orders | Freeze during R1-P13 using a transition matrix before migration |
-| OQ-011 | Exact provider payout schedule and supported payout rails | Settlements | Make schedule and methods configurable; production values require approval |
+| OQ-011 | Exact provider payout and settlement schedule | Settlements | R1-P06 supports external `MOBILE_WALLET` and `BANK_ACCOUNT` destinations only, but does not execute payouts or choose a schedule. Keep the schedule open for the later payout-execution phase. |
 | OQ-012 | Final rules for review deletion, provider response, and abuse reports | Reviews, admin | Do not add unapproved destructive behavior |
 | OQ-013 | Exact premium price, duration, and gallery limits | Premium | Build configurable plans/benefits in Release 2 |

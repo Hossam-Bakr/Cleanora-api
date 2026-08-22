@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 
 import type {
   AuthenticationPolicyPort,
@@ -64,6 +64,7 @@ export interface AuthenticationServiceDependencies {
   readonly accessTtlSeconds: number;
   readonly refreshTtlSeconds: number;
   readonly privacyHashSecret: string;
+  readonly sensitiveProofSecret?: string;
   readonly policy?: AuthenticationPolicyPort;
   readonly now?: () => Date;
 }
@@ -895,6 +896,63 @@ export class AuthenticationService {
     )
       throw authenticationError("AUTH_PASSWORD_RESET_FAILED");
     return { passwordReset: true, nextAction: "LOGIN" as const };
+  }
+
+  async issueSensitiveActionProof(
+    principal: AuthenticationPrincipal,
+    currentPassword: string,
+    scope: {
+      readonly purpose:
+        | "PROVIDER_PAYOUT_SUBMIT"
+        | "PROVIDER_PAYOUT_SUCCESSOR_SUBMIT"
+        | "PROVIDER_PAYOUT_PRIMARY_CHANGE"
+        | "PROVIDER_PAYOUT_WITHDRAW"
+        | "PROVIDER_PAYOUT_REMOVE"
+        | "STAFF_PAYOUT_REVEAL";
+      readonly providerId: string;
+      readonly destinationVersionId: string;
+      readonly requestId: string;
+    },
+  ): Promise<{
+    readonly opaqueProof: string;
+    readonly authenticatedAt: string;
+    readonly expiresAt: string;
+  }> {
+    const [credential, session] = await Promise.all([
+      this.credentials.findByUserId(principal.userId),
+      this.sessions.find(principal.sessionId),
+    ]);
+    if (
+      principal.status !== "ACTIVE" ||
+      principal.verificationOnly ||
+      credential === null ||
+      !(await this.dependencies.passwordHasher.verify(credential.passwordHash, currentPassword)) ||
+      session === null ||
+      session.userId !== principal.userId ||
+      !isSessionActive(session)
+    ) throw authenticationError("AUTH_CURRENT_PASSWORD_INVALID");
+    const authenticatedAt = this.now();
+    const payload = Buffer.from(JSON.stringify({
+      proofId: randomUUID(),
+      actorUserId: principal.userId,
+      sessionId: principal.sessionId,
+      purpose: scope.purpose,
+      providerId: scope.providerId,
+      destinationVersionId: scope.destinationVersionId,
+      requestId: scope.requestId,
+      authenticatedAt: authenticatedAt.toISOString(),
+    }), "utf8").toString("base64url");
+    const sensitiveProofSecret = this.dependencies.sensitiveProofSecret;
+    if (sensitiveProofSecret === undefined) throw authenticationError("AUTH_PROVIDER_UNAVAILABLE");
+    const signature = createHmac("sha256", sensitiveProofSecret)
+      .update(payload)
+      .digest("base64url");
+    const maximumAgeSeconds = scope.purpose === "STAFF_PAYOUT_REVEAL" ? 300 : 600;
+    return {
+      opaqueProof: `${payload}.${signature}`,
+      authenticatedAt: authenticatedAt.toISOString(),
+      expiresAt: new Date(authenticatedAt.getTime() + maximumAgeSeconds * 1000).toISOString(),
+    };
   }
 
   async changePassword(

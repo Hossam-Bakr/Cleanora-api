@@ -119,6 +119,72 @@ async function seedAuthorizationDefinitions(
 }
 
 /**
+ * Seed only owner-approved stable R1-P06 type definitions. Country-scoped
+ * operators, banks, payout policy, keys, and document-policy publication are
+ * deliberately excluded because they require a reviewed human manifest or
+ * explicit Staff bootstrap workflow.
+ */
+async function seedR1P06StableTypes(prisma: PrismaClient): Promise<void> {
+  for (const definition of [
+    {
+      code: "COMMERCIAL_REGISTRATION",
+      displayNameEn: "Commercial registration",
+      displayNameAr: "السجل التجاري",
+      descriptionEn: "Registered-company commercial registration evidence.",
+      descriptionAr: "مستند السجل التجاري للشركة المسجلة.",
+    },
+    {
+      code: "TAX_REGISTRATION",
+      displayNameEn: "Tax registration",
+      displayNameAr: "التسجيل الضريبي",
+      descriptionEn: "Registered-company tax registration evidence.",
+      descriptionAr: "مستند التسجيل الضريبي للشركة المسجلة.",
+    },
+  ] as const) {
+    await prisma.verificationDocumentType.upsert({
+      where: { code: definition.code },
+      create: { ...definition, isActive: true, version: 1 },
+      update: {
+        displayNameEn: definition.displayNameEn,
+        displayNameAr: definition.displayNameAr,
+        descriptionEn: definition.descriptionEn,
+        descriptionAr: definition.descriptionAr,
+        isActive: true,
+      },
+    });
+  }
+
+  for (const definition of [
+    {
+      code: "MOBILE_WALLET" as const,
+      labelEn: "Mobile Wallet",
+      labelAr: "محفظة هاتف محمول",
+      descriptionEn: "External mobile-wallet payout destination.",
+      descriptionAr: "وجهة دفع خارجية لمحفظة هاتف محمول.",
+    },
+    {
+      code: "BANK_ACCOUNT" as const,
+      labelEn: "Bank Account",
+      labelAr: "حساب بنكي",
+      descriptionEn: "External IBAN-first bank-account payout destination.",
+      descriptionAr: "وجهة دفع خارجية لحساب بنكي باستخدام رقم IBAN.",
+    },
+  ] as const) {
+    await prisma.payoutDestinationType.upsert({
+      where: { code: definition.code },
+      create: { ...definition, isActive: true, version: 1 },
+      update: {
+        labelEn: definition.labelEn,
+        labelAr: definition.labelAr,
+        descriptionEn: definition.descriptionEn,
+        descriptionAr: definition.descriptionAr,
+        isActive: true,
+      },
+    });
+  }
+}
+
+/**
  * Seed R1-P01 reference data and R1-P03 authorization definitions. Every write
  * uses its approved natural key so repeated runs stay idempotent.
  *
@@ -185,6 +251,8 @@ export async function seed(existingClient?: PrismaClient): Promise<void> {
         isActive: true
       }
     });
+
+    await seedR1P06StableTypes(prisma);
 
     await prisma.appConfig.upsert({
       where: { key: "platform.default_timezone" },

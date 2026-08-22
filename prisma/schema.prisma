@@ -145,6 +145,7 @@ enum MediaOwnerType {
   PROVIDER_COVER
   PROVIDER_GALLERY_IMAGE
   PROVIDER_GALLERY_VIDEO
+  PROVIDER_VERIFICATION_DOCUMENT_PAGE
 }
 
 enum MediaStorageProvider {
@@ -214,6 +215,13 @@ enum ProviderEmailTemplate {
   REJECTED
   SUSPENDED
   REINSTATED
+  VERIFICATION_DOCUMENT_SUBMITTED
+  VERIFICATION_DOCUMENT_DECIDED
+  PAYOUT_DESTINATION_SUBMITTED
+  PAYOUT_DESTINATION_DECIDED
+  PAYOUT_PRIMARY_CHANGED
+  PAYOUT_DESTINATION_REMOVED
+  PAYOUT_SUCCESSOR_APPROVED
 }
 
 enum ProviderEmailOutboxStatus {
@@ -221,6 +229,139 @@ enum ProviderEmailOutboxStatus {
   SENDING
   SENT
   FAILED
+}
+
+enum VerificationDocumentPolicyStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ProviderDocumentStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  REPLACEMENT_REQUESTED
+  EXPIRED
+  INVALIDATED
+  SUPERSEDED
+}
+
+enum ProviderDocumentEvidenceFormat {
+  PDF
+  IMAGE_SET
+}
+
+enum ProviderDocumentDecisionOutcome {
+  APPROVE
+  REJECT
+  REQUEST_REPLACEMENT
+  INVALIDATE
+}
+
+enum ProviderVerificationHistoryEvent {
+  DOCUMENT_DRAFT_CREATED
+  DOCUMENT_DRAFT_UPDATED
+  DOCUMENT_EVIDENCE_BOUND
+  DOCUMENT_EVIDENCE_REMOVED
+  DOCUMENT_EVIDENCE_REORDERED
+  DOCUMENT_SUBMITTED
+  DOCUMENT_APPROVED
+  DOCUMENT_REJECTED
+  DOCUMENT_REPLACEMENT_REQUESTED
+  DOCUMENT_EXPIRED
+  DOCUMENT_INVALIDATED
+  DOCUMENT_SUPERSEDED
+  POLICY_PUBLISHED
+  POLICY_BECAME_EFFECTIVE
+  VERIFICATION_TRUTH_CHANGED
+  BADGE_TRUTH_CHANGED
+}
+
+enum VerificationBadgeState {
+  NOT_ELIGIBLE
+  NOT_EARNED
+  EARNED
+}
+
+enum PayoutDestinationKind {
+  MOBILE_WALLET
+  BANK_ACCOUNT
+}
+
+enum PayoutHolderRelationship {
+  PROVIDER_LEGAL_ENTITY
+  PROVIDER_OWNER
+}
+
+enum PayoutDestinationStatus {
+  DRAFT
+  PENDING_VERIFICATION
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  REPLACEMENT_REQUESTED
+  INVALIDATED
+  SUPERSEDED
+  REMOVED
+}
+
+enum PayoutVerificationMethod {
+  MANUAL_WALLET_TRANSFER_CHECK
+  MANUAL_BANK_BENEFICIARY_CHECK
+}
+
+enum PayoutDecisionOutcome {
+  APPROVE
+  REJECT
+  REQUEST_CHANGES
+  REQUEST_REPLACEMENT
+  INVALIDATE
+}
+
+enum PayoutIdentityClaimStatus {
+  ACTIVE
+  RELEASED
+}
+
+enum PayoutConflictStatus {
+  OPEN
+  CANDIDATE_REJECTED
+  RESOLVED_AFTER_RELEASE
+}
+
+enum PayoutHistoryEvent {
+  DESTINATION_DRAFT_CREATED
+  DESTINATION_DRAFT_UPDATED
+  DESTINATION_SUBMITTED
+  DESTINATION_APPROVED
+  DESTINATION_REJECTED
+  DESTINATION_CHANGES_REQUESTED
+  DESTINATION_REPLACEMENT_REQUESTED
+  DESTINATION_INVALIDATED
+  DESTINATION_SUPERSEDED
+  DESTINATION_REMOVED
+  PRIMARY_INITIALIZED
+  PRIMARY_CHANGED
+  PRIMARY_CLEARED
+  IDENTITY_CONFLICT_OPENED
+  IDENTITY_CONFLICT_RESOLVED
+}
+
+enum PayoutKeyPurpose {
+  ENCRYPTION
+  LOOKUP_HMAC
+}
+
+enum PayoutKeyRotationStatus {
+  PLANNED
+  RUNNING
+  PAUSED
+  VERIFYING
+  READY_FOR_RETIREMENT
+  COMPLETED
+  FAILED
+  CANCELLED
 }
 
 model Currency {
@@ -253,6 +394,11 @@ model Country {
   countryConfigs    CountryConfig[]
   userAddresses     UserAddress[]
   providerProfiles  ProviderProfile[]
+  verificationDocumentPolicies VerificationDocumentPolicyVersion[]
+  payoutOperators              PayoutOperator[]
+  payoutBanks                  PayoutBank[]
+  payoutCountryPolicies        PayoutCountryPolicy[]
+  payoutDestinationVersions    ProviderPayoutDestinationVersion[]
 
   @@index([isActive])
   @@index([defaultCurrencyId])
@@ -386,12 +532,31 @@ model UserSession {
   createdAt              DateTime                 @default(now()) @map("created_at")
   updatedAt              DateTime                 @updatedAt @map("updated_at")
   user                   User                     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sensitiveActionProofUses SensitiveActionProofUse[]
 
   @@index([userId, revokedAt])
   @@index([userId, expiresAt])
   @@index([expiresAt])
   @@index([revokedAt])
   @@map("user_sessions")
+}
+
+model SensitiveActionProofUse {
+  id                   String   @id @default(cuid())
+  proofIdHash          String   @unique @map("proof_id_hash") @db.Char(64)
+  actorUserId          String   @map("actor_user_id")
+  sessionId            String   @map("session_id")
+  purpose              String   @db.VarChar(100)
+  providerId           String   @map("provider_id")
+  destinationVersionId String   @map("destination_version_id")
+  requestId            String   @map("request_id") @db.VarChar(200)
+  authenticatedAt      DateTime @map("authenticated_at")
+  consumedAt           DateTime @default(now()) @map("consumed_at")
+  session              UserSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+
+  @@index([actorUserId, consumedAt])
+  @@index([destinationVersionId, consumedAt])
+  @@map("sensitive_action_proof_uses")
 }
 
 model OtpCode {
@@ -681,10 +846,13 @@ model MediaFile {
   id                   String               @id @default(cuid())
   ownerUserId          String               @map("owner_user_id")
   ownerType            MediaOwnerType       @map("owner_type")
+  verificationProviderId String?            @map("verification_provider_id")
+  verificationDocumentVersionId String?     @map("verification_document_version_id")
   storageProvider      MediaStorageProvider @map("storage_provider")
   storageKey           String               @map("storage_key")
   contentType          String               @map("content_type")
   byteSize             Int                  @map("byte_size")
+  verificationPageCount Int?                @map("verification_page_count")
   width                Int?
   height               Int?
   status               MediaStatus
@@ -696,8 +864,10 @@ model MediaFile {
   providerLogoProfile  ProviderProfile?     @relation("ProviderProfileLogo")
   providerCoverProfile ProviderProfile?     @relation("ProviderProfileCover")
   providerGalleryItem  ProviderGalleryItem? @relation("ProviderGalleryMedia")
+  providerVerificationEvidence ProviderDocumentEvidence?
 
   @@index([ownerUserId, ownerType])
+  @@index([verificationProviderId, verificationDocumentVersionId])
   @@index([status, cleanupEligibleAt])
   @@map("media_files")
 }
@@ -714,6 +884,7 @@ model Provider {
   operationalStatus      ProviderOperationalStatus  @default(INACTIVE) @map("operational_status")
   reviewCycle            Int                        @default(0) @map("review_cycle")
   version                Int                        @default(1)
+  payoutPrimaryStateVersion Int                     @default(0) @map("payout_primary_state_version")
   firstSubmittedAt       DateTime?                  @map("first_submitted_at")
   lastSubmittedAt        DateTime?                  @map("last_submitted_at")
   applicationChangedAt   DateTime                   @default(now()) @map("application_changed_at")
@@ -732,6 +903,17 @@ model Provider {
   adminInvitations       ProviderAdminInvitation[]
   galleryItems           ProviderGalleryItem[]
   emailOutbox            ProviderEmailOutbox[]
+  documentChains         ProviderDocumentChain[]
+  documentVersions       ProviderDocumentVersion[]
+  documentReviews        ProviderDocumentReview[]
+  verificationHistory    ProviderVerificationHistory[]
+  payoutDestinationChains ProviderPayoutDestinationChain[]
+  payoutIdentityClaims    ProviderPayoutIdentityClaim[]
+  payoutDestinationVersions ProviderPayoutDestinationVersion[]
+  payoutDecisions         ProviderPayoutDecision[]
+  primaryPayoutDestination ProviderPrimaryPayoutDestination?
+  payoutConflicts         ProviderPayoutConflict[]
+  payoutHistory           ProviderPayoutHistory[]
 
   @@index([applicationStatus, kind, lastSubmittedAt, id])
   @@index([operationalStatus, id])
@@ -866,6 +1048,8 @@ model ProviderEmailOutbox {
   recipientUserId  String                     @map("recipient_user_id")
   reviewCycle      Int?                       @map("review_cycle")
   statusHistoryId  String?                    @map("status_history_id")
+  verificationHistoryId String?                @map("verification_history_id")
+  payoutHistoryId       String?                @map("payout_history_id")
   idempotencyKey   String                     @unique @map("idempotency_key") @db.VarChar(200)
   attemptCount     Int                        @default(0) @map("attempt_count")
   nextAttemptAt    DateTime?                  @map("next_attempt_at")
@@ -877,7 +1061,548 @@ model ProviderEmailOutbox {
   provider         Provider                   @relation(fields: [providerId], references: [id], onDelete: Restrict)
   recipientUser    User                       @relation("ProviderEmailOutboxRecipient", fields: [recipientUserId], references: [id], onDelete: Restrict)
   statusHistory    ProviderStatusHistory?     @relation(fields: [statusHistoryId], references: [id], onDelete: Restrict)
+  verificationHistory ProviderVerificationHistory? @relation(fields: [verificationHistoryId], references: [id], onDelete: Restrict)
+  payoutHistory       ProviderPayoutHistory?       @relation(fields: [payoutHistoryId], references: [id], onDelete: Restrict)
 
   @@index([status, nextAttemptAt, lockedUntil])
+  @@index([verificationHistoryId])
+  @@index([payoutHistoryId])
   @@map("provider_email_outbox")
+}
+
+// R1-P06 Provider verification and external payout destinations.
+// Providers owns every model below. No payout identifier or holder-name plaintext is persisted.
+
+model VerificationDocumentType {
+  id            String   @id @default(cuid())
+  code          String   @unique @db.VarChar(100)
+  displayNameAr String   @map("display_name_ar") @db.VarChar(200)
+  displayNameEn String   @map("display_name_en") @db.VarChar(200)
+  descriptionAr String?  @map("description_ar") @db.VarChar(1000)
+  descriptionEn String?  @map("description_en") @db.VarChar(1000)
+  isActive      Boolean  @default(true) @map("is_active")
+  version       Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  policyItems   VerificationDocumentPolicyItem[]
+  documentChains ProviderDocumentChain[]
+
+  @@index([isActive, code])
+  @@map("verification_document_types")
+}
+
+model VerificationDocumentPolicyVersion {
+  id                String                           @id @default(cuid())
+  countryId         String                           @map("country_id")
+  providerKind      ProviderKind                     @map("provider_kind")
+  policyVersion     Int                              @map("policy_version")
+  status            VerificationDocumentPolicyStatus @default(DRAFT)
+  effectiveAt       DateTime?                        @map("effective_at")
+  publishedByUserId String?                          @map("published_by_user_id")
+  publishedAt       DateTime?                        @map("published_at")
+  publishReason     String?                          @map("publish_reason") @db.VarChar(1000)
+  idempotencyKey    String                           @unique @map("idempotency_key") @db.VarChar(200)
+  lastMutationKey   String?                          @unique @map("last_mutation_key") @db.VarChar(200)
+  lastMutationActorUserId String?                    @map("last_mutation_actor_user_id")
+  version           Int                              @default(1)
+  createdByUserId   String                           @map("created_by_user_id")
+  createdAt         DateTime                         @default(now()) @map("created_at")
+  updatedAt         DateTime                         @updatedAt @map("updated_at")
+  country           Country                          @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  items             VerificationDocumentPolicyItem[]
+  documentVersions  ProviderDocumentVersion[]
+  history           ProviderVerificationHistory[]
+
+  @@unique([countryId, providerKind, policyVersion])
+  @@index([countryId, providerKind, status, effectiveAt])
+  @@map("verification_document_policy_versions")
+}
+
+model VerificationDocumentPolicyItem {
+  id              String                            @id @default(cuid())
+  policyVersionId String                            @map("policy_version_id")
+  documentTypeId  String                            @map("document_type_id")
+  isRequired      Boolean                           @default(true) @map("is_required")
+  isActive        Boolean                           @default(true) @map("is_active")
+  fieldRules      Json                              @map("field_rules")
+  position        Int
+  createdAt       DateTime                          @default(now()) @map("created_at")
+  updatedAt       DateTime                          @updatedAt @map("updated_at")
+  policyVersion   VerificationDocumentPolicyVersion @relation(fields: [policyVersionId], references: [id], onDelete: Restrict)
+  documentType    VerificationDocumentType          @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  documentVersions ProviderDocumentVersion[]
+
+  @@unique([policyVersionId, documentTypeId])
+  @@unique([policyVersionId, position])
+  @@map("verification_document_policy_items")
+}
+
+model ProviderPolicyActivationState {
+  id        String   @id @db.VarChar(100)
+  cursor    String?
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("provider_policy_activation_states")
+}
+
+model ProviderDocumentChain {
+  id                 String                    @id @default(cuid())
+  providerId         String                    @map("provider_id")
+  documentTypeId     String                    @map("document_type_id")
+  effectiveVersionId String?                   @unique @map("effective_version_id")
+  version            Int                       @default(1)
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
+  provider           Provider                  @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  documentType       VerificationDocumentType  @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  effectiveVersion   ProviderDocumentVersion?  @relation("DocumentChainEffectiveVersion", fields: [effectiveVersionId], references: [id], onDelete: Restrict)
+  versions           ProviderDocumentVersion[] @relation("DocumentChainVersions")
+
+  @@unique([providerId, documentTypeId])
+  @@index([providerId, updatedAt, id])
+  @@map("provider_document_chains")
+}
+
+model ProviderDocumentVersion {
+  id                     String                         @id @default(cuid())
+  chainId                String                         @map("chain_id")
+  providerId             String                         @map("provider_id")
+  sequence               Int
+  predecessorVersionId   String?                        @unique @map("predecessor_version_id")
+  status                 ProviderDocumentStatus         @default(DRAFT)
+  version                Int                            @default(1)
+  countryCode            String                         @map("country_code") @db.VarChar(2)
+  documentNumber         String                         @map("document_number") @db.VarChar(300)
+  legalName              String                         @map("legal_name") @db.VarChar(300)
+  issuerName             String                         @map("issuer_name") @db.VarChar(300)
+  issueDate              DateTime                       @map("issue_date") @db.Date
+  expiresAt              DateTime?                      @map("expires_at") @db.Date
+  evidenceFormat         ProviderDocumentEvidenceFormat? @map("evidence_format")
+  policyVersionId        String?                        @map("policy_version_id")
+  policyItemId           String?                        @map("policy_item_id")
+  policyRuleSnapshot     Json?                          @map("policy_rule_snapshot")
+  createdByUserId        String                         @map("created_by_user_id")
+  submittedByUserId      String?                        @map("submitted_by_user_id")
+  submittedAt            DateTime?                      @map("submitted_at")
+  approvedAt             DateTime?                      @map("approved_at")
+  rejectedAt             DateTime?                      @map("rejected_at")
+  replacementRequestedAt DateTime?                      @map("replacement_requested_at")
+  expiredAt              DateTime?                      @map("expired_at")
+  invalidatedAt          DateTime?                      @map("invalidated_at")
+  supersededAt           DateTime?                      @map("superseded_at")
+  idempotencyKey         String                         @unique @map("idempotency_key") @db.VarChar(200)
+  createdAt              DateTime                       @default(now()) @map("created_at")
+  updatedAt              DateTime                       @updatedAt @map("updated_at")
+  chain                  ProviderDocumentChain          @relation("DocumentChainVersions", fields: [chainId], references: [id], onDelete: Restrict)
+  provider               Provider                       @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  predecessor            ProviderDocumentVersion?       @relation("DocumentVersionSuccessor", fields: [predecessorVersionId], references: [id], onDelete: Restrict)
+  successor              ProviderDocumentVersion?       @relation("DocumentVersionSuccessor")
+  policyVersion          VerificationDocumentPolicyVersion? @relation(fields: [policyVersionId], references: [id], onDelete: Restrict)
+  policyItem             VerificationDocumentPolicyItem? @relation(fields: [policyItemId], references: [id], onDelete: Restrict)
+  evidence               ProviderDocumentEvidence[]
+  reviews                ProviderDocumentReview[]
+  effectiveForChain      ProviderDocumentChain?         @relation("DocumentChainEffectiveVersion")
+  history                ProviderVerificationHistory[]
+
+  @@unique([chainId, sequence])
+  @@index([providerId, status, updatedAt, id])
+  @@index([status, submittedAt, id])
+  @@map("provider_document_versions")
+}
+
+model ProviderDocumentEvidence {
+  id                   String                  @id @default(cuid())
+  documentVersionId    String                  @map("document_version_id")
+  mediaFileId          String                  @unique @map("media_file_id")
+  position             Int
+  canonicalContentType String                  @map("canonical_content_type") @db.VarChar(50)
+  byteSize             Int                     @map("byte_size")
+  pageCount            Int?                    @map("page_count")
+  expectedDocumentVersion Int                  @map("expected_document_version")
+  boundByUserId        String                  @map("bound_by_user_id")
+  idempotencyKey       String                  @unique @map("idempotency_key") @db.VarChar(200)
+  createdAt            DateTime                @default(now()) @map("created_at")
+  documentVersion      ProviderDocumentVersion @relation(fields: [documentVersionId], references: [id], onDelete: Restrict)
+  mediaFile            MediaFile               @relation(fields: [mediaFileId], references: [id], onDelete: Restrict)
+
+  @@unique([documentVersionId, position])
+  @@map("provider_document_evidence")
+}
+
+model ProviderDocumentReview {
+  id                      String                          @id @default(cuid())
+  providerId              String                          @map("provider_id")
+  documentVersionId       String                          @map("document_version_id")
+  outcome                 ProviderDocumentDecisionOutcome
+  reason                  String                          @db.VarChar(1000)
+  actorUserId             String                          @map("actor_user_id")
+  decidedAt               DateTime                        @default(now()) @map("decided_at")
+  requestId               String?                         @map("request_id") @db.VarChar(200)
+  expectedDocumentVersion Int                             @map("expected_document_version")
+  operationKey            String                          @unique @map("operation_key") @db.VarChar(200)
+  createdAt               DateTime                        @default(now()) @map("created_at")
+  provider                Provider                        @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  documentVersion         ProviderDocumentVersion         @relation(fields: [documentVersionId], references: [id], onDelete: Restrict)
+
+  @@index([documentVersionId, decidedAt])
+  @@index([providerId, decidedAt, id])
+  @@map("provider_document_reviews")
+}
+
+model ProviderVerificationHistory {
+  id                String                           @id @default(cuid())
+  providerId        String?                          @map("provider_id")
+  documentVersionId String?                          @map("document_version_id")
+  policyVersionId   String?                          @map("policy_version_id")
+  event             ProviderVerificationHistoryEvent
+  fromStatus        ProviderDocumentStatus?          @map("from_status")
+  toStatus          ProviderDocumentStatus?          @map("to_status")
+  actorType         AuditActorType                    @map("actor_type")
+  actorUserId       String?                           @map("actor_user_id")
+  reasonCode        String?                           @map("reason_code") @db.VarChar(100)
+  reasonText        String?                           @map("reason_text") @db.VarChar(1000)
+  requestId         String?                           @map("request_id") @db.VarChar(200)
+  mutationTargetId  String?                           @map("mutation_target_id") @db.VarChar(200)
+  exactVersion      Int?                              @map("exact_version")
+  operationKey      String                            @unique @map("operation_key") @db.VarChar(200)
+  createdAt         DateTime                          @default(now()) @map("created_at")
+  provider          Provider?                         @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  documentVersion   ProviderDocumentVersion?          @relation(fields: [documentVersionId], references: [id], onDelete: Restrict)
+  policyVersion     VerificationDocumentPolicyVersion? @relation(fields: [policyVersionId], references: [id], onDelete: Restrict)
+  emailOutbox       ProviderEmailOutbox[]
+
+  @@index([providerId, createdAt, id])
+  @@index([event, createdAt, id])
+  @@index([requestId, event])
+  @@map("provider_verification_history")
+}
+
+model PayoutDestinationType {
+  id            String   @id @default(cuid())
+  code          PayoutDestinationKind @unique
+  labelAr       String   @map("label_ar") @db.VarChar(200)
+  labelEn       String   @map("label_en") @db.VarChar(200)
+  descriptionAr String?  @map("description_ar") @db.VarChar(1000)
+  descriptionEn String?  @map("description_en") @db.VarChar(1000)
+  isActive      Boolean  @default(true) @map("is_active")
+  version       Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  chains        ProviderPayoutDestinationChain[]
+
+  @@index([isActive, code])
+  @@map("payout_destination_types")
+}
+
+model PayoutOperator {
+  id        String   @id @default(cuid())
+  countryId String   @map("country_id")
+  code      String   @db.VarChar(100)
+  labelAr   String   @map("label_ar") @db.VarChar(200)
+  labelEn   String   @map("label_en") @db.VarChar(200)
+  isActive  Boolean  @default(true) @map("is_active")
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  destinationVersions ProviderPayoutDestinationVersion[]
+
+  @@unique([countryId, code])
+  @@index([countryId, isActive, code])
+  @@map("payout_operators")
+}
+
+model PayoutBank {
+  id             String   @id @default(cuid())
+  countryId      String   @map("country_id")
+  code           String   @db.VarChar(100)
+  nameAr         String   @map("name_ar") @db.VarChar(200)
+  nameEn         String   @map("name_en") @db.VarChar(200)
+  routingDisplay Json?    @map("routing_display")
+  isActive       Boolean  @default(true) @map("is_active")
+  version        Int      @default(1)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  country        Country  @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  destinationVersions ProviderPayoutDestinationVersion[]
+
+  @@unique([countryId, code])
+  @@index([countryId, isActive, code])
+  @@map("payout_banks")
+}
+
+model PayoutCountryPolicy {
+  id                      String                  @id @default(cuid())
+  countryId               String                  @map("country_id")
+  allowedDestinationTypes PayoutDestinationKind[] @map("allowed_destination_types")
+  allowedCurrencyCodes    String[]                @map("allowed_currency_codes")
+  callingCodes            String[]                @map("calling_codes")
+  ibanLengths             Int[]                   @map("iban_lengths")
+  isActive                Boolean                 @default(true) @map("is_active")
+  version                 Int                     @default(1)
+  createdAt               DateTime                @default(now()) @map("created_at")
+  updatedAt               DateTime                @updatedAt @map("updated_at")
+  country                 Country                 @relation(fields: [countryId], references: [id], onDelete: Restrict)
+
+  @@unique([countryId])
+  @@index([isActive])
+  @@map("payout_country_policies")
+}
+
+model ProviderPayoutDestinationChain {
+  id                              String                              @id @default(cuid())
+  providerId                      String                              @map("provider_id")
+  destinationTypeId               String                              @map("destination_type_id")
+  currentVersionId                String?                             @unique @map("current_version_id")
+  effectiveApprovedVersionId      String?                             @unique @map("effective_approved_version_id")
+  formerPrimaryEligible           Boolean                             @default(false) @map("former_primary_eligible")
+  primaryRestorationStateVersion  Int?                                @map("primary_restoration_state_version")
+  version                         Int                                 @default(1)
+  createdAt                       DateTime                            @default(now()) @map("created_at")
+  updatedAt                       DateTime                            @updatedAt @map("updated_at")
+  provider                        Provider                            @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  destinationType                 PayoutDestinationType               @relation(fields: [destinationTypeId], references: [id], onDelete: Restrict)
+  currentVersion                  ProviderPayoutDestinationVersion?   @relation("PayoutChainCurrentVersion", fields: [currentVersionId], references: [id], onDelete: Restrict)
+  effectiveApprovedVersion        ProviderPayoutDestinationVersion?   @relation("PayoutChainEffectiveVersion", fields: [effectiveApprovedVersionId], references: [id], onDelete: Restrict)
+  versions                        ProviderPayoutDestinationVersion[]  @relation("PayoutChainVersions")
+  identityClaims                  ProviderPayoutIdentityClaim[]
+  history                         ProviderPayoutHistory[]
+
+  @@index([providerId, updatedAt, id])
+  @@map("provider_payout_destination_chains")
+}
+
+model ProviderPayoutIdentityClaim {
+  id                String                    @id @default(cuid())
+  providerId        String                    @map("provider_id")
+  chainId           String                    @map("chain_id")
+  kind              PayoutDestinationKind
+  countryCode       String?                   @map("country_code") @db.VarChar(2)
+  callingCode       String?                   @map("calling_code") @db.VarChar(3)
+  ibanCountryPrefix String?                   @map("iban_country_prefix") @db.VarChar(2)
+  lastFour          String                    @map("last_four") @db.VarChar(4)
+  identifierLength  Int                       @map("identifier_length")
+  status            PayoutIdentityClaimStatus @default(ACTIVE)
+  claimedAt         DateTime                  @default(now()) @map("claimed_at")
+  releasedAt        DateTime?                 @map("released_at")
+  version           Int                       @default(1)
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  provider          Provider                  @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  chain             ProviderPayoutDestinationChain @relation(fields: [chainId], references: [id], onDelete: Restrict)
+  fingerprints      ProviderPayoutLookupFingerprint[]
+  destinationVersions ProviderPayoutDestinationVersion[]
+  incumbentConflicts ProviderPayoutConflict[]
+
+  @@index([providerId, kind, status])
+  @@index([chainId, status])
+  @@map("provider_payout_identity_claims")
+}
+
+model ProviderPayoutLookupFingerprint {
+  id          String                    @id @default(cuid())
+  claimId     String                    @map("claim_id")
+  lookupKeyId String                    @map("lookup_key_id") @db.VarChar(64)
+  fingerprint String                    @db.Char(64)
+  claimStatus PayoutIdentityClaimStatus @default(ACTIVE) @map("claim_status")
+  createdAt   DateTime                  @default(now()) @map("created_at")
+  retiredAt   DateTime?                 @map("retired_at")
+  claim       ProviderPayoutIdentityClaim @relation(fields: [claimId], references: [id], onDelete: Restrict)
+
+  @@unique([claimId, lookupKeyId])
+  @@index([lookupKeyId, claimStatus])
+  @@map("provider_payout_lookup_fingerprints")
+}
+
+model ProviderPayoutDestinationVersion {
+  id                        String                   @id @default(cuid())
+  chainId                   String                   @map("chain_id")
+  providerId                String                   @map("provider_id")
+  identityClaimId           String                   @map("identity_claim_id")
+  sequence                  Int
+  predecessorVersionId      String?                  @unique @map("predecessor_version_id")
+  kind                      PayoutDestinationKind
+  status                    PayoutDestinationStatus  @default(DRAFT)
+  version                   Int                      @default(1)
+  cryptoRevision            Int                      @default(1) @map("crypto_revision")
+  countryId                 String                   @map("country_id")
+  countryCode               String                   @map("country_code") @db.VarChar(2)
+  currencyCode              String?                  @map("currency_code") @db.VarChar(3)
+  operatorId                String?                  @map("operator_id")
+  bankId                    String?                  @map("bank_id")
+  holderRelationship        PayoutHolderRelationship @map("holder_relationship")
+  identifierCiphertext      String                   @map("identifier_ciphertext")
+  identifierNonce           String                   @map("identifier_nonce") @db.VarChar(16)
+  identifierTag             String                   @map("identifier_tag") @db.VarChar(24)
+  identifierEncryptionKeyId String                   @map("identifier_encryption_key_id") @db.VarChar(64)
+  holderNameCiphertext      String                   @map("holder_name_ciphertext")
+  holderNameNonce           String                   @map("holder_name_nonce") @db.VarChar(16)
+  holderNameTag             String                   @map("holder_name_tag") @db.VarChar(24)
+  holderNameEncryptionKeyId String                   @map("holder_name_encryption_key_id") @db.VarChar(64)
+  createdByUserId           String                   @map("created_by_user_id")
+  submittedByUserId         String?                  @map("submitted_by_user_id")
+  submittedAt               DateTime?                @map("submitted_at")
+  approvedAt                DateTime?                @map("approved_at")
+  rejectedAt                DateTime?                @map("rejected_at")
+  changesRequestedAt        DateTime?                @map("changes_requested_at")
+  replacementRequestedAt    DateTime?                @map("replacement_requested_at")
+  invalidatedAt             DateTime?                @map("invalidated_at")
+  supersededAt              DateTime?                @map("superseded_at")
+  removedAt                 DateTime?                @map("removed_at")
+  idempotencyKey            String                   @unique @map("idempotency_key") @db.VarChar(200)
+  createdAt                 DateTime                 @default(now()) @map("created_at")
+  updatedAt                 DateTime                 @updatedAt @map("updated_at")
+  chain                     ProviderPayoutDestinationChain @relation("PayoutChainVersions", fields: [chainId], references: [id], onDelete: Restrict)
+  provider                  Provider                 @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  identityClaim             ProviderPayoutIdentityClaim @relation(fields: [identityClaimId], references: [id], onDelete: Restrict)
+  country                   Country                  @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  operator                  PayoutOperator?          @relation(fields: [operatorId], references: [id], onDelete: Restrict)
+  bank                      PayoutBank?              @relation(fields: [bankId], references: [id], onDelete: Restrict)
+  predecessor               ProviderPayoutDestinationVersion? @relation("PayoutVersionSuccessor", fields: [predecessorVersionId], references: [id], onDelete: Restrict)
+  successor                 ProviderPayoutDestinationVersion? @relation("PayoutVersionSuccessor")
+  currentForChain           ProviderPayoutDestinationChain? @relation("PayoutChainCurrentVersion")
+  effectiveForChain         ProviderPayoutDestinationChain? @relation("PayoutChainEffectiveVersion")
+  decisions                 ProviderPayoutDecision[]
+  primaryForProvider        ProviderPrimaryPayoutDestination?
+  history                   ProviderPayoutHistory[]
+
+  @@unique([chainId, sequence])
+  @@index([providerId, status, updatedAt, id])
+  @@index([status, submittedAt, id])
+  @@map("provider_payout_destination_versions")
+}
+
+model ProviderPayoutDecision {
+  id                       String                   @id @default(cuid())
+  providerId               String                   @map("provider_id")
+  destinationVersionId     String                   @map("destination_version_id")
+  outcome                  PayoutDecisionOutcome
+  verificationMethod       PayoutVerificationMethod @map("verification_method")
+  reasonCode               String                   @map("reason_code") @db.VarChar(100)
+  verificationNote         String                   @map("verification_note") @db.VarChar(1000)
+  actorUserId              String                   @map("actor_user_id")
+  decidedAt                DateTime                 @default(now()) @map("decided_at")
+  expectedDestinationVersion Int                    @map("expected_destination_version")
+  acceptedRevealAttemptId  String?                  @unique @map("accepted_reveal_attempt_id") @db.VarChar(200)
+  requestId                String?                  @map("request_id") @db.VarChar(200)
+  operationKey             String                   @unique @map("operation_key") @db.VarChar(200)
+  fromStatus               PayoutDestinationStatus  @map("from_status")
+  toStatus                 PayoutDestinationStatus  @map("to_status")
+  encryptionKeyIds         String[]                 @map("encryption_key_ids")
+  lookupKeyIds             String[]                 @map("lookup_key_ids")
+  createdAt                DateTime                 @default(now()) @map("created_at")
+  provider                 Provider                 @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  destinationVersion       ProviderPayoutDestinationVersion @relation(fields: [destinationVersionId], references: [id], onDelete: Restrict)
+  history                  ProviderPayoutHistory[]
+
+  @@index([destinationVersionId, decidedAt])
+  @@index([providerId, decidedAt, id])
+  @@map("provider_payout_decisions")
+}
+
+model ProviderPrimaryPayoutDestination {
+  providerId             String   @id @map("provider_id")
+  destinationVersionId   String   @unique @map("destination_version_id")
+  version                Int      @default(1)
+  selectedByUserId       String   @map("selected_by_user_id")
+  selectedAt             DateTime @default(now()) @map("selected_at")
+  selectionReasonCode    String   @map("selection_reason_code") @db.VarChar(100)
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  provider               Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  destinationVersion     ProviderPayoutDestinationVersion @relation(fields: [destinationVersionId], references: [id], onDelete: Restrict)
+
+  @@map("provider_primary_payout_destinations")
+}
+
+model ProviderPayoutConflict {
+  id                 String               @id @default(cuid())
+  providerId         String               @map("provider_id")
+  commandId          String               @map("command_id") @db.VarChar(100)
+  operationKey       String               @unique @map("operation_key") @db.VarChar(200)
+  kind               PayoutDestinationKind
+  safeMask           String               @map("safe_mask") @db.VarChar(100)
+  incumbentClaimId   String               @map("incumbent_claim_id")
+  status             PayoutConflictStatus @default(OPEN)
+  openedByUserId     String               @map("opened_by_user_id")
+  openedRequestId    String?              @map("opened_request_id") @db.VarChar(200)
+  openedAt           DateTime             @default(now()) @map("opened_at")
+  resolvedByUserId   String?              @map("resolved_by_user_id")
+  resolvedAt         DateTime?            @map("resolved_at")
+  resolutionReason   String?              @map("resolution_reason") @db.VarChar(1000)
+  version            Int                  @default(1)
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  provider           Provider             @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  incumbentClaim     ProviderPayoutIdentityClaim @relation(fields: [incumbentClaimId], references: [id], onDelete: Restrict)
+  history            ProviderPayoutHistory[]
+
+  @@index([status, openedAt, id])
+  @@index([providerId, status, openedAt])
+  @@map("provider_payout_conflicts")
+}
+
+model ProviderPayoutHistory {
+  id                   String             @id @default(cuid())
+  providerId           String             @map("provider_id")
+  chainId              String?            @map("chain_id")
+  destinationVersionId String?            @map("destination_version_id")
+  decisionId           String?            @map("decision_id")
+  conflictId           String?            @map("conflict_id")
+  event                PayoutHistoryEvent
+  fromStatus           PayoutDestinationStatus? @map("from_status")
+  toStatus             PayoutDestinationStatus? @map("to_status")
+  actorType            AuditActorType     @map("actor_type")
+  actorUserId          String?            @map("actor_user_id")
+  reasonCode           String?            @map("reason_code") @db.VarChar(100)
+  reasonText           String?            @map("reason_text") @db.VarChar(1000)
+  safeMask             String?            @map("safe_mask") @db.VarChar(100)
+  requestId            String?            @map("request_id") @db.VarChar(200)
+  exactVersion         Int?               @map("exact_version")
+  expectedPrimaryVersion Int?             @map("expected_primary_version")
+  replacementDestinationVersionId String? @map("replacement_destination_version_id")
+  acknowledgeReadinessLoss Boolean?       @map("acknowledge_readiness_loss")
+  operationKey         String             @unique @map("operation_key") @db.VarChar(200)
+  createdAt            DateTime           @default(now()) @map("created_at")
+  provider             Provider           @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  chain                ProviderPayoutDestinationChain? @relation(fields: [chainId], references: [id], onDelete: Restrict)
+  destinationVersion   ProviderPayoutDestinationVersion? @relation(fields: [destinationVersionId], references: [id], onDelete: Restrict)
+  decision             ProviderPayoutDecision? @relation(fields: [decisionId], references: [id], onDelete: Restrict)
+  conflict             ProviderPayoutConflict? @relation(fields: [conflictId], references: [id], onDelete: Restrict)
+  emailOutbox          ProviderEmailOutbox[]
+
+  @@index([providerId, createdAt, id])
+  @@index([event, createdAt, id])
+  @@map("provider_payout_history")
+}
+
+model ProviderPayoutKeyRotationRun {
+  id                          String                  @id @default(cuid())
+  purpose                     PayoutKeyPurpose
+  fromKeyIds                  String[]                @map("from_key_ids")
+  toActiveKeyId               String                  @map("to_active_key_id") @db.VarChar(64)
+  status                      PayoutKeyRotationStatus @default(PLANNED)
+  batchSize                   Int                     @map("batch_size")
+  cursor                      String?
+  scannedCount                Int                     @default(0) @map("scanned_count")
+  updatedCount                Int                     @default(0) @map("updated_count")
+  failedCount                 Int                     @default(0) @map("failed_count")
+  remainingReferenceCount     Int?                    @map("remaining_reference_count")
+  startedByUserId             String                  @map("started_by_user_id")
+  startedAt                   DateTime                @default(now()) @map("started_at")
+  verifiedAt                  DateTime?               @map("verified_at")
+  verifiedByUserId            String?                 @map("verified_by_user_id")
+  retirementApprovedAt        DateTime?               @map("retirement_approved_at")
+  retirementApprovedByUserId  String?                 @map("retirement_approved_by_user_id")
+  retirementReason            String?                 @map("retirement_reason") @db.VarChar(1000)
+  lastSafeErrorCode           String?                 @map("last_safe_error_code") @db.VarChar(100)
+  operationKey                String                  @unique @map("operation_key") @db.VarChar(200)
+  version                     Int                     @default(1)
+  createdAt                   DateTime                @default(now()) @map("created_at")
+  updatedAt                   DateTime                @updatedAt @map("updated_at")
+
+  @@index([purpose, status, updatedAt, id])
+  @@map("provider_payout_key_rotation_runs")
 }

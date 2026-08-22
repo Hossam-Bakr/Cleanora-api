@@ -1,9 +1,11 @@
 import { APPLICATION_NAME } from "#config/constants";
 import {
+  assertR1P06RuntimeEnvironment,
   assertCustomersRuntimeEnvironment,
   resolveProviderRuntimeConfig,
   type AppEnvironment,
 } from "#config/env";
+import { assertReferencedPayoutKeysAvailable, parsePayoutKeyRings } from "#config/payout-data-keys";
 import { PrismaLifecycle } from "#database/prisma-lifecycle";
 import { Argon2PasswordHasherAdapter } from "#integrations/authentication/argon2-password-hasher.adapter";
 import { CryptoVerifierAdapter } from "#integrations/authentication/crypto-verifier.adapter";
@@ -19,11 +21,21 @@ import { createPrismaPrivilegedAuditWriter } from "#modules/admin/infrastructure
 import { createPrismaGeneralTransactionalAuditWriter } from "#modules/admin/infrastructure/prisma-general-transactional-audit.writer";
 import { createPrismaDenialAuditWriter } from "#modules/admin/infrastructure/prisma-denial-audit.writer";
 import {
+  PrismaAcceptedPayoutRevealAuthorizer,
+  PrismaPayoutRevealAuditGate,
+} from "#modules/admin/infrastructure/prisma-payout-reveal-audit.gate";
+import {
   createAuthenticationModule,
   createAuthenticationPolicy,
 } from "#modules/authentication/auth.module";
 import { AuthorizationService } from "#modules/authentication/authorization.service";
 import { AuthorizationRepository } from "#modules/authentication/infrastructure/authorization.repository";
+import {
+  PrismaAuthenticationProofConsumption,
+  PrismaAuthenticationProofUseAuthorizer,
+  PrismaR1P06StaffPermissionAuthorizer,
+} from "#modules/authentication/infrastructure/prisma-r1-p06-security.adapters";
+import { ProviderSensitiveActionProofVerifier } from "#modules/authentication/infrastructure/provider-sensitive-action-proof.verifier";
 import { PrismaOwnerStaffAdminUnitOfWork } from "#modules/authentication/infrastructure/prisma-owner-staff-admin.unit-of-work";
 import { PrismaRoleManagementUnitOfWork } from "#modules/authentication/infrastructure/prisma-role-management.unit-of-work";
 import { createOwnerInternalRouter } from "#modules/authentication/owner-staff-admin.routes";
@@ -50,7 +62,10 @@ import {
   createMediaStoragePort,
   createProviderMediaPort,
   createProviderMediaStatusReader,
+  createProviderVerificationEvidencePort,
+  createTransactionalProviderVerificationEvidenceAuthorizer,
 } from "#modules/media/infrastructure/media-provider.factory";
+import { ClamAvVerificationMalwareScanner } from "#modules/media/infrastructure/clamav-verification-malware-scanner";
 import { SharpProfileImageProcessor } from "#modules/media/infrastructure/sharp-profile-image.processor";
 import { PrismaMediaRepository } from "#modules/media/infrastructure/prisma-media.repository";
 import {
@@ -67,7 +82,7 @@ import {
   createPrismaProviderIdentityReader,
   createProviderInvitationIdentityOnboarding,
 } from "#modules/authentication/authentication.factories";
-import { createProviderApplicantProfileReader } from "#modules/customers/customers.public";
+import { createProviderApplicantProfileReader, createProviderPayoutHolderAuthorityReader } from "#modules/customers/customers.public";
 import {
   createProviderAdminInvitationRouter,
   createProvidersRouter,
@@ -84,6 +99,26 @@ import { ProviderProjectionService } from "#modules/providers/provider-projectio
 import { ProviderReviewQueryService } from "#modules/providers/provider-review-query.service";
 import { ProviderReviewService } from "#modules/providers/provider-review.service";
 import { ProviderLifecycleService } from "#modules/providers/provider-lifecycle.service";
+import { ProviderDenialAuditService } from "#modules/providers/provider-denial-audit.service";
+import { deriveDocumentVerificationTruth } from "#modules/providers/domain/provider-verification.policy";
+import { PrismaProviderVerificationRepository } from "#modules/providers/infrastructure/prisma-provider-verification.repository";
+import { PrismaProviderPayoutRepository } from "#modules/providers/infrastructure/prisma-provider-payout.repository";
+import { PrismaPayoutRegistryRepository } from "#modules/providers/infrastructure/prisma-payout-registry.repository";
+import { ProviderDocumentService } from "#modules/providers/provider-document.service";
+import { ProviderDocumentReviewService } from "#modules/providers/provider-document-review.service";
+import { ProviderDocumentReviewQueryService } from "#modules/providers/provider-document-review-query.service";
+import { ProviderDocumentPolicyService } from "#modules/providers/provider-document-policy.service";
+import { ProviderDocumentExpirySweep } from "#modules/providers/provider-document-expiry.sweep";
+import { ProviderPolicyActivationSweep } from "#modules/providers/provider-policy-activation.sweep";
+import { ProviderVerificationHistoryService } from "#modules/providers/provider-verification-history.service";
+import { ProviderVerificationQueryService } from "#modules/providers/provider-verification-query.service";
+import { ProviderPayoutConflictService } from "#modules/providers/provider-payout-conflict.service";
+import { ProviderPayoutDestinationService } from "#modules/providers/provider-payout-destination.service";
+import { ProviderPayoutPrimaryService } from "#modules/providers/provider-payout-primary.service";
+import { ProviderPayoutHistoryService } from "#modules/providers/provider-payout-history.service";
+import { ProviderPayoutRevealService } from "#modules/providers/provider-payout-reveal.service";
+import { ProviderPayoutVerificationService } from "#modules/providers/provider-payout-verification.service";
+import { ProviderPayoutReviewQueryService } from "#modules/providers/provider-payout-review-query.service";
 import { ProviderInvitationEmailAdapter } from "#modules/providers/infrastructure/provider-invitation-email.adapter";
 import { ProviderEmailDeliveryAdapter } from "#modules/providers/infrastructure/provider-email-delivery.adapter";
 import {
@@ -293,6 +328,7 @@ function createAuthenticationModuleForRuntime(
     }),
     verifier: new CryptoVerifierAdapter(environment.AUTH_VERIFIER_SECRET!),
     privacyHashSecret: environment.AUTH_PRIVACY_HASH_SECRET!,
+    sensitiveProofSecret: environment.AUTH_VERIFIER_SECRET!,
     policy: createAuthenticationPolicy(),
     email: new AuthenticationEmailAdapter(email),
     customerSignupProfiles: createPrismaCustomerSignupProfileWriter,
@@ -443,6 +479,58 @@ export function createRuntimeDependencies(
     authentication === undefined
       ? undefined
       : (() => {
+          assertR1P06RuntimeEnvironment(environment);
+          const payoutKeyRings = parsePayoutKeyRings({
+            PAYOUT_DATA_ENCRYPTION_KEYS_JSON: environment.PAYOUT_DATA_ENCRYPTION_KEYS_JSON,
+            PAYOUT_DATA_ENCRYPTION_ACTIVE_KEY_ID: environment.PAYOUT_DATA_ENCRYPTION_ACTIVE_KEY_ID,
+            PAYOUT_LOOKUP_HMAC_KEYS_JSON: environment.PAYOUT_LOOKUP_HMAC_KEYS_JSON,
+            PAYOUT_LOOKUP_HMAC_ACTIVE_KEY_ID: environment.PAYOUT_LOOKUP_HMAC_ACTIVE_KEY_ID,
+          });
+          const scannerUrl = new URL(environment.PROVIDER_VERIFICATION_SCANNER_PROVIDER);
+          const createTransactionalStaffPermissionAuthorizer = (transaction: unknown) =>
+            new PrismaR1P06StaffPermissionAuthorizer(
+              transaction as ConstructorParameters<typeof PrismaR1P06StaffPermissionAuthorizer>[0],
+            );
+          const createTransactionalProofUseAuthorizer = (transaction: unknown) =>
+            new PrismaAuthenticationProofUseAuthorizer(
+              transaction as ConstructorParameters<typeof PrismaAuthenticationProofUseAuthorizer>[0],
+            );
+          const createTransactionalAcceptedRevealAuthorizer = (transaction: unknown) =>
+            new PrismaAcceptedPayoutRevealAuthorizer(
+              transaction as ConstructorParameters<typeof PrismaAcceptedPayoutRevealAuthorizer>[0],
+            );
+          const verificationRepository = new PrismaProviderVerificationRepository(
+            database.client,
+            createPrismaPrivilegedAuditWriter,
+            createTransactionalStaffPermissionAuthorizer,
+            createTransactionalProviderVerificationEvidenceAuthorizer,
+          );
+          const payoutRepository = new PrismaProviderPayoutRepository(
+            database.client,
+            createPrismaPrivilegedAuditWriter,
+            createTransactionalStaffPermissionAuthorizer,
+            createTransactionalProofUseAuthorizer,
+            createTransactionalAcceptedRevealAuthorizer,
+            createProviderPayoutHolderAuthorityReader,
+          );
+          const payoutRegistry = new PrismaPayoutRegistryRepository(database.client);
+          const staffPermissions = new PrismaR1P06StaffPermissionAuthorizer(database.client);
+          const authorizeR1P06Staff = (
+            actorUserId: string,
+            permission: "providers.verification.documents.review" | "providers.verification.policies.manage" | "providers.payout-destinations.verify",
+          ): Promise<boolean> => staffPermissions.authorize(actorUserId, permission);
+          const proofVerifier = new ProviderSensitiveActionProofVerifier(
+            new PrismaAuthenticationProofConsumption(environment.AUTH_VERIFIER_SECRET!, database.client),
+          );
+          const evidence = createProviderVerificationEvidencePort({
+            environment,
+            scanner: new ClamAvVerificationMalwareScanner(
+              scannerUrl.hostname,
+              Number(scannerUrl.port),
+              10_000,
+            ),
+            database: database.client,
+          });
           const unitOfWork = new PrismaProvidersUnitOfWork(
             createPrismaGeneralTransactionalAuditWriter,
             createPrismaPrivilegedAuditWriter,
@@ -471,6 +559,7 @@ export function createRuntimeDependencies(
             createProviderApplicantProfileReader(database.client),
           );
           const denialAudit = createPrismaDenialAuditWriter();
+          const r1p06DenialAudit = new ProviderDenialAuditService(denialAudit);
           const mediaReader = createProviderMediaStatusReader(database.client);
           const activeCountries = adaptProviderActiveCountryReader(
             createTransactionalActiveCountryReader(database.client),
@@ -482,6 +571,31 @@ export function createRuntimeDependencies(
             mediaReader,
             activeCountries,
             denialAudit,
+            verificationFacts: {
+              async read(provider) {
+                const profile = await providerRepository.getProfile(provider.id);
+                const policy = provider.kind === "REGISTERED_COMPANY" && profile?.countryId !== null && profile?.countryId !== undefined
+                  ? await verificationRepository.readEffectivePolicy({ countryId: profile.countryId, providerKind: "REGISTERED_COMPANY", now: new Date() })
+                  : null;
+                const effectiveApprovedTypeCodes = await verificationRepository.listEffectiveDocumentTypeCodes(provider.id, new Date());
+                const truth = deriveDocumentVerificationTruth({
+                  providerKind: provider.kind,
+                  applicationStatus: provider.applicationStatus,
+                  effectivePolicyPresent: provider.kind === "INDIVIDUAL_TEAM" || policy !== null,
+                  requiredTypeCodes: policy?.items.filter((item) => item.isRequired).map((item) => item.documentType.code) ?? [],
+                  effectiveApprovedTypeCodes,
+                });
+                return {
+                  documentsVerified: {
+                    applicable: truth.applicable,
+                    status: truth.status,
+                    satisfied: truth.satisfied,
+                    blockerCodes: truth.blockerCodes,
+                  },
+                  payoutDestinationReady: await payoutRepository.isPayoutDestinationReady(provider.id),
+                };
+              },
+            },
           });
           const applications = new ProviderApplicationService({
             unitOfWork,
@@ -625,9 +739,161 @@ export function createRuntimeDependencies(
             acceptance,
             invitationOnboarding: invitationOnboardingIdentity,
           });
+          const documentService = new ProviderDocumentService(
+            verificationRepository,
+            evidence,
+            () => new Date(),
+            r1p06DenialAudit,
+          );
+          const documentReviews = new ProviderDocumentReviewService(
+            verificationRepository,
+            evidence,
+            authorizeR1P06Staff,
+            () => new Date(),
+            r1p06DenialAudit,
+          );
+          const documentReviewQueries = new ProviderDocumentReviewQueryService(
+            verificationRepository,
+            evidence,
+            authorizeR1P06Staff,
+            r1p06DenialAudit,
+          );
+          const documentPolicies = new ProviderDocumentPolicyService(
+            verificationRepository,
+            authorizeR1P06Staff,
+            () => new Date(),
+            r1p06DenialAudit,
+          );
+          const documentHistory = new ProviderVerificationHistoryService(verificationRepository, r1p06DenialAudit);
+          const verificationQueries = new ProviderVerificationQueryService(
+            verificationRepository,
+            payoutRepository,
+            r1p06DenialAudit,
+          );
+          const payoutConflicts = new ProviderPayoutConflictService(
+            payoutRepository,
+            authorizeR1P06Staff,
+            () => new Date(),
+            r1p06DenialAudit,
+          );
+          const payoutHolderReader = createProviderPayoutHolderAuthorityReader(database.client);
+          const payoutDestinations = new ProviderPayoutDestinationService(
+            payoutRepository,
+            payoutRegistry,
+            payoutHolderReader,
+            proofVerifier,
+            payoutConflicts,
+            payoutKeyRings,
+            () => new Date(),
+            r1p06DenialAudit,
+          );
+          const payoutPrimary = new ProviderPayoutPrimaryService(
+            payoutRepository,
+            proofVerifier,
+            () => new Date(),
+            r1p06DenialAudit,
+          );
+          const payoutHistory = new ProviderPayoutHistoryService(payoutRepository, r1p06DenialAudit);
+          const payoutReviewQueries = new ProviderPayoutReviewQueryService(
+            payoutRepository,
+            authorizeR1P06Staff,
+            r1p06DenialAudit,
+          );
+          const payoutRevealAudit = new PrismaPayoutRevealAuditGate(database.client);
+          const payoutReveal = new ProviderPayoutRevealService(
+            payoutRepository,
+            proofVerifier,
+            payoutRevealAudit,
+            (transaction) => new PrismaPayoutRevealAuditGate(transaction),
+            authorizeR1P06Staff,
+            payoutKeyRings,
+          );
+          const payoutVerification = new ProviderPayoutVerificationService(
+            payoutRepository,
+            authorizeR1P06Staff,
+            async ({ attemptId, actorUserId, providerId, destinationVersionId, expectedVersion, purpose }) => {
+              const accepted = await database.client.auditLog.findFirst({
+                where: {
+                  id: attemptId,
+                  actorId: actorUserId,
+                  action: "PROVIDER_PAYOUT_REVEAL_ACCEPTED",
+                  targetType: "PROVIDER_PAYOUT_DESTINATION_VERSION",
+                  targetId: destinationVersionId,
+                  AND: [
+                    { context: { path: ["providerId"], equals: providerId } },
+                    { context: { path: ["expectedVersion"], equals: expectedVersion } },
+                    { context: { path: ["purpose"], equals: purpose } },
+                    { context: { path: ["outcome"], equals: "ACCEPTED" } },
+                  ],
+                },
+                select: { id: true },
+              });
+              return accepted !== null;
+            },
+            payoutHolderReader,
+            payoutKeyRings,
+            () => new Date(),
+            r1p06DenialAudit,
+          );
+          const documentExpiry = new ProviderDocumentExpirySweep(verificationRepository);
+          let policyActivationCursor: string | null = null;
+          const policyActivation = new ProviderPolicyActivationSweep(async ({ cursor, limit }) =>
+            verificationRepository.activateEffectivePolicyBatch({ cursor, limit, now: new Date() }),
+          );
           return {
-            startProviderBackgroundTasks: (): (() => void) =>
-              startProviderEmailDispatcher(providerEmailDispatcher, logger),
+            r1p06ReadinessProbe: {
+              name: "r1-p06-sensitive-data-configuration",
+              check: async (): Promise<void> => {
+                assertR1P06RuntimeEnvironment(environment);
+                const [identifierKeyRows, holderKeyRows, lookupRows] = await Promise.all([
+                  database.client.providerPayoutDestinationVersion.findMany({
+                    distinct: ["identifierEncryptionKeyId"],
+                    select: { identifierEncryptionKeyId: true },
+                  }),
+                  database.client.providerPayoutDestinationVersion.findMany({
+                    distinct: ["holderNameEncryptionKeyId"],
+                    select: { holderNameEncryptionKeyId: true },
+                  }),
+                  database.client.providerPayoutLookupFingerprint.findMany({
+                    distinct: ["lookupKeyId"], select: { lookupKeyId: true },
+                  }),
+                ]);
+                assertReferencedPayoutKeysAvailable({
+                  rings: payoutKeyRings,
+                  encryptionKeyIds: [...new Set([
+                    ...identifierKeyRows.map((row) => row.identifierEncryptionKeyId),
+                    ...holderKeyRows.map((row) => row.holderNameEncryptionKeyId),
+                  ])],
+                  lookupKeyIds: lookupRows.map((row) => row.lookupKeyId),
+                });
+              },
+            },
+            startProviderBackgroundTasks: (): (() => void) => {
+              const stopEmail = startProviderEmailDispatcher(providerEmailDispatcher, logger);
+              const expiryTimer = setInterval(() => {
+                void documentExpiry.runBatch().catch((error: unknown) => {
+                  logger.error("Provider document expiry sweep failed", {
+                    errorName: error instanceof Error ? error.name : "UnknownError",
+                  });
+                });
+              }, 60_000);
+              const policyActivationTimer = setInterval(() => {
+                void policyActivation.runBatch(policyActivationCursor).then((result) => {
+                  policyActivationCursor = result.nextCursor;
+                }).catch((error: unknown) => {
+                  logger.error("Provider policy activation sweep failed", {
+                    errorName: error instanceof Error ? error.name : "UnknownError",
+                  });
+                });
+              }, 60_000);
+              expiryTimer.unref();
+              policyActivationTimer.unref();
+              return (): void => {
+                clearInterval(expiryTimer);
+                clearInterval(policyActivationTimer);
+                stopEmail();
+              };
+            },
             providersRouter: createProvidersRouter({
               authenticateAccess: authentication.authenticateAccess,
               applications,
@@ -635,6 +901,16 @@ export function createRuntimeDependencies(
               media,
               projections,
               membership,
+              verification: {
+                documents: documentService,
+                history: documentHistory,
+                queries: verificationQueries,
+              },
+              payout: {
+                destinations: payoutDestinations,
+                primary: payoutPrimary,
+                history: payoutHistory,
+              },
             }),
             staffProvidersRouter: createStaffProvidersRouter({
               authenticateAccess: authentication.authenticateAccess,
@@ -642,6 +918,17 @@ export function createRuntimeDependencies(
               approval,
               review,
               lifecycle,
+              verification: {
+                reviews: documentReviews,
+                reviewQueries: documentReviewQueries,
+                policies: documentPolicies,
+              },
+              payout: {
+                reviewQueries: payoutReviewQueries,
+                reveal: payoutReveal,
+                verification: payoutVerification,
+                conflicts: payoutConflicts,
+              },
             }),
             providerAdminInvitationRouter: createProviderAdminInvitationRouter({
               authenticateAccess: authentication.authenticateAccess,
@@ -684,6 +971,7 @@ export function createRuntimeDependencies(
       databaseProbe: database.databaseProbe(),
       readinessProbes: [
         database.readinessProbe(),
+        ...(providersComposition?.r1p06ReadinessProbe === undefined ? [] : [providersComposition.r1p06ReadinessProbe]),
         ...(customersRouter === undefined
           ? []
           : [{
