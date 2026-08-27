@@ -8,6 +8,7 @@ import type {
 import { findPrivilegedActionReason } from "./domain/authorization.catalog.js";
 import {
   INVITATION_ONBOARDING_ALLOWED_ACTIONS,
+  WORKER_INVITATION_ONBOARDING_ALLOWED_ACTIONS,
 } from "./domain/auth.policy.js";
 import type {
   AuthorizationDecision,
@@ -24,6 +25,7 @@ export type {
 export {
   findPrivilegedActionReason,
   INVITATION_ONBOARDING_ALLOWED_ACTIONS,
+  WORKER_INVITATION_ONBOARDING_ALLOWED_ACTIONS,
 };
 
 /**
@@ -207,3 +209,118 @@ export interface ProviderInvitationIdentityOnboarding {
     command: VerifyInvitationEmailOtpCommand,
   ): Promise<RestrictedInvitationOnboardingPrincipal>;
 }
+
+/** R1-P07 purposes are intentionally distinct from payout proof purposes. */
+export type WorkerSensitiveActionPurpose =
+  | "WORKER_ACCESS_ISSUE"
+  | "WORKER_ACCESS_RESET"
+  | "WORKER_ACCESS_REVOKE"
+  | "WORKER_REMOVE"
+  | "PROVIDER_ADMIN_GRANT"
+  | "PROVIDER_ADMIN_REVOKE";
+
+export type SensitiveActionProofPurpose = AuthenticationProofPurpose | WorkerSensitiveActionPurpose;
+
+export interface WorkerIdentitySnapshot {
+  readonly userId: string;
+  readonly status: UserStatus;
+  readonly isAccountActive: boolean;
+  readonly emailNormalized: string | null;
+  readonly workerRoleEnabled: boolean;
+  readonly providerSupervisorRoleEnabled: boolean;
+  readonly preferredLanguage: "AR" | "EN" | null;
+}
+
+export interface WorkerIdentityReader {
+  getIdentity(userId: string): Promise<WorkerIdentitySnapshot | null>;
+  findByEmailNormalized(emailNormalized: string): Promise<WorkerIdentitySnapshot | null>;
+}
+
+export type TransactionalWorkerIdentityReaderFactory = (
+  transaction: unknown,
+) => WorkerIdentityReader;
+
+export interface WorkerInvitationIdentityOnboarding {
+  startNewUser(input: {
+    readonly invitationId: string;
+    readonly invitationVersion: number;
+    readonly fixedEmailNormalized: string;
+    readonly password: string;
+    readonly idempotencyKey: string;
+  }): Promise<{
+    readonly userId: string;
+    readonly challengeId: string;
+    readonly maskedDestination: string;
+    readonly expiresAt: Date;
+  }>;
+  verifyEmail(input: {
+    readonly invitationId: string;
+    readonly invitationVersion: number;
+    readonly challengeId: string;
+    readonly code: string;
+    readonly fixedEmailNormalized: string;
+    readonly idempotencyKey: string;
+  }): Promise<{
+    readonly principal: AuthenticationPrincipal;
+    readonly emailNormalized: string;
+    readonly capability: "WORKER_INVITATION_ONBOARDING";
+    readonly allowedActions: readonly ["WORKER_INVITATION_ACCEPT", "SESSION_CLEANUP"];
+    readonly accessToken: string;
+    readonly accessExpiresAt: Date;
+    readonly refreshToken: string;
+    readonly refreshExpiresAt: Date;
+  }>;
+}
+
+export interface TransactionalWorkerIdentityAuthorityWriter {
+  reconcileWorkerRole(input: {
+    readonly userId: string;
+    readonly shouldBeEnabled: boolean;
+  }): Promise<void>;
+  reconcileProviderSupervisorRole(input: {
+    readonly userId: string;
+    readonly shouldBeEnabled: boolean;
+  }): Promise<void>;
+  reconcileProviderAdminRole(input: {
+    readonly userId: string;
+    readonly shouldBeEnabled: boolean;
+  }): Promise<void>;
+}
+
+export type TransactionalWorkerIdentityAuthorityWriterFactory = (
+  transaction: unknown,
+) => TransactionalWorkerIdentityAuthorityWriter;
+
+export interface WorkerRecentAuthenticationProofVerifier {
+  verify(input: {
+    readonly principalUserId: string;
+    readonly sessionId: string;
+    readonly opaqueProof: string;
+    readonly purpose: WorkerSensitiveActionPurpose;
+    readonly providerId: string;
+    readonly workerId: string;
+    readonly requestId: string;
+    readonly maximumAgeSeconds: 600;
+  }): Promise<{
+    readonly proofId: string;
+    readonly authenticatedAt: Date;
+    readonly expiresAt: Date;
+  }>;
+}
+
+export interface TransactionalWorkerProofUseAuthorizer {
+  assertConsumed(input: {
+    readonly proofId: string;
+    readonly actorUserId: string;
+    readonly purpose: WorkerSensitiveActionPurpose;
+    readonly providerId: string;
+    readonly workerId: string;
+    readonly requestId: string;
+    readonly maximumAgeSeconds: 600;
+    readonly now: Date;
+  }): Promise<boolean>;
+}
+
+export type TransactionalWorkerProofUseAuthorizerFactory = (
+  transaction: unknown,
+) => TransactionalWorkerProofUseAuthorizer;

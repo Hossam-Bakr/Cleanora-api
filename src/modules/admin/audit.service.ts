@@ -101,7 +101,7 @@ function containsProtectedContentKey(value: unknown): boolean {
 }
 
 const secretKeyPattern =
-  /(secret|password|credential|token|api[_-]?key|cookie|otp|encryptionKey|hmacKey|rawProof|stepUpProof|reauthenticationProof)/iu;
+  /(secret|password|credential|token|api[_-]?key|cookie|otp|proof|encryptionKey|hmacKey)/iu;
 
 function containsSecretLikeKey(value: unknown): boolean {
   if (Array.isArray(value)) {

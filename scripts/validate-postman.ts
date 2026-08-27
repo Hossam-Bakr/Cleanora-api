@@ -4,11 +4,41 @@ import { resolve } from "node:path";
 import { cleanoraOpenApiDocument } from "../src/swagger/openapi.document.js";
 import { loadR1P06OpenApiSource, r1P06OperationInventory } from "../src/swagger/r1-p06-openapi.paths.js";
 import { R1_P05_IMPLEMENTED_OPERATIONS } from "../src/swagger/r1-p05-openapi.paths.js";
+import { R1_P07_OPENAPI_OPERATIONS } from "../src/swagger/r1-p07-openapi.paths.js";
+import {
+  createWorkerSchema,
+  invitationAcceptSchema,
+  invitationEmailVerificationSchema,
+  invitationOnboardingStartSchema,
+  invitationProofSchema,
+  replaceTeamNameSchema,
+  replaceWorkerProfileSchema,
+  teamDraftSchema,
+  teamLifecycleCommandSchema,
+  teamMembershipCommandSchema,
+  teamSupervisorCommandSchema,
+  workerAdminMembershipCommandSchema,
+  workerAvatarCommandSchema,
+  workerLeaveCommandSchema,
+  workerLifecycleCommandSchema,
+  workerLoginAccessCommandSchema,
+} from "../src/modules/providers/provider-workforce.schema.js";
+
+interface PostmanBody {
+  readonly mode?: string;
+  readonly raw?: string;
+  readonly formdata?: readonly {
+    readonly key: string;
+    readonly type?: string;
+    readonly src?: string;
+    readonly value?: string;
+  }[];
+}
 
 interface PostmanRequest {
   readonly method: string;
   readonly url: string | { readonly raw?: string };
-  readonly body?: unknown;
+  readonly body?: PostmanBody;
 }
 
 interface PostmanItem {
@@ -144,6 +174,86 @@ function collectRequestItems(items: readonly PostmanItem[]): PostmanItem[] {
 
 function runtimeProviderOperations(): string[] {
   return [...R1_P05_IMPLEMENTED_OPERATIONS].sort();
+}
+
+const r1P07RequestSchemas = {
+  createProviderWorkerDraft: createWorkerSchema,
+  replaceProviderWorkerProfile: replaceWorkerProfileSchema,
+  removeProviderWorkerAvatar: workerAvatarCommandSchema,
+  commandProviderWorkerLifecycle: workerLifecycleCommandSchema,
+  commandProviderWorkerLoginAccess: workerLoginAccessCommandSchema,
+  commandProviderWorkerAdminMembership: workerAdminMembershipCommandSchema,
+  createProviderTeamDraft: teamDraftSchema,
+  replaceProviderTeamName: replaceTeamNameSchema,
+  commandProviderTeamLifecycle: teamLifecycleCommandSchema,
+  commandProviderTeamMembership: teamMembershipCommandSchema,
+  commandProviderTeamSupervisor: teamSupervisorCommandSchema,
+  leaveCurrentProvider: workerLeaveCommandSchema,
+  inspectWorkerInvitation: invitationProofSchema,
+  startWorkerInvitationOnboarding: invitationOnboardingStartSchema,
+  verifyWorkerInvitationEmail: invitationEmailVerificationSchema,
+  acceptWorkerInvitation: invitationAcceptSchema,
+} as const;
+
+const r1P07SampleVariables: Readonly<Record<string, string>> = {
+  workerId: "synthetic-worker-id",
+  workerOperationalPhone: "+201012345678",
+  workerInvitationEmail: "worker@example.test",
+  recentAuthenticationProof: "synthetic-recent-authentication-proof",
+  invitationProof: "synthetic-invitation-proof",
+  workerPassword: "Synthetic-Password-Only!",
+  workerInvitationChallengeId: "synthetic-challenge-id",
+  workerEmailCode: "123456",
+};
+
+function materializeR1P07Sample(value: unknown): unknown {
+  if (typeof value === "string") {
+    const exactVariable = /^\{\{([^{}]+)\}\}$/u.exec(value)?.[1];
+    if (exactVariable === undefined) return value;
+    const materialized = r1P07SampleVariables[exactVariable];
+    assert(materialized !== undefined, `R1-P07 request body references unsupported sample variable: ${exactVariable}`);
+    return materialized;
+  }
+  if (Array.isArray(value)) return value.map(materializeR1P07Sample);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, materializeR1P07Sample(entry)]));
+  }
+  return value;
+}
+
+function assertR1P07RequestBodies(collection: PostmanCollection): number {
+  let validated = 0;
+  for (const item of collectRequestItems(collection.item)) {
+    const request = item.request;
+    if (request === undefined || request.body === undefined) continue;
+
+    if (item.name === "uploadProviderWorkerAvatar") {
+      assert(request.body.mode === "formdata", "R1-P07 uploadProviderWorkerAvatar must use multipart form-data");
+      const formdata = new Map((request.body.formdata ?? []).map((entry) => [entry.key, entry]));
+      assert(formdata.get("file")?.type === "file", "R1-P07 uploadProviderWorkerAvatar must include a file part");
+      const avatarResult = workerAvatarCommandSchema.safeParse({
+        expectedVersion: Number(formdata.get("expectedVersion")?.value),
+        idempotencyKey: formdata.get("idempotencyKey")?.value,
+      });
+      assert(
+        avatarResult.success,
+        `R1-P07 uploadProviderWorkerAvatar multipart command fails runtime validation: ${avatarResult.error?.issues.map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`).join("; ")}`,
+      );
+      validated += 1;
+      continue;
+    }
+
+    const schema = r1P07RequestSchemas[item.name as keyof typeof r1P07RequestSchemas];
+    assert(schema !== undefined, `R1-P07 ${item.name} has a body but no runtime-schema validation mapping`);
+    assert(request.body.mode === "raw" && typeof request.body.raw === "string", `R1-P07 ${item.name} must use a raw JSON body`);
+    const result = schema.safeParse(materializeR1P07Sample(JSON.parse(request.body.raw)));
+    assert(
+      result.success,
+      `R1-P07 ${item.name} request body fails runtime validation: ${result.error?.issues.map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`).join("; ")}`,
+    );
+    validated += 1;
+  }
+  return validated;
 }
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -399,6 +509,36 @@ async function main(): Promise<void> {
     assert(!r1P06Serialized.includes(forbidden), `R1-P06 collection contains forbidden secret material: ${forbidden}`);
   }
 
+  const r1P07CollectionPath = resolve(postmanDirectory, "cleanora-r1-p07-provider-workforce.postman_collection.json");
+  const r1P07Collection = await parseJson<PostmanCollection>(r1P07CollectionPath);
+  assert(r1P07Collection.info.schema.endsWith("/collection/v2.1.0/collection.json"), "R1-P07 collection must use Postman collection schema v2.1.0");
+  const r1P07RuntimeOperations = R1_P07_OPENAPI_OPERATIONS.map(([method, path]) => `${method.toUpperCase()} ${path}`).sort();
+  const r1P07RequestCount = assertMirroredEnvironments({
+    label: "R1-P07",
+    collection: r1P07Collection,
+    expectedOperations: r1P07RuntimeOperations,
+  });
+  const r1P07ValidatedRequestBodies = assertR1P07RequestBodies(r1P07Collection);
+  const r1P07Serialized = await readFile(r1P07CollectionPath, "utf8");
+  const r1P07Variables = new Map((r1P07Collection.variable ?? []).map((entry) => [entry.key, entry.value]));
+  for (const secretVariable of [
+    "accessToken", "workerOperationalPhone", "workerInvitationEmail", "recentAuthenticationProof",
+    "invitationProof", "workerPassword", "workerInvitationChallengeId", "workerEmailCode", "workerAvatarFile",
+  ]) {
+    assert(r1P07Variables.get(secretVariable) === "", `R1-P07 collection must export ${secretVariable} empty`);
+  }
+  const r1P07Referenced = new Set([...r1P07Serialized.matchAll(/\{\{([^{}]+)\}\}/gu)].map((match) => match[1]!));
+  const r1P07Undefined = [...r1P07Referenced].filter((key) => !r1P07Variables.has(key) && key !== "$guid");
+  assert(r1P07Undefined.length === 0, `R1-P07 collection leaves variables undefined: ${r1P07Undefined.join(", ")}`);
+  assert(r1P07Serialized.includes("body.error.statusCode"), "R1-P07 tests must validate error-envelope statusCode");
+  for (const forbidden of [
+    "CLOUDINARY_API_SECRET", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "DATABASE_URL", "Bearer eyJ",
+    "SMTP_PASSWORD", "r1p07.synthetic.invitation.proof.never-runtime", "+201012345678",
+    "R1P07-Synthetic-Password-Only!", "r1p07/synthetic/private-worker-avatar.webp",
+  ]) {
+    assert(!r1P07Serialized.includes(forbidden), `R1-P07 collection contains forbidden secret material: ${forbidden}`);
+  }
+
   process.stdout.write(
     `${JSON.stringify({
       ok: true,
@@ -414,11 +554,15 @@ async function main(): Promise<void> {
         r1P04: r1P04RequestCount / 2,
         r1P05: r1P05RuntimeOperations.length,
         r1P06: r1P06RuntimeOperations.length,
+        r1P07: r1P07RuntimeOperations.length,
       },
       r1P05Requests: r1P05RequestCount,
       r1P05RequestsPerEnvironment: r1P05RuntimeOperations.length,
       r1P06Requests: r1P06RequestCount,
       r1P06RequestsPerEnvironment: r1P06RuntimeOperations.length,
+      r1P07Requests: r1P07RequestCount,
+      r1P07RequestsPerEnvironment: r1P07RuntimeOperations.length,
+      r1P07ValidatedRequestBodies,
       runtimeParity: true,
       environments: 2,
     })}\n`,

@@ -12,6 +12,13 @@ const base = {
 } as const;
 
 describe("createMediaStoragePort", () => {
+  it("rejects missing or unknown storage provider values", () => {
+    expect(() => createMediaStoragePort({ ...base, MEDIA_STORAGE_PROVIDER: undefined } as never))
+      .toThrow(/MEDIA_STORAGE_PROVIDER is required/u);
+    expect(() => createMediaStoragePort({ ...base, MEDIA_STORAGE_PROVIDER: "azure" } as never))
+      .toThrow(/Unsupported MEDIA_STORAGE_PROVIDER/u);
+  });
+
   it("rejects s3 with a clear R1-P04 message", () => {
     expect(() =>
       createMediaStoragePort({
@@ -34,6 +41,21 @@ describe("createMediaStoragePort", () => {
         CLOUDINARY_API_SECRET: "",
       } as never),
     ).toThrow(/CLOUDINARY_/u);
+  });
+
+  it.each([
+    ["CLOUDINARY_CLOUD_NAME", ""],
+    ["CLOUDINARY_API_KEY", ""],
+    ["CLOUDINARY_API_SECRET", ""],
+    ["CLOUDINARY_PROFILE_IMAGE_FOLDER", ""],
+  ] as const)("rejects an empty %s", (key, value) => {
+    expect(() => createMediaStoragePort({ ...base, [key]: value } as never))
+      .toThrow(/CLOUDINARY_/u);
+  });
+
+  it.each([undefined, 59, 86_401, 60.5])("rejects invalid signed URL TTL %s", (ttl) => {
+    expect(() => createMediaStoragePort({ ...base, CLOUDINARY_SIGNED_URL_TTL_SECONDS: ttl } as never))
+      .toThrow(/CLOUDINARY_SIGNED_URL_TTL_SECONDS/u);
   });
 
   it("requires MEDIA_IMAGE_MAX_BYTES exactly 5 MiB", () => {

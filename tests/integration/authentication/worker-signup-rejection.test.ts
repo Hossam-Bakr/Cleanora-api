@@ -1,10 +1,11 @@
 import { startAuthenticationTestApp } from '../../helpers/authentication/test-authentication-app.js';
 import { provisionWorker } from '../../helpers/authentication/worker-fixture.js';
+import { hasExplicitR1P07TestDatabase } from '../../helpers/r1-p07-workforce-fixtures.js';
 
 const request = require('supertest') as typeof import('supertest');
 vi.setConfig({ testTimeout: 60_000 });
 
-describe('provider-created worker boundary', () => {
+describe.skipIf(!hasExplicitR1P07TestDatabase())('provider-created worker boundary', () => {
   it('allows controlled worker login while every public enrollment path rejects WORKER', async () => {
     const context = await startAuthenticationTestApp();
     try {

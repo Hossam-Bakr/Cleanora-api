@@ -1,6 +1,11 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import {
   assertAppliedMigration,
   assertExactMigrationDirectoryNames,
+  expectR1P07ConstraintRejection,
+  readDatabaseSqlState,
 } from "../../../scripts/validate-clean-migration.js";
 
 const EXPECTED = [
@@ -17,7 +22,19 @@ const EXPECTED = [
   "r1_p04a_category_aware_customer_signup_verification",
   "r1_p05_provider_onboarding_profile_lifecycle",
   "r1_p06_provider_verification_external_payout_destinations",
+  "r1_p07_worker_team_crew_management",
 ] as const;
+
+const r1P07MigrationSql = readFileSync(
+  resolve(
+    process.cwd(),
+    "prisma",
+    "migrations",
+    "r1_p07_worker_team_crew_management",
+    "migration.sql",
+  ),
+  "utf8",
+);
 
 describe("clean migration exact chronology", () => {
   it("rejects missing or unexpected migration directories", () => {
@@ -51,5 +68,44 @@ describe("clean migration exact chronology", () => {
         },
       ]),
     ).toThrow(/unexpected rows/u);
+  });
+
+  it("accepts only the expected live R1-P07 constraint SQLSTATE", async () => {
+    expect(readDatabaseSqlState({ code: "P2002" })).toBe("23505");
+    expect(readDatabaseSqlState({
+      name: "DriverAdapterError",
+      cause: { kind: "postgres", code: "23514", originalCode: "23514" },
+    })).toBe("23514");
+    expect(readDatabaseSqlState({
+      code: "P2010",
+      meta: { driverAdapterError: { cause: { originalCode: "23514" } } },
+    })).toBe("23514");
+    await expect(expectR1P07ConstraintRejection(
+      "synthetic check",
+      "23514",
+      () => Promise.reject({ code: "P2010", meta: { code: "23514" } }),
+    )).resolves.toBeUndefined();
+    await expect(expectR1P07ConstraintRejection(
+      "synthetic check",
+      "23514",
+      () => Promise.reject({ code: "P2010", meta: { code: "42601" } }),
+    )).rejects.toThrow(/unexpected safe database code/u);
+    await expect(expectR1P07ConstraintRejection(
+      "synthetic check",
+      "23514",
+      async () => undefined,
+    )).rejects.toThrow(/accepted synthetic check/u);
+  });
+
+  it("resolves the required-profile trigger key only from the active trigger table shape", () => {
+    expect(r1P07MigrationSql).toContain(
+      "IF TG_TABLE_NAME = 'provider_workers' THEN\n    worker_key := NEW.\"id\";",
+    );
+    expect(r1P07MigrationSql).toContain(
+      "ELSE\n    worker_key := OLD.\"worker_id\";",
+    );
+    expect(r1P07MigrationSql).not.toContain(
+      "worker_key := CASE WHEN TG_TABLE_NAME = 'provider_workers'",
+    );
   });
 });

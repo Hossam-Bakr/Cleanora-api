@@ -33,4 +33,22 @@ describe("public route map", () => {
       60,
     );
   });
+
+  it("mounts every R1-P07 route family at its sanctioned API prefix", async () => {
+    const app = express();
+    const providerWorkforceRouter = Router().get("/route-probe", (_request, response) => response.status(204).end());
+    const providerWorkerSelfRouter = Router().get("/route-probe", (_request, response) => response.status(204).end());
+    const providerWorkforceInvitationRouter = Router().get("/route-probe", (_request, response) => response.status(204).end());
+    mountRoutes(app, {
+      environment: createTestEnvironment(),
+      logger: new TestLogger(),
+      rateLimiter: { consume: vi.fn(async () => ({ allowed: true, remaining: 1 })) },
+      providerWorkforceRouter,
+      providerWorkerSelfRouter,
+      providerWorkforceInvitationRouter,
+    });
+    await request(app).get("/api/v1/providers/route-probe").expect(204);
+    await request(app).get("/api/v1/workers/route-probe").expect(204);
+    await request(app).get("/api/v1/worker-invitations/route-probe").expect(204);
+  });
 });

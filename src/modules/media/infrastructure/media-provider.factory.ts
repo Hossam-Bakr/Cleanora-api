@@ -8,6 +8,8 @@ import type {
   MediaPendingUploadPort,
   ProviderMediaStatusReader,
   ProviderVerificationEvidencePort,
+  TransactionalWorkerAvatarAuthorizerFactory,
+  WorkerAvatarPort,
   TransactionalProviderVerificationEvidenceAuthorizerFactory,
 } from "../media.public.js";
 import {
@@ -24,6 +26,12 @@ import {
   ProviderVerificationEvidenceAdapter,
   type VerificationMalwareScanner,
 } from "./provider-verification-evidence.adapter.js";
+import {
+  PrismaTransactionalWorkerAvatarAuthorizer,
+  PrismaWorkerAvatarPersistence,
+  SharpWorkerAvatarProcessor,
+  WorkerAvatarAdapter,
+} from "./worker-avatar.adapter.js";
 
 export interface MediaProviderSelection {
   readonly storage: MediaStoragePort;
@@ -173,6 +181,46 @@ export function createProviderMediaStatusReader(
     },
   };
 }
+
+/** Media-owned Worker avatar runtime pipeline, reusing the existing private Cloudinary configuration. */
+export function createWorkerAvatarPort(input: {
+  readonly environment: AppEnvironment;
+  readonly database?: unknown;
+  readonly sdk?: CloudinarySdk;
+}): WorkerAvatarPort {
+  const selection = createMediaStoragePort(input.environment, input.sdk ?? cloudinary);
+  const repository = new PrismaMediaRepository(
+    input.database as ConstructorParameters<typeof PrismaMediaRepository>[0],
+  );
+  const folder = `${input.environment.CLOUDINARY_PROFILE_IMAGE_FOLDER ?? "cleanora-providers"}/worker-avatars`;
+  return new WorkerAvatarAdapter(
+    new SharpWorkerAvatarProcessor(),
+    new PrismaWorkerAvatarPersistence({
+      repository,
+      storage: selection.storage,
+      createStorageKey: () => createOpaqueCloudinaryPublicId(folder),
+      signedUrlTtlSeconds: selection.signedUrlTtlSeconds,
+    }),
+  );
+}
+
+/** Media-owned exact READY/owner/purpose recheck joined to a Providers transaction. */
+export const createTransactionalWorkerAvatarAuthorizer:
+  TransactionalWorkerAvatarAuthorizerFactory = (transaction) => {
+    const repository = new PrismaMediaRepository(
+      transaction as ConstructorParameters<typeof PrismaMediaRepository>[0],
+    );
+    return new PrismaTransactionalWorkerAvatarAuthorizer({
+      async read(mediaFileId) {
+        const row = await repository.findById(mediaFileId);
+        return row === null ? null : {
+          ownerUserId: row.ownerUserId,
+          ownerType: row.ownerType,
+          status: row.status,
+        };
+      },
+    });
+  };
 
 /** Media-owned R1-P06 private evidence pipeline. */
 export function createProviderVerificationEvidencePort(input: {

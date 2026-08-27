@@ -24,7 +24,8 @@ const migrationNames = [
   'r1_p04_customer_profiles_preferences_text_addresses_02_cloudinary_profile_image_storage',
   'r1_p04a_category_aware_customer_signup_verification',
   'r1_p05_provider_onboarding_profile_lifecycle',
-  'r1_p06_provider_verification_external_payout_destinations'
+  'r1_p06_provider_verification_external_payout_destinations',
+  'r1_p07_worker_team_crew_management'
 ] as const;
 const expectedTables = [
   "currencies",
@@ -82,7 +83,17 @@ const expectedTables = [
   "provider_primary_payout_destinations",
   "provider_payout_conflicts",
   "provider_payout_history",
-  "provider_payout_key_rotation_runs"
+  "provider_payout_key_rotation_runs",
+  "provider_workers",
+  "provider_worker_profiles",
+  "provider_worker_skills",
+  "provider_worker_login_access",
+  "provider_worker_invitations",
+  "provider_teams",
+  "provider_team_memberships",
+  "provider_workforce_history",
+  "provider_workforce_commands",
+  "provider_workforce_notification_intents"
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -153,6 +164,18 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "provider_payout_conflicts",
     "provider_payout_history",
     "provider_payout_key_rotation_runs"
+  ],
+  r1_p07_worker_team_crew_management: [
+    "provider_workers",
+    "provider_worker_profiles",
+    "provider_worker_skills",
+    "provider_worker_login_access",
+    "provider_worker_invitations",
+    "provider_teams",
+    "provider_team_memberships",
+    "provider_workforce_history",
+    "provider_workforce_commands",
+    "provider_workforce_notification_intents"
   ]
 };
 const expectedPostDeployTables = ["_prisma_migrations", ...expectedTables] as const;
@@ -542,6 +565,21 @@ export function assertR1P06DisposableDatabaseUrl(
   }
 }
 
+/** Require an explicitly named R1-P07 disposable target for workforce proofs. */
+export function assertR1P07DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+  const url = new URL(connectionString);
+  const targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  if (!/(^|[._-])r1[._-]?p07([._-]|$)/u.test(targetName.toLowerCase())) {
+    throw new Error(
+      "R1-P07 migration proof requires an explicitly named R1-P07 disposable database",
+    );
+  }
+}
+
 /** Accept only the forward-only R1-P06 table/enums/index/constraint inventory. */
 export function assertR1P06MigrationSql(sql: string): void {
   if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/iu.test(sql)) {
@@ -574,6 +612,45 @@ export function assertR1P06MigrationSql(sql: string): void {
   }
   if (!sql.includes("ON DELETE RESTRICT") || /\bON DELETE CASCADE\b/iu.test(sql)) {
     throw new Error("R1-P06 evidence foreign keys must use ON DELETE RESTRICT");
+  }
+}
+
+/** Accept only the additive, phase-owned R1-P07 workforce migration inventory. */
+export function assertR1P07MigrationSql(sql: string): void {
+  if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/iu.test(sql)) {
+    throw new Error("R1-P07 workforce migration contains destructive SQL");
+  }
+  const tables = migrationOwnedTables["r1_p07_worker_team_crew_management"] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P07 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 10) {
+    throw new Error("R1-P07 migration must create exactly ten tables");
+  }
+  for (const required of [
+    "WORKER_PROFILE_IMAGE",
+    "WORKER_INVITATION_EMAIL_VERIFICATION",
+    'ADD COLUMN "workforce_state_version" INTEGER NOT NULL DEFAULT 1',
+    'ADD COLUMN "version" INTEGER NOT NULL DEFAULT 1',
+    "provider_workers_current_identity_unique",
+    "provider_worker_invitations_pending_unique",
+    "provider_teams_non_archived_name_unique",
+    "provider_team_memberships_current_worker_unique",
+    "provider_workforce_commands_scope_idempotency_unique",
+    "provider_team_memberships_escort_never_cleans",
+    "provider_teams_primary_supervisor_valid",
+    "provider_teams_active_valid",
+    "provider_workers_profile_required",
+    "provider_worker_login_access_invitation_same_worker",
+    "provider_workforce_history_immutable",
+    "DEFERRABLE INITIALLY DEFERRED",
+  ]) {
+    if (!sql.includes(required)) throw new Error(`R1-P07 migration is missing ${required}`);
+  }
+  if (!sql.includes("ON DELETE RESTRICT") || /\bON DELETE CASCADE\b/iu.test(sql)) {
+    throw new Error("R1-P07 workforce foreign keys must use ON DELETE RESTRICT");
   }
 }
 
@@ -657,6 +734,10 @@ async function validateMigrationFolder(): Promise<void> {
       assertR1P06MigrationSql(sql);
       continue;
     }
+    if (migrationName === 'r1_p07_worker_team_crew_management') {
+      assertR1P07MigrationSql(sql);
+      continue;
+    }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
       if (!sql.includes(`"${table}"`)) throw new Error(`Migration ${migrationName} is missing expected table ${table}`);
     }
@@ -712,6 +793,7 @@ export async function assertPostDeployState(
     }
     await probeR1P05Constraints(prisma);
     await probeR1P06Constraints(prisma);
+    await probeR1P07Constraints(prisma);
   } finally {
     await prisma.$disconnect();
   }
@@ -739,6 +821,206 @@ async function readSeedCounts(prisma: PrismaClient): Promise<{
       prisma.payoutDestinationType.count(),
     ]);
   return { roles, permissions, rolePermissions, privilegedReasons, countries, currencies, verificationDocumentTypes, payoutDestinationTypes };
+}
+
+export function readDatabaseSqlState(error: unknown): string | null {
+  if (typeof error !== "object" || error === null) return null;
+  const record = error as Readonly<Record<string, unknown>>;
+  if (record["code"] === "P2002") return "23505";
+  if (record["code"] === "P2003") return "23503";
+  const directCause = record["cause"];
+  if (typeof directCause === "object" && directCause !== null) {
+    const directCauseRecord = directCause as Readonly<Record<string, unknown>>;
+    const originalCode = directCauseRecord["originalCode"];
+    if (typeof originalCode === "string") return originalCode;
+    const causeCode = directCauseRecord["code"];
+    if (typeof causeCode === "string") return causeCode;
+  }
+  const meta = record["meta"];
+  if (typeof meta !== "object" || meta === null) return null;
+  const direct = (meta as Readonly<Record<string, unknown>>)["code"];
+  if (typeof direct === "string") return direct;
+  const driverAdapterError = (meta as Readonly<Record<string, unknown>>)["driverAdapterError"];
+  if (typeof driverAdapterError !== "object" || driverAdapterError === null) return null;
+  const cause = (driverAdapterError as Readonly<Record<string, unknown>>)["cause"];
+  if (typeof cause !== "object" || cause === null) return null;
+  const originalCode = (cause as Readonly<Record<string, unknown>>)["originalCode"];
+  return typeof originalCode === "string" ? originalCode : null;
+}
+
+export async function expectR1P07ConstraintRejection(
+  label: string,
+  expectedSqlState: string,
+  operation: () => Promise<unknown>,
+): Promise<void> {
+  try {
+    await operation();
+  } catch (error) {
+    if (readDatabaseSqlState(error) === expectedSqlState) return;
+    throw new Error(`R1-P07 database constraint rejected ${label} with an unexpected safe database code`);
+  }
+  throw new Error(`R1-P07 database constraint accepted ${label}`);
+}
+
+async function probeR1P07Constraints(prisma: PrismaClient): Promise<void> {
+  await prisma.$transaction(async (transaction) => {
+    await transaction.$executeRawUnsafe(`
+      INSERT INTO "users" (
+        "id", "email_normalized", "account_categories", "verified_categories", "status", "updated_at"
+      ) VALUES
+        ('r1p07-proof-owner-a', 'r1p07-proof-owner-a@example.invalid', ARRAY[]::"AccountCategory"[], ARRAY[]::"AccountCategory"[], 'ACTIVE', CURRENT_TIMESTAMP),
+        ('r1p07-proof-owner-b', 'r1p07-proof-owner-b@example.invalid', ARRAY[]::"AccountCategory"[], ARRAY[]::"AccountCategory"[], 'ACTIVE', CURRENT_TIMESTAMP);
+
+      INSERT INTO "providers" (
+        "id", "application_owner_user_id", "owner_user_id", "kind", "application_status",
+        "operational_status", "approved_at", "updated_at"
+      ) VALUES
+        ('r1p07-proof-provider-a', 'r1p07-proof-owner-a', 'r1p07-proof-owner-a', 'INDIVIDUAL_TEAM', 'APPROVED', 'LIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+        ('r1p07-proof-provider-b', 'r1p07-proof-owner-b', 'r1p07-proof-owner-b', 'INDIVIDUAL_TEAM', 'APPROVED', 'LIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+      INSERT INTO "provider_workers" (
+        "id", "provider_id", "identity_user_id", "status", "updated_at"
+      ) VALUES
+        ('r1p07-proof-cleaner', 'r1p07-proof-provider-a', 'r1p07-proof-owner-a', 'ACTIVE', CURRENT_TIMESTAMP),
+        ('r1p07-proof-escort', 'r1p07-proof-provider-a', NULL, 'ACTIVE', CURRENT_TIMESTAMP),
+        ('r1p07-proof-foreign-worker', 'r1p07-proof-provider-b', 'r1p07-proof-owner-b', 'ACTIVE', CURRENT_TIMESTAMP);
+
+      INSERT INTO "provider_worker_profiles" (
+        "worker_id", "full_legal_name", "gender", "operational_phone_e164", "worker_type",
+        "supervisor_capable", "updated_at"
+      ) VALUES
+        ('r1p07-proof-cleaner', 'R1-P07 Proof Cleaner', 'FEMALE', '+201000000701', 'CLEANING_STAFF', false, CURRENT_TIMESTAMP),
+        ('r1p07-proof-escort', 'R1-P07 Proof Escort', 'MALE', '+201000000702', 'ESCORT', false, CURRENT_TIMESTAMP),
+        ('r1p07-proof-foreign-worker', 'R1-P07 Foreign Worker', 'FEMALE', '+201000000703', 'CLEANING_STAFF', true, CURRENT_TIMESTAMP);
+
+      INSERT INTO "provider_teams" (
+        "id", "provider_id", "name", "normalized_name", "status", "updated_at"
+      ) VALUES (
+        'r1p07-proof-team', 'r1p07-proof-provider-a', 'R1-P07 Proof Crew',
+        'r1-p07 proof crew', 'DRAFT', CURRENT_TIMESTAMP
+      );
+
+      INSERT INTO "provider_team_memberships" (
+        "id", "team_id", "worker_id", "cleans", "updated_at"
+      ) VALUES (
+        'r1p07-proof-membership', 'r1p07-proof-team', 'r1p07-proof-cleaner', true, CURRENT_TIMESTAMP
+      );
+
+      UPDATE "provider_teams" SET "status" = 'ACTIVE', "updated_at" = CURRENT_TIMESTAMP
+      WHERE "id" = 'r1p07-proof-team';
+
+      INSERT INTO "provider_worker_invitations" (
+        "id", "worker_id", "invitation_version", "email_normalized", "locale", "status",
+        "issued_by_user_id", "issued_at", "expires_at", "updated_at"
+      ) VALUES (
+        'r1p07-proof-invitation', 'r1p07-proof-cleaner', 1,
+        'r1p07-proof-worker@example.invalid', 'EN', 'PENDING', 'r1p07-proof-owner-a',
+        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '72 hours', CURRENT_TIMESTAMP
+      );
+
+      INSERT INTO "provider_workforce_history" (
+        "id", "provider_id", "target_type", "target_id", "target_version", "event_code",
+        "actor_user_id", "request_id"
+      ) VALUES (
+        'r1p07-proof-history', 'r1p07-proof-provider-a', 'WORKER', 'r1p07-proof-cleaner',
+        1, 'WORKER_CREATED', 'r1p07-proof-owner-a', 'r1p07-proof-request'
+      );
+    `);
+  });
+
+  await expectR1P07ConstraintRejection("a zero Provider workforce version", "23514", () =>
+    prisma.$executeRawUnsafe(`UPDATE "providers" SET "workforce_state_version" = 0 WHERE "id" = 'r1p07-proof-provider-a'`));
+  await expectR1P07ConstraintRejection("a Worker without its required profile", "23514", () =>
+    prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
+      INSERT INTO "provider_workers" ("id", "provider_id", "status", "updated_at")
+      VALUES ('r1p07-proof-profileless', 'r1p07-proof-provider-a', 'DRAFT', CURRENT_TIMESTAMP)
+    `)));
+  await expectR1P07ConstraintRejection("a duplicate current identity engagement", "23505", () =>
+    prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
+      INSERT INTO "provider_workers" ("id", "provider_id", "identity_user_id", "status", "updated_at")
+      VALUES ('r1p07-proof-identity-duplicate', 'r1p07-proof-provider-a', 'r1p07-proof-owner-a', 'DRAFT', CURRENT_TIMESTAMP);
+      INSERT INTO "provider_worker_profiles" (
+        "worker_id", "full_legal_name", "gender", "operational_phone_e164", "worker_type", "updated_at"
+      ) VALUES (
+        'r1p07-proof-identity-duplicate', 'R1-P07 Duplicate Identity', 'FEMALE',
+        '+201000000704', 'CLEANING_STAFF', CURRENT_TIMESTAMP
+      )
+    `)));
+  await expectR1P07ConstraintRejection("a second pending invitation", "23505", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "provider_worker_invitations" (
+        "id", "worker_id", "invitation_version", "email_normalized", "locale", "status",
+        "issued_by_user_id", "issued_at", "expires_at", "updated_at"
+      ) VALUES (
+        'r1p07-proof-invitation-duplicate', 'r1p07-proof-cleaner', 2,
+        'r1p07-proof-worker@example.invalid', 'EN', 'PENDING', 'r1p07-proof-owner-a',
+        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '72 hours', CURRENT_TIMESTAMP
+      )
+    `));
+  await expectR1P07ConstraintRejection("a duplicate non-archived normalized Team name", "23505", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "provider_teams" ("id", "provider_id", "name", "normalized_name", "status", "updated_at")
+      VALUES ('r1p07-proof-team-name-duplicate', 'r1p07-proof-provider-a', 'Duplicate', 'r1-p07 proof crew', 'DRAFT', CURRENT_TIMESTAMP)
+    `));
+  await expectR1P07ConstraintRejection("a second current Team membership", "23505", () =>
+    prisma.$transaction(async (transaction) => {
+      await transaction.$executeRawUnsafe(`
+        INSERT INTO "provider_teams" ("id", "provider_id", "name", "normalized_name", "status", "updated_at")
+        VALUES ('r1p07-proof-team-second', 'r1p07-proof-provider-a', 'Second Crew', 'second crew', 'DRAFT', CURRENT_TIMESTAMP)
+      `);
+      await transaction.$executeRawUnsafe(`
+        INSERT INTO "provider_team_memberships" ("id", "team_id", "worker_id", "cleans", "updated_at")
+        VALUES ('r1p07-proof-membership-second', 'r1p07-proof-team-second', 'r1p07-proof-cleaner', true, CURRENT_TIMESTAMP)
+      `);
+    }));
+  await expectR1P07ConstraintRejection("an Escort membership with cleans=true", "23514", () =>
+    prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
+      INSERT INTO "provider_team_memberships" ("id", "team_id", "worker_id", "cleans", "updated_at")
+      VALUES ('r1p07-proof-escort-cleans', 'r1p07-proof-team', 'r1p07-proof-escort', true, CURRENT_TIMESTAMP)
+    `)));
+  await expectR1P07ConstraintRejection("a cross-Provider Team membership", "23514", () =>
+    prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
+      INSERT INTO "provider_team_memberships" ("id", "team_id", "worker_id", "cleans", "updated_at")
+      VALUES ('r1p07-proof-cross-provider', 'r1p07-proof-team', 'r1p07-proof-foreign-worker', false, CURRENT_TIMESTAMP)
+    `)));
+  await expectR1P07ConstraintRejection("removal of an active Team's final cleaner", "23514", () =>
+    prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
+      UPDATE "provider_team_memberships" SET "ended_at" = CURRENT_TIMESTAMP, "updated_at" = CURRENT_TIMESTAMP
+      WHERE "id" = 'r1p07-proof-membership'
+    `)));
+  await expectR1P07ConstraintRejection("an ineligible primary Supervisor", "23514", () =>
+    prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
+      UPDATE "provider_teams" SET "primary_supervisor_worker_id" = 'r1p07-proof-cleaner', "updated_at" = CURRENT_TIMESTAMP
+      WHERE "id" = 'r1p07-proof-team'
+    `)));
+  await expectR1P07ConstraintRejection("mismatched login-access invitation ownership", "23514", () =>
+    prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
+      INSERT INTO "provider_worker_login_access" ("worker_id", "status", "current_invitation_id", "updated_at")
+      VALUES ('r1p07-proof-escort', 'INVITED', 'r1p07-proof-invitation', CURRENT_TIMESTAMP)
+    `)));
+  await expectR1P07ConstraintRejection("a notification intent without exactly one recipient", "23514", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "provider_workforce_notification_intents" (
+        "id", "provider_id", "template", "locale", "idempotency_key", "updated_at"
+      ) VALUES (
+        'r1p07-proof-invalid-notification', 'r1p07-proof-provider-a', 'WORKER_ACTIVATED',
+        'EN', 'r1p07-proof-invalid-notification', CURRENT_TIMESTAMP
+      )
+    `));
+  await expectR1P07ConstraintRejection("a malformed idempotency fingerprint", "23514", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "provider_workforce_commands" (
+        "id", "provider_id", "scope_key", "idempotency_key", "request_fingerprint"
+      ) VALUES (
+        'r1p07-proof-invalid-command', 'r1p07-proof-provider-a', 'worker:r1p07-proof-cleaner',
+        'r1p07-proof-invalid-command', 'not-a-sha256-fingerprint'
+      )
+    `));
+  await expectR1P07ConstraintRejection("an update to immutable workforce history", "55000", () =>
+    prisma.$executeRawUnsafe(`
+      UPDATE "provider_workforce_history" SET "event_code" = 'MUTATED'
+      WHERE "id" = 'r1p07-proof-history'
+    `));
 }
 
 async function probeR1P06Constraints(prisma: PrismaClient): Promise<void> {
@@ -1304,9 +1586,9 @@ async function run(): Promise<void> {
     );
   }
 
-  assertR1P06DisposableDatabaseUrl(configuredConnectionString);
+  assertR1P07DisposableDatabaseUrl(configuredConnectionString);
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p06_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p07_proof_${process.pid}_${Date.now()}`;
   proofUrl.searchParams.set("schema", proofSchema);
   proofUrl.searchParams.set("options", `-c search_path=${proofSchema}`);
   const connectionString = proofUrl.toString();
@@ -1329,7 +1611,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact tables, full history, double-seed idempotency, and live R1-P05/R1-P06 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact tables, full history, double-seed idempotency, and live R1-P05/R1-P06/R1-P07 constraint probes.`,
   );
 }
 

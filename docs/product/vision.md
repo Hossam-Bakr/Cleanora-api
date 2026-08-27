@@ -98,9 +98,11 @@ Premium status may affect sorting, but must not bypass eligibility.
 
 A user may hold multiple roles over time. Permissions are authoritative for sensitive operations.
 
-Supervisor and provider-admin capabilities are provider-scoped memberships or
-permissions; they do not require separate identity systems. A provider admin
-does not need to be a worker and never gains provider ownership implicitly.
+Supervisor capability is an explicit Provider-scoped Worker capability.
+Provider Admin authority comes only from explicit active
+`provider_members.ADMIN` membership for the exact Provider, never from a Worker
+boolean or profile flag. A Provider Admin does not need to be a Worker and never
+gains Provider ownership implicitly.
 
 ### 4.2 Customer types
 
@@ -151,8 +153,15 @@ These are entry surfaces over one identity system, not separate authentication s
 
 #### Worker
 
-- Worker is created or invited by a provider.
-- Login uses phone and password.
+- A Provider may create a Worker Profile before the person's Authentication
+  account is complete, then invite the person by email.
+- A new user chooses their own password. An existing user signs in and accepts
+  the invitation without changing their password.
+- Worker operational phone data remains separate from Authentication phone data.
+- The Owner selects Arabic or English for each Worker invitation version. After
+  acceptance, Worker email uses the recipient's saved language preference when
+  available, then the last accepted invitation locale, then Arabic as the final
+  fallback. Email failure never changes accepted workforce truth.
 
 #### Marketer
 
@@ -216,15 +225,30 @@ than storing an unstructured generic settings object.
 Workers have mini-profiles containing at least:
 
 - Name
-- Phone
+- Private operational phone normalized to E.164
 - Avatar when available
-- Role/title
+- Closed `workerType`: `CLEANING_STAFF`, `ESCORT`, or `OTHER`
+- Optional display title and Provider-managed skill tags
 - Required gender: `male` or `female`
 - Active state
-- Supervisor flag
-- Provider-admin flag
+- Independent Supervisor capability when assigned
 
-A provider may group workers into teams.
+A Provider may group Workers into Teams. A Worker has at most one active Team
+membership, and `cleans` belongs to that membership rather than to the permanent
+Worker profile. Provider Admin authority remains a separate explicit
+`provider_members.ADMIN` membership.
+
+A Team's primary Supervisor may read only that current Team and its current
+members and may change only `cleans` on an existing current membership in that
+Team. Primary Supervisor authority does not include adding, removing, or moving
+members; editing Worker profiles, skills, lifecycle, invitations, login access,
+or Provider Admin membership; changing Team name or lifecycle; or assigning or
+clearing the primary Supervisor. Full operational-phone access applies only to
+the Supervisor's current Team members while that assignment remains valid.
+If a Supervisor's `cleans=false` change would remove an active Team's final
+valid cleaner, the command is rejected and referred to an Owner or Admin. Only
+an Owner or Admin may confirm that impact, after which the membership change and
+Team inactivation are atomic.
 
 The customer crew preference is:
 
@@ -232,7 +256,11 @@ The customer crew preference is:
 - `all_female`
 - `any`
 
-A female cleaning crew may include male escorts who do not clean. The assignment model must record this explicitly, for example with `cleans = false`, and customer-facing copy must explain it.
+A female cleaning crew may include male escorts who do not clean. Every Escort
+Team membership has `cleans=false`; a request for `cleans=true` is invalid, and
+a current cleaning Worker must have that membership fact explicitly corrected
+before their type can change to `ESCORT`. A later assignment model must preserve
+the non-cleaning fact, and customer-facing copy must explain it.
 
 ---
 
@@ -346,7 +374,8 @@ Order completion requires a six-digit code sent to the customer by SMS.
 
 ### 8.3 Panic and emergency
 
-Worker, supervisor, or provider-admin may trigger panic for an active order.
+Worker, Supervisor, or an explicit exact-Provider Admin member may trigger panic
+for an active order.
 
 The system must:
 

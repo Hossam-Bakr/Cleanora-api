@@ -127,6 +127,50 @@ export interface ProviderMediaStatusReader {
  */
 export const MEDIA_PUBLIC_CONTRACT = "media.public" as const;
 
+export const WORKER_PROFILE_IMAGE = "WORKER_PROFILE_IMAGE" as const;
+
+export interface WorkerAvatarReceipt {
+  readonly mediaFileId: string;
+  readonly ownerUserId: string;
+  readonly state: "PROCESSING" | "READY" | "FAILED";
+  readonly canonicalContentType: "image/jpeg" | "image/png" | "image/webp";
+  readonly byteSize: number;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly safeReceiptId: string;
+}
+
+export interface WorkerAvatarPort {
+  ingest(input: {
+    readonly ownerUserId: string;
+    readonly declaredContentType: string;
+    readonly bytes: Buffer;
+  }): Promise<WorkerAvatarReceipt>;
+  readValidationReceipt(mediaFileId: string): Promise<WorkerAvatarReceipt | null>;
+  issuePrivateDelivery(input: {
+    readonly mediaFileId: string;
+    readonly actorUserId: string;
+    readonly providerId: string;
+    readonly workerId: string;
+    readonly purpose: "WORKER_AVATAR_PRIVATE_READ";
+  }): Promise<{ readonly url: string; readonly expiresAt: Date }>;
+  requestCleanup(input: {
+    readonly mediaFileId: string;
+    readonly safeReasonCode: string;
+  }): Promise<void>;
+}
+
+export interface TransactionalWorkerAvatarAuthorizer {
+  assertReadyOwnedProfileImage(input: {
+    readonly mediaFileId: string;
+    readonly ownerUserId: string;
+  }): Promise<boolean>;
+}
+
+export type TransactionalWorkerAvatarAuthorizerFactory = (
+  transaction: unknown,
+) => TransactionalWorkerAvatarAuthorizer;
+
 export type ProviderVerificationEvidencePurpose =
   | "PROVIDER_DOCUMENT_MANAGEMENT"
   | "STAFF_DOCUMENT_REVIEW";

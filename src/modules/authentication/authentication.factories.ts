@@ -14,3 +14,13 @@ export {
   createProviderInvitationIdentityOnboarding,
   type ProviderInvitationOnboardingDependencies,
 } from "./infrastructure/prisma-provider-invitation-onboarding.js";
+export {
+  createWorkerInvitationIdentityOnboarding,
+  type WorkerInvitationOnboardingDependencies,
+} from "./infrastructure/prisma-worker-invitation-onboarding.js";
+export { WorkerSensitiveActionProofVerifier } from "./infrastructure/provider-sensitive-action-proof.verifier.js";
+export {
+  createPrismaWorkerIdentityReaderFactory,
+  createPrismaWorkerIdentityAuthorityWriterFactory,
+  createPrismaWorkerProofUseAuthorizerFactory,
+} from "./infrastructure/prisma-worker-workforce.adapters.js";

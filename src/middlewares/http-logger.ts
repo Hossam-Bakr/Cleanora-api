@@ -4,13 +4,40 @@ const morgan = require("morgan") as typeof import("morgan");
 export interface HttpLogStream {
   write(line: string): void;
 }
+
+const SENSITIVE_PATH_MARKER = /^(?:authorization|cookie|credential|email|otp|password|phone|proof|secret|storage.?key|token)$/iu;
+const ENCODED_CONTROL = /%(?:0a|0d|00)/giu;
+
+/**
+ * Return a bounded path safe for access logs. Query/fragment values never enter
+ * the result, control characters are removed, and a value following a
+ * secret-named path segment is replaced without attempting risky URL decoding.
+ */
+export function sanitizeHttpLogUrl(value: string | undefined): string {
+  const withoutQuery = (value ?? "/").split(/[?#]/u, 1)[0] ?? "/";
+  const withoutControls = [...withoutQuery]
+    .filter((character) => {
+      const codePoint = character.codePointAt(0) ?? 0;
+      return codePoint > 31 && codePoint !== 127;
+    })
+    .join("")
+    .replace(ENCODED_CONTROL, "[REDACTED]");
+  const segments = withoutControls.split("/");
+  const safeSegments = segments.map((segment, index) =>
+    index > 0 && SENSITIVE_PATH_MARKER.test(segments[index - 1] ?? "")
+      ? "[REDACTED]"
+      : segment,
+  );
+  const safe = safeSegments.join("/").slice(0, 2_048);
+  return safe.startsWith("/") && safe.length > 0 ? safe : "/";
+}
+
 // add safe-url token
 morgan.token("safe-url", (request) => {
   const expressRequest = request as typeof request & {
     readonly originalUrl?: string;
   };
-  const url = expressRequest.originalUrl ?? request.url ?? "/";
-  return url.split("?")[0] ?? "/";
+  return sanitizeHttpLogUrl(expressRequest.originalUrl ?? request.url);
 });
 
 // add request-id token

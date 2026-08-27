@@ -1,0 +1,1032 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P07 Provider Workforce API
+  version: 0.1.0-design
+  description: >-
+    Design contract for Provider-owned Worker, invitation/access, Team,
+    membership, Supervisor, history, and workersReady behavior. This file is
+    mounted as the R1-P07 runtime contract. It exposes no booking,
+    public Worker profile, payroll, payout, raw Prisma record, storage key,
+    audit payload, or persisted invitation token.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Provider Workers
+  - name: Provider Teams
+  - name: Worker Self Service
+  - name: Worker Invitations
+paths:
+  /providers/{providerId}/workers:
+    get:
+      tags: [Provider Workers]
+      operationId: listProviderWorkers
+      x-requirement-ids: [FR-025, FR-027, FR-033, FR-036, FR-037, FR-038, FR-088]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/WorkerList'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '404': {$ref: '#/components/responses/Failure'}
+    post:
+      tags: [Provider Workers]
+      operationId: createProviderWorkerDraft
+      x-requirement-ids: [FR-001, FR-002, FR-021, FR-052, FR-076, FR-077]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateWorkerInput'}
+      responses:
+        '201': {$ref: '#/components/responses/WorkerPrivate'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/workers/{workerId}:
+    get:
+      tags: [Provider Workers]
+      operationId: getProviderWorker
+      x-requirement-ids: [FR-025, FR-026, FR-027, FR-028, FR-037, FR-038]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/WorkerId'
+      responses:
+        '200': {$ref: '#/components/responses/WorkerPrivate'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '404': {$ref: '#/components/responses/Failure'}
+    put:
+      tags: [Provider Workers]
+      operationId: replaceProviderWorkerProfile
+      x-requirement-ids: [FR-021, FR-022, FR-023, FR-024, FR-052, FR-053, FR-056, FR-057, FR-078]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/WorkerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReplaceWorkerProfileInput'}
+      responses:
+        '200': {$ref: '#/components/responses/WorkerPrivate'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/workers/{workerId}/avatar:
+    post:
+      tags: [Provider Workers]
+      operationId: uploadProviderWorkerAvatar
+      x-requirement-ids: [FR-029, FR-030, FR-031, FR-076]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/WorkerId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: {$ref: '#/components/schemas/AvatarUploadInput'}
+      responses:
+        '202': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+        '413': {$ref: '#/components/responses/Failure'}
+        '415': {$ref: '#/components/responses/Failure'}
+    delete:
+      tags: [Provider Workers]
+      operationId: removeProviderWorkerAvatar
+      x-requirement-ids: [FR-031, FR-076, FR-079]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/WorkerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VersionCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/workers/{workerId}/lifecycle-commands:
+    post:
+      tags: [Provider Workers]
+      operationId: commandProviderWorkerLifecycle
+      x-requirement-ids: [FR-042, FR-043, FR-044, FR-045, FR-046, FR-047, FR-050, FR-051, FR-074, FR-075, FR-081, FR-082]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/WorkerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkerLifecycleCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/workers/{workerId}/login-access-commands:
+    post:
+      tags: [Provider Workers]
+      operationId: commandProviderWorkerLoginAccess
+      x-requirement-ids: [FR-010, FR-011, FR-013, FR-014, FR-015, FR-019, FR-040, FR-076, FR-084]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/WorkerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginAccessCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        '201': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/workers/{workerId}/admin-membership-commands:
+    post:
+      tags: [Provider Workers]
+      operationId: commandProviderWorkerAdminMembership
+      x-requirement-ids: [FR-033, FR-034, FR-035, FR-039, FR-040, FR-076, FR-081, FR-082]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/WorkerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AdminMembershipCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/workers/{workerId}/history:
+    get:
+      tags: [Provider Workers]
+      operationId: listProviderWorkerHistory
+      x-requirement-ids: [FR-079, FR-080, FR-087, FR-088]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/WorkerId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/HistoryList'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '404': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/teams:
+    get:
+      tags: [Provider Teams]
+      operationId: listProviderTeams
+      x-requirement-ids: [FR-036, FR-037, FR-059, FR-060, FR-088]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/TeamList'}
+        '403': {$ref: '#/components/responses/Failure'}
+    post:
+      tags: [Provider Teams]
+      operationId: createProviderTeamDraft
+      x-requirement-ids: [FR-060, FR-061, FR-062, FR-076, FR-077]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateTeamInput'}
+      responses:
+        '201': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/teams/{teamId}:
+    get:
+      tags: [Provider Teams]
+      operationId: getProviderTeam
+      x-requirement-ids: [FR-025, FR-026, FR-037, FR-059, FR-064, FR-069]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200': {$ref: '#/components/responses/TeamPrivate'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '404': {$ref: '#/components/responses/Failure'}
+    put:
+      tags: [Provider Teams]
+      operationId: replaceProviderTeamName
+      x-requirement-ids: [FR-036, FR-037, FR-061, FR-076, FR-078]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReplaceTeamInput'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/teams/{teamId}/lifecycle-commands:
+    post:
+      tags: [Provider Teams]
+      operationId: commandProviderTeamLifecycle
+      x-requirement-ids: [FR-060, FR-063, FR-067, FR-068, FR-076, FR-078]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TeamLifecycleCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/teams/{teamId}/membership-commands:
+    post:
+      tags: [Provider Teams]
+      operationId: commandProviderTeamMembership
+      x-requirement-ids: [FR-037, FR-050, FR-051, FR-054, FR-056, FR-059, FR-063, FR-069, FR-076]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TeamMembershipCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        '201': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/teams/{teamId}/supervisor-commands:
+    post:
+      tags: [Provider Teams]
+      operationId: commandProviderTeamSupervisor
+      x-requirement-ids: [FR-053, FR-064, FR-065, FR-066, FR-076]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SupervisorCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/teams/{teamId}/history:
+    get:
+      tags: [Provider Teams]
+      operationId: listProviderTeamHistory
+      x-requirement-ids: [FR-059, FR-068, FR-079, FR-087, FR-088]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': {$ref: '#/components/responses/HistoryList'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '404': {$ref: '#/components/responses/Failure'}
+  /providers/{providerId}/workforce-readiness:
+    get:
+      tags: [Provider Workers]
+      operationId: getProviderWorkforceReadiness
+      x-requirement-ids: [FR-070, FR-071, FR-072, FR-073, FR-074, FR-075]
+      parameters:
+        - $ref: '#/components/parameters/ProviderId'
+      responses:
+        '200': {$ref: '#/components/responses/Readiness'}
+        '403': {$ref: '#/components/responses/Failure'}
+  /workers/me:
+    get:
+      tags: [Worker Self Service]
+      operationId: getCurrentWorkerContext
+      x-requirement-ids: [FR-025, FR-038, FR-088]
+      responses:
+        '200': {$ref: '#/components/responses/WorkerPrivate'}
+        '404': {$ref: '#/components/responses/Failure'}
+  /workers/me/leave:
+    post:
+      tags: [Worker Self Service]
+      operationId: leaveCurrentProvider
+      x-requirement-ids: [FR-008, FR-009, FR-048, FR-049, FR-050, FR-051, FR-076]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkerLeaveCommand'}
+      responses:
+        '200': {$ref: '#/components/responses/Command'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /worker-invitations/inspect:
+    post:
+      tags: [Worker Invitations]
+      operationId: inspectWorkerInvitation
+      security: []
+      x-requirement-ids: [FR-013, FR-014, FR-015, FR-016, FR-028]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/InvitationProofInput'}
+      responses:
+        '200': {$ref: '#/components/responses/InvitationInspection'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /worker-invitations/onboarding/start:
+    post:
+      tags: [Worker Invitations]
+      operationId: startWorkerInvitationOnboarding
+      security: []
+      x-requirement-ids: [FR-011, FR-012, FR-016, FR-020]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/InvitationOnboardingStartInput'}
+      responses:
+        '200': {$ref: '#/components/responses/OnboardingStart'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /worker-invitations/onboarding/verify-email:
+    post:
+      tags: [Worker Invitations]
+      operationId: verifyWorkerInvitationEmail
+      security: []
+      x-requirement-ids: [FR-012, FR-016, FR-020]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/InvitationEmailVerificationInput'}
+      responses:
+        '200': {$ref: '#/components/responses/OnboardingVerify'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+  /worker-invitations/accept:
+    post:
+      tags: [Worker Invitations]
+      operationId: acceptWorkerInvitation
+      x-requirement-ids: [FR-003, FR-004, FR-005, FR-006, FR-012, FR-016, FR-017, FR-018, FR-020]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/InvitationAcceptInput'}
+      responses:
+        '200': {$ref: '#/components/responses/WorkerPrivate'}
+        '400': {$ref: '#/components/responses/Failure'}
+        '403': {$ref: '#/components/responses/Failure'}
+        '409': {$ref: '#/components/responses/Failure'}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    ProviderId:
+      name: providerId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    WorkerId:
+      name: workerId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema: {type: string, minLength: 1}
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, maximum: 100, default: 25}
+  responses:
+    Command:
+      description: Versioned idempotent command result with only safe impact facts.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/CommandSuccessEnvelope'}
+    WorkerList:
+      description: Bounded Worker summaries; operational phone is absent.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/WorkerListSuccessEnvelope'}
+    WorkerPrivate:
+      description: Authorized role-specific Worker DTO with no generic caching.
+      headers:
+        Cache-Control:
+          schema: {type: string, const: 'no-store, private'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/WorkerPrivateSuccessEnvelope'}
+    TeamList:
+      description: Bounded Team summaries.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/TeamListSuccessEnvelope'}
+    TeamPrivate:
+      description: Authorized Team detail; member phones remain absent and require a separately authorized Worker detail read.
+      headers:
+        Cache-Control:
+          schema: {type: string, const: 'no-store, private'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/TeamPrivateSuccessEnvelope'}
+    HistoryList:
+      description: Bounded immutable safe history facts.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/HistoryListSuccessEnvelope'}
+    Readiness:
+      description: Derived workersReady facts; not a writable flag.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ReadinessSuccessEnvelope'}
+    InvitationInspection:
+      description: Safe latest-invitation inspection with no identity-existence or bearer-proof echo.
+      headers:
+        Cache-Control:
+          schema: {type: string, const: 'no-store, private'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/InvitationInspectionSuccessEnvelope'}
+    OnboardingStart:
+      description: Safe fixed-email onboarding challenge result.
+      headers:
+        Cache-Control:
+          schema: {type: string, const: 'no-store, private'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/OnboardingStartSuccessEnvelope'}
+    OnboardingVerify:
+      description: Restricted onboarding verification result. Tokens are returned only on this purpose-specific no-store Authentication handoff and remain prohibited from logs/history/audit/outbox/errors.
+      headers:
+        Cache-Control:
+          schema: {type: string, const: 'no-store, private'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/OnboardingVerifySuccessEnvelope'}
+    Failure:
+      description: Stable safe failure envelope with no private existence, phone, proof, credential, or internal detail.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/FailureEnvelope'}
+  schemas:
+    IdempotencyKey:
+      type: string
+      format: uuid
+    PositiveVersion:
+      type: integer
+      minimum: 1
+    Locale:
+      type: string
+      enum: [AR, EN]
+    WorkerType:
+      type: string
+      enum: [CLEANING_STAFF, ESCORT, OTHER]
+    WorkerGender:
+      type: string
+      enum: [male, female]
+    ReasonNote:
+      type: string
+      minLength: 10
+      maxLength: 1000
+    VersionCommand:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, idempotencyKey]
+      properties:
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+    CreateWorkerInput:
+      type: object
+      additionalProperties: false
+      required: [fullLegalName, gender, operationalPhoneE164, workerType, expectedVersion, idempotencyKey]
+      properties:
+        fullLegalName: {type: string, minLength: 1, maxLength: 200}
+        gender: {$ref: '#/components/schemas/WorkerGender'}
+        operationalPhoneE164: {type: string, pattern: '^\\+[1-9][0-9]{7,14}$'}
+        workerType: {$ref: '#/components/schemas/WorkerType'}
+        displayTitle: {type: [string, 'null'], maxLength: 120}
+        supervisorCapable: {type: boolean, default: false}
+        skillTags:
+          type: array
+          maxItems: 50
+          uniqueItems: true
+          items: {type: string, minLength: 1, maxLength: 100}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+      description: expectedVersion is the Provider workforce-state version used to serialize creation of a new Worker aggregate.
+    ReplaceWorkerProfileInput:
+      type: object
+      additionalProperties: false
+      required: [fullLegalName, gender, operationalPhoneE164, workerType, supervisorCapable, skillTags, expectedVersion, idempotencyKey]
+      properties:
+        fullLegalName: {type: string, minLength: 1, maxLength: 200}
+        gender: {$ref: '#/components/schemas/WorkerGender'}
+        operationalPhoneE164: {type: string, pattern: '^\\+[1-9][0-9]{7,14}$'}
+        workerType: {$ref: '#/components/schemas/WorkerType'}
+        displayTitle: {type: [string, 'null'], maxLength: 120}
+        supervisorCapable: {type: boolean}
+        skillTags:
+          type: array
+          maxItems: 50
+          uniqueItems: true
+          items: {type: string, minLength: 1, maxLength: 100}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+      description: expectedVersion is the exact Worker-profile version. A CLEANING_STAFF-to-ESCORT request conflicts while the current membership still has cleans=true.
+    AvatarUploadInput:
+      type: object
+      additionalProperties: false
+      required: [file, expectedVersion, idempotencyKey]
+      properties:
+        file: {type: string, format: binary}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+    WorkerLifecycleCommand:
+      type: object
+      additionalProperties: false
+      required: [action, expectedVersion, idempotencyKey]
+      properties:
+        action: {type: string, enum: [ACTIVATE, DEACTIVATE, REACTIVATE, REMOVE]}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedTeamVersion: {type: [integer, 'null'], minimum: 1}
+        expectedMembershipVersion: {type: [integer, 'null'], minimum: 1}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+        reasonCode:
+          type: [string, 'null']
+          enum: [TEMPORARILY_UNAVAILABLE, SCHEDULE_OR_LEAVE, PERFORMANCE_OR_POLICY, PROVIDER_OPERATIONAL_CHANGE, ENGAGEMENT_ENDED, DUPLICATE_OR_INCORRECT_RECORD, OTHER, null]
+        note: {oneOf: [{$ref: '#/components/schemas/ReasonNote'}, {type: 'null'}]}
+        confirmTeamImpact: {type: boolean, default: false}
+        confirmReadinessImpact: {type: boolean, default: false}
+        recentAuthenticationProof: {type: [string, 'null'], minLength: 1}
+      description: Domain validation restricts reasonCode to the action-specific DEC-039 catalog and requires note for REMOVE or OTHER.
+    LoginAccessCommand:
+      type: object
+      additionalProperties: false
+      required: [action, expectedVersion, expectedAccessVersion, idempotencyKey, recentAuthenticationProof]
+      properties:
+        action: {type: string, enum: [ISSUE_INVITATION, RESEND_INVITATION, RESET_ACCESS, REVOKE_ACCESS]}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedAccessVersion: {type: [integer, 'null'], minimum: 1}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+        email: {type: [string, 'null'], format: email, maxLength: 320}
+        locale: {oneOf: [{$ref: '#/components/schemas/Locale'}, {type: 'null'}]}
+        reasonCode: {type: [string, 'null'], enum: [SECURITY_CONCERN, ACCESS_NO_LONGER_REQUIRED, ENGAGEMENT_ENDED, OTHER, null]}
+        note: {oneOf: [{$ref: '#/components/schemas/ReasonNote'}, {type: 'null'}]}
+        recentAuthenticationProof: {type: string, minLength: 1}
+      description: expectedVersion is the Worker version. expectedAccessVersion is explicit null before the first invitation and exact thereafter. ISSUE/RESEND require email and locale; REVOKE requires its closed reason catalog; OTHER requires note.
+    AdminMembershipCommand:
+      type: object
+      additionalProperties: false
+      required: [action, expectedVersion, expectedMembershipVersion, idempotencyKey, reasonCode, recentAuthenticationProof]
+      properties:
+        action: {type: string, enum: [GRANT, REVOKE]}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedMembershipVersion: {type: [integer, 'null'], minimum: 1}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+        reasonCode:
+          type: string
+          enum: [OPERATIONAL_RESPONSIBILITY, COVERAGE_OR_BACKUP, RESPONSIBILITY_ENDED, SECURITY_CONCERN, ENGAGEMENT_ENDED, OTHER]
+        note: {oneOf: [{$ref: '#/components/schemas/ReasonNote'}, {type: 'null'}]}
+        recentAuthenticationProof: {type: string, minLength: 1}
+      description: expectedVersion is the Worker version. expectedMembershipVersion is explicit null when granting a missing membership and exact when changing an existing row. Domain validation chooses the exact grant or revocation catalog; OTHER requires note.
+    CreateTeamInput:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, idempotencyKey]
+      properties:
+        name: {type: [string, 'null'], maxLength: 160}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+      description: expectedVersion is the Provider workforce-state version used to serialize aggregate creation.
+    ReplaceTeamInput:
+      type: object
+      additionalProperties: false
+      required: [name, expectedVersion, idempotencyKey]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 160}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+    TeamLifecycleCommand:
+      type: object
+      additionalProperties: false
+      required: [action, expectedVersion, idempotencyKey]
+      properties:
+        action: {type: string, enum: [ACTIVATE, DEACTIVATE, REACTIVATE, ARCHIVE]}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+    TeamMembershipCommand:
+      type: object
+      additionalProperties: false
+      required: [action, workerId, expectedVersion, expectedWorkerVersion, idempotencyKey]
+      properties:
+        action: {type: string, enum: [ADD, UPDATE_CLEANS, MOVE, REMOVE]}
+        workerId: {type: string, minLength: 1}
+        membershipId: {type: [string, 'null'], minLength: 1}
+        targetTeamId: {type: [string, 'null'], minLength: 1}
+        cleans: {type: [boolean, 'null']}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedWorkerVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedMembershipVersion: {type: [integer, 'null'], minimum: 1}
+        expectedTargetTeamVersion: {type: [integer, 'null'], minimum: 1}
+        confirmLastCleanerImpact: {type: boolean, default: false}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+      description: Supervisors may use UPDATE_CLEANS only for an existing current membership in their Team and cannot confirm a final-cleaner impact.
+    SupervisorCommand:
+      type: object
+      additionalProperties: false
+      required: [action, expectedVersion, idempotencyKey]
+      properties:
+        action: {type: string, enum: [ASSIGN, CLEAR]}
+        workerId: {type: [string, 'null'], minLength: 1}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedWorkerVersion: {type: [integer, 'null'], minimum: 1}
+        expectedMembershipVersion: {type: [integer, 'null'], minimum: 1}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+    WorkerLeaveCommand:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, idempotencyKey]
+      properties:
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedTeamVersion: {type: [integer, 'null'], minimum: 1}
+        expectedMembershipVersion: {type: [integer, 'null'], minimum: 1}
+        confirmTeamImpact: {type: boolean, default: false}
+        confirmReadinessImpact: {type: boolean, default: false}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+    InvitationProofInput:
+      type: object
+      additionalProperties: false
+      required: [invitationProof]
+      properties:
+        invitationProof: {type: string, minLength: 1, writeOnly: true}
+    InvitationOnboardingStartInput:
+      type: object
+      additionalProperties: false
+      required: [invitationProof, password, expectedVersion, idempotencyKey]
+      properties:
+        invitationProof: {type: string, minLength: 1, writeOnly: true}
+        password: {type: string, minLength: 1, writeOnly: true}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+    InvitationEmailVerificationInput:
+      type: object
+      additionalProperties: false
+      required: [invitationProof, challengeId, code, expectedVersion, idempotencyKey]
+      properties:
+        invitationProof: {type: string, minLength: 1, writeOnly: true}
+        challengeId: {type: string, minLength: 1}
+        code: {type: string, minLength: 1, writeOnly: true}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+    InvitationAcceptInput:
+      type: object
+      additionalProperties: false
+      required: [invitationProof, expectedVersion, expectedWorkerVersion, expectedAccessVersion, idempotencyKey, operationalPhoneE164]
+      properties:
+        invitationProof: {type: string, minLength: 1, writeOnly: true}
+        expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedWorkerVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        expectedAccessVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        idempotencyKey: {$ref: '#/components/schemas/IdempotencyKey'}
+        operationalPhoneE164: {type: string, pattern: '^\\+[1-9][0-9]{7,14}$'}
+    CommandResult:
+      type: object
+      additionalProperties: false
+      required: [outcomeCode, targetId, version, impacts]
+      properties:
+        outcomeCode: {type: string, minLength: 1, maxLength: 100}
+        targetId: {type: string, minLength: 1}
+        version: {$ref: '#/components/schemas/PositiveVersion'}
+        impacts:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            additionalProperties: false
+            required: [targetType, targetId, outcomeCode, version]
+            properties:
+              targetType: {type: string, enum: [WORKER, WORKER_PROFILE, LOGIN_ACCESS, INVITATION, ADMIN_MEMBERSHIP, TEAM, TEAM_MEMBERSHIP, PRIMARY_SUPERVISOR, READINESS, AVATAR]}
+              targetId: {type: string, minLength: 1}
+              outcomeCode: {type: string, minLength: 1, maxLength: 100}
+              version: {$ref: '#/components/schemas/PositiveVersion'}
+    CommandSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/CommandResult'}
+        requestId: {type: string, format: uuid}
+    WorkerListItem:
+      type: object
+      additionalProperties: false
+      required: [workerId, providerId, fullLegalName, gender, workerType, operationalStatus, supervisorCapable, workerVersion, profileVersion]
+      properties:
+        workerId: {type: string}
+        providerId: {type: string}
+        fullLegalName: {type: string}
+        gender: {$ref: '#/components/schemas/WorkerGender'}
+        workerType: {$ref: '#/components/schemas/WorkerType'}
+        displayTitle: {type: [string, 'null']}
+        operationalStatus: {type: string, enum: [DRAFT, ACTIVE, INACTIVE, REMOVED]}
+        supervisorCapable: {type: boolean}
+        currentTeamId: {type: [string, 'null']}
+        workerVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        profileVersion: {$ref: '#/components/schemas/PositiveVersion'}
+      description: Operational phone is intentionally absent from list items.
+    WorkerManagementView:
+      type: object
+      additionalProperties: false
+      required: [viewScope, worker, operationalPhoneE164, skills, loginAccessStatus]
+      properties:
+        viewScope: {type: string, enum: [PROVIDER_MANAGEMENT]}
+        worker: {$ref: '#/components/schemas/WorkerListItem'}
+        operationalPhoneE164: {type: string, pattern: '^\\+[1-9][0-9]{7,14}$'}
+        skills: {type: array, maxItems: 50, items: {type: string}}
+        loginAccessStatus: {type: [string, 'null'], enum: [INVITED, ACTIVE, EXPIRED, REVOKED, null]}
+        avatar:
+          oneOf:
+            - $ref: '#/components/schemas/PrivateAvatarView'
+            - type: 'null'
+    WorkerSelfView:
+      type: object
+      additionalProperties: false
+      required: [viewScope, worker, operationalPhoneE164, skills, loginAccessStatus]
+      properties:
+        viewScope: {type: string, enum: [SELF]}
+        worker: {$ref: '#/components/schemas/WorkerListItem'}
+        operationalPhoneE164: {type: string, pattern: '^\\+[1-9][0-9]{7,14}$'}
+        skills: {type: array, maxItems: 50, items: {type: string}}
+        loginAccessStatus: {type: [string, 'null'], enum: [INVITED, ACTIVE, EXPIRED, REVOKED, null]}
+        avatar:
+          oneOf:
+            - $ref: '#/components/schemas/PrivateAvatarView'
+            - type: 'null'
+    WorkerSupervisorView:
+      type: object
+      additionalProperties: false
+      required: [viewScope, workerId, providerId, teamId, fullLegalName, gender, workerType, displayTitle, operationalPhoneE164, cleans, membershipVersion]
+      properties:
+        viewScope: {type: string, enum: [PRIMARY_SUPERVISOR]}
+        workerId: {type: string}
+        providerId: {type: string}
+        teamId: {type: string}
+        fullLegalName: {type: string}
+        gender: {$ref: '#/components/schemas/WorkerGender'}
+        workerType: {$ref: '#/components/schemas/WorkerType'}
+        displayTitle: {type: [string, 'null']}
+        operationalPhoneE164: {type: string, pattern: '^\\+[1-9][0-9]{7,14}$'}
+        cleans: {type: boolean}
+        membershipVersion: {$ref: '#/components/schemas/PositiveVersion'}
+      description: Contains no skills, lifecycle command authority, invitation/access detail, Admin membership, or profile-edit surface.
+    PrivateAvatarView:
+      type: object
+      additionalProperties: false
+      required: [url, expiresAt]
+      properties:
+        url: {type: string, format: uri}
+        expiresAt: {type: string, format: date-time}
+      description: Short-lived signed private delivery only; storage key is absent.
+    WorkerPrivateView:
+      oneOf:
+        - $ref: '#/components/schemas/WorkerManagementView'
+        - $ref: '#/components/schemas/WorkerSelfView'
+        - $ref: '#/components/schemas/WorkerSupervisorView'
+    WorkerListSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          additionalProperties: false
+          required: [items, nextCursor]
+          properties:
+            items: {type: array, items: {$ref: '#/components/schemas/WorkerListItem'}}
+            nextCursor: {type: [string, 'null']}
+        requestId: {type: string, format: uuid}
+    WorkerPrivateSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/WorkerPrivateView'}
+        requestId: {type: string, format: uuid}
+    TeamListItem:
+      type: object
+      additionalProperties: false
+      required: [teamId, providerId, name, status, currentMemberCount, validCleanerCount, version]
+      properties:
+        teamId: {type: string}
+        providerId: {type: string}
+        name: {type: [string, 'null']}
+        status: {type: string, enum: [DRAFT, ACTIVE, INACTIVE, ARCHIVED]}
+        primarySupervisorWorkerId: {type: [string, 'null']}
+        currentMemberCount: {type: integer, minimum: 0}
+        validCleanerCount: {type: integer, minimum: 0}
+        version: {$ref: '#/components/schemas/PositiveVersion'}
+    TeamMemberView:
+      type: object
+      additionalProperties: false
+      required: [membershipId, workerId, fullLegalName, gender, workerType, cleans, workerStatus, membershipVersion]
+      properties:
+        membershipId: {type: string}
+        workerId: {type: string}
+        fullLegalName: {type: string}
+        gender: {$ref: '#/components/schemas/WorkerGender'}
+        workerType: {$ref: '#/components/schemas/WorkerType'}
+        cleans: {type: boolean}
+        workerStatus: {type: string, enum: [DRAFT, ACTIVE, INACTIVE, REMOVED]}
+        membershipVersion: {$ref: '#/components/schemas/PositiveVersion'}
+      description: Operational phone is absent; an authorized Worker detail read is separate.
+    TeamPrivateView:
+      type: object
+      additionalProperties: false
+      required: [team, members]
+      properties:
+        team: {$ref: '#/components/schemas/TeamListItem'}
+        members: {type: array, items: {$ref: '#/components/schemas/TeamMemberView'}}
+    TeamListSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          additionalProperties: false
+          required: [items, nextCursor]
+          properties:
+            items: {type: array, items: {$ref: '#/components/schemas/TeamListItem'}}
+            nextCursor: {type: [string, 'null']}
+        requestId: {type: string, format: uuid}
+    TeamPrivateSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/TeamPrivateView'}
+        requestId: {type: string, format: uuid}
+    SafeHistoryItem:
+      type: object
+      additionalProperties: false
+      required: [historyId, targetType, targetId, targetVersion, eventCode, actorUserId, createdAt]
+      properties:
+        historyId: {type: string}
+        targetType: {type: string}
+        targetId: {type: string}
+        targetVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        eventCode: {type: string}
+        actorUserId: {type: string}
+        reasonCode: {type: [string, 'null']}
+        note: {type: [string, 'null'], maxLength: 1000}
+        safeBefore: {type: [object, 'null'], additionalProperties: true}
+        safeAfter: {type: [object, 'null'], additionalProperties: true}
+        createdAt: {type: string, format: date-time}
+      description: Safe facts never contain full phone, invitation proof/email, credentials, OTP, cookie, or storage key.
+    HistoryListSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          additionalProperties: false
+          required: [items, nextCursor]
+          properties:
+            items: {type: array, items: {$ref: '#/components/schemas/SafeHistoryItem'}}
+            nextCursor: {type: [string, 'null']}
+        requestId: {type: string, format: uuid}
+    ReadinessSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          additionalProperties: false
+          required: [providerId, workforceVersion, workersReady, qualifyingWorkerCount, blockerCodes]
+          properties:
+            providerId: {type: string}
+            workforceVersion:
+              allOf:
+                - $ref: '#/components/schemas/PositiveVersion'
+              description: Current Provider workforce CAS version required by Worker and Team creation commands.
+            workersReady: {type: boolean}
+            qualifyingWorkerCount: {type: integer, minimum: 0}
+            blockerCodes:
+              type: array
+              uniqueItems: true
+              items: {type: string, enum: [NO_ACTIVE_CLEANING_WORKER, PROFILE_INCOMPLETE, WORKER_ACCOUNT_OR_ROLE_INACTIVE, WORKER_LOGIN_ACCESS_INACTIVE]}
+        requestId: {type: string, format: uuid}
+    InvitationInspectionSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          additionalProperties: false
+          required: [providerId, workerId, invitationVersion, expectedVersion, locale, maskedEmail, expiresAt, onboardingMode, expectedWorkerVersion, expectedAccessVersion]
+          properties:
+            providerId: {type: string}
+            workerId: {type: string}
+            invitationVersion: {$ref: '#/components/schemas/PositiveVersion'}
+            expectedVersion: {$ref: '#/components/schemas/PositiveVersion'}
+            locale: {$ref: '#/components/schemas/Locale'}
+            maskedEmail: {type: string}
+            expiresAt: {type: string, format: date-time}
+            onboardingMode: {type: string, enum: [AUTHENTICATE_OR_CREATE]}
+            expectedWorkerVersion: {$ref: '#/components/schemas/PositiveVersion'}
+            expectedAccessVersion: {$ref: '#/components/schemas/PositiveVersion'}
+        requestId: {type: string, format: uuid}
+    OnboardingStartSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          additionalProperties: false
+          required: [challengeId, maskedDestination, expiresAt]
+          properties:
+            challengeId: {type: string}
+            maskedDestination: {type: string}
+            expiresAt: {type: string, format: date-time}
+        requestId: {type: string, format: uuid}
+    OnboardingVerifySuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          additionalProperties: false
+          required: [userId, emailNormalized, capability, allowedActions, accessToken, accessExpiresAt, refreshToken, refreshExpiresAt]
+          properties:
+            userId: {type: string}
+            emailNormalized: {type: string, format: email}
+            capability: {type: string, enum: [WORKER_INVITATION_ONBOARDING]}
+            allowedActions: {type: array, const: [WORKER_INVITATION_ACCEPT, SESSION_CLEANUP]}
+            accessToken: {type: string, minLength: 1, readOnly: true}
+            accessExpiresAt: {type: string, format: date-time}
+            refreshToken: {type: string, minLength: 1, readOnly: true}
+            refreshExpiresAt: {type: string, format: date-time}
+        requestId: {type: string, format: uuid}
+    FailureEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, error, requestId]
+      properties:
+        success: {type: boolean, const: false}
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, statusCode, message]
+          properties:
+            code:
+              type: string
+              enum: [REQUEST_VALIDATION_FAILED, AUTHENTICATION_REQUIRED, WORKER_INVITATION_INVALID, WORKER_AVATAR_INVALID, WORKFORCE_VALIDATION_FAILED, WORKFORCE_PERMISSION_DENIED, WORKFORCE_RESOURCE_NOT_FOUND, WORKFORCE_STATE_CONFLICT, WORKFORCE_IDEMPOTENCY_KEY_CONFLICT, WORKFORCE_INVALID_WORKER_TRANSITION, WORKFORCE_INVALID_ACCESS_TRANSITION, WORKFORCE_INVALID_TEAM_TRANSITION, WORKFORCE_TEAM_ACTIVATION_INVALID, WORKFORCE_ESCORT_CANNOT_CLEAN, WORKFORCE_ESCORT_MEMBERSHIP_CONFLICT, WORKFORCE_SUPERVISOR_INVALID, WORKFORCE_FINAL_CLEANER_CONFLICT, WORKFORCE_REAUTHENTICATION_REQUIRED, WORKFORCE_PROFILE_INCOMPLETE, WORKFORCE_PROFILE_INVALID, WORKFORCE_PROFILE_MISSING, WORKFORCE_PHONE_INVALID, WORKFORCE_GENDER_INVALID, WORKFORCE_TYPE_INVALID, WORKFORCE_SKILL_INVALID, WORKFORCE_SKILL_DUPLICATE, WORKFORCE_REASON_INVALID, WORKFORCE_REASON_NOTE_REQUIRED, WORKFORCE_DEPENDENCY_NOT_READY, INTERNAL_SERVER_ERROR]
+            statusCode: {type: integer, minimum: 400, maximum: 599}
+            message: {type: string}
+            details: {type: object, additionalProperties: true}
+        requestId: {type: string, format: uuid}

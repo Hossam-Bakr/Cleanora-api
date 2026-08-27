@@ -17,6 +17,8 @@
     "test:coverage": "node --require ./scripts/clean-coverage.cjs --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --coverage --exclude tests/integration/customers/sc008-workload.test.ts",
     "test:r1-p06": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p06.config.ts",
     "test:coverage:r1-p06": "node --require ./scripts/clean-coverage.cjs --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p06.config.ts --coverage",
+    "test:r1-p07": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p07.config.ts",
+    "test:coverage:r1-p07": "node --require ./scripts/clean-coverage.cjs --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p07.config.ts --coverage",
     "test:performance:sc008": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run tests/integration/customers/sc008-workload.test.ts",
     "db:check": "node --env-file=.env --conditions=development --import tsx scripts/check-database.ts",
     "auth:inspect": "node --env-file=.env --conditions=development --import tsx scripts/inspect-auth.ts",
@@ -32,8 +34,9 @@
     "postman:generate:r1-p04": "node --conditions=development --import tsx scripts/generate-r1-p04-postman.ts",
     "postman:generate:r1-p05": "node --conditions=development --import tsx scripts/generate-r1-p05-postman.ts",
     "postman:generate:r1-p06": "node --conditions=development --import tsx scripts/generate-r1-p06-postman.ts",
+    "postman:generate:r1-p07": "node --conditions=development --import tsx scripts/generate-r1-p07-postman.ts",
     "r1-p06:payout-key-rotation": "node --env-file=.env --conditions=development --import tsx scripts/run-r1-p06-payout-key-rotation.ts",
-    "postman:generate": "npm run postman:generate:foundation && npm run postman:generate:auth && npm run postman:generate:r1-p04 && npm run postman:generate:r1-p05 && npm run postman:generate:r1-p06",
+    "postman:generate": "npm run postman:generate:foundation && npm run postman:generate:auth && npm run postman:generate:r1-p04 && npm run postman:generate:r1-p05 && npm run postman:generate:r1-p06 && npm run postman:generate:r1-p07",
     "postman:validate": "node --conditions=development --import tsx scripts/validate-postman.ts",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
@@ -43,6 +46,7 @@
     "prisma:migrate:status": "prisma migrate status",
     "db:validate-clean-migration": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-clean-migration.ts",
     "db:validate-r1-p06-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p06-upgrade.ts",
+    "db:validate-r1-p07-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p07-upgrade.ts",
     "smoke:cloudinary-profile-image": "node --env-file=.env --require ./scripts/register-env.cjs --conditions=development --import tsx scripts/smoke-cloudinary-profile-image.ts"
   },
   "imports": {
@@ -125,8 +129,12 @@
     "vitest": "^4.1.10"
   },
   "overrides": {
+    "@prisma/config": {
+      "deepmerge-ts": "8.0.2"
+    },
     "@prisma/dev": {
-      "find-my-way": "9.7.0"
+      "find-my-way": "9.7.0",
+      "valibot": "1.4.2"
     }
   }
 }

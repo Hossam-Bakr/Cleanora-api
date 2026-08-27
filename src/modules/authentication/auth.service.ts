@@ -142,6 +142,7 @@ export class AuthenticationService {
     return resolveAuthenticatedCapability(identity, {
       now: this.now(),
       providerAdminEnabled: grants.roleCodes.includes("provider_admin"),
+      workerEnabled: grants.roleCodes.includes("worker"),
     });
   }
 
@@ -394,7 +395,8 @@ export class AuthenticationService {
     purpose: OtpPurpose,
   ): Promise<VerificationChallengeAccepted> {
     // Public verification never issues invitation-purpose OTPs.
-    if (purpose === "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION") {
+    if (purpose === "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION"
+      || purpose === "WORKER_INVITATION_EMAIL_VERIFICATION") {
       throw authenticationError("AUTH_VERIFICATION_FAILED");
     }
     const publicPurpose:
@@ -908,7 +910,13 @@ export class AuthenticationService {
         | "PROVIDER_PAYOUT_PRIMARY_CHANGE"
         | "PROVIDER_PAYOUT_WITHDRAW"
         | "PROVIDER_PAYOUT_REMOVE"
-        | "STAFF_PAYOUT_REVEAL";
+        | "STAFF_PAYOUT_REVEAL"
+        | "WORKER_ACCESS_ISSUE"
+        | "WORKER_ACCESS_RESET"
+        | "WORKER_ACCESS_REVOKE"
+        | "WORKER_REMOVE"
+        | "PROVIDER_ADMIN_GRANT"
+        | "PROVIDER_ADMIN_REVOKE";
       readonly providerId: string;
       readonly destinationVersionId: string;
       readonly requestId: string;

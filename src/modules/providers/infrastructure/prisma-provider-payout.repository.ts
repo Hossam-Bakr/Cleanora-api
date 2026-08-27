@@ -31,6 +31,7 @@ export class PrismaProviderPayoutRepository {
     private readonly createProofUseAuthorizer?: TransactionalAuthenticationProofUseAuthorizerFactory,
     private readonly createAcceptedRevealAuthorizer?: TransactionalAcceptedPayoutRevealAuthorizerFactory,
     private readonly createHolderAuthorityReader?: TransactionalProviderPayoutHolderAuthorityReaderFactory,
+    private readonly createPayoutRevealAuditGate?: (transaction: Prisma.TransactionClient) => PayoutRevealAuditGate,
   ) {}
 
   private async assertStaffPayoutPermission(transaction: Prisma.TransactionClient, actorUserId: string): Promise<void> {
@@ -269,7 +270,6 @@ export class PrismaProviderPayoutRepository {
     readonly requestId: string;
     readonly proofId: string;
     readonly now: Date;
-    readonly createAuditGate: (transaction: Prisma.TransactionClient) => PayoutRevealAuditGate;
     readonly prepareSensitiveResult: (
       row: NonNullable<Awaited<ReturnType<PrismaProviderPayoutRepository["read"]>>>,
       authority: { readonly legalEntityName: string | null; readonly ownerLegalName: string | null },
@@ -339,7 +339,9 @@ export class PrismaProviderPayoutRepository {
         activeOwnerUserId: approvedProvider.ownerUserId,
       });
       const sensitiveResult = input.prepareSensitiveResult(row, authority);
-      const audit = await input.createAuditGate(transaction).commitAcceptedReveal({
+      const auditGate = this.createPayoutRevealAuditGate?.(transaction);
+      if (auditGate === undefined) throw new Error("AUDIT_WRITE_FAILED");
+      const audit = await auditGate.commitAcceptedReveal({
         actorUserId: input.actorUserId,
         providerId: input.providerId,
         destinationVersionId: row.id,

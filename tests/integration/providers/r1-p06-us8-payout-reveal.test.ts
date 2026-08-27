@@ -65,14 +65,13 @@ describe("R1-P06 US8 exact pending-version reveal", () => {
           row: typeof revealRow,
           authority: { readonly legalEntityName: string | null; readonly ownerLegalName: string | null },
         ) => object;
-        readonly createAuditGate: (transaction: never) => PayoutRevealAuditGate;
       }) {
         expect(input.proofId).toBe("proof-1");
         const sensitiveResult = input.prepareSensitiveResult(revealRow, {
           legalEntityName: "Synthetic Company",
           ownerLegalName: R1_P06_SENTINELS.holderName,
         });
-        const audit = await input.createAuditGate(undefined as never).commitAcceptedReveal({
+        const audit = await gate.commitAcceptedReveal({
           actorUserId: R1_P06_IDS.staffUserId,
           providerId: R1_P06_IDS.providerId,
           destinationVersionId: R1_P06_IDS.destinationVersionId,
@@ -93,7 +92,7 @@ describe("R1-P06 US8 exact pending-version reveal", () => {
         return { actorUserId: R1_P06_IDS.staffUserId, sessionId: R1_P06_IDS.sessionId, authenticatedAt: new Date(), expiresAt: new Date(), proofId: "proof-1" };
       },
     };
-    const service = new ProviderPayoutRevealService(repository, proofVerifier, gate, () => gate, async () => options.authorize ?? true, rings, () => new Date("2026-08-13T09:00:00.000Z"));
+    const service = new ProviderPayoutRevealService(repository, proofVerifier, gate, async () => options.authorize ?? true, rings, () => new Date("2026-08-13T09:00:00.000Z"));
     return { service, accepted, denied };
   }
 

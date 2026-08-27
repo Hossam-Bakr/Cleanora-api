@@ -39,6 +39,9 @@ const expectedPermissionCodes = [
   "privacy.requests.reassign",
   "providers.applications.review",
   "providers.lifecycle.manage",
+  "providers.verification.documents.review",
+  "providers.verification.policies.manage",
+  "providers.payout-destinations.verify",
 ];
 
 const expectedRolePermissionMap: Record<string, string[]> = {
@@ -53,6 +56,9 @@ const expectedRolePermissionMap: Record<string, string[]> = {
     "privacy.requests.reassign",
     "providers.applications.review",
     "providers.lifecycle.manage",
+    "providers.verification.documents.review",
+    "providers.verification.policies.manage",
+    "providers.payout-destinations.verify",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],
@@ -128,10 +134,13 @@ describe("FR-002 authorization catalog", () => {
   });
 
   it("excludes later-phase business permissions", () => {
-    // R1-P05 Staff Provider review/lifecycle permissions are intentional.
-    const r1P05StaffProviderPermissions = new Set([
+    // Implemented R1-P05/R1-P06 Staff Provider permissions are intentional.
+    const implementedStaffProviderPermissions = new Set([
       "providers.applications.review",
       "providers.lifecycle.manage",
+      "providers.verification.documents.review",
+      "providers.verification.policies.manage",
+      "providers.payout-destinations.verify",
     ]);
     for (const forbidden of [
       "provider",
@@ -148,16 +157,19 @@ describe("FR-002 authorization catalog", () => {
         (code) =>
           code.includes(forbidden) &&
           !code.startsWith("authz.scope.") &&
-          !r1P05StaffProviderPermissions.has(code),
+          !implementedStaffProviderPermissions.has(code),
       );
       expect(leaked).toEqual([]);
     }
   });
 
-  it("grants R1-P05 Provider Staff permissions to staff_admin only", () => {
+  it("grants implemented Provider Staff permissions to staff_admin only", () => {
     for (const permissionCode of [
       "providers.applications.review",
       "providers.lifecycle.manage",
+      "providers.verification.documents.review",
+      "providers.verification.policies.manage",
+      "providers.payout-destinations.verify",
     ]) {
       const holders = Object.entries(ROLE_PERMISSION_MAP)
         .filter(([, codes]) => codes.includes(permissionCode))

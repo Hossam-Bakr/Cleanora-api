@@ -1,4 +1,7 @@
-import { MediaCleanupService } from "../../../../src/modules/media/infrastructure/media-cleanup.service.js";
+import {
+  MediaCleanupService,
+  startMediaCleanupSweep,
+} from "../../../../src/modules/media/infrastructure/media-cleanup.service.js";
 import type { MediaStoragePort } from "../../../../src/modules/media/domain/media.ports.js";
 
 describe("MediaCleanupService", () => {
@@ -78,5 +81,20 @@ describe("MediaCleanupService", () => {
 
     const cleanup = new MediaCleanupService(repository as never, storage);
     await expect(cleanup.sweepOnce()).resolves.toEqual({ processed: 0 });
+  });
+
+  it("logs only an error classification when a sweep failure contains protected storage material", async () => {
+    const warn = vi.fn();
+    const stop = startMediaCleanupSweep({
+      sweepOnce: vi.fn(async () => {
+        throw new Error("cloudinary/private-worker-storage-key");
+      }),
+    } as never, { warn } as never);
+    await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
+    stop();
+    expect(warn).toHaveBeenCalledWith("media cleanup sweep failed", {
+      errorName: "Error",
+    });
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("private-worker-storage-key");
   });
 });

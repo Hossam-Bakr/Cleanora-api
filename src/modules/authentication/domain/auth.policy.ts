@@ -17,6 +17,9 @@ export const SELF_SIGNUP_CATEGORIES: readonly AccountCategory[] = [
 export const INVITATION_ONBOARDING_ALLOWED_ACTIONS: readonly InvitationOnboardingAllowedAction[] =
   ["ACCEPT_PROVIDER_ADMIN_INVITATION", "SESSION_CLEANUP"] as const;
 
+export const WORKER_INVITATION_ONBOARDING_ALLOWED_ACTIONS =
+  ["WORKER_INVITATION_ACCEPT", "SESSION_CLEANUP"] as const satisfies readonly InvitationOnboardingAllowedAction[];
+
 export const OTP_TTL_SECONDS = 600;
 export const OTP_MAX_ATTEMPTS = 5;
 export const OTP_RESEND_SECONDS = 60;
@@ -75,6 +78,8 @@ export interface LoginCapabilityOptions {
    * Full capability is derived from that role alone — never from Provider tables.
    */
   readonly providerAdminEnabled?: boolean;
+  /** Authentication-owned global Worker role; exact Provider scope remains in Providers. */
+  readonly workerEnabled?: boolean;
 }
 
 export function loginCapability(
@@ -131,6 +136,9 @@ export function resolveAuthenticatedCapability(
   if (capability === "FULL") {
     return "FULL";
   }
+  if (options.providerAdminEnabled === true || options.workerEnabled === true) {
+    return "FULL";
+  }
   if (
     identity.accountCategories.length === 0 &&
     identity.verifiedCategories.length === 0 &&
@@ -144,7 +152,8 @@ export function resolveAuthenticatedCapability(
 export function isRestrictedInvitationOnboardingCapability(
   capability: SessionCapability,
 ): boolean {
-  return capability === "PROVIDER_ADMIN_INVITATION_ONBOARDING";
+  return capability === "PROVIDER_ADMIN_INVITATION_ONBOARDING"
+    || capability === "WORKER_INVITATION_ONBOARDING";
 }
 
 /** Maps domain session capability to the persisted Prisma SessionCapability enum. */
@@ -247,7 +256,8 @@ export function recoveryChannel(category: AccountCategory): AuthDeliveryChannel 
 export type OtpPurpose =
   | "CATEGORY_VERIFICATION"
   | "OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION"
-  | "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION";
+  | "PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION"
+  | "WORKER_INVITATION_EMAIL_VERIFICATION";
 
 export interface VerificationTarget {
   readonly userId: string;

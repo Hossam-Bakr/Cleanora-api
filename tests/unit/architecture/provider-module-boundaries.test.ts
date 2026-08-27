@@ -62,7 +62,11 @@ describe("R1-P05 provider module boundaries", () => {
     const allowedSuffixes = [
       "authentication/authentication.public.js",
       "authentication/authentication.public",
+      "customers/customers.public.js",
+      "customers/customers.public",
+      "media/media.public.js",
       "media/media.public",
+      "admin/audit.public.js",
       "admin/audit.public",
     ];
     const violations: string[] = [];

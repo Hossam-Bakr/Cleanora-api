@@ -166,13 +166,37 @@ describe.skipIf(!hasDatabase)("US6 approval transaction (T072)", () => {
         }),
       ).toBe(1);
 
+      const admin = await signupAndLogin(context.app, {
+        accountCategory: "INDIVIDUAL",
+        emailInbox: context.email,
+        label: "us6-approve-admin-access",
+      });
+      await context.prisma.userRole.create({
+        data: {
+          userId: admin.userId,
+          roleId: providerAdmin.id,
+          status: "ENABLED",
+          enabledAt: new Date(),
+        },
+      });
+      await context.prisma.providerMember.create({
+        data: {
+          providerId,
+          userId: admin.userId,
+          level: "ADMIN",
+          status: "ACTIVE",
+          invitedByUserId: owner.userId,
+          enabledAt: new Date(),
+        },
+      });
+
       await context.prisma.providerMember.updateMany({
-        where: { providerId, userId: owner.userId },
+        where: { providerId, userId: admin.userId },
         data: { status: "DISABLED", disabledAt: new Date() },
       });
       const disabledMemberList = await request(context.app)
         .get("/api/v1/providers")
-        .set("Authorization", `Bearer ${owner.accessToken}`)
+        .set("Authorization", `Bearer ${admin.accessToken}`)
         .expect(200);
       expect(disabledMemberList.body.data).toEqual([]);
       for (const path of [
@@ -183,33 +207,33 @@ describe.skipIf(!hasDatabase)("US6 approval transaction (T072)", () => {
       ]) {
         await request(context.app)
           .get(path)
-          .set("Authorization", `Bearer ${owner.accessToken}`)
+          .set("Authorization", `Bearer ${admin.accessToken}`)
           .expect(404);
       }
 
       await context.prisma.providerMember.updateMany({
-        where: { providerId, userId: owner.userId },
+        where: { providerId, userId: admin.userId },
         data: { status: "ACTIVE", disabledAt: null },
       });
       await context.prisma.userRole.updateMany({
-        where: { userId: owner.userId, roleId: providerAdmin.id },
+        where: { userId: admin.userId, roleId: providerAdmin.id },
         data: { status: "DISABLED", disabledAt: new Date() },
       });
       await request(context.app)
         .get(`/api/v1/providers/${providerId}`)
-        .set("Authorization", `Bearer ${owner.accessToken}`)
+        .set("Authorization", `Bearer ${admin.accessToken}`)
         .expect(404);
 
       await context.prisma.providerMember.deleteMany({
-        where: { providerId, userId: owner.userId },
+        where: { providerId, userId: admin.userId },
       });
       await context.prisma.userRole.updateMany({
-        where: { userId: owner.userId, roleId: providerAdmin.id },
+        where: { userId: admin.userId, roleId: providerAdmin.id },
         data: { status: "ENABLED", disabledAt: null },
       });
       await request(context.app)
         .get(`/api/v1/providers/${providerId}`)
-        .set("Authorization", `Bearer ${owner.accessToken}`)
+        .set("Authorization", `Bearer ${admin.accessToken}`)
         .expect(404);
     } finally {
       await context.stop();

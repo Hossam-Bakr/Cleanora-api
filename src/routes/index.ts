@@ -28,6 +28,12 @@ export interface RouteDependencies {
   readonly staffProvidersRouter?: Router;
   /** Body-token Provider Admin invitation onboarding routes. */
   readonly providerAdminInvitationRouter?: Router;
+  /** R1-P07 Provider-owned Worker/Team management routes. */
+  readonly providerWorkforceRouter?: Router;
+  /** R1-P07 trusted-current-identity Worker self-service routes. */
+  readonly providerWorkerSelfRouter?: Router;
+  /** R1-P07 Worker invitation inspect/onboarding/accept routes. */
+  readonly providerWorkforceInvitationRouter?: Router;
 }
 
 /**
@@ -69,6 +75,18 @@ export function mountRoutes(
 
   if (dependencies.providersRouter !== undefined) {
     app.use(`${apiPrefix}/providers`, dependencies.providersRouter);
+  }
+
+  if (dependencies.providerWorkforceRouter !== undefined) {
+    app.use(`${apiPrefix}/providers`, dependencies.providerWorkforceRouter);
+  }
+
+  if (dependencies.providerWorkerSelfRouter !== undefined) {
+    app.use(`${apiPrefix}/workers`, dependencies.providerWorkerSelfRouter);
+  }
+
+  if (dependencies.providerWorkforceInvitationRouter !== undefined) {
+    app.use(`${apiPrefix}/worker-invitations`, dependencies.providerWorkforceInvitationRouter);
   }
 
   if (dependencies.providerAdminInvitationRouter !== undefined) {

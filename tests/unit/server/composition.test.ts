@@ -8,6 +8,7 @@ import { createTestEnvironment } from "../../helpers/test-environment.js";
 
 describe("runtime composition", () => {
   afterEach(() => {
+    vi.useRealTimers();
     resetPrismaClientForTests("test");
   });
 
@@ -51,10 +52,19 @@ describe("runtime composition", () => {
     expect(runtime.routes.providersRouter).toBeDefined();
     expect(runtime.routes.staffProvidersRouter).toBeDefined();
     expect(runtime.routes.providerAdminInvitationRouter).toBeDefined();
+    expect(runtime.routes.providerWorkforceRouter).toBeDefined();
+    expect(runtime.routes.providerWorkerSelfRouter).toBeDefined();
+    expect(runtime.routes.providerWorkforceInvitationRouter).toBeDefined();
     expect(runtime.privacyProcessor).toBeDefined();
     expect(runtime.privacyPrivileged).toBeDefined();
     expect(runtime.startCustomersBackgroundTasks).toBeTypeOf("function");
     expect(runtime.routes.readinessProbes?.length).toBeGreaterThan(1);
+
+    vi.useFakeTimers();
+    const stop = runtime.startCustomersBackgroundTasks?.();
+    expect(stop).toBeTypeOf("function");
+    stop?.();
+    vi.useRealTimers();
   });
 
   it("wires nodemailer transport when EMAIL_AUTH_ENABLED for auth and invitations", () => {

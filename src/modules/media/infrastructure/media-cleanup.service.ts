@@ -52,10 +52,7 @@ export function startMediaCleanupSweep(
   const run = (): void => {
     void cleanup.sweepOnce().catch((error: unknown) => {
       logger.warn("media cleanup sweep failed", {
-        err:
-          error instanceof Error
-            ? { name: error.name, message: error.message }
-            : { message: "media cleanup failed" },
+        errorName: error instanceof Error ? error.name : "UnknownError",
       });
     });
   };

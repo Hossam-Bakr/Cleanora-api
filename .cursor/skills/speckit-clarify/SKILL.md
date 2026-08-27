@@ -127,9 +127,7 @@ Execution steps:
 
 4. Generate (internally) a prioritized queue of candidate clarification questions (maximum 5). Do NOT output them all at once. Apply these constraints:
     - Maximum of 5 total questions across the whole session.
-    - Each question must be answerable with EITHER:
-       - A short multiple‑choice selection (2–5 distinct, mutually exclusive options), OR
-       - A one-word / short‑phrase answer (explicitly constrain: "Answer in <=5 words").
+    - Each material decision question must offer 2–4 distinct, mutually exclusive numbered options. A strictly factual value request that is not a policy choice may instead require a one-word / short-phrase answer (explicitly constrain: "Answer in <=5 words"); never invent filler options.
     - Only include questions whose answers materially impact architecture, data modeling, task decomposition, test design, UX behavior, operational readiness, or compliance validation.
     - Ensure category coverage balance: attempt to cover the highest impact unresolved categories first; avoid asking two low-impact questions when a single high-impact area (e.g., security posture) is unresolved.
     - Exclude questions already answered, trivial stylistic preferences, or plan-level execution details (unless blocking correctness).
@@ -138,33 +136,24 @@ Execution steps:
 
 5. Sequential questioning loop (interactive):
     - Present EXACTLY ONE question at a time.
+    - Number questions sequentially, use the user's language, and follow `docs/ai/decision-question-format.md`.
     - For multiple‑choice questions:
        - **Analyze all options** and determine the **most suitable option** based on:
           - Best practices for the project type
           - Common patterns in similar implementations
           - Risk reduction (security, performance, maintainability)
           - Alignment with any explicit project goals or constraints visible in the spec
-       - Present your **recommended option prominently** at the top with clear reasoning (1-2 sentences explaining why this is the best choice).
-       - Format as: `**Recommended:** Option [X] - <reasoning>`
-       - Then render all options as a Markdown table:
-
-       | Option | Description |
-       |--------|-------------|
-       | A | <Option A description> |
-       | B | <Option B description> |
-       | C | <Option C description> (add D/E as needed up to 5) |
-       | Short | Provide a different short answer (<=5 words) (Include only if free-form alternative is appropriate) |
-
-       - After the table, add: `You can reply with the option letter (e.g., "A"), accept the recommendation by saying "yes" or "recommended", or provide your own short answer.`
+       - Render the 2–4 options as a numbered list. Do not use lettered labels or an option table.
+       - After all options, state the localized equivalent of `أنا أقترح الاختيار رقم (N)` and give clear UX, Product, Security, or risk reasoning in 1–2 sentences.
+       - Then explain that the user may reply with the option number, accept with `recommended`, `المقترح`, `yes`, or `نعم`, or provide a short alternative when one is genuinely appropriate.
     - For short‑answer style (no meaningful discrete options):
-       - Provide your **suggested answer** based on best practices and context.
-       - Format as: `**Suggested:** <your proposed answer> - <brief reasoning>`
-       - Then output: `Format: Short answer (<=5 words). You can accept the suggestion by saying "yes" or "suggested", or provide your own answer.`
+       - Use this only for a factual value that would make multiple choice artificial, not for a material policy decision.
+       - Ask directly for a short answer in the user's language and constrain it to <=5 words.
     - After the user answers:
-       - If the user replies with "yes", "recommended", or "suggested", use your previously stated recommendation/suggestion as the answer.
-       - Otherwise, validate the answer maps to one option or fits the <=5 word constraint.
+       - If the user replies with `recommended`, `المقترح`, `yes`, or `نعم`, use the previously stated recommendation as the answer.
+       - Otherwise, validate that the answer maps to one numbered option or fits the <=5 word constraint.
        - If ambiguous, ask for a quick disambiguation (count still belongs to same question; do not advance).
-       - Once satisfactory, record it in working memory (do not yet write to disk) and move to the next queued question.
+       - Once satisfactory, immediately integrate and save it using step 6, complete the required validation, and only then move to the next queued question.
     - Stop asking further questions when:
        - All critical ambiguities resolved early (remaining queued items become unnecessary), OR
        - User signals completion ("done", "good", "no more"), OR

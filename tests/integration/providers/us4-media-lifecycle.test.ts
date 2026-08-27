@@ -57,6 +57,24 @@ describe.skipIf(!hasDatabase)("US4 provider media lifecycle (T054)", () => {
       version = firstLogo.body.data.version;
       const firstLogoId = firstLogo.body.data.logo.mediaId as string;
 
+      const providerAdminRole = await context.prisma.role.findUniqueOrThrow({
+        where: { code: "provider_admin" },
+      });
+      await context.prisma.userRole.create({
+        data: {
+          userId: session.userId,
+          roleId: providerAdminRole.id,
+          status: "ENABLED",
+          enabledAt: new Date(),
+        },
+      });
+      await context.prisma.user.update({
+        where: { id: session.userId },
+        data: {
+          accountCategories: ["INDIVIDUAL", "PROVIDER_OWNER"],
+          verifiedCategories: ["INDIVIDUAL", "PROVIDER_OWNER"],
+        },
+      });
       await context.prisma.provider.update({
         where: { id: providerId },
         data: {

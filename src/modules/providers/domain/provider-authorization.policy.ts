@@ -155,11 +155,11 @@ export function canReadPrivateContacts(
     return false;
   }
   if (facts.actorUserId === facts.applicationOwnerUserId) {
-    return (
+    if (
       facts.applicationStatus === "DRAFT" ||
       facts.applicationStatus === "CHANGES_REQUESTED" ||
       facts.applicationStatus === "PENDING_REVIEW"
-    );
+    ) return true;
   }
   return hasActiveOwnerOrAdminMembership(facts);
 }

@@ -1,8 +1,10 @@
 import { buildImplementedR1P05SwaggerFragments } from "./r1-p05-openapi.paths.js";
 import { buildImplementedR1P06SwaggerFragments } from "./r1-p06-openapi.paths.js";
+import { buildImplementedR1P07SwaggerFragments } from "./r1-p07-openapi.paths.js";
 
 const r1P05Fragments = buildImplementedR1P05SwaggerFragments();
 const r1P06Fragments = buildImplementedR1P06SwaggerFragments();
+const r1P07Fragments = buildImplementedR1P07SwaggerFragments();
 
 const apiErrorResponse = { $ref: "#/components/responses/ApiError" } as const;
 const rateLimitResponse = {
@@ -171,10 +173,12 @@ export const cleanoraOpenApiDocument = {
     },
     ...r1P05Fragments.tags,
     ...r1P06Fragments.tags,
+    ...r1P07Fragments.tags,
   ],
   paths: {
     ...r1P05Fragments.paths,
     ...r1P06Fragments.paths,
+    ...r1P07Fragments.paths,
     "/system/health/live": {
       get: {
         tags: ["System Health"],
@@ -1110,14 +1114,17 @@ export const cleanoraOpenApiDocument = {
     parameters: {
       ...r1P05Fragments.parameters,
       ...r1P06Fragments.parameters,
+      ...r1P07Fragments.parameters,
     },
     requestBodies: {
       ...r1P05Fragments.requestBodies,
       ...r1P06Fragments.requestBodies,
+      ...r1P07Fragments.requestBodies,
     },
     responses: {
       ...r1P05Fragments.responses,
       ...r1P06Fragments.responses,
+      ...r1P07Fragments.responses,
       ApiError: {
         description: "Safe stable API failure.",
         headers: {
@@ -1145,6 +1152,7 @@ export const cleanoraOpenApiDocument = {
     schemas: {
       ...r1P05Fragments.schemas,
       ...r1P06Fragments.schemas,
+      ...r1P07Fragments.schemas,
       AccountCategory: {
         type: "string",
         enum: [

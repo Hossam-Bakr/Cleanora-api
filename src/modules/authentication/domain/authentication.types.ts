@@ -15,10 +15,12 @@ export type AuthenticationMethod = 'PASSWORD' | 'GOOGLE';
 export type SessionCapability =
   | 'FULL'
   | 'VERIFICATION_ONLY'
-  | 'PROVIDER_ADMIN_INVITATION_ONBOARDING';
+  | 'PROVIDER_ADMIN_INVITATION_ONBOARDING'
+  | 'WORKER_INVITATION_ONBOARDING';
 
 export type InvitationOnboardingAllowedAction =
   | 'ACCEPT_PROVIDER_ADMIN_INVITATION'
+  | 'WORKER_INVITATION_ACCEPT'
   | 'SESSION_CLEANUP';
 
 export type AuthDeliveryChannel = 'SMS' | 'EMAIL';

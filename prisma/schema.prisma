@@ -64,6 +64,7 @@ enum OtpPurpose {
   CATEGORY_VERIFICATION
   OPTIONAL_INDIVIDUAL_EMAIL_VERIFICATION
   PROVIDER_ADMIN_INVITATION_EMAIL_VERIFICATION
+  WORKER_INVITATION_EMAIL_VERIFICATION
 }
 
 enum AuthChallengeStatus {
@@ -141,6 +142,7 @@ enum PreferredLanguage {
 
 enum MediaOwnerType {
   CUSTOMER_PROFILE_IMAGE
+  WORKER_PROFILE_IMAGE
   PROVIDER_LOGO
   PROVIDER_COVER
   PROVIDER_GALLERY_IMAGE
@@ -229,6 +231,83 @@ enum ProviderEmailOutboxStatus {
   SENDING
   SENT
   FAILED
+}
+
+enum WorkerOperationalStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  REMOVED
+}
+
+enum WorkerGender {
+  MALE
+  FEMALE
+}
+
+enum WorkerType {
+  CLEANING_STAFF
+  ESCORT
+  OTHER
+}
+
+enum WorkerLoginAccessStatus {
+  INVITED
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum WorkerInvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+  SUPERSEDED
+}
+
+enum ProviderTeamStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum ProviderWorkforceTargetType {
+  WORKER
+  WORKER_PROFILE
+  LOGIN_ACCESS
+  INVITATION
+  ADMIN_MEMBERSHIP
+  TEAM
+  TEAM_MEMBERSHIP
+  PRIMARY_SUPERVISOR
+  READINESS
+}
+
+enum ProviderWorkforceNotificationTemplate {
+  INVITATION_ISSUED
+  LOGIN_ACCESS_ACTIVATED
+  LOGIN_ACCESS_RESET
+  LOGIN_ACCESS_REVOKED
+  WORKER_ACTIVATED
+  WORKER_DEACTIVATED
+  WORKER_REMOVED
+  WORKER_DEPARTED
+  PROVIDER_ADMIN_GRANTED
+  PROVIDER_ADMIN_REVOKED
+}
+
+enum ProviderWorkforceNotificationStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
+enum ProviderWorkforceCommandStatus {
+  IN_PROGRESS
+  ACCEPTED
 }
 
 enum VerificationDocumentPolicyStatus {
@@ -489,6 +568,12 @@ model User {
   providerAdminInvitationsAccepted ProviderAdminInvitation[]  @relation("ProviderAdminInvitationAccepter")
   providerGalleryItemsCreated      ProviderGalleryItem[]      @relation("ProviderGalleryItemCreator")
   providerEmailOutboxRecipients    ProviderEmailOutbox[]      @relation("ProviderEmailOutboxRecipient")
+  workerEngagements                ProviderWorker[]            @relation("ProviderWorkerIdentity")
+  workerInvitationsIssued          ProviderWorkerInvitation[]  @relation("ProviderWorkerInvitationIssuer")
+  workerInvitationsAccepted        ProviderWorkerInvitation[]  @relation("ProviderWorkerInvitationAccepter")
+  workforceHistoryActions          ProviderWorkforceHistory[]  @relation("ProviderWorkforceHistoryActor")
+  workforceCommands                ProviderWorkforceCommand[]  @relation("ProviderWorkforceCommandActor")
+  workforceNotificationRecipients  ProviderWorkforceNotificationIntent[] @relation("ProviderWorkforceNotificationRecipient")
 
   @@index([status])
   @@map("users")
@@ -865,6 +950,7 @@ model MediaFile {
   providerCoverProfile ProviderProfile?     @relation("ProviderProfileCover")
   providerGalleryItem  ProviderGalleryItem? @relation("ProviderGalleryMedia")
   providerVerificationEvidence ProviderDocumentEvidence?
+  workerProfileImage ProviderWorkerProfile? @relation("ProviderWorkerProfileAvatar")
 
   @@index([ownerUserId, ownerType])
   @@index([verificationProviderId, verificationDocumentVersionId])
@@ -914,6 +1000,12 @@ model Provider {
   primaryPayoutDestination ProviderPrimaryPayoutDestination?
   payoutConflicts         ProviderPayoutConflict[]
   payoutHistory           ProviderPayoutHistory[]
+  workers                 ProviderWorker[]
+  teams                   ProviderTeam[]
+  workforceHistory        ProviderWorkforceHistory[]
+  workforceCommands       ProviderWorkforceCommand[]
+  workforceNotifications  ProviderWorkforceNotificationIntent[]
+  workforceStateVersion   Int                        @default(1) @map("workforce_state_version")
 
   @@index([applicationStatus, kind, lastSubmittedAt, id])
   @@index([operationalStatus, id])
@@ -983,6 +1075,7 @@ model ProviderMember {
   invitedByUserId String?                   @map("invited_by_user_id")
   enabledAt       DateTime                  @map("enabled_at")
   disabledAt      DateTime?                 @map("disabled_at")
+  version         Int                       @default(1)
   createdAt       DateTime                  @default(now()) @map("created_at")
   updatedAt       DateTime                  @updatedAt @map("updated_at")
   provider        Provider                  @relation(fields: [providerId], references: [id], onDelete: Restrict)
@@ -993,6 +1086,221 @@ model ProviderMember {
   @@index([userId, status])
   @@index([providerId, level, status])
   @@map("provider_members")
+}
+
+// R1-P07 Provider-owned workforce, Team, command, history, and notification truth.
+
+model ProviderWorker {
+  id                         String                  @id @default(cuid())
+  providerId                 String                  @map("provider_id")
+  identityUserId             String?                 @map("identity_user_id")
+  predecessorWorkerId        String?                 @unique @map("predecessor_worker_id")
+  status                     WorkerOperationalStatus @default(DRAFT)
+  version                    Int                     @default(1)
+  acceptedInvitationLocale   PreferredLanguage?      @map("accepted_invitation_locale")
+  endedAt                    DateTime?                @map("ended_at")
+  createdAt                  DateTime                 @default(now()) @map("created_at")
+  updatedAt                  DateTime                 @updatedAt @map("updated_at")
+  provider                   Provider                 @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  identityUser               User?                    @relation("ProviderWorkerIdentity", fields: [identityUserId], references: [id], onDelete: Restrict)
+  predecessor                ProviderWorker?          @relation("ProviderWorkerPredecessor", fields: [predecessorWorkerId], references: [id], onDelete: Restrict)
+  successors                 ProviderWorker[]         @relation("ProviderWorkerPredecessor")
+  profile                    ProviderWorkerProfile?
+  loginAccess                ProviderWorkerLoginAccess?
+  invitations                ProviderWorkerInvitation[]
+  skills                     ProviderWorkerSkill[]
+  teamMemberships            ProviderTeamMembership[]
+  supervisedTeams            ProviderTeam[]           @relation("ProviderTeamPrimarySupervisor")
+
+  @@index([providerId, status, id])
+  @@index([providerId, updatedAt, id])
+  @@index([identityUserId, endedAt])
+  @@map("provider_workers")
+}
+
+model ProviderWorkerProfile {
+  workerId                 String       @id @map("worker_id")
+  fullLegalName            String       @map("full_legal_name") @db.VarChar(200)
+  gender                   WorkerGender
+  operationalPhoneE164     String       @map("operational_phone_e164") @db.VarChar(16)
+  workerType               WorkerType   @map("worker_type")
+  displayTitle             String?      @map("display_title") @db.VarChar(120)
+  supervisorCapable        Boolean      @default(false) @map("supervisor_capable")
+  avatarMediaFileId        String?      @unique @map("avatar_media_file_id")
+  version                  Int          @default(1)
+  createdAt                DateTime     @default(now()) @map("created_at")
+  updatedAt                DateTime     @updatedAt @map("updated_at")
+  worker                   ProviderWorker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  avatarMediaFile          MediaFile?   @relation("ProviderWorkerProfileAvatar", fields: [avatarMediaFileId], references: [id], onDelete: Restrict)
+
+  @@index([workerType, supervisorCapable])
+  @@map("provider_worker_profiles")
+}
+
+model ProviderWorkerSkill {
+  id              String   @id @default(cuid())
+  workerId        String   @map("worker_id")
+  displayLabel    String   @map("display_label") @db.VarChar(100)
+  normalizedLabel String   @map("normalized_label") @db.VarChar(100)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  worker          ProviderWorker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+
+  @@unique([workerId, normalizedLabel])
+  @@map("provider_worker_skills")
+}
+
+model ProviderWorkerLoginAccess {
+  workerId             String                  @id @map("worker_id")
+  status               WorkerLoginAccessStatus
+  version              Int                     @default(1)
+  currentInvitationId  String?                 @unique @map("current_invitation_id")
+  activatedAt          DateTime?               @map("activated_at")
+  revokedAt            DateTime?               @map("revoked_at")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
+  worker               ProviderWorker          @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  currentInvitation    ProviderWorkerInvitation? @relation("ProviderWorkerCurrentInvitation", fields: [currentInvitationId], references: [id], onDelete: Restrict)
+
+  @@map("provider_worker_login_access")
+}
+
+model ProviderWorkerInvitation {
+  id                String                   @id @default(cuid())
+  workerId          String                   @map("worker_id")
+  invitationVersion Int                      @map("invitation_version")
+  emailNormalized   String                   @map("email_normalized") @db.VarChar(320)
+  locale            PreferredLanguage
+  status            WorkerInvitationStatus   @default(PENDING)
+  version           Int                      @default(1)
+  issuedByUserId    String                   @map("issued_by_user_id")
+  acceptedByUserId  String?                  @map("accepted_by_user_id")
+  issuedAt          DateTime                 @default(now()) @map("issued_at")
+  expiresAt         DateTime                 @map("expires_at")
+  acceptedAt        DateTime?                @map("accepted_at")
+  revokedAt         DateTime?                @map("revoked_at")
+  expiredAt         DateTime?                @map("expired_at")
+  supersededAt      DateTime?                @map("superseded_at")
+  createdAt         DateTime                 @default(now()) @map("created_at")
+  updatedAt         DateTime                 @updatedAt @map("updated_at")
+  worker            ProviderWorker           @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  issuedByUser      User                     @relation("ProviderWorkerInvitationIssuer", fields: [issuedByUserId], references: [id], onDelete: Restrict)
+  acceptedByUser    User?                    @relation("ProviderWorkerInvitationAccepter", fields: [acceptedByUserId], references: [id], onDelete: Restrict)
+  currentForAccess  ProviderWorkerLoginAccess? @relation("ProviderWorkerCurrentInvitation")
+  notificationIntents ProviderWorkforceNotificationIntent[]
+
+  @@unique([workerId, invitationVersion])
+  @@index([workerId, status, invitationVersion])
+  @@index([status, expiresAt])
+  @@map("provider_worker_invitations")
+}
+
+model ProviderTeam {
+  id                         String             @id @default(cuid())
+  providerId                 String             @map("provider_id")
+  name                       String?            @db.VarChar(200)
+  normalizedName             String?            @map("normalized_name") @db.VarChar(200)
+  status                     ProviderTeamStatus @default(DRAFT)
+  primarySupervisorWorkerId  String?            @map("primary_supervisor_worker_id")
+  version                    Int                @default(1)
+  createdAt                  DateTime           @default(now()) @map("created_at")
+  updatedAt                  DateTime           @updatedAt @map("updated_at")
+  provider                   Provider           @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  primarySupervisor          ProviderWorker?    @relation("ProviderTeamPrimarySupervisor", fields: [primarySupervisorWorkerId], references: [id], onDelete: Restrict)
+  memberships                ProviderTeamMembership[]
+
+  @@index([providerId, status, id])
+  @@map("provider_teams")
+}
+
+model ProviderTeamMembership {
+  id          String   @id @default(cuid())
+  teamId      String   @map("team_id")
+  workerId    String   @map("worker_id")
+  cleans      Boolean  @default(false)
+  version     Int      @default(1)
+  startedAt   DateTime @default(now()) @map("started_at")
+  endedAt     DateTime? @map("ended_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  team        ProviderTeam @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  worker      ProviderWorker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+
+  @@unique([teamId, workerId, startedAt])
+  @@index([teamId, endedAt, id])
+  @@map("provider_team_memberships")
+}
+
+model ProviderWorkforceHistory {
+  id            String                         @id @default(cuid())
+  providerId    String                         @map("provider_id")
+  targetType    ProviderWorkforceTargetType    @map("target_type")
+  targetId      String                         @map("target_id")
+  targetVersion Int                            @map("target_version")
+  eventCode     String                         @map("event_code") @db.VarChar(100)
+  actorUserId   String                         @map("actor_user_id")
+  reasonCode    String?                        @map("reason_code") @db.VarChar(100)
+  note          String?                        @db.VarChar(1000)
+  safeBefore    Json?                          @map("safe_before")
+  safeAfter     Json?                          @map("safe_after")
+  requestId     String                         @map("request_id") @db.VarChar(200)
+  createdAt     DateTime                       @default(now()) @map("created_at")
+  provider      Provider                       @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  actorUser     User                           @relation("ProviderWorkforceHistoryActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  notificationIntents ProviderWorkforceNotificationIntent[]
+
+  @@index([providerId, targetType, targetId, createdAt, id])
+  @@index([actorUserId, createdAt])
+  @@map("provider_workforce_history")
+}
+
+model ProviderWorkforceCommand {
+  id                 String                         @id @default(cuid())
+  providerId         String                         @map("provider_id")
+  scopeKey           String                         @map("scope_key") @db.VarChar(240)
+  idempotencyKey     String                         @map("idempotency_key") @db.VarChar(200)
+  requestFingerprint String                         @map("request_fingerprint") @db.Char(64)
+  status             ProviderWorkforceCommandStatus @default(IN_PROGRESS)
+  safeResultCode     String?                        @map("safe_result_code") @db.VarChar(100)
+  safeResultJson     Json?                          @map("safe_result_json")
+  actorUserId        String?                        @map("actor_user_id")
+  createdAt          DateTime                       @default(now()) @map("created_at")
+  completedAt        DateTime?                      @map("completed_at")
+  provider           Provider                       @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  actorUser          User?                          @relation("ProviderWorkforceCommandActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([scopeKey, idempotencyKey])
+  @@index([providerId, createdAt])
+  @@map("provider_workforce_commands")
+}
+
+model ProviderWorkforceNotificationIntent {
+  id                         String                              @id @default(cuid())
+  providerId                 String                              @map("provider_id")
+  template                   ProviderWorkforceNotificationTemplate
+  locale                     PreferredLanguage
+  recipientUserId            String?                             @map("recipient_user_id")
+  recipientEmailNormalized   String?                             @map("recipient_email_normalized") @db.VarChar(320)
+  invitationId               String?                             @map("invitation_id")
+  historyId                  String?                             @map("history_id")
+  safeVariables              Json                                @default("{}") @map("safe_variables")
+  idempotencyKey             String                              @unique @map("idempotency_key") @db.VarChar(240)
+  status                     ProviderWorkforceNotificationStatus @default(PENDING)
+  attemptCount               Int                                 @default(0) @map("attempt_count")
+  nextAttemptAt              DateTime?                            @map("next_attempt_at")
+  lockedUntil                DateTime?                            @map("locked_until")
+  sentAt                     DateTime?                            @map("sent_at")
+  lastSafeErrorCode          String?                              @map("last_safe_error_code") @db.VarChar(100)
+  createdAt                  DateTime                             @default(now()) @map("created_at")
+  updatedAt                  DateTime                             @updatedAt @map("updated_at")
+  provider                   Provider                             @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  recipientUser              User?                                @relation("ProviderWorkforceNotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Restrict)
+  invitation                 ProviderWorkerInvitation?            @relation(fields: [invitationId], references: [id], onDelete: Restrict)
+  history                    ProviderWorkforceHistory?             @relation(fields: [historyId], references: [id], onDelete: Restrict)
+
+  @@index([status, nextAttemptAt, lockedUntil])
+  @@index([providerId, createdAt])
+  @@map("provider_workforce_notification_intents")
 }
 
 model ProviderAdminInvitation {

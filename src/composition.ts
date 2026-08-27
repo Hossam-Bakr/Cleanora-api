@@ -62,6 +62,8 @@ import {
   createMediaStoragePort,
   createProviderMediaPort,
   createProviderMediaStatusReader,
+  createTransactionalWorkerAvatarAuthorizer,
+  createWorkerAvatarPort,
   createProviderVerificationEvidencePort,
   createTransactionalProviderVerificationEvidenceAuthorizer,
 } from "#modules/media/infrastructure/media-provider.factory";
@@ -81,6 +83,11 @@ import {
   createPrismaProviderIdentityAuthorityWriterFactory,
   createPrismaProviderIdentityReader,
   createProviderInvitationIdentityOnboarding,
+  createPrismaWorkerIdentityAuthorityWriterFactory,
+  createPrismaWorkerIdentityReaderFactory,
+  createPrismaWorkerProofUseAuthorizerFactory,
+  createWorkerInvitationIdentityOnboarding,
+  WorkerSensitiveActionProofVerifier,
 } from "#modules/authentication/authentication.factories";
 import { createProviderApplicantProfileReader, createProviderPayoutHolderAuthorityReader } from "#modules/customers/customers.public";
 import {
@@ -130,6 +137,34 @@ import { PrismaProviderMediaRepository } from "#modules/providers/infrastructure
 import { PrismaProviderReviewRepository } from "#modules/providers/infrastructure/prisma-provider-review.repository";
 import { PrismaProviderRepository } from "#modules/providers/infrastructure/prisma-provider.repository";
 import { PrismaProvidersUnitOfWork } from "#modules/providers/infrastructure/prisma-providers.unit-of-work";
+import { PrismaProvidersWorkforceUnitOfWork } from "#modules/providers/infrastructure/prisma-providers-workforce.unit-of-work";
+import { PrismaProviderWorkforceNotificationRepository } from "#modules/providers/infrastructure/prisma-provider-workforce-notification.repository";
+import { PrismaProviderWorkforceRepository } from "#modules/providers/infrastructure/prisma-provider-workforce.repository";
+import { ProviderWorkforceEmailDeliveryAdapter } from "#modules/providers/infrastructure/provider-workforce-email-delivery.adapter";
+import { HmacWorkerInvitationProofAdapter } from "#modules/providers/infrastructure/worker-invitation-proof.adapter";
+import { ProviderWorkforceService } from "#modules/providers/provider-workforce.service";
+import { ProviderWorkforceQueryService } from "#modules/providers/provider-workforce-query.service";
+import { ProviderWorkforceMediaService } from "#modules/providers/provider-workforce-media.service";
+import { ProviderWorkforceLifecycleService } from "#modules/providers/provider-workforce-lifecycle.service";
+import { ProviderWorkforceInvitationService } from "#modules/providers/provider-workforce-invitation.service";
+import { ProviderWorkforceInvitationQueryService } from "#modules/providers/provider-workforce-invitation-query.service";
+import { ProviderWorkforceOnboardingService } from "#modules/providers/provider-workforce-onboarding.service";
+import { ProviderWorkforceInvitationAcceptanceService } from "#modules/providers/provider-workforce-invitation-acceptance.service";
+import { ProviderWorkforceAccessService } from "#modules/providers/provider-workforce-access.service";
+import { ProviderWorkforceAuthorityService } from "#modules/providers/provider-workforce-authority.service";
+import { ProviderTeamService } from "#modules/providers/provider-team.service";
+import { ProviderTeamMembershipService } from "#modules/providers/provider-team-membership.service";
+import { ProviderTeamSupervisorService } from "#modules/providers/provider-team-supervisor.service";
+import { ProviderTeamQueryService } from "#modules/providers/provider-team-query.service";
+import { ProviderWorkforceReadinessService } from "#modules/providers/provider-workforce-readiness.service";
+import { ProviderWorkerSelfService } from "#modules/providers/provider-worker-self.service";
+import {
+  ProviderWorkforceNotificationDispatcher,
+  startProviderWorkforceNotificationDispatcher,
+} from "#modules/providers/provider-workforce-notification.dispatcher";
+import { createProviderWorkforceRouter } from "#modules/providers/provider-workforce.routes";
+import { createProviderWorkforceInvitationRouter } from "#modules/providers/provider-workforce-invitation.routes";
+import { createProviderWorkerSelfRouter } from "#modules/providers/provider-worker-self.routes";
 import type {
   ActiveCountryReaderPort,
   ProviderApplicantProfileReaderPort,
@@ -512,6 +547,7 @@ export function createRuntimeDependencies(
             createTransactionalProofUseAuthorizer,
             createTransactionalAcceptedRevealAuthorizer,
             createProviderPayoutHolderAuthorityReader,
+            (transaction) => new PrismaPayoutRevealAuditGate(transaction),
           );
           const payoutRegistry = new PrismaPayoutRegistryRepository(database.client);
           const staffPermissions = new PrismaR1P06StaffPermissionAuthorizer(database.client);
@@ -685,6 +721,91 @@ export function createRuntimeDependencies(
                 socketTimeoutMilliseconds: environment.SMTP_SOCKET_TIMEOUT_MS!,
               })
             : new UnavailableEmailAdapter();
+          const workforceUnitOfWork = new PrismaProvidersWorkforceUnitOfWork(
+            createPrismaWorkerIdentityReaderFactory,
+            createPrismaWorkerIdentityAuthorityWriterFactory,
+            createPrismaWorkerProofUseAuthorizerFactory,
+            createTransactionalWorkerAvatarAuthorizer,
+            createPrismaGeneralTransactionalAuditWriter,
+          );
+          const workerRecentProof = new WorkerSensitiveActionProofVerifier(
+            new PrismaAuthenticationProofConsumption(environment.AUTH_VERIFIER_SECRET!, database.client),
+          );
+          const workerInvitationProof = new HmacWorkerInvitationProofAdapter(
+            environment.AUTH_VERIFIER_SECRET!,
+          );
+          const workerAvatar = createWorkerAvatarPort({
+            environment,
+            database: database.client,
+          });
+          const workerIdentityOnboarding = createWorkerInvitationIdentityOnboarding({
+            passwordHasher: new Argon2PasswordHasherAdapter(),
+            tokens: new JwtTokenServiceAdapter({
+              accessSecret: environment.JWT_ACCESS_SECRET!,
+              refreshSecret: environment.JWT_REFRESH_SECRET!,
+              issuer: environment.JWT_ISSUER,
+              audience: environment.JWT_AUDIENCE,
+              accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
+            }),
+            verifier: new CryptoVerifierAdapter(environment.AUTH_VERIFIER_SECRET!),
+            email: new AuthenticationEmailAdapter(invitationEmailTransport),
+            accessTtlSeconds: environment.JWT_ACCESS_TTL_SECONDS,
+            refreshTtlSeconds: environment.JWT_REFRESH_TTL_SECONDS,
+          });
+          const workforce = new ProviderWorkforceService({ unitOfWork: workforceUnitOfWork });
+          const workforceQueries = new ProviderWorkforceQueryService(workforceUnitOfWork, workerAvatar);
+          const workforceMedia = new ProviderWorkforceMediaService({ unitOfWork: workforceUnitOfWork, avatar: workerAvatar });
+          const workforceLifecycle = new ProviderWorkforceLifecycleService({ unitOfWork: workforceUnitOfWork, recentProof: workerRecentProof, denialAudit });
+          const workforceInvitations = new ProviderWorkforceInvitationService({ unitOfWork: workforceUnitOfWork, recentProof: workerRecentProof, invitationProof: workerInvitationProof, denialAudit });
+          const workforceInvitationQueries = new ProviderWorkforceInvitationQueryService({ unitOfWork: workforceUnitOfWork, invitationProof: workerInvitationProof });
+          const workforceOnboarding = new ProviderWorkforceOnboardingService({ unitOfWork: workforceUnitOfWork, invitationProof: workerInvitationProof, onboarding: workerIdentityOnboarding });
+          const workforceAcceptance = new ProviderWorkforceInvitationAcceptanceService({ unitOfWork: workforceUnitOfWork, invitationProof: workerInvitationProof });
+          const workforceAccess = new ProviderWorkforceAccessService({ unitOfWork: workforceUnitOfWork, recentProof: workerRecentProof, invitationProof: workerInvitationProof, denialAudit });
+          const workforceAuthority = new ProviderWorkforceAuthorityService({ unitOfWork: workforceUnitOfWork, recentProof: workerRecentProof, denialAudit });
+          const teams = new ProviderTeamService({ unitOfWork: workforceUnitOfWork });
+          const teamMemberships = new ProviderTeamMembershipService({ unitOfWork: workforceUnitOfWork });
+          const teamSupervisors = new ProviderTeamSupervisorService({ unitOfWork: workforceUnitOfWork });
+          const teamQueries = new ProviderTeamQueryService(workforceUnitOfWork);
+          const workforceReadiness = new ProviderWorkforceReadinessService(workforceUnitOfWork);
+          const workerSelf = new ProviderWorkerSelfService({ unitOfWork: workforceUnitOfWork, avatar: workerAvatar });
+          const workforceNotificationRepository = new PrismaProviderWorkforceNotificationRepository(
+            database.client,
+          );
+          const workforceNotificationReader = new PrismaProviderWorkforceRepository(database.client);
+          const workforceNotificationDispatcher = new ProviderWorkforceNotificationDispatcher(
+            workforceNotificationRepository,
+            new ProviderWorkforceEmailDeliveryAdapter({
+              email: invitationEmailTransport,
+              identityReader: createPrismaWorkerIdentityReaderFactory(database.client),
+              invitationProof: workerInvitationProof,
+              readInvitation: (invitationId) => workforceNotificationReader.getInvitation(invitationId),
+              invitationAcceptPath: `${environment.API_PREFIX}/worker-invitations/accept`,
+            }),
+          );
+          const workforceHttpService = {
+            createWorkerDraft: workforce.createWorkerDraft.bind(workforce),
+            replaceWorkerProfile: workforce.replaceWorkerProfile.bind(workforce),
+            listWorkers: workforceQueries.listWorkers.bind(workforceQueries),
+            getWorker: workforceQueries.getWorker.bind(workforceQueries),
+            listWorkerHistory: workforceQueries.listWorkerHistory.bind(workforceQueries),
+            upload: workforceMedia.upload.bind(workforceMedia),
+            remove: workforceMedia.remove.bind(workforceMedia),
+            transitionWorkerLifecycle: workforceLifecycle.transition.bind(workforceLifecycle),
+            issueWorkerInvitation: workforceInvitations.issue.bind(workforceInvitations),
+            resendWorkerInvitation: workforceInvitations.resend.bind(workforceInvitations),
+            resetWorkerAccess: workforceAccess.reset.bind(workforceAccess),
+            revokeWorkerAccess: workforceAccess.revoke.bind(workforceAccess),
+            changeWorkerAdminMembership: workforceAuthority.change.bind(workforceAuthority),
+            createTeamDraft: teams.createDraft.bind(teams),
+            replaceTeamName: teams.replaceName.bind(teams),
+            transitionTeamLifecycle: teams.transition.bind(teams),
+            changeTeamMembership: teamMemberships.change.bind(teamMemberships),
+            changeTeamSupervisor: teamSupervisors.change.bind(teamSupervisors),
+            listTeams: teamQueries.list.bind(teamQueries),
+            getTeam: teamQueries.get.bind(teamQueries),
+            listTeamHistory: teamQueries.history.bind(teamQueries),
+            getWorkforceReadiness: workforceReadiness.getForActor.bind(workforceReadiness),
+          };
           const invitationEmail = new ProviderInvitationEmailAdapter(
             invitationEmailTransport,
             `${environment.API_PREFIX}/provider-admin-invitations/accept`,
@@ -804,7 +925,6 @@ export function createRuntimeDependencies(
             payoutRepository,
             proofVerifier,
             payoutRevealAudit,
-            (transaction) => new PrismaPayoutRevealAuditGate(transaction),
             authorizeR1P06Staff,
             payoutKeyRings,
           );
@@ -870,6 +990,10 @@ export function createRuntimeDependencies(
             },
             startProviderBackgroundTasks: (): (() => void) => {
               const stopEmail = startProviderEmailDispatcher(providerEmailDispatcher, logger);
+              const stopWorkforceEmail = startProviderWorkforceNotificationDispatcher(
+                workforceNotificationDispatcher,
+                logger,
+              );
               const expiryTimer = setInterval(() => {
                 void documentExpiry.runBatch().catch((error: unknown) => {
                   logger.error("Provider document expiry sweep failed", {
@@ -891,6 +1015,7 @@ export function createRuntimeDependencies(
               return (): void => {
                 clearInterval(expiryTimer);
                 clearInterval(policyActivationTimer);
+                stopWorkforceEmail();
                 stopEmail();
               };
             },
@@ -910,6 +1035,22 @@ export function createRuntimeDependencies(
                 destinations: payoutDestinations,
                 primary: payoutPrimary,
                 history: payoutHistory,
+              },
+            }),
+            providerWorkforceRouter: createProviderWorkforceRouter({
+              authenticateAccess: authentication.authenticateAccess,
+              service: workforceHttpService,
+            }),
+            providerWorkerSelfRouter: createProviderWorkerSelfRouter({
+              authenticateAccess: authentication.authenticateAccess,
+              service: workerSelf,
+            }),
+            providerWorkforceInvitationRouter: createProviderWorkforceInvitationRouter({
+              authenticateAccess: authentication.authenticateAccess,
+              service: {
+                query: workforceInvitationQueries,
+                onboarding: workforceOnboarding,
+                acceptance: workforceAcceptance,
               },
             }),
             staffProvidersRouter: createStaffProvidersRouter({
@@ -954,6 +1095,9 @@ export function createRuntimeDependencies(
   const staffProvidersRouter = providersComposition?.staffProvidersRouter;
   const providerAdminInvitationRouter =
     providersComposition?.providerAdminInvitationRouter;
+  const providerWorkforceRouter = providersComposition?.providerWorkforceRouter;
+  const providerWorkerSelfRouter = providersComposition?.providerWorkerSelfRouter;
+  const providerWorkforceInvitationRouter = providersComposition?.providerWorkforceInvitationRouter;
 
   return {
     database,
@@ -985,6 +1129,11 @@ export function createRuntimeDependencies(
       ...(authentication === undefined ? {} : { authenticationRouter: authentication.router }),
       ...(customersRouter === undefined ? {} : { customersRouter }),
       ...(providersRouter === undefined ? {} : { providersRouter }),
+      ...(providerWorkforceRouter === undefined ? {} : { providerWorkforceRouter }),
+      ...(providerWorkerSelfRouter === undefined ? {} : { providerWorkerSelfRouter }),
+      ...(providerWorkforceInvitationRouter === undefined
+        ? {}
+        : { providerWorkforceInvitationRouter }),
       ...(staffProvidersRouter === undefined ? {} : { staffProvidersRouter }),
       ...(providerAdminInvitationRouter === undefined
         ? {}
