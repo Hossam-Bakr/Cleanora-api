@@ -11,6 +11,12 @@ The backend is one deployable modular monolith. Business modules own their behav
 3. Load only the active phase specification or its roadmap section.
 4. Load the smallest matching rules and, when useful, one skill from `.codex/skills/`.
 
+When a material owner decision or approval is required, follow
+`docs/ai/decision-question-format.md`: ask one numbered question in the owner's
+language, give two to four mutually exclusive numbered options, and place the
+reasoned recommendation after the options. Do not force simple factual questions
+into multiple choice.
+
 Canonical product documents must be repository-local before implementation. Their expected destinations and current bootstrap status are recorded in `docs/README.md`. Do not substitute files from another project or silently invent missing rules.
 
 ## Roles

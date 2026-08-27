@@ -35,6 +35,23 @@ describe("requireR1P04TestDatabase (T103)", () => {
     });
   });
 
+  it("accepts an explicitly attested R1-P07 disposable target for R1-P04 regression only", () => {
+    const databaseName = "cleanora_r1_p07_proof";
+    expect(requireR1P04TestDatabase(approvedEnv({
+      TEST_DATABASE_HAS_R1_P07: "true",
+      TEST_DATABASE_URL: urlFor(databaseName),
+      TEST_MIGRATION_DATABASE_URL: urlFor(databaseName),
+    }))).toEqual({ databaseName });
+  });
+
+  it("rejects an R1-P07 target without the explicit compatibility attestation", () => {
+    const databaseName = "cleanora_r1_p07_proof";
+    expect(() => requireR1P04TestDatabase(approvedEnv({
+      TEST_DATABASE_URL: urlFor(databaseName),
+      TEST_MIGRATION_DATABASE_URL: urlFor(databaseName),
+    }))).toThrow(/explicitly attested R1-P07/u);
+  });
+
   it("rejects an R1-P02 CI database", () => {
     const env = approvedEnv({
       TEST_DATABASE_URL: urlFor("cleanora_r1_p02_ci"),

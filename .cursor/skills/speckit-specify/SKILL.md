@@ -198,7 +198,7 @@ Given that feature description, do this:
       - **If [NEEDS CLARIFICATION] markers remain**:
         1. Extract all [NEEDS CLARIFICATION: ...] markers from the spec
         2. **LIMIT CHECK**: If more than 3 markers exist, keep only the 3 most critical (by scope/security/UX impact) and make informed guesses for the rest
-        3. For each clarification needed (max 3), present options to user in this format:
+        3. Resolve the retained questions sequentially, presenting EXACTLY ONE at a time in the user's language and following `docs/ai/decision-question-format.md`. For each material decision (max 3), use this format:
 
            ```markdown
            ## Question [N]: [Topic]
@@ -207,28 +207,23 @@ Given that feature description, do this:
 
            **What we need to know**: [Specific question from NEEDS CLARIFICATION marker]
 
-           **Suggested Answers**:
+           1. [First suggested answer, including its implication]
+           2. [Second mutually exclusive answer, including its implication]
+           3. [Third answer only when genuinely useful]
+           4. [Fourth answer only when genuinely useful]
 
-           | Option | Answer | Implications |
-           |--------|--------|--------------|
-           | A      | [First suggested answer] | [What this means for the feature] |
-           | B      | [Second suggested answer] | [What this means for the feature] |
-           | C      | [Third suggested answer] | [What this means for the feature] |
-           | Custom | Provide your own answer | [Explain how to provide custom input] |
+           أنا أقترح الاختيار رقم (N) للأسباب التالية:
+           - [Clear UX, Product, Security, or risk reasoning]
 
-           **Your choice**: _[Wait for user response]_
+           **Your choice**: _[Reply with the option number, `recommended`, `المقترح`, `yes`, `نعم`, or a short alternative when appropriate]_
            ```
 
-        4. **CRITICAL - Table Formatting**: Ensure markdown tables are properly formatted:
-           - Use consistent spacing with pipes aligned
-           - Each cell should have spaces around content: `| Content |` not `|Content|`
-           - Header separator must have at least 3 dashes: `|--------|`
-           - Test that the table renders correctly in markdown preview
-        5. Number questions sequentially (Q1, Q2, Q3 - max 3 total)
-        6. Present all questions together before waiting for responses
-        7. Wait for user to respond with their choices for all questions (e.g., "Q1: A, Q2: Custom - [details], Q3: B")
-        8. Update the spec by replacing each [NEEDS CLARIFICATION] marker with the user's selected or provided answer
-        9. Re-run validation after all clarifications are resolved
+        4. Offer 2–4 real, mutually exclusive numbered options without a table or filler choices. If the missing input is strictly factual and discrete options would be artificial, ask directly for a short answer instead.
+        5. Place the reasoned recommendation after every option, never before them.
+        6. Wait for the current answer only. Treat the option number as the selection; treat `recommended`, `المقترح`, `yes`, or `نعم` as acceptance of the recommendation; otherwise validate an appropriate short alternative.
+        7. Immediately replace that question's [NEEDS CLARIFICATION] marker, reconcile conflicting wording, save the spec, and re-run the relevant specification and checklist validation before presenting the next question.
+        8. Number questions sequentially (Q1, Q2, Q3 — max 3 total) and never reveal the future question queue unless the owner explicitly requests a batch preview outside this formal loop.
+        9. After all accepted clarifications are integrated, run the complete validation pass again.
 
    d. **Update Checklist**: After each validation iteration, update the checklist file with current pass/fail status
 

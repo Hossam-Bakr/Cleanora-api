@@ -1,6 +1,5 @@
 import type { RecentAuthenticationProofVerifier } from "../authentication/authentication.public.js";
 import type { PayoutRevealAuditGate } from "../admin/audit.public.js";
-import type { Prisma } from "#generated/prisma/client";
 import type { PayoutKeyRings } from "./domain/provider-verification.types.js";
 import { createPayoutDataCrypto } from "./infrastructure/payout-data-crypto.adapter.js";
 import type { PrismaProviderPayoutRepository } from "./infrastructure/prisma-provider-payout.repository.js";
@@ -29,7 +28,6 @@ export class ProviderPayoutRevealService {
     private readonly repository: PrismaProviderPayoutRepository,
     private readonly proofVerifier: RecentAuthenticationProofVerifier,
     private readonly auditGate: PayoutRevealAuditGate,
-    private readonly createAuditGate: (transaction: Prisma.TransactionClient) => PayoutRevealAuditGate,
     private readonly authorizeStaff: (actorUserId: string, permission: "providers.payout-destinations.verify") => Promise<boolean>,
     rings: PayoutKeyRings,
     private readonly now: () => Date = () => new Date(),
@@ -58,7 +56,6 @@ export class ProviderPayoutRevealService {
         requestId: input.requestId,
         proofId: proof.proofId,
         now: this.now(),
-        createAuditGate: this.createAuditGate,
         prepareSensitiveResult: (row, authority) => {
           applicableEncryptionKeyIds = [row.identifierEncryptionKeyId, row.holderNameEncryptionKeyId];
           applicableLookupKeyIds = row.identityClaim.fingerprints.map((item) => item.lookupKeyId);

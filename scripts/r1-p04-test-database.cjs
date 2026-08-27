@@ -9,6 +9,8 @@
 
 const APPROVED_R1_P04_PROOF_NAME = "cleanora_r1_p04_clean_proof";
 const APPROVED_NAME_PATTERN = /^cleanora_r1_p04_[a-z0-9_]+_proof$/u;
+const APPROVED_R1_P07_COMPATIBILITY_PATTERN =
+  /^cleanora_r1_p07(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/u;
 const FORBIDDEN_NAME_PATTERNS = [
   /r1_p02/iu,
   /_ci(?:_|$)/iu,
@@ -50,6 +52,22 @@ function isForbiddenDatabaseName(name) {
  */
 function isApprovedR1P04ProofName(name) {
   return APPROVED_NAME_PATTERN.test(name) && !isForbiddenDatabaseName(name);
+}
+
+/**
+ * A later-phase disposable target may run R1-P04 regressions only when the
+ * caller explicitly attests that the target contains R1-P07 migrations.
+ * This never makes the target eligible for R1-P04 migration commands by name
+ * alone and does not accept arbitrary future or shared databases.
+ *
+ * @param {string} name
+ * @param {NodeJS.ProcessEnv} env
+ * @returns {boolean}
+ */
+function isApprovedR1P07CompatibilityTarget(name, env) {
+  return env.TEST_DATABASE_HAS_R1_P07 === "true" &&
+    APPROVED_R1_P07_COMPATIBILITY_PATTERN.test(name) &&
+    !isForbiddenDatabaseName(name);
 }
 
 /**
@@ -112,10 +130,14 @@ function requireR1P04TestDatabase(env = process.env) {
         "R1-P02 CI, production-like, Railway, and shared app databases are forbidden.",
     );
   }
-  if (!isApprovedR1P04ProofName(pooledName)) {
+  if (
+    !isApprovedR1P04ProofName(pooledName) &&
+    !isApprovedR1P07CompatibilityTarget(pooledName, env)
+  ) {
     throw new Error(
       `Rejected unapproved R1-P04 database name '${pooledName}'. ` +
-        `Expected disposable proof name matching cleanora_r1_p04_*_proof (canonical: ${APPROVED_R1_P04_PROOF_NAME}).`,
+        `Expected disposable proof name matching cleanora_r1_p04_*_proof ` +
+        `(canonical: ${APPROVED_R1_P04_PROOF_NAME}) or an explicitly attested R1-P07 disposable target.`,
     );
   }
 

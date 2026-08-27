@@ -1529,3 +1529,293 @@ does not move money, execute payouts, or create a Cleanora-held balance.
 
 OQ-007 is resolved by this decision. OQ-009 remains open and out of scope.
 OQ-011 remains open only for payout and settlement scheduling.
+
+---
+
+## DEC-038 — Worker, team, access, and readiness pre-activation baseline
+
+**Date:** 2026-08-22
+**Status:** Approved baseline; R1-P07 activated on 2026-08-22 and later advanced
+through separately authorized pre-implementation preparation
+
+This decision originally recorded the owner's approved product baseline for
+R1-P07 before activation. It resolves the 27 reviewed Worker and Team decision
+questions. On 2026-08-22, the owner separately authorized R1-P07 activation and
+`speckit-specify`, then issued a later instruction authorizing the remaining
+pre-implementation specification-driven workflow through analysis. DEC-039
+records its five clarification refinements. Neither authorization permits
+product implementation, and derived artifacts must not silently replace these
+decisions.
+
+### Worker identity, engagement, and invitations
+
+- A Worker Profile is Provider-owned operational data separate from the
+  Authentication identity. A Provider may create the profile before the invited
+  person has completed a Cleanora login account.
+- Invitations are sent by email. A new user chooses their own password; an
+  existing user signs in and accepts the invitation without changing their
+  password. Invitation tokens and credentials never appear in generic logs,
+  history, or safe audit payloads.
+- An invitation expires after 72 hours. Resending invalidates every earlier
+  invitation link for that engagement, and the exact Provider Owner may revoke
+  an outstanding invitation.
+- One Authentication identity may hold `CUSTOMER` and `WORKER` at the same time.
+  Those roles do not merge Customer and Worker data ownership.
+- A person may have only one current Provider engagement. `INACTIVE` remains a
+  current engagement, so another Provider cannot engage the same identity until
+  the prior engagement becomes `REMOVED` or the Worker leaves that Provider.
+- The exact Provider Owner may remove a Worker, and a Worker may leave the
+  Provider. Both operations preserve history and notify the other party.
+- Rehiring creates a new engagement linked to its removed predecessor. A
+  `REMOVED` engagement is never reopened.
+
+### Worker lifecycle, contact privacy, and media
+
+- Worker operational lifecycle is `DRAFT → ACTIVE ↔ INACTIVE → REMOVED`.
+  `REMOVED` is terminal. Login-access lifecycle is separate and uses
+  `INVITED`, `ACTIVE`, `EXPIRED`, and `REVOKED`.
+- The Worker operational phone is normalized to E.164 and is separate from the
+  Authentication phone. The Worker reviews it when accepting the invitation;
+  confirmation does not update Authentication phone data automatically and is
+  not treated as proof of Authentication-phone ownership.
+- The full operational phone is available only to the exact Provider Owner,
+  an explicit exact-Provider Admin, the Worker themself, and the primary
+  Supervisor of the Worker's current team. Other Workers cannot see the full
+  value, and Customers never receive it.
+- Worker avatar media uses the Media-owned private profile-image flow. The
+  accepted input contract is JPEG, PNG, or WebP up to 5 MiB, with safe
+  orientation and metadata handling and a processed WebP output no larger than
+  1200 pixels on its longest edge. Any later public display requires a separate
+  decision.
+
+### Authority and recent authentication
+
+- Exact-Provider Admin authority comes only from explicit active
+  `provider_members.ADMIN` membership. No Worker boolean or profile flag grants
+  Admin authority. The same identity may be both Worker and Provider Admin only
+  when both relationships exist explicitly.
+- The exact Provider Owner initiates or resets login access, grants or revokes
+  Admin membership, removes Workers, and revokes Worker access. A new Worker
+  still chooses their own password; the Owner never assigns it.
+- An explicit Provider Admin manages Worker profiles, skills, teams, team
+  membership, and operational states but cannot grant ownership or Admin
+  authority. Under the DEC-039 refinement, a primary Supervisor reads only the
+  assigned current Team and its current members and may write only `cleans` on
+  an existing current membership. A Worker sees only their own profile and
+  operational context and cannot modify their authority or Provider-managed
+  administrative profile.
+- High-risk credential, Admin-authority, removal, and access-revocation commands
+  require Authentication-owned recent re-authentication, with a default maximum
+  age of 10 minutes. Ordinary profile, skill, team, and operational edits do not
+  require step-up authentication.
+
+### Worker types, skills, and cleaning context
+
+- `workerType` is closed to `CLEANING_STAFF`, `ESCORT`, and `OTHER`.
+  Supervisor capability is independent of `workerType`.
+- `cleans` is contextual membership data, not a permanent Worker trait. It is
+  stored on team membership and may be copied as an immutable assignment
+  snapshot by a later Booking phase.
+- Display title is optional. Skills are Provider-managed normalized tags that
+  reject duplicates within one Worker and may later map to the R1-P08 catalog.
+- An Escort is a complete auditable Worker rather than a separate entity and,
+  as refined by DEC-039, every Team membership for an Escort has
+  `cleans=false`.
+
+### Team lifecycle and membership
+
+- A Worker has at most one active team membership, while earlier memberships
+  remain historical.
+- Team lifecycle is `DRAFT → ACTIVE ↔ INACTIVE → ARCHIVED`; `ARCHIVED` is
+  terminal. A normalized team name is unique among the exact Provider's
+  non-archived teams.
+- A `DRAFT` team may be empty. Activation requires a valid name and at least one
+  active cleaning Worker.
+- A team has at most one optional primary Supervisor. That Supervisor must be an
+  active Worker, a current member of the team, and hold Supervisor capability.
+- Before deactivating, removing, or accepting the departure of a Worker whose
+  loss would remove the final active cleaning Worker from an active team, the UI
+  shows the impact. After explicit confirmation, Worker and Team are made
+  inactive atomically and history is retained for each transition.
+- Deactivating the primary Supervisor clears that assignment. The Team remains
+  `ACTIVE` only if at least one valid active cleaning Worker remains.
+- Making a Team `INACTIVE` does not deactivate its Workers. Archiving a Team
+  ends its current memberships and preserves their history.
+
+### `workersReady` gate
+
+- `workersReady` is satisfied when at least one Worker has operational status
+  `ACTIVE`, has `workerType=CLEANING_STAFF`, has a complete required profile,
+  and has an Authentication account, the Worker role, and active login access.
+- Team membership is not required for `workersReady`. A Provider Owner counts
+  only if an explicit Worker engagement exists for the same identity.
+- An Escort, a Supervisor who is not eligible to clean, and an unaccepted
+  invitation do not satisfy the gate.
+- Deactivating or removing the final eligible Worker is allowed only after a
+  warning and explicit confirmation. The operation makes `workersReady`
+  unsatisfied and never auto-promotes another Worker.
+
+### Concurrency, history, reasons, and notifications
+
+- Lifecycle, invitation, membership, authority, and Team commands require
+  `expectedVersion` and `idempotencyKey`. An identical retry is idempotent;
+  stale or competing commands conflict without partial state.
+- Immutable history records actor, timestamp, exact target and version,
+  transition, and safe before/after facts without full phone values, invitation
+  tokens, credentials, or other secrets.
+- A reason code is required to deactivate or remove a Worker, revoke access, or
+  grant or revoke Admin membership. Removal and reason `OTHER` additionally
+  require a meaningful note of at least 10 characters. Routine name, title,
+  skill, and team-membership changes require no reason.
+- Invitations, access changes, Worker lifecycle changes, Admin membership
+  changes, and Worker departure or removal emit localized email intents through
+  an idempotent outbox. Delivery failure does not roll back or rewrite accepted
+  business truth.
+
+### Phase boundary
+
+- DEC-038 approves product decisions only. It defines no HTTP endpoint,
+  request/response schema, public module contract, Prisma model, migration, or
+  database operation.
+- The owner activated R1-P07 on 2026-08-22 and later authorized creation of the
+  phase branch plus clarification, planning, specialized checklists, tasks,
+  analysis, and Companion capture through `tasks / ready-to-implement`.
+- Product implementation and tests, Prisma/schema changes, migrations, database
+  work, staging, commit, push, merge, deployment, and production operations
+  remain separately controlled and unperformed.
+
+## DEC-039 — R1-P07 Supervisor scope, Escort cleaning, reasons, and notification locale
+
+**Date:** 2026-08-22
+**Status:** Approved clarification decision; R1-P07 pre-implementation workflow
+is authorized and implementation remains unstarted
+
+The owner approved five clarification answers for R1-P07 after DEC-038 and
+authorized the specification-driven workflow to continue through clarification,
+planning, checklists, tasks, and consistency analysis. These decisions refine
+DEC-038 without authorizing product implementation, tests, Prisma changes,
+migrations, database operations, staging, commit, push, merge, deployment, or
+production work.
+
+### Primary Supervisor scope
+
+- A primary Supervisor may read only the exact current Team and its current
+  members and may modify only `cleans` on an existing current membership within
+  that Team.
+- A primary Supervisor cannot add, remove, or move members; create or edit a
+  Worker Profile, skills, Worker lifecycle, invitation, login access, or Admin
+  membership; change Team name or lifecycle; or assign or clear the primary
+  Supervisor.
+- Full operational-phone access is limited to the Supervisor's current Team
+  members and ends as soon as the primary-Supervisor assignment or current
+  membership is no longer valid.
+- R1-P07 adds no operational-notes field or other daily-operation write surface;
+  the only new Supervisor write is the existing membership's `cleans` value.
+
+### Escort cleaning invariant
+
+- Every Team membership for a Worker whose `workerType=ESCORT` must carry
+  `cleans=false`. A request for `cleans=true` is rejected and never changes the
+  Worker's type automatically.
+- Changing a Worker from `CLEANING_STAFF` to `ESCORT` is rejected while the
+  current Team membership still has `cleans=true`. An authorized actor must
+  correct the membership explicitly before retrying the type change.
+- An Escort never counts as an active cleaning Worker and never satisfies
+  `workersReady`.
+
+### Primary-Supervisor last-cleaner command
+
+- If a primary Supervisor attempts to set `cleans=false` for the final valid
+  cleaning Worker in an `ACTIVE` Team, the command is rejected with a safe
+  conflict that directs the actor to an Owner or Admin.
+- An exact Provider Owner or Admin may make the same change only after the
+  operational impact is shown and explicitly confirmed. On acceptance, the
+  membership's `cleans` change and the Team transition to `INACTIVE` commit
+  atomically with distinct history for each affected truth.
+- Cancellation, stale expected version, a competing command, or failure changes
+  zero business state, history, readiness, audit, or notification effects.
+
+### Closed reason catalogs
+
+- Worker deactivation accepts only `TEMPORARILY_UNAVAILABLE`,
+  `SCHEDULE_OR_LEAVE`, `PERFORMANCE_OR_POLICY`,
+  `PROVIDER_OPERATIONAL_CHANGE`, or `OTHER`.
+- Worker removal accepts only `ENGAGEMENT_ENDED`, `PERFORMANCE_OR_POLICY`,
+  `DUPLICATE_OR_INCORRECT_RECORD`, or `OTHER`.
+- Login-access revocation accepts only `SECURITY_CONCERN`,
+  `ACCESS_NO_LONGER_REQUIRED`, `ENGAGEMENT_ENDED`, or `OTHER`.
+- Provider Admin grant accepts only `OPERATIONAL_RESPONSIBILITY`,
+  `COVERAGE_OR_BACKUP`, or `OTHER`.
+- Provider Admin revocation accepts only `RESPONSIBILITY_ENDED`,
+  `SECURITY_CONCERN`, `ENGAGEMENT_ENDED`, or `OTHER`.
+- Each command accepts only its own catalog. A meaningful note of at least 10
+  characters is required for every Worker removal and every command whose
+  reason is `OTHER`; routine edits remain reason-free under DEC-038.
+
+### Notification locale
+
+- The Owner selects `AR` or `EN` whenever an invitation version is issued,
+  including resend, and the locale is stored with that exact version.
+- After acceptance, email uses the recipient's valid `UserPreferences.language`
+  when present. When it is absent or invalid, a Worker uses the locale of the
+  last accepted invitation; if neither source is valid, the final fallback is
+  `AR`.
+- Locale is immutable intent meaning. Notification delivery failure or retry
+  cannot roll back, duplicate, or rewrite the accepted business truth.
+
+### Boundary and authorization
+
+- DEC-039 refines DEC-038 and is canonical for these five topics. It does not
+  define product HTTP or persistence contracts; those belong to the authorized
+  technical plan.
+- The owner authorized the pre-implementation workflow through clarification,
+  planning, specialized checklists, tasks, and analysis on branch
+  `r1-p07-worker-team-crew-management`, with a mandatory stop before
+  `speckit-implement`.
+- No product code or tests, Prisma/schema change, migration, database operation,
+  staging, commit, push, merge, deployment, or production work is authorized or
+  performed by this decision.
+
+## DEC-040 — R1-P07 implementation completion and publication boundary
+
+**Date:** 2026-08-24
+**Status:** Approved and Complete — implementation, migration proofs, tests,
+coverage, independent review, and evidence gates passed
+
+The human owner instructed Codex to complete R1-P07, make it ready for Git
+publication, and mark it completed. This decision closes the sole active phase
+after repository-grounded verification; it does not reinterpret the historical
+pre-implementation boundaries in DEC-038 or DEC-039.
+
+### Completion evidence
+
+- All FR-001–FR-088 and SC-001–SC-014 are implemented and trace to completed
+  tasks T001–T156.
+- The phase-owned additive migration applied chronologically on a clean
+  disposable R1-P07 database and upgraded a populated R1-P06 fixture without
+  changing any pre-existing baseline table digest or business truth.
+- The final phase suite passed 79 files / 330 tests with no skip; full
+  integration passed 149 files / 497 tests; global coverage passed 336 files /
+  1,405 tests above every unchanged threshold.
+- Prisma, typecheck, lint, build, OpenAPI, Postman, documentation, module
+  boundaries, privacy/redaction, SQL review, concurrency, and diff gates passed.
+- The accepted final read-only independent review has no unresolved BLOCKER or
+  MAJOR, and Codex independently resolved every applicable finding.
+- Companion records implementation completion and terminal phase completion.
+
+### Preserved boundaries
+
+- R1-P07 adds no separate Workers module, Booking assignment/snapshot, payroll,
+  payout schedule/execution, attendance, public Worker profile, frontend,
+  Docker, cloud, deployment, or production migration.
+- Invitation proofs reuse the existing `AUTH_VERIFIER_SECRET` with domain
+  separation; R1-P07 requires no new environment variable or secret.
+- The repository `.env` database, remote databases, production resources, and
+  the installed PostgreSQL service were not changed. Proof used only a
+  temporary localhost cluster and phase-named disposable targets, which were
+  stopped and deleted after verification.
+- Phase completion does not authorize staging, commit, push, merge, deployment,
+  production configuration, production migration, force-push, or history
+  rewriting. The guarded Git workflow activates only on a new human message
+  whose entire content is exactly `commit and push`.
+- No later roadmap phase is activated by this decision.

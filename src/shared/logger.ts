@@ -15,7 +15,7 @@ export interface LogSink {
 
 const REDACTED = "[REDACTED]";
 const SENSITIVE_KEY =
-  /(password|passcode|token|credential|verifier|jwt|api[_-]?key|email|phone|otp|secret|authorization|cookie|payment[_-]?payload)/iu;
+  /(password|passcode|token|credential|verifier|proof|jwt|api[_-]?key|email|phone|otp|secret|storage.?key|authorization|cookie|payment[_-]?payload)/iu;
 const LEVEL_VALUE: Readonly<Record<LogLevel, number>> = {
   debug: 10,
   info: 20,

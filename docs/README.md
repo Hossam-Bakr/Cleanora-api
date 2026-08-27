@@ -31,6 +31,7 @@ Precedence:
 - Development loop: `docs/ai/development-cycle.md`
 - Spec Kit integration: `docs/ai/spec-kit-integration.md`
 - Repeatable workflows: `docs/ai/workflows/`
+- Owner decision-question contract: `docs/ai/decision-question-format.md`
 - Phase navigation: `docs/phases/`
 - Review/readiness reports: `docs/ai/reviews/`
 
@@ -46,14 +47,17 @@ Precedence:
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
 
-**Live pointer (2026-08-14):** `R1-P06 — Provider Verification & External
-Payout Destinations` is **Complete** (T001–T137). Independent implementation
-review and all evidence gates passed, including explicitly approved disposable
-clean-install and populated R1-P05-upgrade proofs, and human completion
-authorization is recorded. No phase is active; R1-P07 is not activated. No Git
-action, deployment, production migration, or real payout execution was
-authorized by completion. See `docs/product/current.md` and
-`specs/R1-P06-provider-verification-external-payout-destinations/completion-report.md`.
+**Live pointer (2026-08-22):** `R1-P07 — Worker, Team & Crew Management` is the
+sole active phase. DEC-038 supplies its approved product baseline and DEC-039
+records the approved clarification refinements. The branch
+`r1-p07-worker-team-crew-management` carries the preserved local work.
+Specification, clarification, plan, contracts, quality checklists, continuous
+tasks T001–T156, and CLEAN consistency analysis are complete; Companion is at
+`tasks / ready-to-implement`. Product implementation, tests, Prisma,
+migrations, database operations, staging, commit, push, merge, deployment, and
+production work remain unauthorized. The only next workflow step is
+`speckit-implement`, and it has not been run. R1-P06 remains Complete and merged
+into `origin/main` through PR #6. See `docs/product/current.md`.
 
 ## Current backend navigation
 

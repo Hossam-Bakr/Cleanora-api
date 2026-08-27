@@ -18,6 +18,7 @@ export type CloudinaryDestroyResult = "ok" | "not_found";
  */
 export const MEDIA_OWNER_TYPES = [
   "CUSTOMER_PROFILE_IMAGE",
+  "WORKER_PROFILE_IMAGE",
   "PROVIDER_LOGO",
   "PROVIDER_COVER",
   "PROVIDER_GALLERY_IMAGE",
@@ -34,6 +35,8 @@ export const PROVIDER_MEDIA_OWNER_TYPES = [
 ] as const;
 
 export type ProviderMediaOwnerType = (typeof PROVIDER_MEDIA_OWNER_TYPES)[number];
+
+export type WorkerProfileImageOwnerType = "WORKER_PROFILE_IMAGE";
 
 /**
  * Media lifecycle statuses persisted on `media_files.status`.

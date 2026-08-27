@@ -473,8 +473,8 @@ Make authorization authoritative across customer, provider, worker, and staff op
 - Resource ownership
 - Provider membership scope
 - Worker scope
-- Supervisor flag
-- Provider-admin flag
+- Explicit Provider-scoped Supervisor capability
+- Explicit `provider_members.ADMIN` membership authority
 - Staff roles: admin, operations, support, finance
 - Privileged write reason
 - Before/after audit records
@@ -493,7 +493,8 @@ Make authorization authoritative across customer, provider, worker, and staff op
 
 - Every protected endpoint declares permission and ownership rules.
 - Privileged writes require a reason where configured.
-- Supervisor/provider-admin can proxy only within their provider.
+- Supervisor and explicit Provider Admin proxy authority is confined to the
+  exact Provider and the granted scope.
 - Staff powers are separated and tested.
 
 ---
@@ -856,27 +857,46 @@ are defined by the R1-P06 data model and phase migration plan:
 
 ## R1-P07 — Worker, Team & Crew Management
 
+**Status:** Active and ready to implement as of 2026-08-22 under DEC-038,
+DEC-039, and the owner's expanded pre-implementation authorization.
+Clarification, planning, focused checklists, continuous tasks T001–T156, and
+CLEAN consistency analysis are complete. The only next workflow step is
+`speckit-implement`; implementation and further Git actions remain separately
+controlled.
+
 ### Goal
 
 Give providers complete worker and team management with gender and proxy-operation rules.
 
 ### Scope
 
-- Add/edit worker
-- Create login credentials
-- Activate/deactivate worker
-- Historical-safe removal
+- Provider-owned Worker Profiles separate from Authentication identities
+- Email invitation, access acceptance, expiration, resend, and revocation
+- Worker lifecycle: `DRAFT → ACTIVE ↔ INACTIVE → REMOVED` (`REMOVED` terminal)
+- Separate login-access lifecycle: `INVITED / ACTIVE / EXPIRED / REVOKED`
+- Historical-safe removal, Worker departure, and linked new engagement on rehire
 - Required gender
-- Worker role/title and avatar
-- Supervisor flag
-- Provider-admin flag
-- Worker skills
-- Team creation and membership
-- Team active state
+- Closed `workerType`, optional display title, normalized skills, and private avatar
+- Independent Supervisor capability and one optional primary Supervisor per Team
+- Primary Supervisor reads limited to the current Team and current members, with
+  the only write authority being `cleans` on an existing current membership
+- Supervisor attempts to remove the final valid cleaner from an active Team
+  conflict; Owner/Admin confirmation atomically changes membership and Team
+- Provider Admin authority through explicit `provider_members.ADMIN` membership only
+- Team creation with one active Team membership per Worker and retained history
+- Team lifecycle: `DRAFT → ACTIVE ↔ INACTIVE → ARCHIVED` (`ARCHIVED` terminal)
 - Crew gender composition
-- Male escort representation
-- `cleans` behavior on assignment
-- Worker activity history
+- Escort representation with membership `cleans=false`; incompatible cleaning
+  membership or Worker-type changes are rejected until explicitly corrected
+- Membership-level `cleans`, with assignment snapshots deferred to Booking
+- `workersReady` based on an active, complete, login-enabled `CLEANING_STAFF`
+- Versioned lifecycle, authority, invitation, and membership commands with safe
+  history, reasons, audit evidence, and localized notification intents
+- Closed action-specific reason catalogs for Worker deactivation/removal,
+  login-access revocation, and Provider Admin grant/revocation, with meaningful
+  notes for every removal and every `OTHER`
+- Invitation-version locale selected as `AR` or `EN`, followed after acceptance
+  by recipient preference, accepted-invitation locale, and final `AR` fallback
 
 ### Tables
 
@@ -891,10 +911,17 @@ Give providers complete worker and team management with gender and proxy-operati
 ### Done When
 
 - Provider controls only its own workers.
-- Historical bookings survive deactivation.
-- Crew composition can be evaluated.
-- Supervisor/provider-admin proxy permissions are enforced.
-- Escort workers can be represented without being counted as cleaners.
+- Historical engagements, memberships, and bookings survive lifecycle changes.
+- Crew composition and membership-level cleaning participation can be evaluated.
+- Supervisor scope and explicit Provider Admin membership authority are enforced.
+- Last-cleaner membership changes cannot leave an active Team without a valid
+  cleaner or produce partial membership/Team history.
+- Escort workers are represented only with `cleans=false` memberships and are
+  never counted as cleaners.
+- `workersReady` cannot be satisfied by an Escort, an unaccepted invitation, or
+  a Supervisor who is not an eligible cleaning Worker.
+- The prepared HTTP contracts and persistence design remain implementation
+  artifacts only until the separately authorized `speckit-implement` step.
 
 ---
 
@@ -1342,7 +1369,7 @@ Provide the locked emergency workflow without live location.
 ### Scope
 
 - Worker panic
-- Supervisor/provider-admin panic
+- Supervisor/explicit Provider Admin panic
 - Emergency flag
 - Emergency dossier
 - Admin/operations alert record

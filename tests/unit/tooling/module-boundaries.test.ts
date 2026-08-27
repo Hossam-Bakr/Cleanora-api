@@ -75,6 +75,7 @@ describe("business module dependency boundaries", () => {
       "admin/audit.service.ts",
       "admin/infrastructure/prisma-denial-audit.writer.ts",
       "admin/infrastructure/prisma-general-transactional-audit.writer.ts",
+      "admin/infrastructure/prisma-payout-reveal-audit.gate.ts",
       "admin/infrastructure/prisma-privileged-audit.writer.ts",
     ]);
   });

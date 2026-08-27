@@ -21,7 +21,11 @@ from pathlib import Path
 # Canonical vocab (mirrors src/core/types/specContext.ts). Kept here only to
 # reject the legacy terminal step and to avoid regressing an advanced spec.
 CANONICAL_STEPS = {"specify", "clarify", "plan", "tasks", "analyze", "implement"}
-STEP_ORDER = {"specify": 0, "clarify": 1, "plan": 2, "tasks": 3, "analyze": 4, "implement": 5}
+# Analyze is an optional quality pass over the completed tasks gate, not a
+# durable pipeline position after task generation. Keep it lateral with tasks
+# so the sanctioned after_tasks hook can restore ready-to-implement after a
+# completed analysis while the guard still blocks any regression from implement.
+STEP_ORDER = {"specify": 0, "clarify": 1, "plan": 2, "tasks": 3, "analyze": 3, "implement": 5}
 # The single home for the step -> canonical completed-status map. `--advance`
 # flips status to this when finishing a step; clarify/analyze are absent (no
 # status advance) so the verb records only the finish for them.

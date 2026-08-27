@@ -3,17 +3,17 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `None — R1-P06 is Complete; R1-P07 is not activated` |
-| Status | `No active phase — awaiting separate human authorization for any next-phase preparation or activation` |
-| Backend Branch | `codex/r1-p06-provider-verification-payout-destinations` — created from current `origin/main` for the explicitly authorized R1-P06 commit-and-push handoff; merge and deployment remain unauthorized |
-| Frontend Branch | `Not created — R1-P06 supplied a backend UX contract only` |
-| Backend Owner | `Unassigned — R1-P06 implementation and closure are complete` |
+| Current Phase | `None — R1-P07 is complete; the next phase is not activated` |
+| Status | `R1-P07 Complete — implementation, clean/upgrade migration proofs, all tests and coverage, independent review, evidence reconciliation, and owner completion approval passed` |
+| Backend Branch | `r1-p07-worker-team-crew-management; ready for the guarded Git workflow but not staged, committed, or pushed` |
+| Frontend Branch | `Not created — R1-P07 specification is technology-agnostic` |
+| Backend Owner | `Complete — no implementation owner is active` |
 | Frontend Owner | `Not assigned — no frontend application exists` |
-| Started At | `Not started for a next phase` |
-| Completed At | `2026-08-14` (R1-P06) |
-| Last Updated | `2026-08-22` (R1-P06 remains Complete; the owner explicitly authorized its guarded commit-and-push handoff, and the dedicated backend feature branch was created from current `origin/main`; merge, deployment, production migration, payout execution, destructive cleanup, and R1-P07 action remain unauthorized) |
+| Started At | `2026-08-22` |
+| Completed At | `2026-08-24 — explicit human-owner instruction to complete R1-P07 and mark it completed` |
+| Last Updated | `2026-08-27` (R1-P07 remains complete; the desktop-web UX/API handoff and executable contract-parity corrections passed their focused revalidation) |
 
-## Most recently completed phase — R1-P06
+## Previously completed phase — R1-P06
 
 R1-P06 (`Provider Verification & External Payout Destinations`) is **Complete**
 as of `2026-08-14`, by explicit human-owner approval:
@@ -32,10 +32,11 @@ Provider relations, double-seed idempotency, live constraints, five-destination
 enforcement, and six-request reveal serialization. The temporary proof server
 is stopped and the installed PostgreSQL service was not modified.
 
-No phase is active after this closure. The completion decision does not
-authorize Git actions, deployment, production configuration or migration, real
-external wallet or bank operations, destructive cleanup, next-phase
-preparation, or R1-P07 activation.
+R1-P06 was merged into `origin/main` through PR #6 at `5d466f09`. No phase is
+active after its closure. That merge and the later documentation-only
+preparation record do not authorize deployment, production configuration or
+migration, real external wallet or bank operations, destructive cleanup,
+R1-P07 activation, or further Git actions.
 
 The phase verifies Registered Company provider documents and collects approved
 external Mobile Wallet or Bank Account payout destinations without creating an
@@ -80,6 +81,95 @@ Canonical artifacts for this completed phase:
 - `specs/R1-P06-provider-verification-external-payout-destinations/implementation-review-report.md`
 - `specs/R1-P06-provider-verification-external-payout-destinations/completion-report.md`
 - DEC-037
+
+## Most recently completed phase — R1-P07
+
+R1-P07 (`Worker, Team & Crew Management`) is **Complete** as of 2026-08-24.
+The human owner explicitly instructed Codex to complete the phase, make it
+ready for Git publication, and mark it completed after the implementation and
+evidence review. DEC-038 and DEC-039 remain the canonical product decisions;
+DEC-040 records completion and the unchanged Git/production boundaries.
+
+Delivered behavior includes Provider-owned Worker profiles and engagements,
+restricted localized invitations, identity/access/role reconciliation, private
+avatars, Worker/Admin/access lifecycle commands, closed reason catalogs,
+immutable safe history, notification intents, Teams and membership history,
+primary-Supervisor scope, Escort and final-cleaner invariants, optimistic
+versions/idempotency, and transaction-consistent `workersReady` facts. No
+separate Workers module, Booking assignment, payroll, payout scheduling,
+attendance, public Worker surface, frontend, Docker, cloud, or production work
+was introduced. No new environment variable is required.
+
+Final evidence:
+
+- FR-001–FR-088 and SC-001–SC-014 map to completed tasks T001–T156;
+- clean chronological installation passed with 14 migrations and 67 exact
+  public tables, including live constraint probes and double-seed idempotency;
+- populated R1-P06 upgrade preserved all baseline table digests and existing
+  Provider/member/Media/outbox/verification/payout truth;
+- R1-P07 tests passed: 79 files / 330 tests, with phase coverage 85.17%
+  statements, 76.80% branches, 84.86% functions, and 88.16% lines;
+- full integration passed: 149 files / 497 tests;
+- full repository coverage passed: 336 files / 1,405 tests, with 83.50%
+  statements, 75.31% branches, 86.00% functions, and 85.80% lines;
+- Prisma, typecheck, lint, build, OpenAPI, Postman, documentation, diff,
+  architecture, privacy, redaction, and concurrency gates passed;
+- the accepted final read-only Claude review has no unresolved BLOCKER or
+  MAJOR, and every applicable finding was independently remediated by Codex;
+- Companion records the implementation and terminal completion state.
+
+Canonical completion artifacts:
+
+- `specs/R1-P07-worker-team-crew-management/spec.md`
+- `specs/R1-P07-worker-team-crew-management/plan.md`
+- `specs/R1-P07-worker-team-crew-management/tasks.md`
+- `specs/R1-P07-worker-team-crew-management/contracts/`
+- `specs/R1-P07-worker-team-crew-management/migration-review.md`
+- `specs/R1-P07-worker-team-crew-management/migration-evidence.md`
+- `specs/R1-P07-worker-team-crew-management/module-boundary-review.md`
+- `specs/R1-P07-worker-team-crew-management/security-validation.md`
+- `specs/R1-P07-worker-team-crew-management/review-resolution.md`
+- `specs/R1-P07-worker-team-crew-management/implementation-summary.md`
+- `specs/R1-P07-worker-team-crew-management/implementation-review-report.md`
+- `specs/R1-P07-worker-team-crew-management/completion-report.md`
+- DEC-038, DEC-039, and DEC-040
+
+The disposable proof cluster is stopped and deleted after the final database
+gate; the repository `.env` database and installed PostgreSQL service were not
+modified. The feature branch preserves the dirty worktree and remains unstaged,
+uncommitted, unpushed, unmerged, and undeployed. Completion is not Git
+authorization: publication requires a new human message exactly equal to
+`commit and push`. No subsequent phase is active.
+
+### 2026-08-27 frontend handoff addendum
+
+The completed phase now also includes a consistent 19-image desktop-website UX
+handoff under `docs/design/r1-p07/web-ux-v2/`, including complete Owner/Admin,
+invited-person, Worker, and primary-Supervisor flows. Every functional screen
+shows its used API surface, and the companion Arabic guide documents all 25
+R1-P07 HTTP operations with request/response examples, authorization,
+optimistic-version/idempotency rules, errors, and frontend usage.
+
+The handoff review found and fixed stale generated Postman worker field names,
+then expanded Postman validation so generated bodies execute against the
+runtime Zod schemas. It also reconciled the worker list/default/full-replace,
+Team command-response, pagination, and Provider aggregate-version contracts.
+Four UX references were corrected to remove unsupported filters/export actions
+and to use the executable state/event vocabulary.
+
+Fresh non-database revalidation passed typecheck, lint, build, Prisma, OpenAPI,
+Postman, docs, Git diff, all 911 unit tests, and 329 R1-P07 tests. The R1-P07
+coverage rerun passed at 85.19% statements, 76.51% branches, 84.86% functions,
+and 88.17% lines. `npm audit --audit-level=high` also passed with zero
+vulnerabilities after compatible lockfile updates and scoped patched
+Prisma-tooling overrides, without the proposed forced Prisma downgrade. A new
+broad integration attempt was not accepted as fresh
+evidence because legacy P04-P06 database suites timed out against the currently
+configured, non-proof PostgreSQL target; it was stopped rather than treating an
+unknown `.env` database as an approved disposable test database. The successful
+2026-08-24 clean/upgrade migration, full integration, global coverage, review,
+and owner-completion evidence above remains the canonical phase-completion
+proof. The addendum does not reopen the phase or authorize any Git action.
 
 ## Completed phase — R1-P05
 

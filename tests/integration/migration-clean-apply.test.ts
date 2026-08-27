@@ -9,6 +9,7 @@ import {
   assertExactPostDeployTables,
   assertForwardMigrationSql,
   assertR1P06DisposableDatabaseUrl,
+  assertR1P07DisposableDatabaseUrl,
   assertSafeCleanTestDatabaseUrl,
   createMigrationProofPrismaClient,
 } from "../../scripts/validate-clean-migration.js";
@@ -85,6 +86,21 @@ describe("R1-P01 migration boundary", () => {
     ).toThrow(/explicitly named R1-P06/u);
   });
 
+  it("requires the active phase proof target to name R1-P07 explicitly", () => {
+    expect(() =>
+      assertR1P07DisposableDatabaseUrl(
+        "postgresql://cleanora:secret@127.0.0.1/cleanora_r1_p07_local_test",
+        "test",
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertR1P07DisposableDatabaseUrl(
+        "postgresql://cleanora:secret@127.0.0.1/cleanora_r1_p06_local_test",
+        "test",
+      ),
+    ).toThrow(/explicitly named R1-P07/u);
+  });
+
   it("constructs a schema-aware Prisma proof client for isolated schemas", async () => {
     const schemaAware = createMigrationProofPrismaClient(
       "postgresql://cleanora:secret@127.0.0.1/cleanora_r1_p06_local_test?schema=r1_p06_isolated",
@@ -156,6 +172,16 @@ describe("R1-P01 migration boundary", () => {
       "provider_payout_conflicts",
       "provider_payout_history",
       "provider_payout_key_rotation_runs",
+      "provider_workers",
+      "provider_worker_profiles",
+      "provider_worker_skills",
+      "provider_worker_login_access",
+      "provider_worker_invitations",
+      "provider_teams",
+      "provider_team_memberships",
+      "provider_workforce_history",
+      "provider_workforce_commands",
+      "provider_workforce_notification_intents",
     );
     expect(() => assertExactPostDeployTables(expected)).not.toThrow();
     expect(() =>
@@ -231,6 +257,11 @@ describe("R1-P01 migration boundary", () => {
         },
         {
           migration_name: "r1_p06_provider_verification_external_payout_destinations",
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p07_worker_team_crew_management",
           finished_at: new Date(),
           rolled_back_at: null
         }

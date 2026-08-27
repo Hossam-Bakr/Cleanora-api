@@ -1,0 +1,4286 @@
+{
+  "info": {
+    "_postman_id": "00000000-p007-4000-8000-000000000007",
+    "name": "Cleanora R1-P07 Worker, Team & Crew Management",
+    "description": "Credential-free synthetic examples for the complete R1-P07 runtime contract. No real phone, email, password, OTP, invitation proof, access token, SMTP value, Cloudinary key, or database URL is stored.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/v1"
+    },
+    {
+      "key": "hostUrl",
+      "value": "https://YOUR-HOSTED-DOMAIN.example/api/v1"
+    },
+    {
+      "key": "requestId",
+      "value": "00000000-0000-4000-8000-000000000007"
+    },
+    {
+      "key": "providerId",
+      "value": "synthetic-provider-id"
+    },
+    {
+      "key": "workerId",
+      "value": "synthetic-worker-id"
+    },
+    {
+      "key": "teamId",
+      "value": "synthetic-team-id"
+    },
+    {
+      "key": "membershipId",
+      "value": "synthetic-membership-id"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "workerOperationalPhone",
+      "value": ""
+    },
+    {
+      "key": "workerInvitationEmail",
+      "value": ""
+    },
+    {
+      "key": "recentAuthenticationProof",
+      "value": ""
+    },
+    {
+      "key": "invitationProof",
+      "value": ""
+    },
+    {
+      "key": "workerPassword",
+      "value": ""
+    },
+    {
+      "key": "workerInvitationChallengeId",
+      "value": ""
+    },
+    {
+      "key": "workerEmailCode",
+      "value": ""
+    },
+    {
+      "key": "workerAvatarFile",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Hosted (Not hosted yet)",
+      "description": "Hosted (Not hosted yet) mirror of all 25 R1-P07 operations.",
+      "item": [
+        {
+          "name": "Provider Workers",
+          "item": [
+            {
+              "name": "listProviderWorkers",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers",
+                "description": "R1-P07 listProviderWorkers."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers",
+                    "description": "R1-P07 listProviderWorkers."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "createProviderWorkerDraft",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers",
+                "description": "R1-P07 createProviderWorkerDraft.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000002\",\n  \"fullLegalName\": \"Synthetic Worker\",\n  \"gender\": \"female\",\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\",\n  \"workerType\": \"CLEANING_STAFF\",\n  \"displayTitle\": \"Synthetic Cleaner\",\n  \"supervisorCapable\": false,\n  \"skillTags\": [\n    \"Deep Cleaning\"\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 201",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers",
+                    "description": "R1-P07 createProviderWorkerDraft.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000002\",\n  \"fullLegalName\": \"Synthetic Worker\",\n  \"gender\": \"female\",\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\",\n  \"workerType\": \"CLEANING_STAFF\",\n  \"displayTitle\": \"Synthetic Cleaner\",\n  \"supervisorCapable\": false,\n  \"skillTags\": [\n    \"Deep Cleaning\"\n  ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 201,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "getProviderWorker",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}",
+                "description": "R1-P07 getProviderWorker."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}",
+                    "description": "R1-P07 getProviderWorker."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "replaceProviderWorkerProfile",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}",
+                "description": "R1-P07 replaceProviderWorkerProfile.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000004\",\n  \"fullLegalName\": \"Synthetic Worker\",\n  \"gender\": \"female\",\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\",\n  \"workerType\": \"CLEANING_STAFF\",\n  \"displayTitle\": \"Synthetic Cleaner\",\n  \"supervisorCapable\": false,\n  \"skillTags\": [\n    \"Deep Cleaning\"\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}",
+                    "description": "R1-P07 replaceProviderWorkerProfile.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000004\",\n  \"fullLegalName\": \"Synthetic Worker\",\n  \"gender\": \"female\",\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\",\n  \"workerType\": \"CLEANING_STAFF\",\n  \"displayTitle\": \"Synthetic Cleaner\",\n  \"supervisorCapable\": false,\n  \"skillTags\": [\n    \"Deep Cleaning\"\n  ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "uploadProviderWorkerAvatar",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar",
+                "description": "R1-P07 uploadProviderWorkerAvatar.",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "{{workerAvatarFile}}"
+                    },
+                    {
+                      "key": "expectedVersion",
+                      "type": "text",
+                      "value": "1"
+                    },
+                    {
+                      "key": "idempotencyKey",
+                      "type": "text",
+                      "value": "00000000-0000-4000-8000-000000000005"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([202, 400, 409, 413, 415 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 202",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar",
+                    "description": "R1-P07 uploadProviderWorkerAvatar.",
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "file",
+                          "type": "file",
+                          "src": "{{workerAvatarFile}}"
+                        },
+                        {
+                          "key": "expectedVersion",
+                          "type": "text",
+                          "value": "1"
+                        },
+                        {
+                          "key": "idempotencyKey",
+                          "type": "text",
+                          "value": "00000000-0000-4000-8000-000000000005"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 202,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "removeProviderWorkerAvatar",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar",
+                "description": "R1-P07 removeProviderWorkerAvatar.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000006\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar",
+                    "description": "R1-P07 removeProviderWorkerAvatar.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000006\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderWorkerLifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/lifecycle-commands",
+                "description": "R1-P07 commandProviderWorkerLifecycle.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000007\",\n  \"action\": \"DEACTIVATE\",\n  \"reasonCode\": \"TEMPORARILY_UNAVAILABLE\",\n  \"confirmTeamImpact\": false,\n  \"confirmReadinessImpact\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/lifecycle-commands",
+                    "description": "R1-P07 commandProviderWorkerLifecycle.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000007\",\n  \"action\": \"DEACTIVATE\",\n  \"reasonCode\": \"TEMPORARILY_UNAVAILABLE\",\n  \"confirmTeamImpact\": false,\n  \"confirmReadinessImpact\": false\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderWorkerLoginAccess",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/login-access-commands",
+                "description": "R1-P07 commandProviderWorkerLoginAccess.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000008\",\n  \"action\": \"ISSUE_INVITATION\",\n  \"expectedAccessVersion\": null,\n  \"email\": \"{{workerInvitationEmail}}\",\n  \"locale\": \"AR\",\n  \"recentAuthenticationProof\": \"{{recentAuthenticationProof}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/login-access-commands",
+                    "description": "R1-P07 commandProviderWorkerLoginAccess.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000008\",\n  \"action\": \"ISSUE_INVITATION\",\n  \"expectedAccessVersion\": null,\n  \"email\": \"{{workerInvitationEmail}}\",\n  \"locale\": \"AR\",\n  \"recentAuthenticationProof\": \"{{recentAuthenticationProof}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderWorkerAdminMembership",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/admin-membership-commands",
+                "description": "R1-P07 commandProviderWorkerAdminMembership.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000009\",\n  \"action\": \"GRANT\",\n  \"expectedMembershipVersion\": null,\n  \"reasonCode\": \"OPERATIONAL_RESPONSIBILITY\",\n  \"recentAuthenticationProof\": \"{{recentAuthenticationProof}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/admin-membership-commands",
+                    "description": "R1-P07 commandProviderWorkerAdminMembership.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000009\",\n  \"action\": \"GRANT\",\n  \"expectedMembershipVersion\": null,\n  \"reasonCode\": \"OPERATIONAL_RESPONSIBILITY\",\n  \"recentAuthenticationProof\": \"{{recentAuthenticationProof}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "listProviderWorkerHistory",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/history",
+                "description": "R1-P07 listProviderWorkerHistory."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/history",
+                    "description": "R1-P07 listProviderWorkerHistory."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "getProviderWorkforceReadiness",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/workforce-readiness",
+                "description": "R1-P07 getProviderWorkforceReadiness."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/workforce-readiness",
+                    "description": "R1-P07 getProviderWorkforceReadiness."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Provider Teams",
+          "item": [
+            {
+              "name": "listProviderTeams",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/teams",
+                "description": "R1-P07 listProviderTeams."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/teams",
+                    "description": "R1-P07 listProviderTeams."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "createProviderTeamDraft",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/teams",
+                "description": "R1-P07 createProviderTeamDraft.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000012\",\n  \"name\": \"Synthetic Crew\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 201",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/teams",
+                    "description": "R1-P07 createProviderTeamDraft.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000012\",\n  \"name\": \"Synthetic Crew\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 201,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "getProviderTeam",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}",
+                "description": "R1-P07 getProviderTeam."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}",
+                    "description": "R1-P07 getProviderTeam."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "replaceProviderTeamName",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}",
+                "description": "R1-P07 replaceProviderTeamName.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000014\",\n  \"name\": \"Synthetic Crew Updated\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}",
+                    "description": "R1-P07 replaceProviderTeamName.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000014\",\n  \"name\": \"Synthetic Crew Updated\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderTeamLifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}/lifecycle-commands",
+                "description": "R1-P07 commandProviderTeamLifecycle.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000015\",\n  \"action\": \"ACTIVATE\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}/lifecycle-commands",
+                    "description": "R1-P07 commandProviderTeamLifecycle.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000015\",\n  \"action\": \"ACTIVATE\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderTeamMembership",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}/membership-commands",
+                "description": "R1-P07 commandProviderTeamMembership.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000016\",\n  \"action\": \"ADD\",\n  \"workerId\": \"{{workerId}}\",\n  \"expectedWorkerVersion\": 1,\n  \"cleans\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}/membership-commands",
+                    "description": "R1-P07 commandProviderTeamMembership.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000016\",\n  \"action\": \"ADD\",\n  \"workerId\": \"{{workerId}}\",\n  \"expectedWorkerVersion\": 1,\n  \"cleans\": true\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderTeamSupervisor",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}/supervisor-commands",
+                "description": "R1-P07 commandProviderTeamSupervisor.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000017\",\n  \"action\": \"ASSIGN\",\n  \"workerId\": \"{{workerId}}\",\n  \"expectedWorkerVersion\": 1,\n  \"expectedMembershipVersion\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}/supervisor-commands",
+                    "description": "R1-P07 commandProviderTeamSupervisor.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000017\",\n  \"action\": \"ASSIGN\",\n  \"workerId\": \"{{workerId}}\",\n  \"expectedWorkerVersion\": 1,\n  \"expectedMembershipVersion\": 1\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "listProviderTeamHistory",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}/history",
+                "description": "R1-P07 listProviderTeamHistory."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/providers/{{providerId}}/teams/{{teamId}}/history",
+                    "description": "R1-P07 listProviderTeamHistory."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Worker Self Service",
+          "item": [
+            {
+              "name": "getCurrentWorkerContext",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/workers/me",
+                "description": "R1-P07 getCurrentWorkerContext."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/workers/me",
+                    "description": "R1-P07 getCurrentWorkerContext."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "leaveCurrentProvider",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/workers/me/leave",
+                "description": "R1-P07 leaveCurrentProvider.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000021\",\n  \"confirmTeamImpact\": false,\n  \"confirmReadinessImpact\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/workers/me/leave",
+                    "description": "R1-P07 leaveCurrentProvider.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000021\",\n  \"confirmTeamImpact\": false,\n  \"confirmReadinessImpact\": false\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Worker Invitations",
+          "item": [
+            {
+              "name": "inspectWorkerInvitation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/worker-invitations/inspect",
+                "description": "R1-P07 inspectWorkerInvitation.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invitationProof\": \"{{invitationProof}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/worker-invitations/inspect",
+                    "description": "R1-P07 inspectWorkerInvitation.",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"invitationProof\": \"{{invitationProof}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "startWorkerInvitationOnboarding",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/worker-invitations/onboarding/start",
+                "description": "R1-P07 startWorkerInvitationOnboarding.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000023\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"password\": \"{{workerPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/worker-invitations/onboarding/start",
+                    "description": "R1-P07 startWorkerInvitationOnboarding.",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000023\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"password\": \"{{workerPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "verifyWorkerInvitationEmail",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/worker-invitations/onboarding/verify-email",
+                "description": "R1-P07 verifyWorkerInvitationEmail.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000024\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"challengeId\": \"{{workerInvitationChallengeId}}\",\n  \"code\": \"{{workerEmailCode}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/worker-invitations/onboarding/verify-email",
+                    "description": "R1-P07 verifyWorkerInvitationEmail.",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000024\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"challengeId\": \"{{workerInvitationChallengeId}}\",\n  \"code\": \"{{workerEmailCode}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "acceptWorkerInvitation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{hostUrl}}/worker-invitations/accept",
+                "description": "R1-P07 acceptWorkerInvitation.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000025\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"expectedWorkerVersion\": 1,\n  \"expectedAccessVersion\": 1,\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/worker-invitations/accept",
+                    "description": "R1-P07 acceptWorkerInvitation.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000025\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"expectedWorkerVersion\": 1,\n  \"expectedAccessVersion\": 1,\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Local",
+      "description": "Local mirror of all 25 R1-P07 operations.",
+      "item": [
+        {
+          "name": "Provider Workers",
+          "item": [
+            {
+              "name": "listProviderWorkers",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers",
+                "description": "R1-P07 listProviderWorkers."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers",
+                    "description": "R1-P07 listProviderWorkers."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "createProviderWorkerDraft",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers",
+                "description": "R1-P07 createProviderWorkerDraft.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000002\",\n  \"fullLegalName\": \"Synthetic Worker\",\n  \"gender\": \"female\",\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\",\n  \"workerType\": \"CLEANING_STAFF\",\n  \"displayTitle\": \"Synthetic Cleaner\",\n  \"supervisorCapable\": false,\n  \"skillTags\": [\n    \"Deep Cleaning\"\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 201",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers",
+                    "description": "R1-P07 createProviderWorkerDraft.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000002\",\n  \"fullLegalName\": \"Synthetic Worker\",\n  \"gender\": \"female\",\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\",\n  \"workerType\": \"CLEANING_STAFF\",\n  \"displayTitle\": \"Synthetic Cleaner\",\n  \"supervisorCapable\": false,\n  \"skillTags\": [\n    \"Deep Cleaning\"\n  ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 201,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "getProviderWorker",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}",
+                "description": "R1-P07 getProviderWorker."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}",
+                    "description": "R1-P07 getProviderWorker."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "replaceProviderWorkerProfile",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}",
+                "description": "R1-P07 replaceProviderWorkerProfile.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000004\",\n  \"fullLegalName\": \"Synthetic Worker\",\n  \"gender\": \"female\",\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\",\n  \"workerType\": \"CLEANING_STAFF\",\n  \"displayTitle\": \"Synthetic Cleaner\",\n  \"supervisorCapable\": false,\n  \"skillTags\": [\n    \"Deep Cleaning\"\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}",
+                    "description": "R1-P07 replaceProviderWorkerProfile.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000004\",\n  \"fullLegalName\": \"Synthetic Worker\",\n  \"gender\": \"female\",\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\",\n  \"workerType\": \"CLEANING_STAFF\",\n  \"displayTitle\": \"Synthetic Cleaner\",\n  \"supervisorCapable\": false,\n  \"skillTags\": [\n    \"Deep Cleaning\"\n  ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "uploadProviderWorkerAvatar",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar",
+                "description": "R1-P07 uploadProviderWorkerAvatar.",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "{{workerAvatarFile}}"
+                    },
+                    {
+                      "key": "expectedVersion",
+                      "type": "text",
+                      "value": "1"
+                    },
+                    {
+                      "key": "idempotencyKey",
+                      "type": "text",
+                      "value": "00000000-0000-4000-8000-000000000005"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([202, 400, 409, 413, 415 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 202",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar",
+                    "description": "R1-P07 uploadProviderWorkerAvatar.",
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "file",
+                          "type": "file",
+                          "src": "{{workerAvatarFile}}"
+                        },
+                        {
+                          "key": "expectedVersion",
+                          "type": "text",
+                          "value": "1"
+                        },
+                        {
+                          "key": "idempotencyKey",
+                          "type": "text",
+                          "value": "00000000-0000-4000-8000-000000000005"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 202,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "removeProviderWorkerAvatar",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar",
+                "description": "R1-P07 removeProviderWorkerAvatar.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000006\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar",
+                    "description": "R1-P07 removeProviderWorkerAvatar.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000006\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderWorkerLifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/lifecycle-commands",
+                "description": "R1-P07 commandProviderWorkerLifecycle.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000007\",\n  \"action\": \"DEACTIVATE\",\n  \"reasonCode\": \"TEMPORARILY_UNAVAILABLE\",\n  \"confirmTeamImpact\": false,\n  \"confirmReadinessImpact\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/lifecycle-commands",
+                    "description": "R1-P07 commandProviderWorkerLifecycle.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000007\",\n  \"action\": \"DEACTIVATE\",\n  \"reasonCode\": \"TEMPORARILY_UNAVAILABLE\",\n  \"confirmTeamImpact\": false,\n  \"confirmReadinessImpact\": false\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderWorkerLoginAccess",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/login-access-commands",
+                "description": "R1-P07 commandProviderWorkerLoginAccess.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000008\",\n  \"action\": \"ISSUE_INVITATION\",\n  \"expectedAccessVersion\": null,\n  \"email\": \"{{workerInvitationEmail}}\",\n  \"locale\": \"AR\",\n  \"recentAuthenticationProof\": \"{{recentAuthenticationProof}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/login-access-commands",
+                    "description": "R1-P07 commandProviderWorkerLoginAccess.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000008\",\n  \"action\": \"ISSUE_INVITATION\",\n  \"expectedAccessVersion\": null,\n  \"email\": \"{{workerInvitationEmail}}\",\n  \"locale\": \"AR\",\n  \"recentAuthenticationProof\": \"{{recentAuthenticationProof}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderWorkerAdminMembership",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/admin-membership-commands",
+                "description": "R1-P07 commandProviderWorkerAdminMembership.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000009\",\n  \"action\": \"GRANT\",\n  \"expectedMembershipVersion\": null,\n  \"reasonCode\": \"OPERATIONAL_RESPONSIBILITY\",\n  \"recentAuthenticationProof\": \"{{recentAuthenticationProof}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/admin-membership-commands",
+                    "description": "R1-P07 commandProviderWorkerAdminMembership.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000009\",\n  \"action\": \"GRANT\",\n  \"expectedMembershipVersion\": null,\n  \"reasonCode\": \"OPERATIONAL_RESPONSIBILITY\",\n  \"recentAuthenticationProof\": \"{{recentAuthenticationProof}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "listProviderWorkerHistory",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/history",
+                "description": "R1-P07 listProviderWorkerHistory."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workers/{{workerId}}/history",
+                    "description": "R1-P07 listProviderWorkerHistory."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "getProviderWorkforceReadiness",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/workforce-readiness",
+                "description": "R1-P07 getProviderWorkforceReadiness."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/workforce-readiness",
+                    "description": "R1-P07 getProviderWorkforceReadiness."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Provider Teams",
+          "item": [
+            {
+              "name": "listProviderTeams",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/teams",
+                "description": "R1-P07 listProviderTeams."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/teams",
+                    "description": "R1-P07 listProviderTeams."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "createProviderTeamDraft",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/teams",
+                "description": "R1-P07 createProviderTeamDraft.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000012\",\n  \"name\": \"Synthetic Crew\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 201",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/teams",
+                    "description": "R1-P07 createProviderTeamDraft.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000012\",\n  \"name\": \"Synthetic Crew\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 201,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "getProviderTeam",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}",
+                "description": "R1-P07 getProviderTeam."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}",
+                    "description": "R1-P07 getProviderTeam."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "replaceProviderTeamName",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}",
+                "description": "R1-P07 replaceProviderTeamName.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000014\",\n  \"name\": \"Synthetic Crew Updated\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}",
+                    "description": "R1-P07 replaceProviderTeamName.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000014\",\n  \"name\": \"Synthetic Crew Updated\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderTeamLifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}/lifecycle-commands",
+                "description": "R1-P07 commandProviderTeamLifecycle.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000015\",\n  \"action\": \"ACTIVATE\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}/lifecycle-commands",
+                    "description": "R1-P07 commandProviderTeamLifecycle.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000015\",\n  \"action\": \"ACTIVATE\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderTeamMembership",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}/membership-commands",
+                "description": "R1-P07 commandProviderTeamMembership.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000016\",\n  \"action\": \"ADD\",\n  \"workerId\": \"{{workerId}}\",\n  \"expectedWorkerVersion\": 1,\n  \"cleans\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}/membership-commands",
+                    "description": "R1-P07 commandProviderTeamMembership.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000016\",\n  \"action\": \"ADD\",\n  \"workerId\": \"{{workerId}}\",\n  \"expectedWorkerVersion\": 1,\n  \"cleans\": true\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "commandProviderTeamSupervisor",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}/supervisor-commands",
+                "description": "R1-P07 commandProviderTeamSupervisor.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000017\",\n  \"action\": \"ASSIGN\",\n  \"workerId\": \"{{workerId}}\",\n  \"expectedWorkerVersion\": 1,\n  \"expectedMembershipVersion\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}/supervisor-commands",
+                    "description": "R1-P07 commandProviderTeamSupervisor.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000017\",\n  \"action\": \"ASSIGN\",\n  \"workerId\": \"{{workerId}}\",\n  \"expectedWorkerVersion\": 1,\n  \"expectedMembershipVersion\": 1\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "listProviderTeamHistory",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}/history",
+                "description": "R1-P07 listProviderTeamHistory."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 403, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/providers/{{providerId}}/teams/{{teamId}}/history",
+                    "description": "R1-P07 listProviderTeamHistory."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Worker Self Service",
+          "item": [
+            {
+              "name": "getCurrentWorkerContext",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/workers/me",
+                "description": "R1-P07 getCurrentWorkerContext."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 404 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/workers/me",
+                    "description": "R1-P07 getCurrentWorkerContext."
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "leaveCurrentProvider",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/workers/me/leave",
+                "description": "R1-P07 leaveCurrentProvider.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000021\",\n  \"confirmTeamImpact\": false,\n  \"confirmReadinessImpact\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/workers/me/leave",
+                    "description": "R1-P07 leaveCurrentProvider.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000021\",\n  \"confirmTeamImpact\": false,\n  \"confirmReadinessImpact\": false\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Worker Invitations",
+          "item": [
+            {
+              "name": "inspectWorkerInvitation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/worker-invitations/inspect",
+                "description": "R1-P07 inspectWorkerInvitation.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invitationProof\": \"{{invitationProof}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/worker-invitations/inspect",
+                    "description": "R1-P07 inspectWorkerInvitation.",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"invitationProof\": \"{{invitationProof}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "startWorkerInvitationOnboarding",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/worker-invitations/onboarding/start",
+                "description": "R1-P07 startWorkerInvitationOnboarding.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000023\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"password\": \"{{workerPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/worker-invitations/onboarding/start",
+                    "description": "R1-P07 startWorkerInvitationOnboarding.",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000023\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"password\": \"{{workerPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "verifyWorkerInvitationEmail",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/worker-invitations/onboarding/verify-email",
+                "description": "R1-P07 verifyWorkerInvitationEmail.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000024\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"challengeId\": \"{{workerInvitationChallengeId}}\",\n  \"code\": \"{{workerEmailCode}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/worker-invitations/onboarding/verify-email",
+                    "description": "R1-P07 verifyWorkerInvitationEmail.",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000024\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"challengeId\": \"{{workerInvitationChallengeId}}\",\n  \"code\": \"{{workerEmailCode}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "acceptWorkerInvitation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-request-id",
+                    "value": "{{requestId}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/worker-invitations/accept",
+                "description": "R1-P07 acceptWorkerInvitation.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000025\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"expectedWorkerVersion\": 1,\n  \"expectedAccessVersion\": 1,\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Expected documented status\", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));",
+                      "pm.test(\"Envelope status code\", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });",
+                      "pm.test(\"Private response is not cached\", () => { const value = pm.response.headers.get(\"Cache-Control\"); if (value) pm.expect(value).to.include(\"no-store\"); });"
+                    ]
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success 200",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-request-id",
+                        "value": "{{requestId}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/worker-invitations/accept",
+                    "description": "R1-P07 acceptWorkerInvitation.",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000025\",\n  \"invitationProof\": \"{{invitationProof}}\",\n  \"expectedWorkerVersion\": 1,\n  \"expectedAccessVersion\": 1,\n  \"operationalPhoneE164\": \"{{workerOperationalPhone}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Synthetic success",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-store, private"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"outcomeCode\": \"SYNTHETIC_SUCCESS\"\n  },\n  \"requestId\": \"00000000-0000-4000-8000-000000000007\"\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

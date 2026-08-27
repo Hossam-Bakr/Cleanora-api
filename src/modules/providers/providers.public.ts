@@ -23,6 +23,41 @@ export interface ProviderR1P06ReadinessFacts {
   readonly verificationBadge: "NOT_ELIGIBLE" | "NOT_EARNED" | "EARNED";
 }
 
+export interface ProviderWorkersReadyFacts {
+  readonly providerId: string;
+  readonly workersReady: boolean;
+  readonly qualifyingWorkerCount: number;
+  readonly blockerCodes: readonly (
+    | "NO_ACTIVE_CLEANING_WORKER"
+    | "PROFILE_INCOMPLETE"
+    | "WORKER_ACCOUNT_OR_ROLE_INACTIVE"
+    | "WORKER_LOGIN_ACCESS_INACTIVE"
+  )[];
+}
+
+export interface BookingSafeTeamMemberFact {
+  readonly workerId: string;
+  readonly gender: "male" | "female";
+  readonly workerType: "CLEANING_STAFF" | "ESCORT" | "OTHER";
+  readonly cleans: boolean;
+}
+
+export interface BookingSafeTeamFacts {
+  readonly providerId: string;
+  readonly teamId: string;
+  readonly teamVersion: number;
+  readonly active: boolean;
+  readonly members: readonly BookingSafeTeamMemberFact[];
+}
+
+export interface ProviderWorkforcePublicReader {
+  getWorkersReady(providerId: string): Promise<ProviderWorkersReadyFacts | null>;
+  getBookingSafeTeamFacts(input: {
+    readonly providerId: string;
+    readonly teamId: string;
+  }): Promise<BookingSafeTeamFacts | null>;
+}
+
 export type ProviderApplicationStatus =
   | "DRAFT"
   | "PENDING_REVIEW"
