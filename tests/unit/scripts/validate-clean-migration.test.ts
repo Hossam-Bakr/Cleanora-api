@@ -98,11 +98,11 @@ describe("clean migration exact chronology", () => {
   });
 
   it("resolves the required-profile trigger key only from the active trigger table shape", () => {
-    expect(r1P07MigrationSql).toContain(
-      "IF TG_TABLE_NAME = 'provider_workers' THEN\n    worker_key := NEW.\"id\";",
+    expect(r1P07MigrationSql).toMatch(
+      /IF TG_TABLE_NAME = 'provider_workers' THEN\r?\n {4}worker_key := NEW\."id";/u,
     );
-    expect(r1P07MigrationSql).toContain(
-      "ELSE\n    worker_key := OLD.\"worker_id\";",
+    expect(r1P07MigrationSql).toMatch(
+      /ELSE\r?\n {4}worker_key := OLD\."worker_id";/u,
     );
     expect(r1P07MigrationSql).not.toContain(
       "worker_key := CASE WHEN TG_TABLE_NAME = 'provider_workers'",

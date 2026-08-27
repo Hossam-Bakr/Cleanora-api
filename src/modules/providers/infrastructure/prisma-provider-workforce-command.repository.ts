@@ -9,7 +9,11 @@ export class PrismaProviderWorkforceCommandRepository implements WorkforceComman
   public constructor(private readonly db: DbClient) {}
 
   public async begin(input: Parameters<WorkforceCommandRepositoryPort["begin"]>[0]) {
-    await this.db.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.scopeKey}:${input.idempotencyKey}`}, 0))`;
+    // Return a typed column — bare pg_advisory_xact_lock() is void and fails Prisma driver adapters (P2010).
+    await this.db.$queryRaw`
+      SELECT 1 AS locked
+      FROM pg_advisory_xact_lock(hashtextextended(${`${input.scopeKey}:${input.idempotencyKey}`}, 0))
+    `;
     const existing = await this.db.providerWorkforceCommand.findUnique({ where: { scopeKey_idempotencyKey: { scopeKey: input.scopeKey, idempotencyKey: input.idempotencyKey } } });
     if (existing !== null) {
       if (existing.requestFingerprint !== input.requestFingerprint || existing.actorUserId !== input.actorUserId) {

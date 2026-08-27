@@ -20,7 +20,7 @@ describe("R1-P07 workforce persistence infrastructure", () => {
   });
 
   it("serializes command keys, replays only matching accepted fingerprints, and CAS-accepts once", async () => {
-    const queryRaw = vi.fn(async () => []);
+    const queryRaw = vi.fn(async (..._args: unknown[]) => []);
     const findUnique = vi.fn();
     const create = vi.fn(async () => ({ id: "command-1" }));
     const updateMany = vi.fn(async () => ({ count: 1 }));
@@ -39,6 +39,11 @@ describe("R1-P07 workforce persistence infrastructure", () => {
     findUnique.mockResolvedValueOnce(null);
     await expect(repository.begin(input)).resolves.toEqual({ replay: false, result: null });
     expect(queryRaw).toHaveBeenCalledTimes(1);
+    const lockTemplate = queryRaw.mock.calls[0]?.[0];
+    const lockSql = Array.isArray(lockTemplate) ? lockTemplate.join(" ") : String(lockTemplate ?? "");
+    expect(lockSql).toContain("SELECT 1 AS locked");
+    expect(lockSql).toContain("pg_advisory_xact_lock");
+    expect(lockSql).not.toMatch(/SELECT\s+pg_advisory_xact_lock\s*\(/);
     expect(create).toHaveBeenCalledWith({ data: input });
 
     findUnique.mockResolvedValueOnce({
