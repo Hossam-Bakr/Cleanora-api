@@ -42,6 +42,8 @@ const expectedPermissionCodes = [
   "providers.verification.documents.review",
   "providers.verification.policies.manage",
   "providers.payout-destinations.verify",
+  "catalog.management.read",
+  "catalog.management.write",
 ];
 
 const expectedRolePermissionMap: Record<string, string[]> = {
@@ -59,6 +61,8 @@ const expectedRolePermissionMap: Record<string, string[]> = {
     "providers.verification.documents.review",
     "providers.verification.policies.manage",
     "providers.payout-destinations.verify",
+    "catalog.management.read",
+    "catalog.management.write",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],
@@ -253,5 +257,74 @@ describe("R1-P04 privacy reassignment catalog (DEC-031)", () => {
           operation.operationId === "customers.privacy.requests.reassign",
       ),
     ).toHaveLength(1);
+  });
+});
+
+describe("R1-P08 Catalog management catalog (DEC-043)", () => {
+  it("maps catalog.management.read and catalog.management.write to staff_admin only", () => {
+    for (const permissionCode of [
+      "catalog.management.read",
+      "catalog.management.write",
+    ]) {
+      const holders = Object.entries(ROLE_PERMISSION_MAP)
+        .filter(([, codes]) => codes.includes(permissionCode))
+        .map(([roleCode]) => roleCode);
+      expect(holders).toEqual(["staff_admin"]);
+    }
+  });
+
+  it("binds catalog_management_change to CATALOG_MANAGEMENT_WRITE", () => {
+    expect(findPrivilegedActionReason("catalog_management_change")).toEqual(
+      expect.objectContaining({
+        code: "catalog_management_change",
+        operation: "CATALOG_MANAGEMENT_WRITE",
+        isActive: true,
+      }),
+    );
+  });
+
+  it("declares catalog.management.read as non-privileged", () => {
+    expect(findProtectedOperation("catalog.management.read")).toEqual(
+      expect.objectContaining({
+        operationId: "catalog.management.read",
+        permissionCode: "catalog.management.read",
+        ownership: "NONE",
+        scope: "GLOBAL",
+        privileged: false,
+        publicHttp: false,
+      }),
+    );
+  });
+
+  it("declares catalog.management.write as privileged with CATALOG_MANAGEMENT_WRITE", () => {
+    expect(findProtectedOperation("catalog.management.write")).toEqual(
+      expect.objectContaining({
+        operationId: "catalog.management.write",
+        permissionCode: "catalog.management.write",
+        ownership: "NONE",
+        scope: "GLOBAL",
+        privileged: true,
+        reasonOperation: "CATALOG_MANAGEMENT_WRITE",
+        publicHttp: false,
+      }),
+    );
+  });
+
+  it("keeps the additive Catalog catalog rows present exactly once", () => {
+    expect(
+      AUTHORIZATION_PERMISSIONS.filter((permission) =>
+        permission.code.startsWith("catalog.management."),
+      ),
+    ).toHaveLength(2);
+    expect(
+      PRIVILEGED_ACTION_REASONS.filter(
+        (reason) => reason.code === "catalog_management_change",
+      ),
+    ).toHaveLength(1);
+    expect(
+      PROTECTED_OPERATIONS.filter((operation) =>
+        operation.operationId.startsWith("catalog.management."),
+      ),
+    ).toHaveLength(2);
   });
 });

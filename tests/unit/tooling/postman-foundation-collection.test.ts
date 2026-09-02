@@ -19,7 +19,7 @@ describe("R1-P01 Postman collection", () => {
       await readFile(
         join(
           process.cwd(),
-          "postman/R1-P01-foundation-country-configuration.postman_collection.json"
+          "postman/Cleanora-R1-P01-Foundation-Country-Configuration.postman_collection.json"
         ),
         "utf8"
       )

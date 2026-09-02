@@ -47,17 +47,12 @@ Precedence:
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
 
-**Live pointer (2026-08-22):** `R1-P07 — Worker, Team & Crew Management` is the
-sole active phase. DEC-038 supplies its approved product baseline and DEC-039
-records the approved clarification refinements. The branch
-`r1-p07-worker-team-crew-management` carries the preserved local work.
-Specification, clarification, plan, contracts, quality checklists, continuous
-tasks T001–T156, and CLEAN consistency analysis are complete; Companion is at
-`tasks / ready-to-implement`. Product implementation, tests, Prisma,
-migrations, database operations, staging, commit, push, merge, deployment, and
-production work remain unauthorized. The only next workflow step is
-`speckit-implement`, and it has not been run. R1-P06 remains Complete and merged
-into `origin/main` through PR #6. See `docs/product/current.md`.
+**Live pointer:** `R1-P08 — Catalog, Localization & Service Requirements` is
+the sole active phase. `docs/product/current.md` is the authority for its live
+state and approval boundary. The R1-P08 Swagger and Postman material documents
+the implemented protected-management contract only; it does not authorize
+database operations, Git actions, deployment, production work, or phase
+completion. Completed R1-P07 artifacts remain historical closure evidence.
 
 ## Current backend navigation
 

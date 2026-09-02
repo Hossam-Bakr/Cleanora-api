@@ -5,20 +5,32 @@ import type { AppEnvironment } from "../../../config/env.js";
 import { MediaError } from "../domain/media.errors.js";
 import type { MediaStoragePort, ProviderMediaPort } from "../domain/media.ports.js";
 import type {
+  CatalogServiceImagePort,
   MediaPendingUploadPort,
   ProviderMediaStatusReader,
   ProviderVerificationEvidencePort,
+  TransactionalCatalogServiceImageAuthorizerFactory,
+  TransactionalCatalogServiceMediaFactsReaderFactory,
   TransactionalWorkerAvatarAuthorizerFactory,
   WorkerAvatarPort,
   TransactionalProviderVerificationEvidenceAuthorizerFactory,
 } from "../media.public.js";
+import {
+  CatalogServiceImageAdapter,
+  PrismaCatalogServiceImagePersistence,
+  SharpCatalogServiceImageProcessor,
+} from "./catalog-service-image.adapter.js";
 import {
   CloudinaryMediaAdapter,
   createOpaqueCloudinaryPublicId,
   type CloudinarySdk,
 } from "./cloudinary-media.adapter.js";
 import { MediaCleanupService } from "./media-cleanup.service.js";
-import { PrismaMediaRepository } from "./prisma-media.repository.js";
+import {
+  PrismaMediaRepository,
+  PrismaTransactionalCatalogServiceImageAuthorizer,
+  PrismaTransactionalCatalogServiceMediaFactsReader,
+} from "./prisma-media.repository.js";
 import { ProviderMediaAdapter } from "./provider-media.adapter.js";
 import { SharpProviderImageProcessor } from "./sharp-provider-image.processor.js";
 import {
@@ -203,6 +215,64 @@ export function createWorkerAvatarPort(input: {
     }),
   );
 }
+
+/**
+ * Composition-owned Catalog service-image pipeline. Reuses the private
+ * Cloudinary profile-image storage configuration without Provider coupling.
+ */
+export function createCatalogServiceImagePort(input: {
+  readonly environment: AppEnvironment;
+  readonly database?: unknown;
+  readonly sdk?: CloudinarySdk;
+}): CatalogServiceImagePort {
+  const selection = createMediaStoragePort(
+    input.environment,
+    input.sdk ?? cloudinary,
+  );
+  const repository = new PrismaMediaRepository(
+    input.database as ConstructorParameters<typeof PrismaMediaRepository>[0],
+  );
+  const folder = `${input.environment.CLOUDINARY_PROFILE_IMAGE_FOLDER ?? "cleanora-catalog"}/catalog-service-images`;
+  return new CatalogServiceImageAdapter(
+    new SharpCatalogServiceImageProcessor(),
+    new PrismaCatalogServiceImagePersistence({
+      repository: {
+        reserveCatalogServiceImage: (value) =>
+          repository.reserveCatalogServiceImage(value),
+        findById: (mediaFileId) => repository.findById(mediaFileId),
+        markStatus: (mediaFileId, status, extra) =>
+          repository.markStatus(
+            mediaFileId,
+            status,
+            extra as Parameters<PrismaMediaRepository["markStatus"]>[2],
+          ),
+        markPendingDelete: (mediaFileId) =>
+          repository.markPendingDelete(mediaFileId),
+      },
+      storage: selection.storage,
+      createStorageKey: () => createOpaqueCloudinaryPublicId(folder),
+      signedUrlTtlSeconds: selection.signedUrlTtlSeconds,
+    }),
+  );
+}
+
+/** Media-owned exact READY Catalog service-image recheck joined to a Catalog transaction. */
+export const createTransactionalCatalogServiceImageAuthorizer:
+  TransactionalCatalogServiceImageAuthorizerFactory = (transaction) => {
+    const repository = new PrismaMediaRepository(
+      transaction as ConstructorParameters<typeof PrismaMediaRepository>[0],
+    );
+    return new PrismaTransactionalCatalogServiceImageAuthorizer(repository);
+  };
+
+/** Media-owned safe snapshot facts for Catalog service-image associations. */
+export const createTransactionalCatalogServiceMediaFactsReader:
+  TransactionalCatalogServiceMediaFactsReaderFactory = (transaction) => {
+    const repository = new PrismaMediaRepository(
+      transaction as ConstructorParameters<typeof PrismaMediaRepository>[0],
+    );
+    return new PrismaTransactionalCatalogServiceMediaFactsReader(repository);
+  };
 
 /** Media-owned exact READY/owner/purpose recheck joined to a Providers transaction. */
 export const createTransactionalWorkerAvatarAuthorizer:

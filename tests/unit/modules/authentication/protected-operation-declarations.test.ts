@@ -74,6 +74,7 @@ describe("R1-P03 protected-operation declarations", () => {
         "ROLE_DISABLE",
         "STAFF_SAMPLE_PRIVILEGED_WRITE",
         "PRIVACY_REQUEST_REASSIGN",
+        "CATALOG_MANAGEMENT_WRITE",
       ];
       expect(reasons).toContain(operation.reasonOperation);
     }

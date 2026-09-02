@@ -168,9 +168,9 @@ async function main(): Promise<void> {
     ],
     item: [environmentFolder("Hosted (Not hosted yet)", "{{hostUrl}}"), environmentFolder("Local", "{{baseUrl}}")],
   };
-  const outputPath = resolve("postman/Cleanora-R1-P06.postman_collection.json");
+  const outputPath = resolve("postman/Cleanora-R1-P06-Provider-Verification.postman_collection.json");
   await writeFile(outputPath, `${JSON.stringify(collection, null, 2)}\n`, "utf8");
-  process.stdout.write(`${JSON.stringify({ ok: true, outputPath: "postman/Cleanora-R1-P06.postman_collection.json", requestsPerEnvironment: inventory.length, totalRequests: inventory.length * 2 })}\n`);
+  process.stdout.write(`${JSON.stringify({ ok: true, outputPath: "postman/Cleanora-R1-P06-Provider-Verification.postman_collection.json", requestsPerEnvironment: inventory.length, totalRequests: inventory.length * 2 })}\n`);
 }
 
 void main();

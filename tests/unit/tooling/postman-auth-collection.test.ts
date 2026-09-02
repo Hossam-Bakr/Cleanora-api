@@ -80,7 +80,7 @@ describe("canonical Auth Postman artifacts", () => {
 
   it("contains every genuine Auth operation once per Hosted and Local environment", async () => {
     const path = resolve(
-      "postman/R1-P02-authentication.postman_collection.json",
+      "postman/Cleanora-R1-P02-Authentication.postman_collection.json",
     );
     const document = JSON.parse(
       await readFile(path, "utf8"),
@@ -124,7 +124,7 @@ describe("canonical Auth Postman artifacts", () => {
   it("keeps complete saved email-only signup variants", async () => {
     const document = JSON.parse(
       await readFile(
-        resolve("postman/R1-P02-authentication.postman_collection.json"),
+        resolve("postman/Cleanora-R1-P02-Authentication.postman_collection.json"),
         "utf8",
       ),
     ) as PostmanDocument;
@@ -181,9 +181,9 @@ describe("canonical Auth Postman artifacts", () => {
     const files = await readdir(resolve("postman"));
     expect(
       files.filter((file) =>
-        /R1-P02-(?:authentication|google).*collection\.json$/iu.test(file),
+        /Cleanora-R1-P02-Authentication.*collection\.json$/iu.test(file),
       ),
-    ).toEqual(["R1-P02-authentication.postman_collection.json"]);
+    ).toEqual(["Cleanora-R1-P02-Authentication.postman_collection.json"]);
 
     const environmentPath = resolve(
       "postman/Cleanora-local.postman_environment.json",

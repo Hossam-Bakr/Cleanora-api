@@ -34,6 +34,8 @@ export interface RouteDependencies {
   readonly providerWorkerSelfRouter?: Router;
   /** R1-P07 Worker invitation inspect/onboarding/accept routes. */
   readonly providerWorkforceInvitationRouter?: Router;
+  /** R1-P08 protected staff Catalog management routes. */
+  readonly staffCatalogRouter?: Router;
 }
 
 /**
@@ -98,5 +100,9 @@ export function mountRoutes(
 
   if (dependencies.staffProvidersRouter !== undefined) {
     app.use(`${apiPrefix}/staff/providers`, dependencies.staffProvidersRouter);
+  }
+
+  if (dependencies.staffCatalogRouter !== undefined) {
+    app.use(`${apiPrefix}/staff/catalog`, dependencies.staffCatalogRouter);
   }
 }

@@ -21,6 +21,9 @@ import type {
   StoredProviderVideoReference,
 } from "./domain/media.types.js";
 import {
+  CATALOG_SERVICE_IMAGE_ALLOWED_CONTENT_TYPES,
+  CATALOG_SERVICE_IMAGE_MAX_BYTES,
+  CATALOG_SERVICE_IMAGE_MAX_EDGE,
   MEDIA_OWNER_TYPES,
   MEDIA_STATUSES,
   PROFILE_IMAGE_MAX_BYTES,
@@ -57,6 +60,9 @@ export type {
 
 export {
   MediaError,
+  CATALOG_SERVICE_IMAGE_ALLOWED_CONTENT_TYPES,
+  CATALOG_SERVICE_IMAGE_MAX_BYTES,
+  CATALOG_SERVICE_IMAGE_MAX_EDGE,
   MEDIA_OWNER_TYPES,
   MEDIA_STATUSES,
   PROFILE_IMAGE_MAX_BYTES,
@@ -170,6 +176,87 @@ export interface TransactionalWorkerAvatarAuthorizer {
 export type TransactionalWorkerAvatarAuthorizerFactory = (
   transaction: unknown,
 ) => TransactionalWorkerAvatarAuthorizer;
+
+export const CATALOG_SERVICE_IMAGE =
+  "CATALOG_SERVICE_IMAGE" as const satisfies MediaOwnerType;
+
+/**
+ * Safe Catalog service image receipt. It carries no storage key, signed URL,
+ * or Catalog business meaning; Media owns file lifecycle only.
+ */
+export interface CatalogServiceImageReceipt {
+  readonly mediaFileId: string;
+  readonly ownerUserId: string;
+  readonly state: "PROCESSING" | "READY" | "FAILED";
+  readonly canonicalContentType: "image/jpeg" | "image/png" | "image/webp";
+  readonly byteSize: number;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly safeReceiptId: string;
+}
+
+/**
+ * Media-owned Catalog service image pipeline. Catalog reserves the stable
+ * media identity first, so `ingest` is idempotent for the same supplied
+ * `mediaFileId` and a crashed upload can be resumed without a duplicate file.
+ */
+export interface CatalogServiceImagePort {
+  ingest(input: {
+    readonly mediaFileId: string;
+    readonly ownerUserId: string;
+    readonly declaredContentType: string;
+    readonly bytes: Buffer;
+  }): Promise<CatalogServiceImageReceipt>;
+  readValidationReceipt(mediaFileId: string): Promise<CatalogServiceImageReceipt | null>;
+  issueDelivery(input: {
+    readonly mediaFileId: string;
+    readonly purpose: "CATALOG_SERVICE_PRESENTATION";
+  }): Promise<{ readonly url: string; readonly expiresAt: Date }>;
+  requestCleanup(input: {
+    readonly mediaFileId: string;
+    readonly safeReasonCode: string;
+  }): Promise<void>;
+}
+
+/**
+ * Transaction-bound recheck proving the reserved media identity is a READY
+ * Catalog service image uploaded by the trusted staff principal.
+ */
+export interface TransactionalCatalogServiceImageAuthorizer {
+  assertReadyCatalogServiceImage(input: {
+    readonly mediaFileId: string;
+    readonly uploaderUserId: string;
+  }): Promise<boolean>;
+}
+
+export type TransactionalCatalogServiceImageAuthorizerFactory = (
+  transaction: unknown,
+) => TransactionalCatalogServiceImageAuthorizer;
+
+/** Safe Catalog snapshot facts for associated service images. */
+export interface CatalogServiceMediaSafeFact {
+  readonly mediaFileId: string;
+  readonly contentType: "image/jpeg" | "image/png" | "image/webp";
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly status: string;
+  readonly ownerUserId: string;
+}
+
+/**
+ * Transaction-bound Media-owned reader for Catalog association snapshots.
+ * Media interprets processing status and ownership; Catalog never reads
+ * `media_files` persistence directly.
+ */
+export interface TransactionalCatalogServiceMediaFactsReader {
+  readCatalogServiceMediaFacts(
+    mediaFileIds: readonly string[],
+  ): Promise<ReadonlyMap<string, CatalogServiceMediaSafeFact>>;
+}
+
+export type TransactionalCatalogServiceMediaFactsReaderFactory = (
+  transaction: unknown,
+) => TransactionalCatalogServiceMediaFactsReader;
 
 export type ProviderVerificationEvidencePurpose =
   | "PROVIDER_DOCUMENT_MANAGEMENT"

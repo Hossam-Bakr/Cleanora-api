@@ -1,0 +1,1027 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P08 Catalog API Design Contract
+  version: 0.1.0
+  description: >-
+    Design contract for protected staff Catalog management, strict
+    Arabic/English localization, service configuration, and service images.
+    R1-P08 exposes no anonymous or customer Catalog Browse HTTP operation;
+    selectable reads are a module-internal contract and R1-P12 owns Browse.
+    Runtime documentation is generated separately during implementation.
+servers:
+  - url: /api/v1
+tags:
+  - name: Staff Catalog Categories
+  - name: Staff Catalog Services
+paths:
+  /staff/catalog/categories:
+    get:
+      tags: [Staff Catalog Categories]
+      operationId: listCatalogCategoriesForManagement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Protected category list including inactive drafts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Staff Catalog Categories]
+      operationId: createCatalogCategory
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryCommand'
+      responses:
+        '201':
+          description: Inactive or complete category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/categories/{categoryId}:
+    parameters:
+      - $ref: '#/components/parameters/CategoryId'
+    get:
+      tags: [Staff Catalog Categories]
+      operationId: getCatalogCategoryForManagement
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Protected category detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Staff Catalog Categories]
+      operationId: replaceCatalogCategoryContent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceCategoryCommand'
+      responses:
+        '200':
+          description: Category content replaced at one new version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/categories/{categoryId}/lifecycle:
+    parameters:
+      - $ref: '#/components/parameters/CategoryId'
+    post:
+      tags: [Staff Catalog Categories]
+      operationId: changeCatalogCategoryLifecycle
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/VersionedCommand'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: string
+                      enum: [ACTIVATE, DEACTIVATE]
+      responses:
+        '200':
+          description: Category lifecycle changed atomically
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/categories/order:
+    put:
+      tags: [Staff Catalog Categories]
+      operationId: replaceCatalogCategoryOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceOrderCommand'
+      responses:
+        '200':
+          description: Complete category order replaced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandReceiptEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/services:
+    get:
+      tags: [Staff Catalog Services]
+      operationId: listCatalogServicesForManagement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CategoryIdQuery'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Protected service list including inactive drafts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Staff Catalog Services]
+      operationId: createCatalogService
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceCommand'
+      responses:
+        '201':
+          description: Inactive service created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/services/{serviceId}:
+    parameters:
+      - $ref: '#/components/parameters/ServiceId'
+    get:
+      tags: [Staff Catalog Services]
+      operationId: getCatalogServiceForManagement
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Complete protected service aggregate view
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Staff Catalog Services]
+      operationId: moveCatalogServiceToCategory
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/VersionedCommand'
+                - type: object
+                  required: [categoryId]
+                  properties:
+                    categoryId:
+                      type: string
+                      minLength: 1
+      responses:
+        '200':
+          description: Service moved to the category at a new version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/services/{serviceId}/configuration:
+    parameters:
+      - $ref: '#/components/parameters/ServiceId'
+    put:
+      tags: [Staff Catalog Services]
+      operationId: replaceCatalogServiceConfiguration
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceServiceConfigurationCommand'
+      responses:
+        '200':
+          description: Complete service configuration replaced atomically
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/services/{serviceId}/lifecycle:
+    parameters:
+      - $ref: '#/components/parameters/ServiceId'
+    post:
+      tags: [Staff Catalog Services]
+      operationId: changeCatalogServiceLifecycle
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/VersionedCommand'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: string
+                      enum: [ACTIVATE, DEACTIVATE]
+      responses:
+        '200':
+          description: Service lifecycle changed atomically
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/services/order:
+    put:
+      tags: [Staff Catalog Services]
+      operationId: replaceCatalogServiceOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ReplaceOrderCommand'
+                - type: object
+                  required: [categoryId]
+                  properties:
+                    categoryId:
+                      type: string
+                      minLength: 1
+      responses:
+        '200':
+          description: Complete service order in one category replaced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandReceiptEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/services/{serviceId}/media:
+    parameters:
+      - $ref: '#/components/parameters/ServiceId'
+    post:
+      tags: [Staff Catalog Services]
+      operationId: uploadCatalogServiceImage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, expectedVersion, idempotencyKey, reasonCode]
+              properties:
+                file:
+                  type: string
+                  contentMediaType: application/octet-stream
+                  contentEncoding: binary
+                expectedVersion:
+                  type: integer
+                  minimum: 1
+                idempotencyKey:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                reasonCode:
+                  type: string
+                  const: catalog_management_change
+      responses:
+        '201':
+          description: READY image associated with the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+  /staff/catalog/services/{serviceId}/media/order:
+    parameters:
+      - $ref: '#/components/parameters/ServiceId'
+    put:
+      tags: [Staff Catalog Services]
+      operationId: replaceCatalogServiceMediaOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/VersionedCommand'
+                - type: object
+                  required: [orderedAssociationIds]
+                  properties:
+                    orderedAssociationIds:
+                      type: array
+                      uniqueItems: true
+                      items:
+                        type: string
+                        minLength: 1
+      responses:
+        '200':
+          description: Complete service image order replaced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /staff/catalog/services/{serviceId}/media/{associationId}/remove:
+    parameters:
+      - $ref: '#/components/parameters/ServiceId'
+      - $ref: '#/components/parameters/AssociationId'
+    post:
+      tags: [Staff Catalog Services]
+      operationId: removeCatalogServiceImage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionedCommand'
+      responses:
+        '200':
+          description: Association removed without deleting Media file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    CategoryId:
+      name: categoryId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    CategoryIdQuery:
+      name: categoryId
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+    ServiceId:
+      name: serviceId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    AssociationId:
+      name: associationId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 500
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+  schemas:
+    CatalogLocale:
+      type: string
+      enum: [AR, EN]
+    StableCode:
+      type: string
+      minLength: 2
+      maxLength: 100
+      pattern: '^[A-Z][A-Z0-9_]*$'
+    NullableShortText:
+      type: [string, 'null']
+      minLength: 1
+      maxLength: 160
+    NullableLongText:
+      type: [string, 'null']
+      minLength: 1
+      maxLength: 2000
+    CommandBase:
+      type: object
+      required: [idempotencyKey, reasonCode]
+      properties:
+        idempotencyKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+        reasonCode:
+          type: string
+          const: catalog_management_change
+    VersionedCommand:
+      allOf:
+        - $ref: '#/components/schemas/CommandBase'
+        - type: object
+          required: [expectedVersion]
+          properties:
+            expectedVersion:
+              type: integer
+              minimum: 1
+    LocalizedCategoryContent:
+      type: object
+      required: [nameAr, nameEn, descriptionAr, descriptionEn]
+      properties:
+        nameAr:
+          $ref: '#/components/schemas/NullableShortText'
+        nameEn:
+          $ref: '#/components/schemas/NullableShortText'
+        descriptionAr:
+          $ref: '#/components/schemas/NullableLongText'
+        descriptionEn:
+          $ref: '#/components/schemas/NullableLongText'
+    CreateCategoryCommand:
+      allOf:
+        - $ref: '#/components/schemas/CommandBase'
+        - $ref: '#/components/schemas/LocalizedCategoryContent'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              $ref: '#/components/schemas/StableCode'
+    ReplaceCategoryCommand:
+      allOf:
+        - $ref: '#/components/schemas/VersionedCommand'
+        - $ref: '#/components/schemas/LocalizedCategoryContent'
+    ReplaceOrderCommand:
+      allOf:
+        - $ref: '#/components/schemas/CommandBase'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              minItems: 1
+              items:
+                type: object
+                required: [id, expectedVersion]
+                properties:
+                  id:
+                    type: string
+                    minLength: 1
+                  expectedVersion:
+                    type: integer
+                    minimum: 1
+    ServiceTranslationInput:
+      type: object
+      required: [locale, name, description]
+      properties:
+        locale:
+          $ref: '#/components/schemas/CatalogLocale'
+        name:
+          $ref: '#/components/schemas/NullableShortText'
+        description:
+          $ref: '#/components/schemas/NullableLongText'
+    CreateServiceCommand:
+      allOf:
+        - $ref: '#/components/schemas/CommandBase'
+        - type: object
+          required: [categoryId, code, translations]
+          properties:
+            categoryId:
+              type: string
+              minLength: 1
+            code:
+              $ref: '#/components/schemas/StableCode'
+            translations:
+              type: array
+              maxItems: 2
+              items:
+                $ref: '#/components/schemas/ServiceTranslationInput'
+    PriceUnitInput:
+      type: object
+      required: [code, labelAr, labelEn, isActive]
+      properties:
+        code:
+          $ref: '#/components/schemas/StableCode'
+        labelAr:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 120
+        labelEn:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 120
+        isActive:
+          type: boolean
+    FieldOptionInput:
+      type: object
+      required: [value, labelAr, labelEn, isActive]
+      properties:
+        value:
+          $ref: '#/components/schemas/StableCode'
+        labelAr:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 200
+        labelEn:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 200
+        isActive:
+          type: boolean
+    FieldInput:
+      type: object
+      required:
+        - code
+        - kind
+        - labelAr
+        - labelEn
+        - helpTextAr
+        - helpTextEn
+        - isRequired
+        - isActive
+        - options
+      properties:
+        code:
+          $ref: '#/components/schemas/StableCode'
+        kind:
+          type: string
+          enum: [INFORMATION, TEXT, NUMBER, BOOLEAN, SINGLE_SELECT, MULTI_SELECT]
+        labelAr:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 300
+        labelEn:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 300
+        helpTextAr:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 1000
+        helpTextEn:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 1000
+        isRequired:
+          type: boolean
+        isActive:
+          type: boolean
+        minLength:
+          type: [integer, 'null']
+          minimum: 0
+        maxLength:
+          type: [integer, 'null']
+          minimum: 0
+        numberMode:
+          type: [string, 'null']
+          enum: [INTEGER, DECIMAL, null]
+        minValue:
+          type: [string, 'null']
+          pattern: '^-?[0-9]+(?:\.[0-9]{1,3})?$'
+        maxValue:
+          type: [string, 'null']
+          pattern: '^-?[0-9]+(?:\.[0-9]{1,3})?$'
+        minSelections:
+          type: [integer, 'null']
+          minimum: 0
+        maxSelections:
+          type: [integer, 'null']
+          minimum: 0
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldOptionInput'
+    CountryAvailabilityInput:
+      type: object
+      required: [countryCode, isAvailable]
+      properties:
+        countryCode:
+          type: string
+          pattern: '^[A-Z]{2}$'
+        isAvailable:
+          type: boolean
+    ReplaceServiceConfigurationCommand:
+      allOf:
+        - $ref: '#/components/schemas/VersionedCommand'
+        - type: object
+          required: [translations, priceUnits, fields, countries]
+          properties:
+            translations:
+              type: array
+              maxItems: 2
+              items:
+                $ref: '#/components/schemas/ServiceTranslationInput'
+            priceUnits:
+              type: array
+              items:
+                $ref: '#/components/schemas/PriceUnitInput'
+            fields:
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldInput'
+            countries:
+              type: array
+              items:
+                $ref: '#/components/schemas/CountryAvailabilityInput'
+    CategoryView:
+      type: object
+      required:
+        - id
+        - code
+        - nameAr
+        - nameEn
+        - descriptionAr
+        - descriptionEn
+        - displayOrder
+        - isActive
+        - version
+      properties:
+        id:
+          type: string
+        code:
+          $ref: '#/components/schemas/StableCode'
+        nameAr:
+          $ref: '#/components/schemas/NullableShortText'
+        nameEn:
+          $ref: '#/components/schemas/NullableShortText'
+        descriptionAr:
+          $ref: '#/components/schemas/NullableLongText'
+        descriptionEn:
+          $ref: '#/components/schemas/NullableLongText'
+        displayOrder:
+          type: integer
+          minimum: 0
+        isActive:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+    ServiceManagementView:
+      type: object
+      required:
+        - id
+        - code
+        - categoryId
+        - displayOrder
+        - isActive
+        - version
+        - translations
+        - priceUnits
+        - fields
+        - countries
+        - media
+      properties:
+        id:
+          type: string
+        code:
+          $ref: '#/components/schemas/StableCode'
+        categoryId:
+          type: string
+        displayOrder:
+          type: integer
+          minimum: 0
+        isActive:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+        translations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceTranslationInput'
+        priceUnits:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceUnitInput'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldInput'
+        countries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CountryAvailabilityInput'
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManagementMediaView'
+    ManagementMediaView:
+      type: object
+      required: [associationId, mediaId, displayOrder, status]
+      properties:
+        associationId:
+          type: string
+        mediaId:
+          type: string
+        displayOrder:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [PROCESSING, READY, FAILED, PENDING_DELETE, DELETED]
+    CommandReceipt:
+      type: object
+      required: [targetType, targetId, acceptedVersion, replayed]
+      properties:
+        targetType:
+          type: string
+        targetId:
+          type: string
+        acceptedVersion:
+          type: integer
+          minimum: 1
+        replayed:
+          type: boolean
+    PaginationMeta:
+      type: object
+      required: [nextCursor]
+      properties:
+        nextCursor:
+          type: [string, 'null']
+    CategoryEnvelope:
+      $ref: '#/components/schemas/CategorySuccessEnvelope'
+    CategorySuccessEnvelope:
+      type: object
+      required: [success, data, requestId]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/CategoryView'
+        requestId:
+          type: string
+    CategoryListEnvelope:
+      type: object
+      required: [success, data, requestId, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryView'
+        requestId:
+          type: string
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    ServiceEnvelope:
+      type: object
+      required: [success, data, requestId]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/ServiceManagementView'
+        requestId:
+          type: string
+    ServiceListEnvelope:
+      type: object
+      required: [success, data, requestId, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceManagementView'
+        requestId:
+          type: string
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    CommandReceiptEnvelope:
+      type: object
+      required: [success, data, requestId]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/CommandReceipt'
+        requestId:
+          type: string
+    ErrorEnvelope:
+      type: object
+      required: [success, error, requestId]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+        requestId:
+          type: string
+  responses:
+    ValidationError:
+      description: Safe validation, localization, country, or Media eligibility failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Forbidden:
+      description: Protected Catalog operation denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    NotFound:
+      description: Safe unavailable/not-found result without draft leakage
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Conflict:
+      description: Expected-version or idempotency conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    DependencyUnavailable:
+      description: Safe Media or required dependency failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'

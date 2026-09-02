@@ -1819,3 +1819,251 @@ pre-implementation boundaries in DEC-038 or DEC-039.
   rewriting. The guarded Git workflow activates only on a new human message
   whose entire content is exactly `commit and push`.
 - No later roadmap phase is activated by this decision.
+
+## DEC-041 — R1-P08 strict bilingual catalog activation without fallback
+
+**Date:** 2026-08-30
+**Status:** Approved — first R1-P08 product clarification
+
+The human owner selected strict bilingual activation for localized Catalog
+records.
+
+### Localization policy
+
+- A localized category, service, customer-facing price unit, service field, or
+  field option may be saved with incomplete localized content only while
+  inactive. In R1-P08 that inactive record is its draft form; no separate
+  `DRAFT` lifecycle state is introduced.
+- The record cannot be activated, and a service depending on it cannot become
+  selectable, until every required Arabic and English value is present and
+  valid.
+- A localized read must use the exact requested supported locale. Missing
+  requested-locale content produces a safe deterministic failure and never
+  silently substitutes the other locale.
+- Blank-after-trimming or duplicate locale content remains invalid. Activation
+  failure changes no partial Catalog, order, history, or audit state.
+
+### Rationale and boundary
+
+This policy makes the R1-P08 Arabic/English catalog completeness goal directly
+testable, avoids mixed-language customer experiences, and still permits staff
+to prepare incomplete drafts without adding a fallback framework. It does not
+choose the remaining service-field-kind or staff-authority policies, implement
+frontend behavior, or authorize product code, database operations, Git actions,
+deployment, production migration, or phase completion.
+
+## DEC-042 — R1-P08 closed Release 1 service-field kinds
+
+**Date:** 2026-08-30
+**Status:** Approved — second R1-P08 product clarification
+
+The human owner selected the balanced six-kind service-field model for Release
+1. R1-P08 defines field metadata for later consumers and does not persist
+customer answers.
+
+### Closed kind catalog and compatible constraints
+
+- `INFORMATION` is localized display-only content. It never requires or stores
+  an answer and accepts no options, length bounds, numeric bounds, or selection
+  bounds.
+- `TEXT` accepts optional minimum and maximum answer length and no options,
+  numeric bounds, or selection bounds.
+- `NUMBER` accepts optional minimum and maximum values plus an explicit integer-
+  or-decimal mode and no options, length bounds, or selection bounds.
+- `BOOLEAN` represents yes/no and accepts no options, length bounds, numeric
+  bounds, or selection bounds.
+- `SINGLE_SELECT` uses stable, ordered, localized options and permits exactly
+  one selected value when answered. It accepts no length or numeric bounds.
+- `MULTI_SELECT` uses stable, ordered, localized options and accepts optional
+  minimum and maximum selection counts. It accepts no length or numeric bounds.
+- Requiredness is explicit only for answer-bearing kinds. `INFORMATION` can
+  never be required. Options are valid only for the two select kinds.
+- A field cannot become active when its kind, constraints, options, or
+  requiredness are internally inconsistent. An incompatible update fails
+  atomically without changing field, order, version, or audit state.
+
+### Exclusions and rationale
+
+The Release 1 kind set excludes date, time, file/image upload, executable
+expressions, conditional question graphs, arbitrary schemas, and customer answer
+persistence. Scheduling belongs to Booking, files remain Media-owned, and
+answers belong to a later Booking phase. The six kinds cover information,
+free-text, quantity/measurement, yes/no, one-choice, and multiple-choice needs
+without building a generic form engine.
+
+This decision does not choose the remaining staff-authority policy, implement
+frontend behavior, or authorize product code, database operations, Git actions,
+deployment, production migration, or phase completion.
+
+## DEC-043 — R1-P08 staff-admin-only protected Catalog management
+
+**Date:** 2026-08-30
+**Status:** Approved — final R1-P08 product clarification
+
+The human owner selected active-`staff_admin`-only authority for protected
+Catalog management.
+
+### Permission and role mapping
+
+- Authentication owns two additive permissions:
+  `catalog.management.read` and `catalog.management.write`.
+- Both permissions map only to the existing `staff_admin` role. Only an active
+  grant contributes authority.
+- `staff_operations`, `staff_support`, `staff_finance`, provider roles, workers,
+  and customers receive neither permission. No staff role receives a protected
+  read-only Catalog view.
+- Catalog checks declared permissions/protected operations through the
+  Authentication public contract; it does not inspect role tables or hard-code
+  role hierarchy in Catalog business code.
+
+### Protected and selectable surfaces
+
+- Protected management reads may include inactive drafts, incomplete localized
+  content, configuration, ordering, country availability, and version truth.
+- Every Catalog mutation requires `catalog.management.write`, an active
+  privileged reason capability, the operation's valid reason, atomic audit, and
+  the command's conflict-safe precondition.
+- Safe selectable reads are a separate Catalog contract for active, complete,
+  country-available truth. They never expose inactive drafts or protected
+  management detail and do not grant management authority.
+
+### Rationale and boundary
+
+The mapping follows Cleanora's current least-authority baseline: existing
+product review and management permissions remain staff-admin-only, and R1-P08
+defines no Operations or Support workflow that justifies broader access. A
+later owner-approved phase may map one of the declared permissions to another
+role without moving authorization ownership into Catalog.
+
+This decision completes R1-P08 product clarification. It does not implement
+frontend behavior or authorize product code, database operations, Git actions,
+deployment, production migration, or phase completion.
+
+## DEC-044 — R1-P08 minimal complete Egypt housekeeping seed
+
+**Date:** 2026-08-30
+**Status:** Approved — fourth and final R1-P08 product clarification
+
+The human owner selected the smallest complete, active, selectable Egypt seed
+rather than a multi-service catalog or inactive structural placeholders.
+
+### Seed contract
+
+- Create one `HOME_CLEANING` category named `Home Cleaning` /
+  `تنظيف المنازل` and one `STANDARD_HOME_CLEANING` service named
+  `Standard Home Cleaning` / `تنظيف منزلي قياسي`.
+- Configure active `PER_VISIT` (`Per visit` / `لكل زيارة`) and `PER_HOUR`
+  (`Per hour` / `لكل ساعة`) price units.
+- Configure five representative fields: localized preparation information,
+  integer bedroom count, integer bathroom count, optional pet presence, and
+  optional special instructions. The seed does not require all six supported
+  field kinds to appear; the full closed kind catalog remains required and
+  tested independently under DEC-042.
+- Make the service available for authoritative country code `EG` and satisfy
+  every strict bilingual and activation rule before it becomes selectable.
+- Do not seed Media files or create an external-storage dependency. Service
+  media remains manageable after seed through the R1-P08 Media boundary.
+
+### Idempotency and owner-managed values
+
+- Stable codes identify seed-owned records. Re-running the seed creates missing
+  records but does not duplicate them, silently reactivate records, or overwrite
+  values that staff subsequently managed through the application.
+- A double-run proof must produce the same identities and counts: one category,
+  one service, two price units, five fields, and one Egypt availability record.
+- Supporting bilingual descriptions and labels must be concise and neutral and
+  must not decide OQ-002 concerning who supplies cleaning materials.
+
+### Rationale and boundary
+
+This seed proves a real end-to-end selectable Catalog path while keeping the
+initial product content intentionally small. It avoids both an unusable
+placeholder-only catalog and an unapproved multi-service taxonomy. It does not
+authorize Provider prices, bookings, customer answers, frontend work, external
+media creation, deployment, production migration, or any Git operation.
+
+## DEC-045 — Dual disposable targets for R1-P08 repository gates
+
+**Date:** 2026-09-02
+**Status:** Approved — SC-012 closeout arrangement for R1-P08
+
+The human owner selected option 1 of the R1-P08 closeout question: authorize a
+current-schema disposable integration target that satisfies the historical
+R1-P04 name guard, keep the separate R1-P08 live target, and require both
+`test:integration` and `test:coverage` to pass.
+
+### Dual-target contract
+
+- `TEST_DATABASE_URL` and `TEST_MIGRATION_DATABASE_URL` name the same current-
+  schema disposable database matching `cleanora_r1_p04_*_proof`. The authorized
+  current target is `cleanora_r1_p04_current_proof`.
+- `CLEANORA_R1_P08_DATABASE_URL` remains the separate live Catalog target
+  matching `cleanora_r1_p08_*_(test|proof|clean|ci)`. The existing live target
+  `cleanora_r1_p08_test` is retained.
+- R1-P08 migration validators and live Catalog suites read
+  `CLEANORA_R1_P08_DATABASE_URL`. They do not borrow the R1-P04-named
+  integration URLs.
+- Name guards, coverage thresholds, assertions, and skip-is-not-pass rules stay
+  unchanged. Older remote tests may receive only demonstrably remote-safe timing
+  budget adjustments if they still fail on this valid arrangement.
+
+### Forbidden targets
+
+- Do not migrate, reset, seed, or otherwise mutate the historical
+  `cleanora_r1_p04_clean_proof`.
+- Do not connect to, inspect, migrate, seed, or recover the historical
+  `Cleanora` database.
+- Do not point either family at R1-P02 CI, Railway, production-like, or shared
+  application databases.
+
+### Rationale and boundary
+
+A single URL cannot satisfy both the R1-P04 proof-name guard and the R1-P08 live
+name guard. Two named disposable databases preserve both locked contracts and
+produce the command-level repository evidence SC-012 requires. This decision
+does not mark R1-P08 Complete, does not authorize Git publication, deployment,
+production configuration, or production migration, and does not accept a red
+repository gate as tracked debt.
+
+## DEC-046 — R1-P08 implementation completion and publication boundary
+
+**Date:** 2026-09-03
+**Status:** Approved and Complete — implementation, DEC-045 dual disposable
+targets, migration proofs, tests, coverage, independent review, and evidence
+gates passed
+
+The human owner instructed the active agent to mark R1-P08 Complete after the
+Ready-for-owner-completion-approval gate. This decision closes the sole active
+phase after repository-grounded verification; it does not reinterpret
+DEC-041–DEC-045.
+
+### Completion evidence
+
+- All FR-001–FR-052 and SC-001–SC-012 are implemented and trace to completed
+  tasks T001–T156.
+- The phase-owned additive migration applied chronologically on disposable
+  R1-P08 targets and upgraded a populated R1-P07 fixture without changing
+  pre-existing baseline digests or workforce truth.
+- Phase suite: 54 files / 333 tests passed / 0 skipped; phase coverage
+  85.41 / 76.04 / 83.37 / 85.21.
+- Under DEC-045, `test:integration` exited 0 (169 passed / 3 skipped files,
+  601 passed / 5 skipped tests) and `test:coverage` exited 0 at
+  83.69 / 75.03 / 86.46 / 85.61 versus unchanged 80/75/80/80 thresholds.
+- Prisma, typecheck, lint, build, OpenAPI, Postman, documentation, module
+  boundaries, privacy/redaction, SQL review, and both migration validators
+  passed.
+- Independent review finding M-04 is resolved under DEC-045; no unresolved
+  BLOCKER or MAJOR remains.
+
+### Preserved boundaries
+
+- R1-P08 adds no anonymous Browse HTTP, Provider pricing, Booking mutation,
+  wallet behavior, frontend application, Docker, cloud, deployment, or
+  production migration.
+- Historical `cleanora_r1_p04_clean_proof` and `Cleanora` were not migrated,
+  seeded, reset, or inspected for this closure.
+- Phase completion does not authorize staging, commit, push, merge, deployment,
+  production configuration, production migration, force-push, or history
+  rewriting. The guarded Git workflow activates only on a new human message
+  whose entire content is exactly `commit and push`.
+- No later roadmap phase (including R1-P09) is activated by this decision.

@@ -176,6 +176,16 @@ import {
   type Logger,
 } from "#shared/logger";
 import { AppError } from "#shared/errors/app-error";
+import { createCatalogRouter } from "#modules/catalog/catalog.routes";
+import { CatalogService } from "#modules/catalog/catalog.service";
+import { PrismaCatalogRepository } from "#modules/catalog/catalog.repository";
+import { createCatalogDefinitionReader } from "#modules/catalog/catalog.public";
+import type { CatalogDefinitionReader } from "#modules/catalog/catalog.public";
+import {
+  createCatalogServiceImagePort,
+  createTransactionalCatalogServiceImageAuthorizer,
+  createTransactionalCatalogServiceMediaFactsReader,
+} from "#modules/media/infrastructure/media-provider.factory";
 
 function adaptProviderActiveCountryReader(
   reader = createActiveCountryReader(),
@@ -285,6 +295,8 @@ export interface RuntimeDependencies {
   readonly privacyProcessor: PrivacyProcessorPort | undefined;
   readonly privacyPrivileged: PrivacyPrivilegedPort | undefined;
   readonly startCustomersBackgroundTasks: (() => () => void) | undefined;
+  /** Internal Catalog reader for future module wiring; not an HTTP surface. */
+  readonly catalogDefinitionReader: CatalogDefinitionReader;
 }
 
 /**
@@ -1099,6 +1111,47 @@ export function createRuntimeDependencies(
   const providerWorkerSelfRouter = providersComposition?.providerWorkerSelfRouter;
   const providerWorkforceInvitationRouter = providersComposition?.providerWorkforceInvitationRouter;
 
+  // Internal CatalogDefinitionReader is a module-public contract for future
+  // module wiring. Compose it independently of Authentication / staff HTTP.
+  const catalogDefinitionReader = createCatalogDefinitionReader(
+    new CatalogService({
+      authorization,
+      logger,
+      repository: new PrismaCatalogRepository(
+        database.client,
+        createTransactionalActiveCountryReader,
+        createPrismaPrivilegedAuditWriter,
+        createTransactionalCatalogServiceImageAuthorizer,
+        createTransactionalCatalogServiceMediaFactsReader,
+      ),
+    }),
+  );
+
+  const staffCatalogRouter =
+    authentication === undefined
+      ? undefined
+      : (() => {
+          const catalogRepository = new PrismaCatalogRepository(
+            database.client,
+            createTransactionalActiveCountryReader,
+            createPrismaPrivilegedAuditWriter,
+            createTransactionalCatalogServiceImageAuthorizer,
+            createTransactionalCatalogServiceMediaFactsReader,
+          );
+          return createCatalogRouter({
+            authenticateAccess: authentication.authenticateAccess,
+            catalogService: new CatalogService({
+              authorization,
+              logger,
+              catalogServiceImage: createCatalogServiceImagePort({
+                environment,
+                database: database.client,
+              }),
+              repository: catalogRepository,
+            }),
+          });
+        })();
+
   return {
     database,
     logger,
@@ -1108,6 +1161,7 @@ export function createRuntimeDependencies(
     privacyProcessor,
     privacyPrivileged,
     startCustomersBackgroundTasks,
+    catalogDefinitionReader,
     routes: {
       environment,
       logger,
@@ -1138,6 +1192,9 @@ export function createRuntimeDependencies(
       ...(providerAdminInvitationRouter === undefined
         ? {}
         : { providerAdminInvitationRouter }),
+      ...(staffCatalogRouter === undefined
+        ? {}
+        : { staffCatalogRouter }),
     },
   };
 }

@@ -182,6 +182,15 @@ describe("R1-P01 migration boundary", () => {
       "provider_workforce_history",
       "provider_workforce_commands",
       "provider_workforce_notification_intents",
+      "service_categories",
+      "services",
+      "service_translations",
+      "service_price_units",
+      "service_fields",
+      "service_field_options",
+      "service_country_availability",
+      "service_media_associations",
+      "catalog_command_requests",
     );
     expect(() => assertExactPostDeployTables(expected)).not.toThrow();
     expect(() =>
@@ -262,6 +271,11 @@ describe("R1-P01 migration boundary", () => {
         },
         {
           migration_name: "r1_p07_worker_team_crew_management",
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name: "r1_p08_catalog_localization_service_requirements",
           finished_at: new Date(),
           rolled_back_at: null
         }

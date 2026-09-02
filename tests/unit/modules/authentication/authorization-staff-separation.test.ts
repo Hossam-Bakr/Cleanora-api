@@ -95,3 +95,63 @@ describe("staff power separation", () => {
     }
   });
 });
+
+describe("R1-P08 Catalog staff separation (DEC-043)", () => {
+  it("allows only active staff_admin to read Catalog management", async () => {
+    const principal = createTestPrincipal();
+    await expect(
+      serviceForRole("staff_admin").authorizeProtectedOperation({
+        principal,
+        operationId: "catalog.management.read",
+      }),
+    ).resolves.toEqual({ allowed: true });
+
+    for (const roleCode of [
+      "staff_operations",
+      "staff_support",
+      "staff_finance",
+      "customer",
+      "provider_admin",
+      "worker",
+    ]) {
+      await expect(
+        serviceForRole(roleCode).authorizeProtectedOperation({
+          principal,
+          operationId: "catalog.management.read",
+        }),
+      ).resolves.toEqual({
+        allowed: false,
+        denialCode: "PERMISSION_DENIED",
+      });
+    }
+  });
+
+  it("allows only active staff_admin to write Catalog management", async () => {
+    const principal = createTestPrincipal();
+    await expect(
+      serviceForRole("staff_admin").authorizeProtectedOperation({
+        principal,
+        operationId: "catalog.management.write",
+      }),
+    ).resolves.toEqual({ allowed: true });
+
+    for (const roleCode of [
+      "staff_operations",
+      "staff_support",
+      "staff_finance",
+      "customer",
+      "provider_admin",
+      "worker",
+    ]) {
+      await expect(
+        serviceForRole(roleCode).authorizeProtectedOperation({
+          principal,
+          operationId: "catalog.management.write",
+        }),
+      ).resolves.toEqual({
+        allowed: false,
+        denialCode: "PERMISSION_DENIED",
+      });
+    }
+  });
+});

@@ -77,6 +77,14 @@ export const AUTHORIZATION_PERMISSIONS: readonly PermissionDefinitionSeed[] = [
     code: "providers.payout-destinations.verify",
     name: "Verify provider payout destinations",
   },
+  {
+    code: "catalog.management.read",
+    name: "Read Catalog management definitions",
+  },
+  {
+    code: "catalog.management.write",
+    name: "Write Catalog management definitions",
+  },
 ];
 
 /**
@@ -100,6 +108,8 @@ export const ROLE_PERMISSION_MAP: Readonly<
     "providers.verification.documents.review",
     "providers.verification.policies.manage",
     "providers.payout-destinations.verify",
+    "catalog.management.read",
+    "catalog.management.write",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],
@@ -149,6 +159,12 @@ export const PRIVILEGED_ACTION_REASONS: readonly PrivilegedActionReasonSeed[] = 
     code: "privacy_request_reassign",
     name: "Reassign a privacy request processor",
     operation: "PRIVACY_REQUEST_REASSIGN",
+    isActive: true,
+  },
+  {
+    code: "catalog_management_change",
+    name: "Change Catalog management definitions",
+    operation: "CATALOG_MANAGEMENT_WRITE",
     isActive: true,
   },
 ];
@@ -314,12 +330,39 @@ const PROVIDER_STAFF_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
   },
 ];
 
+/**
+ * Catalog management protected operations (R1-P08 / DEC-043).
+ * Both map only to active staff_admin. Write is privileged and requires
+ * reason `catalog_management_change` for `CATALOG_MANAGEMENT_WRITE`.
+ */
+const CATALOG_MANAGEMENT_OPERATIONS: readonly ProtectedOperationDeclaration[] =
+  [
+    {
+      operationId: "catalog.management.read",
+      permissionCode: "catalog.management.read",
+      ownership: "NONE",
+      scope: "GLOBAL",
+      privileged: false,
+      publicHttp: false,
+    },
+    {
+      operationId: "catalog.management.write",
+      permissionCode: "catalog.management.write",
+      ownership: "NONE",
+      scope: "GLOBAL",
+      privileged: true,
+      reasonOperation: "CATALOG_MANAGEMENT_WRITE",
+      publicHttp: false,
+    },
+  ];
+
 /** Every declared protected operation. All are internal. */
 export const PROTECTED_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
   ...ROLE_MANAGEMENT_OPERATIONS,
   ...STAFF_SAMPLE_OPERATIONS,
   ...PRIVACY_REASSIGNMENT_OPERATIONS,
   ...PROVIDER_STAFF_OPERATIONS,
+  ...CATALOG_MANAGEMENT_OPERATIONS,
 ];
 
 /** Find one declared protected operation, or `undefined` when undeclared. */

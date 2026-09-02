@@ -183,13 +183,13 @@ async function main(): Promise<void> {
 
   await Promise.all([
     writeFile(
-      resolve("postman/R1-P00-foundation.postman_collection.json"),
+      resolve("postman/Cleanora-R1-P00-Foundation.postman_collection.json"),
       `${JSON.stringify(r1P00, null, 2)}\n`,
       "utf8",
     ),
     writeFile(
       resolve(
-        "postman/R1-P01-foundation-country-configuration.postman_collection.json",
+        "postman/Cleanora-R1-P01-Foundation-Country-Configuration.postman_collection.json",
       ),
       `${JSON.stringify(r1P01, null, 2)}\n`,
       "utf8",

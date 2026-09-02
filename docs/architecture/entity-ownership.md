@@ -129,6 +129,8 @@ Unassigned exclusions (must remain excluded until roadmap assignment): **OQ-003,
 | `service_fields` | `catalog` | R1 | R1-P08 | `catalog` | — | authoritative | `providers` (offerings against catalog); `bookings` (service selection/snapshots); `eligibility` (service filters) | OQ-002 |
 | `service_field_options` | `catalog` | R1 | R1-P08 | `catalog` | — | configurable / authoritative | `providers` (offerings against catalog); `bookings` (service selection/snapshots); `eligibility` (service filters) | OQ-002 |
 | `service_country_availability` | `catalog` | R1 | R1-P08 | `catalog` | — | authoritative | `providers` (offerings against catalog); `bookings` (service selection/snapshots); `eligibility` (service filters) |  |
+| `service_media_associations` | `catalog` | R1 | R1-P08 | `catalog` | — | authoritative | `media` (file lifecycle only); `bookings` (presentation snapshot consumers) |  |
+| `catalog_command_requests` | `catalog` | R1 | R1-P08 | `catalog` | — | technical / authoritative | `admin` (audit correlation via request IDs only) |  |
 | `provider_services` | `providers` | R1 | R1-P09 | `providers` | — | authoritative | `bookings` (pricing/offering selection); `eligibility` (service availability) |  |
 | `provider_service_prices` | `providers` | R1 | R1-P09 | `providers` | — | authoritative | `bookings` (pricing/offering selection); `eligibility` (service availability) |  |
 | `provider_service_price_history` | `providers` | R1 | R1-P09 | `providers` | — | historical / auditable | `admin` (history review) |  |

@@ -8,6 +8,7 @@
  */
 
 const APPROVED_R1_P04_PROOF_NAME = "cleanora_r1_p04_clean_proof";
+const APPROVED_R1_P04_CURRENT_PROOF_NAME = "cleanora_r1_p04_current_proof";
 const APPROVED_NAME_PATTERN = /^cleanora_r1_p04_[a-z0-9_]+_proof$/u;
 const APPROVED_R1_P07_COMPATIBILITY_PATTERN =
   /^cleanora_r1_p07(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/u;
@@ -159,6 +160,7 @@ function hasR1P04TestDatabaseReady(env = process.env) {
 
 module.exports = {
   APPROVED_R1_P04_PROOF_NAME,
+  APPROVED_R1_P04_CURRENT_PROOF_NAME,
   parseDatabaseName,
   isForbiddenDatabaseName,
   isApprovedR1P04ProofName,

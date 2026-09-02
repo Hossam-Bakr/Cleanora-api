@@ -275,7 +275,7 @@ async function main(): Promise<void> {
 
   const collectionPath = resolve(
     postmanDirectory,
-    "R1-P04-customer-self-service.postman_collection.json",
+    "Cleanora-R1-P04-Customer-Self-Service.postman_collection.json",
   );
   const collection = await parseJson<PostmanCollection>(collectionPath);
   assert(
@@ -291,7 +291,7 @@ async function main(): Promise<void> {
   });
 
   const r1P00Collection = await parseJson<PostmanCollection>(
-    resolve(postmanDirectory, "R1-P00-foundation.postman_collection.json"),
+    resolve(postmanDirectory, "Cleanora-R1-P00-Foundation.postman_collection.json"),
   );
   const r1P00RequestCount = assertMirroredEnvironments({
     label: "R1-P00",
@@ -305,7 +305,7 @@ async function main(): Promise<void> {
   const r1P01Collection = await parseJson<PostmanCollection>(
     resolve(
       postmanDirectory,
-      "R1-P01-foundation-country-configuration.postman_collection.json",
+      "Cleanora-R1-P01-Foundation-Country-Configuration.postman_collection.json",
     ),
   );
   const r1P01RequestCount = assertMirroredEnvironments({
@@ -319,7 +319,7 @@ async function main(): Promise<void> {
   });
 
   const r1P02Collection = await parseJson<PostmanCollection>(
-    resolve(postmanDirectory, "R1-P02-authentication.postman_collection.json"),
+    resolve(postmanDirectory, "Cleanora-R1-P02-Authentication.postman_collection.json"),
   );
   const r1P02RequestCount = assertMirroredEnvironments({
     label: "R1-P02",
@@ -420,7 +420,7 @@ async function main(): Promise<void> {
 
   const r1P05CollectionPath = resolve(
     postmanDirectory,
-    "Cleanora-R1-P05.postman_collection.json",
+    "Cleanora-R1-P05-Provider-Onboarding.postman_collection.json",
   );
   const r1P05Collection =
     await parseJson<PostmanCollection>(r1P05CollectionPath);
@@ -483,7 +483,7 @@ async function main(): Promise<void> {
 
   const r1P06CollectionPath = resolve(
     postmanDirectory,
-    "Cleanora-R1-P06.postman_collection.json",
+    "Cleanora-R1-P06-Provider-Verification.postman_collection.json",
   );
   const r1P06Collection = await parseJson<PostmanCollection>(r1P06CollectionPath);
   assert(
@@ -509,7 +509,7 @@ async function main(): Promise<void> {
     assert(!r1P06Serialized.includes(forbidden), `R1-P06 collection contains forbidden secret material: ${forbidden}`);
   }
 
-  const r1P07CollectionPath = resolve(postmanDirectory, "cleanora-r1-p07-provider-workforce.postman_collection.json");
+  const r1P07CollectionPath = resolve(postmanDirectory, "Cleanora-R1-P07-Worker-Team-Crew-Management.postman_collection.json");
   const r1P07Collection = await parseJson<PostmanCollection>(r1P07CollectionPath);
   assert(r1P07Collection.info.schema.endsWith("/collection/v2.1.0/collection.json"), "R1-P07 collection must use Postman collection schema v2.1.0");
   const r1P07RuntimeOperations = R1_P07_OPENAPI_OPERATIONS.map(([method, path]) => `${method.toUpperCase()} ${path}`).sort();
