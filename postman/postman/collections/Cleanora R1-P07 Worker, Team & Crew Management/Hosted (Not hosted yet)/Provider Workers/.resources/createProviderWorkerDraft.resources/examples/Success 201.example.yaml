@@ -1,0 +1,41 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/providers/{{providerId}}/workers"
+  method: POST
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "expectedVersion": 1,
+        "idempotencyKey": "00000000-0000-4000-8000-000000000002",
+        "fullLegalName": "Synthetic Worker",
+        "gender": "female",
+        "operationalPhoneE164": "{{workerOperationalPhone}}",
+        "workerType": "CLEANING_STAFF",
+        "displayTitle": "Synthetic Cleaner",
+        "supervisorCapable": false,
+        "skillTags": [
+          "Deep Cleaning"
+        ]
+      }
+response:
+  statusCode: 201
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+    Cache-Control: no-store, private
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "outcomeCode": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000007"
+      }
+order: 1000

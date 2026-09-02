@@ -1,0 +1,29 @@
+$kind: http-request
+description: R1-P06 createProviderPayoutDestinationSuccessor.
+url: "{{baseUrl}}/providers/{{providerId}}/payout-destinations/{{destinationVersionId}}/successors"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type": "MOBILE_WALLET",
+      "countryCode": "EG",
+      "walletNumber": "+201000000000",
+      "operatorCode": "SYNTHETIC_OPERATOR",
+      "holderLegalName": "Synthetic Provider Owner",
+      "holderRelationship": "PROVIDER_OWNER",
+      "commandId": "00000000-0000-4000-8000-000000000028",
+      "expectedVersion": 1
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([201, 409 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+    language: text/javascript
+examples: ./.resources/createProviderPayoutDestinationSuccessor.resources/examples
+order: 7000

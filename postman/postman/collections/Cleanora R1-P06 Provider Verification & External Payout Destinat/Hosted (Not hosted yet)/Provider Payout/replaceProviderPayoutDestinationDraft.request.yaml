@@ -1,0 +1,29 @@
+$kind: http-request
+description: R1-P06 replaceProviderPayoutDestinationDraft.
+url: "{{hostUrl}}/providers/{{providerId}}/payout-destinations/{{destinationVersionId}}"
+method: PUT
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type": "MOBILE_WALLET",
+      "countryCode": "EG",
+      "walletNumber": "+201000000000",
+      "operatorCode": "SYNTHETIC_OPERATOR",
+      "holderLegalName": "Synthetic Provider Owner",
+      "holderRelationship": "PROVIDER_OWNER",
+      "commandId": "00000000-0000-4000-8000-000000000026",
+      "expectedVersion": 1
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([200, 409 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+    language: text/javascript
+examples: ./.resources/replaceProviderPayoutDestinationDraft.resources/examples
+order: 5000

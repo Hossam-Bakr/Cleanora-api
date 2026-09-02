@@ -1,0 +1,3 @@
+$kind: collection
+description: Manage OWNER and ADMIN memberships and the Provider Admin invitation lifecycle. Provider members are administrators, not cleaning workers.
+order: 5000

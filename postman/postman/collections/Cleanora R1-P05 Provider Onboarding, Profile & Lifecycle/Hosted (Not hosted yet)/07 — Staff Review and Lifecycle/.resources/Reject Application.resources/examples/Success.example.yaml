@@ -1,0 +1,156 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/staff/providers/applications/{{providerId}}/reject"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "reason": "{{staffRejectionReason}}",
+        "expectedVersion": {{providerVersion}}
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "provider": {
+            "id": "provider_example_01",
+            "providerKind": "INDIVIDUAL_TEAM",
+            "applicationStatus": "REJECTED",
+            "operationalStatus": "INACTIVE",
+            "version": 10,
+            "createdAt": "2026-08-13T10:00:00.000Z",
+            "updatedAt": "2026-08-13T10:00:00.000Z"
+          },
+          "completion": {
+            "policyVersion": "r1-p05-v1",
+            "percentage": 100,
+            "checks": [
+              {
+                "code": "ELIGIBLE_CATEGORY_VERIFIED",
+                "satisfied": true
+              },
+              {
+                "code": "MATCHING_CUSTOMER_PROFILE_COMPLETE",
+                "satisfied": true
+              },
+              {
+                "code": "ARABIC_DISPLAY_NAME",
+                "satisfied": true
+              },
+              {
+                "code": "ARABIC_DESCRIPTION",
+                "satisfied": true
+              },
+              {
+                "code": "OPERATIONAL_EMAIL",
+                "satisfied": true
+              },
+              {
+                "code": "OPERATIONAL_PHONE",
+                "satisfied": true
+              },
+              {
+                "code": "ACTIVE_COUNTRY",
+                "satisfied": true
+              },
+              {
+                "code": "READY_LOGO",
+                "satisfied": true
+              },
+              {
+                "code": "READY_COVER",
+                "satisfied": true
+              },
+              {
+                "code": "MIN_READY_GALLERY_IMAGES",
+                "satisfied": true
+              }
+            ],
+            "missingRequirementCodes": []
+          },
+          "readiness": {
+            "gates": [
+              {
+                "key": "profileComplete",
+                "status": "SATISFIED",
+                "satisfied": true,
+                "owningPhase": "R1-P05"
+              },
+              {
+                "key": "applicationApproved",
+                "status": "SATISFIED",
+                "satisfied": true,
+                "owningPhase": "R1-P05"
+              },
+              {
+                "key": "documentsVerified",
+                "status": "NOT_REQUIRED",
+                "satisfied": true,
+                "owningPhase": "R1-P05"
+              },
+              {
+                "key": "payoutDestinationReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P06"
+              },
+              {
+                "key": "workersReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P07"
+              },
+              {
+                "key": "servicesReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P09"
+              },
+              {
+                "key": "coverageReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P10"
+              },
+              {
+                "key": "availabilityReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P10"
+              },
+              {
+                "key": "capacityReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P10"
+              },
+              {
+                "key": "operationalLive",
+                "status": "BLOCKED",
+                "satisfied": false,
+                "owningPhase": "R1-P05"
+              },
+              {
+                "key": "eligibleForPublicBrowse",
+                "status": "BLOCKED",
+                "satisfied": false,
+                "owningPhase": "R1-P12"
+              }
+            ],
+            "eligibleForPublicBrowse": false
+          }
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

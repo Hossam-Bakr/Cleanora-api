@@ -1,0 +1,15 @@
+$kind: http-request
+description: Provider-owned browser callback. Google supplies state/code. On success the backend writes the refresh cookie and redirects to frontendUrl/auth/google/callback with safe markers only. Do not manually send it in normal Postman testing.
+url: "{{hostUrl}}/auth/google/callback"
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Browser navigation endpoint is documented', () => {
+        pm.expect(pm.request.url.toString()).to.include('/auth/google/');
+      });
+    language: text/javascript
+examples: ./.resources/Google Callback.resources/examples
+order: 3000

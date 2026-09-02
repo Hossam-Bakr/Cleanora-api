@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/auth/me"
+  method: GET
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "user": {
+            "id": "<user-id>",
+            "displayName": "Aly Oser",
+            "avatarUrl": "https://lh3.googleusercontent.com/a/example",
+            "email": "user@example.test",
+            "phone": "+201234567890",
+            "emailVerified": true,
+            "phoneVerified": false,
+            "status": "ACTIVE",
+            "accountCategories": [
+              "INDIVIDUAL"
+            ],
+            "verifiedCategories": [
+              "INDIVIDUAL"
+            ],
+            "pendingCategories": []
+          },
+          "verificationOnly": false
+        },
+        "requestId": "7ebf45ad-7384-41ab-8e74-e864ae048d30"
+      }
+order: 1000

@@ -1,0 +1,27 @@
+$kind: http-request
+description: Deletes the owned address using its current version.
+url: "{{hostUrl}}/customers/addresses/{{addressId}}"
+method: DELETE
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "version": {{addressVersion}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([200]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.requestId).to.be.a("string");
+        });
+      }
+    language: text/javascript
+examples: ./.resources/Delete Address.resources/examples
+order: 5000

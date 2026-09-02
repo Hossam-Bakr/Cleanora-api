@@ -1,0 +1,79 @@
+$kind: collection
+description: |+
+  # Cleanora R1-P00 — Foundation
+
+  > **API version:** `/api/v1`  
+  > **Collection environments:** `Hosted (Not hosted yet)` and `Local`
+
+  R1-P00 establishes the first externally observable Cleanora system-health
+  contract. This collection is intentionally small: it verifies that the HTTP
+  process is alive and that required application dependencies are ready.
+
+  ## Collection Structure
+
+  ```text
+  Hosted (Not hosted yet)
+  └── System
+      ├── Liveness
+      └── Readiness
+
+  Local
+  └── System
+      ├── Liveness
+      └── Readiness
+  ```
+
+  Hosted requests use `{{hostUrl}}`; Local requests use `{{baseUrl}}`.
+
+  ## Requests
+
+  ### Liveness
+
+  ```http
+  GET {{baseUrl}}/system/health/live
+  ```
+
+  Confirms that the API process can receive and answer HTTP requests. It does not
+  prove that PostgreSQL or every required dependency is available.
+
+  ### Readiness
+
+  ```http
+  GET {{baseUrl}}/system/health/ready
+  ```
+
+  Confirms that the application is ready to serve dependency-backed traffic. A
+  dependency failure may produce `503 Service Unavailable` with a safe error
+  envelope.
+
+  ## Saved Examples
+
+  Every request contains a Saved Example named `Success`. Expand the request in
+  Postman to inspect the request URL, HTTP status, and representative Cleanora
+  response envelope.
+
+  ## Standard Success Envelope
+
+  ```json
+  {
+    "success": true,
+    "data": {
+      "status": "ok"
+    },
+    "requestId": "request_example_01"
+  }
+  ```
+
+  ## Running Locally
+
+  ```bash
+  npm run dev
+  ```
+
+  ```text
+  Local API: http://localhost:8000/api/v1
+  Swagger:   http://localhost:8000/api/v1/docs
+  ```
+
+  The health requests require no Bearer token and have no request body.
+

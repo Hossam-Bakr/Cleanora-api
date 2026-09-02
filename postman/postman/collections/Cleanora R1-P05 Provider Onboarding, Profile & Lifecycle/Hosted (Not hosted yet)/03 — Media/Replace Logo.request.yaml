@@ -1,0 +1,41 @@
+$kind: http-request
+description: Uploads or replaces the single Provider logo. Select providerLogoPath. Images must satisfy the server content-type, size, and normalized-dimension policy.
+url: "{{hostUrl}}/providers/{{providerId}}/media/logo"
+method: PUT
+headers:
+  Accept: application/json
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - "{{providerLogoPath}}"
+      description: Select the private local file in your Postman environment.
+    - type: text
+      key: expectedVersion
+      value: "{{providerVersion}}"
+      description: Current Provider aggregate version.
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([200]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          const succeeded = pm.response.code >= 200 && pm.response.code < 300;
+          pm.expect(body.success).to.eql(succeeded);
+          pm.expect(body.requestId).to.be.a("string");
+          if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }
+        });
+        if (body.success === true && body.data && typeof body.data === "object") {
+          const data = body.data;
+          const currentVersion = data.version ?? data.provider?.version ?? data.application?.version;
+          if (Number.isInteger(currentVersion) && currentVersion > 0) {
+            pm.environment.set("providerVersion", String(currentVersion));
+          }
+        }
+      }
+    language: text/javascript
+examples: ./.resources/Replace Logo.resources/examples
+order: 2000

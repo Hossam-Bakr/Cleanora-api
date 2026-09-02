@@ -1,0 +1,15 @@
+$kind: http-request
+description: Open this URL as top-level browser navigation. It redirects to Google and must not be started in Postman then continued in Chrome.
+url: "{{hostUrl}}/auth/google/browser"
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Browser navigation endpoint is documented', () => {
+        pm.expect(pm.request.url.toString()).to.include('/auth/google/');
+      });
+    language: text/javascript
+examples: ./.resources/Start Google Browser Sign-In.resources/examples
+order: 2000

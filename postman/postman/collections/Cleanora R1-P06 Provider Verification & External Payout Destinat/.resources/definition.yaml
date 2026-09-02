@@ -1,0 +1,24 @@
+$kind: collection
+name: Cleanora R1-P06 Provider Verification & External Payout Destinations
+description: Synthetic, secret-free executable examples for R1-P06 only. Payout execution and settlement are out of scope. Full payout values are present only in exact authorized runtime reveal responses.
+variables:
+  baseUrl: http://localhost:8000/api/v1
+  hostUrl: https://YOUR-HOSTED-DOMAIN.example/api/v1
+  requestId: 00000000-0000-4000-8000-000000000006
+  providerId: synthetic-provider-id
+  documentVersionId: synthetic-document-version-id
+  destinationVersionId: synthetic-destination-version-id
+  evidenceId: synthetic-evidence-id
+  policyVersionId: synthetic-policy-version-id
+  conflictId: synthetic-conflict-id
+  accessToken: ""
+  verificationEvidenceFile: ""
+  currentPassword: ""
+  sensitiveActionProof: ""
+  revealAttemptId: ""
+auth:
+  - id: f6108167-021a-4e82-976c-0506ece352a9
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{accessToken}}"

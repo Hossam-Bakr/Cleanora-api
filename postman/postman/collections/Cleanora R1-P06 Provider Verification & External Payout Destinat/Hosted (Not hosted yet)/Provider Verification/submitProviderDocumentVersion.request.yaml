@@ -1,0 +1,23 @@
+$kind: http-request
+description: R1-P06 submitProviderDocumentVersion.
+url: "{{hostUrl}}/providers/{{providerId}}/verification/documents/{{documentVersionId}}/submit"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "expectedVersion": 1,
+      "commandId": "00000000-0000-4000-8000-000000000011"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([200, 409, 422 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+    language: text/javascript
+examples: ./.resources/submitProviderDocumentVersion.resources/examples
+order: 10000

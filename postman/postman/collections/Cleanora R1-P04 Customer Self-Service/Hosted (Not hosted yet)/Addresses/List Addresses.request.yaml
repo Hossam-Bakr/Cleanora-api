@@ -1,0 +1,20 @@
+$kind: http-request
+description: Lists all owned peer text addresses; none is primary/default.
+url: "{{hostUrl}}/customers/addresses"
+method: GET
+headers:
+  Accept: application/json
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([200]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.requestId).to.be.a("string");
+        });
+      }
+    language: text/javascript
+examples: ./.resources/List Addresses.resources/examples
+order: 1000

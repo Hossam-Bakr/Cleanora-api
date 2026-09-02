@@ -1,0 +1,39 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/staff/providers/{{providerId}}/payout-destinations/{{destinationVersionId}}/reveal"
+  method: POST
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "expectedVersion": 1,
+        "purpose": "MANUAL_PAYOUT_DESTINATION_VERIFICATION",
+        "reason": "Manual beneficiary lookup before Staff decision",
+        "stepUpProof": "{{sensitiveActionProof}}",
+        "commandId": "00000000-0000-4000-8000-000000000034"
+      }
+response:
+  statusCode: 200
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "destinationVersionId": "synthetic-destination-version",
+          "type": "MOBILE_WALLET",
+          "fullIdentifier": "SYNTHETIC_RUNTIME_ONLY",
+          "holderLegalName": "Synthetic Runtime Holder",
+          "holderRelationship": "PROVIDER_OWNER",
+          "revealAttemptId": "synthetic-reveal-attempt"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000006"
+      }
+order: 1000

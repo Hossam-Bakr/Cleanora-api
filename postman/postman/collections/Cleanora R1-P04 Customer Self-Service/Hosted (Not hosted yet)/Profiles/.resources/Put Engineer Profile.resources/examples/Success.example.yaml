@@ -1,0 +1,33 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/customers/profiles/engineer"
+  method: PUT
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "fullName": "{{engineerFullName}}",
+        "professionalTitle": "{{professionalTitle}}"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "category": "ENGINEER",
+          "created": true,
+          "fullName": "Cleanora Engineer",
+          "professionalTitle": "Cleaning Engineer"
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

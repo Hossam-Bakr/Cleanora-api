@@ -1,0 +1,46 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/providers/{{providerId}}/media/cover"
+  method: DELETE
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "expectedVersion": {{providerVersion}}
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "providerId": "provider_example_01",
+          "logo": {
+            "id": "media_logo_01",
+            "type": "LOGO",
+            "status": "READY",
+            "url": "https://res.cloudinary.com/example/image/upload/provider-logo.webp"
+          },
+          "cover": null,
+          "gallery": [
+            {
+              "id": "gallery_image_01",
+              "type": "GALLERY_IMAGE",
+              "status": "READY",
+              "position": 1,
+              "url": "https://res.cloudinary.com/example/image/upload/gallery-01.webp"
+            }
+          ],
+          "version": 11
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

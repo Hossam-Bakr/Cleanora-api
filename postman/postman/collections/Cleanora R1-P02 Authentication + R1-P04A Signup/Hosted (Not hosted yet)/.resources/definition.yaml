@@ -1,0 +1,3 @@
+$kind: collection
+description: Authentication requests using {{hostUrl}}. Select the hosted environment and configure the hosted URL before use.
+order: 1000

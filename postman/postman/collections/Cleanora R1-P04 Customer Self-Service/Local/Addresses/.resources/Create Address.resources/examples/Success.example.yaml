@@ -1,0 +1,43 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/customers/addresses"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "countryCode": "{{countryCode}}",
+        "city": "{{city}}",
+        "district": "{{district}}",
+        "addressText": "{{addressText}}",
+        "building": "{{building}}",
+        "floor": "{{floor}}",
+        "notes": "{{addressNotes}}"
+      }
+response:
+  statusCode: 201
+  statusText: Created
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "id": "address_example_01",
+          "countryCode": "EG",
+          "city": "Cairo",
+          "district": "Nasr City",
+          "addressText": "Example Street",
+          "building": "10",
+          "floor": "2",
+          "notes": "Near the main entrance",
+          "version": 1
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

@@ -1,0 +1,25 @@
+$kind: http-request
+description: R1-P07 createProviderTeamDraft.
+url: "{{hostUrl}}/providers/{{providerId}}/teams"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "expectedVersion": 1,
+      "idempotencyKey": "00000000-0000-4000-8000-000000000012",
+      "name": "Synthetic Crew"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected documented status", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 409 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+      pm.test("Private response is not cached", () => { const value = pm.response.headers.get("Cache-Control"); if (value) pm.expect(value).to.include("no-store"); });
+    language: text/javascript
+examples: ./.resources/createProviderTeamDraft.resources/examples
+order: 2000

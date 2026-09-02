@@ -1,0 +1,33 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/providers/{{providerId}}/members/{{userId}}"
+  method: DELETE
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "expectedVersion": {{providerVersion}}
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "member": {
+            "userId": "user_admin_01",
+            "role": "ADMIN",
+            "enabled": false
+          }
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

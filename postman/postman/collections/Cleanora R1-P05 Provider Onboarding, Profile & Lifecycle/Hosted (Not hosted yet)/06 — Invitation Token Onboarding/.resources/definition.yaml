@@ -1,0 +1,3 @@
+$kind: collection
+description: Inspect an out-of-band invitation, create and verify an invitation-only identity when needed, then accept the invitation while authenticated.
+order: 6000

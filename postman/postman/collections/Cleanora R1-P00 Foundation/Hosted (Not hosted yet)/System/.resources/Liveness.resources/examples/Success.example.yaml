@@ -1,0 +1,23 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/system/health/live"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+    x-request-id: request_example_01
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "status": "ok"
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

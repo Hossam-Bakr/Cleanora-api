@@ -1,0 +1,35 @@
+$kind: http-request
+description: R1-P06 replaceVerificationDocumentPolicyDraft.
+url: "{{baseUrl}}/staff/providers/verification/document-policies/{{policyVersionId}}"
+method: PUT
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "effectiveAt": "2026-09-01T00:00:00.000Z",
+      "expectedVersion": 1,
+      "commandId": "00000000-0000-4000-8000-000000000017",
+      "items": [
+        {
+          "documentTypeCode": "COMMERCIAL_REGISTRATION",
+          "isRequired": true,
+          "isActive": true,
+          "position": 0,
+          "fieldRules": {
+            "expiryRequired": false
+          }
+        }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([200, 409 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+    language: text/javascript
+examples: ./.resources/replaceVerificationDocumentPolicyDraft.resources/examples
+order: 4000

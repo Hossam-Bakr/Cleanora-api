@@ -1,0 +1,31 @@
+$kind: http-request
+description: Returns 200 when healthy or 503 DEPENDENCY_NOT_READY without leaking infrastructure details.
+url: "{{baseUrl}}/system/health/ready"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+      pm.test("Expected health status", () => pm.expect([200, 503]).to.include(pm.response.code));
+      pm.test('Uses a correlated Cleanora response envelope', () => {
+        pm.expect(body.requestId).to.be.a('string');
+        pm.expect(pm.response.headers.get('x-request-id')).to.eql(body.requestId);
+        if (pm.response.code === 200) {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.data.status).to.eql('ready');
+        }
+      });
+      if (pm.response.code === 503) {
+        pm.test('Returns a safe dependency failure', () => {
+          pm.expect(body.success).to.eql(false);
+          pm.expect(body.error).to.include({ code: 'DEPENDENCY_NOT_READY', statusCode: 503 });
+          pm.expect(JSON.stringify(body)).not.to.match(/postgres(?:ql)?:\/\/|DATABASE_URL|SELECT\s/i);
+        });
+      }
+    language: text/javascript
+examples: ./.resources/Readiness.resources/examples
+order: 2000

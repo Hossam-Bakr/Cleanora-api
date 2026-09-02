@@ -1,0 +1,33 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/staff/providers/{{providerId}}/verification/documents/{{documentVersionId}}/decisions"
+  method: POST
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "outcome": "APPROVE",
+        "reason": "Document matched the authoritative synthetic record",
+        "expectedVersion": 1,
+        "commandId": "00000000-0000-4000-8000-000000000021"
+      }
+response:
+  statusCode: 200
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "status": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000006"
+      }
+order: 1000

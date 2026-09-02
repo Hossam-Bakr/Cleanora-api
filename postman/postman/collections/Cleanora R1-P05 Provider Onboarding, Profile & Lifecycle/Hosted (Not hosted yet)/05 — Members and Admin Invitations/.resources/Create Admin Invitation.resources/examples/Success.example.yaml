@@ -1,0 +1,39 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/providers/{{providerId}}/admin-invitations"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "email": "{{providerAdminInviteEmail}}",
+        "expectedVersion": {{providerVersion}}
+      }
+response:
+  statusCode: 202
+  statusText: Accepted
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "invitation": {
+            "id": "invitation_example_01",
+            "providerId": "provider_example_01",
+            "email": "provider.admin@example.com",
+            "status": "PENDING",
+            "expiresAt": "2026-08-20T10:00:00.000Z",
+            "createdAt": "2026-08-13T10:00:00.000Z"
+          },
+          "deliveryAccepted": true,
+          "version": 12
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

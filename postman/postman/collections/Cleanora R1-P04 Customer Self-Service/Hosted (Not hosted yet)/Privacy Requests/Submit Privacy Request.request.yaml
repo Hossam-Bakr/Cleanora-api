@@ -1,0 +1,28 @@
+$kind: http-request
+description: Submits DEACTIVATION, DELETION, or EXPORT. Submission does not execute or fulfill the request.
+url: "{{hostUrl}}/customers/privacy-requests"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "purpose": "{{privacyPurpose}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([201]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.requestId).to.be.a("string");
+        });
+        if (body.data?.id) pm.environment.set("privacyRequestId", body.data.id);
+      }
+    language: text/javascript
+examples: ./.resources/Submit Privacy Request.resources/examples
+order: 2000

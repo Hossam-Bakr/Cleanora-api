@@ -1,0 +1,28 @@
+$kind: http-request
+description: R1-P07 commandProviderWorkerLifecycle.
+url: "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/lifecycle-commands"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "expectedVersion": 1,
+      "idempotencyKey": "00000000-0000-4000-8000-000000000007",
+      "action": "DEACTIVATE",
+      "reasonCode": "TEMPORARILY_UNAVAILABLE",
+      "confirmTeamImpact": false,
+      "confirmReadinessImpact": false
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected documented status", () => pm.expect(pm.response.code).to.be.oneOf([200, 400, 403, 409 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+      pm.test("Private response is not cached", () => { const value = pm.response.headers.get("Cache-Control"); if (value) pm.expect(value).to.include("no-store"); });
+    language: text/javascript
+examples: ./.resources/commandProviderWorkerLifecycle.resources/examples
+order: 7000

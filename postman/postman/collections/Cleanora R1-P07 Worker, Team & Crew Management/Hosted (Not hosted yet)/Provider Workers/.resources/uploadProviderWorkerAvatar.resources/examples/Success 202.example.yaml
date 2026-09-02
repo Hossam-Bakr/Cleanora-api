@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar"
+  method: POST
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+  body:
+    type: formdata
+    content:
+      - type: file
+        key: file
+        src:
+          - "{{workerAvatarFile}}"
+      - type: text
+        key: expectedVersion
+        value: "1"
+      - type: text
+        key: idempotencyKey
+        value: 00000000-0000-4000-8000-000000000005
+response:
+  statusCode: 202
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+    Cache-Control: no-store, private
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "outcomeCode": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000007"
+      }
+order: 1000

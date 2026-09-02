@@ -1,0 +1,35 @@
+$kind: http-request
+description: Creates a text-only address. countryCode must identify an active configured country; geospatial fields are rejected.
+url: "{{baseUrl}}/customers/addresses"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "countryCode": "{{countryCode}}",
+      "city": "{{city}}",
+      "district": "{{district}}",
+      "addressText": "{{addressText}}",
+      "building": "{{building}}",
+      "floor": "{{floor}}",
+      "notes": "{{addressNotes}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([201]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.requestId).to.be.a("string");
+        });
+        if (body.data?.id) pm.environment.set("addressId", body.data.id);
+        if (body.data?.version) pm.environment.set("addressVersion", body.data.version);
+      }
+    language: text/javascript
+examples: ./.resources/Create Address.resources/examples
+order: 2000

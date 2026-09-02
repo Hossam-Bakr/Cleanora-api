@@ -1,0 +1,3 @@
+$kind: collection
+description: Upload, list, order, and remove the Provider logo, cover, gallery images, and gallery videos. Upload requests are prepared as multipart/form-data.
+order: 3000

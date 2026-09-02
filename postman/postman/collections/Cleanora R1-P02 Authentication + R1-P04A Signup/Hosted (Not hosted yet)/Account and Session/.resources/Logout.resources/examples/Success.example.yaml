@@ -1,0 +1,22 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/auth/logout"
+  method: POST
+  headers:
+    Origin: "{{origin}}"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "loggedOut": true
+        },
+        "requestId": "7ebf45ad-7384-41ab-8e74-e864ae048d30"
+      }
+order: 1000

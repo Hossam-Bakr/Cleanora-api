@@ -1,0 +1,34 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/auth/sensitive-action-proofs"
+  method: POST
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "currentPassword": "{{currentPassword}}",
+        "purpose": "STAFF_PAYOUT_REVEAL",
+        "providerId": "{{providerId}}",
+        "destinationVersionId": "{{destinationVersionId}}",
+        "requestId": "{{requestId}}"
+      }
+response:
+  statusCode: 201
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "status": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000006"
+      }
+order: 1000

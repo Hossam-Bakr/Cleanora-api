@@ -1,0 +1,23 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/providers/{{providerId}}/payout-destinations"
+  method: POST
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+response:
+  statusCode: 201
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "status": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000006"
+      }
+order: 1000

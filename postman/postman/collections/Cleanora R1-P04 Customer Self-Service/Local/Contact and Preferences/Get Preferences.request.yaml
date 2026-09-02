@@ -1,0 +1,21 @@
+$kind: http-request
+description: Returns the current or default complete preference matrix.
+url: "{{baseUrl}}/customers/preferences"
+method: GET
+headers:
+  Accept: application/json
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([200]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.requestId).to.be.a("string");
+        });
+        if (body.data?.version) pm.environment.set("preferencesVersion", body.data.version);
+      }
+    language: text/javascript
+examples: ./.resources/Get Preferences.resources/examples
+order: 2000

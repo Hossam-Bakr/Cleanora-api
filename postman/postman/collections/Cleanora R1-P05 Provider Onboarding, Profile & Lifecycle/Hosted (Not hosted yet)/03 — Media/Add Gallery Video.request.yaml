@@ -1,0 +1,45 @@
+$kind: http-request
+description: Adds one optional gallery video, up to 2 total. Select providerGalleryVideoPath. MP4 or WebM; authoritative maximum 40 MiB.
+url: "{{hostUrl}}/providers/{{providerId}}/media/gallery-videos"
+method: POST
+headers:
+  Accept: application/json
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - "{{providerGalleryVideoPath}}"
+      description: Select the private local file in your Postman environment.
+    - type: text
+      key: expectedVersion
+      value: "{{providerVersion}}"
+      description: Current Provider aggregate version.
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([201]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          const succeeded = pm.response.code >= 200 && pm.response.code < 300;
+          pm.expect(body.success).to.eql(succeeded);
+          pm.expect(body.requestId).to.be.a("string");
+          if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }
+        });
+        if (body.success === true && body.data && typeof body.data === "object") {
+          const data = body.data;
+          const currentVersion = data.version ?? data.provider?.version ?? data.application?.version;
+          if (Number.isInteger(currentVersion) && currentVersion > 0) {
+            pm.environment.set("providerVersion", String(currentVersion));
+          }
+      const capturedValue = data.id ?? data.galleryItemId ?? data.media?.id ?? data.item?.id;
+      if (typeof capturedValue === "string" && capturedValue.length > 0) {
+        pm.environment.set("galleryItemId", capturedValue);
+      }
+        }
+      }
+    language: text/javascript
+examples: ./.resources/Add Gallery Video.resources/examples
+order: 5000

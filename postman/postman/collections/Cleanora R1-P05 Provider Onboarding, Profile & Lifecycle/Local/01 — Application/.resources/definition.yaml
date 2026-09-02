@@ -1,0 +1,3 @@
+$kind: collection
+description: Create or recover the single Provider draft, read the aggregate, change a never-submitted kind, and submit the completed application.
+order: 1000

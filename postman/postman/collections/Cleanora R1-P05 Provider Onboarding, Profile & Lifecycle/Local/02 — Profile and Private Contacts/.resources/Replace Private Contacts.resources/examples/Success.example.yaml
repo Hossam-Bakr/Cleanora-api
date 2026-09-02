@@ -1,0 +1,54 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/providers/{{providerId}}/contacts"
+  method: PUT
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "operationalEmail": "{{providerOperationalEmail}}",
+        "operationalPhone": "{{providerOperationalPhone}}",
+        "channels": [
+          {
+            "type": "WHATSAPP",
+            "value": "{{providerWhatsApp}}"
+          },
+          {
+            "type": "WEBSITE",
+            "value": "{{providerWebsite}}"
+          }
+        ],
+        "expectedVersion": {{providerVersion}}
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "providerId": "provider_example_01",
+          "operationalEmail": "provider.ops@example.com",
+          "operationalPhone": "+201000000000",
+          "channels": [
+            {
+              "type": "WHATSAPP",
+              "value": "+201000000000"
+            },
+            {
+              "type": "WEBSITE",
+              "value": "https://example.com/cleanora-provider"
+            }
+          ],
+          "version": 3
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

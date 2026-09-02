@@ -1,0 +1,25 @@
+$kind: http-request
+description: Requests/resends the existing challenge. Cooldown applies. Possible invalid, expired, and rate-limit responses are in Swagger.
+url: "{{baseUrl}}/auth/otp/request"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "challengeId": "{{challengeId}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+      pm.test('Uses the Cleanora response envelope', () => {
+        pm.expect(body.success).to.eql(true);
+        pm.expect(body.requestId).to.be.a('string');
+      });
+      if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);
+      if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);
+    language: text/javascript
+examples: ./.resources/Request OTP.resources/examples
+order: 2000

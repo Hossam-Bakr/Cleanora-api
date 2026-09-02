@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/providers/{{providerId}}/payout-destinations/{{destinationVersionId}}"
+  method: PUT
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "type": "MOBILE_WALLET",
+        "countryCode": "EG",
+        "walletNumber": "+201000000000",
+        "operatorCode": "SYNTHETIC_OPERATOR",
+        "holderLegalName": "Synthetic Provider Owner",
+        "holderRelationship": "PROVIDER_OWNER",
+        "commandId": "00000000-0000-4000-8000-000000000026",
+        "expectedVersion": 1
+      }
+response:
+  statusCode: 200
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "status": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000006"
+      }
+order: 1000

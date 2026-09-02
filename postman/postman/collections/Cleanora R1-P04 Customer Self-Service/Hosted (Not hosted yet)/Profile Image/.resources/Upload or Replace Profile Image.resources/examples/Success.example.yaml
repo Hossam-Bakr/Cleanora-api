@@ -1,0 +1,63 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/customers/profile-image"
+  method: PUT
+  headers:
+    Accept: application/json
+  body:
+    type: formdata
+    content:
+      - type: file
+        key: file
+        src:
+          - "{{profileImagePath}}"
+        description: Local JPEG/PNG/WebP file; maximum 5 MiB.
+      - type: text
+        key: expectedAssociationVersion
+        value: "{{profileImageAssociationVersion}}"
+        description: Current image association version.
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "profiles": [
+            {
+              "category": "INDIVIDUAL",
+              "created": true,
+              "fullName": "Cleanora Individual"
+            },
+            {
+              "category": "COMPANY",
+              "created": true,
+              "companyName": "Cleanora Services",
+              "representativeFullName": "Cleanora Representative",
+              "commercialRegistrationNumber": "CR-EXAMPLE-001",
+              "taxRegistrationNumber": "TAX-EXAMPLE-001"
+            },
+            {
+              "category": "ENGINEER",
+              "created": true,
+              "fullName": "Cleanora Engineer",
+              "professionalTitle": "Cleaning Engineer"
+            }
+          ],
+          "profileImage": {
+            "mediaId": "media_profile_example_01",
+            "associationVersion": 2,
+            "contentType": "image/webp",
+            "width": 600,
+            "height": 600,
+            "url": "https://res.cloudinary.com/example/image/authenticated/profile.webp",
+            "urlExpiresAt": "2026-08-13T10:10:00.000Z"
+          }
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

@@ -1,0 +1,19 @@
+$kind: http-request
+description: JSON inspection endpoint. For a real Chrome flow use Start Google Browser Sign-In so the same browser owns the correlation cookie.
+url: "{{hostUrl}}/auth/google"
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+      pm.test('Uses the Cleanora response envelope', () => {
+        pm.expect(body.success).to.eql(true);
+        pm.expect(body.requestId).to.be.a('string');
+      });
+      if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);
+      if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);
+    language: text/javascript
+examples: ./.resources/Inspect Google Authorization URL.resources/examples
+order: 1000

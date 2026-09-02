@@ -1,0 +1,28 @@
+$kind: http-request
+description: R1-P06 decideProviderPayoutDestination.
+url: "{{baseUrl}}/staff/providers/{{providerId}}/payout-destinations/{{destinationVersionId}}/decisions"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "outcome": "APPROVE",
+      "verificationMethod": "MANUAL_WALLET_TRANSFER_CHECK",
+      "reasonCode": "VERIFIED_MATCH",
+      "verificationNote": "External beneficiary holder name and wallet details matched",
+      "acceptedRevealAttemptId": "{{revealAttemptId}}",
+      "expectedVersion": 1,
+      "commandId": "00000000-0000-4000-8000-000000000035"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([200, 409 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+    language: text/javascript
+examples: ./.resources/decideProviderPayoutDestination.resources/examples
+order: 4000

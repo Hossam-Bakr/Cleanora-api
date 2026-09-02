@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/providers/{{providerId}}/verification/documents"
+  method: POST
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "typeCode": "COMMERCIAL_REGISTRATION",
+        "countryCode": "EG",
+        "documentNumber": "SYNTHETIC-DOC-0001",
+        "legalName": "Synthetic Cleanora Company",
+        "issuerName": "Synthetic Registry Authority",
+        "issueDate": "2026-01-01",
+        "expiresAt": null,
+        "commandId": "00000000-0000-4000-8000-000000000005"
+      }
+response:
+  statusCode: 201
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "status": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000006"
+      }
+order: 1000

@@ -1,0 +1,17 @@
+$kind: http-request
+description: Revokes every session owned by the current user.
+url: "{{hostUrl}}/auth/logout-all"
+method: POST
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+      pm.test('Uses the Cleanora response envelope', () => {
+        pm.expect(body.success).to.eql(true);
+        pm.expect(body.requestId).to.be.a('string');
+      });
+      if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);
+      if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);
+    language: text/javascript
+examples: ./.resources/Logout All.resources/examples
+order: 6000

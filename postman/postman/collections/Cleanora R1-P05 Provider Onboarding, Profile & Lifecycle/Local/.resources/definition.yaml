@@ -1,0 +1,12 @@
+$kind: collection
+description: "Runs all 41 R1-P05 operations against localHostUrl/localBaseUrl. Default: http://localhost:8000/api/v1."
+scripts:
+  - type: http:beforeRequest
+    code: |-
+      const selectedHostUrl = pm.environment.get("localHostUrl") || pm.collectionVariables.get("localHostUrl");
+      const selectedBaseUrl = pm.environment.get("localBaseUrl") || pm.collectionVariables.get("localBaseUrl");
+      if (!selectedHostUrl || !selectedBaseUrl) { throw new Error("Local development URL variables are not configured."); }
+      pm.variables.set("hostUrl", selectedHostUrl);
+      pm.variables.set("baseUrl", selectedBaseUrl);
+    language: text/javascript
+order: 2000

@@ -1,0 +1,39 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/providers/{{providerId}}/verification/documents/{{documentVersionId}}/evidence"
+  method: POST
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+  body:
+    type: formdata
+    content:
+      - type: file
+        key: file
+        src:
+          - "{{verificationEvidenceFile}}"
+      - type: text
+        key: position
+        value: "0"
+      - type: text
+        key: expectedVersion
+        value: "1"
+      - type: text
+        key: commandId
+        value: 00000000-0000-4000-8000-000000000008
+response:
+  statusCode: 202
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "status": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000006"
+      }
+order: 1000

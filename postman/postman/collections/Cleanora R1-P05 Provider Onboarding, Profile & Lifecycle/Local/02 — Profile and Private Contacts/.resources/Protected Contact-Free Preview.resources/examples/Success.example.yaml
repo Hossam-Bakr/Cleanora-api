@@ -1,0 +1,48 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/providers/{{providerId}}/preview"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "providerId": "provider_example_01",
+          "providerKind": "INDIVIDUAL_TEAM",
+          "displayNameAr": "فريق كلينورا للنظافة",
+          "displayNameEn": "Cleanora Cleaning Team",
+          "descriptionAr": "فريق متخصص في تنظيف المنازل والشقق.",
+          "countryCode": "EG",
+          "logo": {
+            "id": "media_logo_01",
+            "type": "LOGO",
+            "status": "READY",
+            "url": "https://res.cloudinary.com/example/image/upload/provider-logo.webp"
+          },
+          "cover": {
+            "id": "media_cover_01",
+            "type": "COVER",
+            "status": "READY",
+            "url": "https://res.cloudinary.com/example/image/upload/provider-cover.webp"
+          },
+          "gallery": [
+            {
+              "id": "gallery_image_01",
+              "type": "GALLERY_IMAGE",
+              "status": "READY",
+              "position": 1,
+              "url": "https://res.cloudinary.com/example/image/upload/gallery-01.webp"
+            }
+          ]
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

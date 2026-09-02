@@ -1,0 +1,199 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/staff/providers/applications/{{providerId}}"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "provider": {
+            "id": "provider_example_01",
+            "providerKind": "INDIVIDUAL_TEAM",
+            "applicationStatus": "PENDING_REVIEW",
+            "operationalStatus": "INACTIVE",
+            "version": 9,
+            "createdAt": "2026-08-13T10:00:00.000Z",
+            "updatedAt": "2026-08-13T10:00:00.000Z"
+          },
+          "profile": {
+            "providerId": "provider_example_01",
+            "displayNameAr": "فريق كلينورا للنظافة",
+            "displayNameEn": "Cleanora Cleaning Team",
+            "descriptionAr": "فريق متخصص في تنظيف المنازل والشقق باحترافية وجودة عالية.",
+            "descriptionEn": "A professional team specializing in high-quality home and apartment cleaning.",
+            "countryCode": "EG",
+            "version": 2
+          },
+          "contacts": {
+            "providerId": "provider_example_01",
+            "operationalEmail": "provider.ops@example.com",
+            "operationalPhone": "+201000000000",
+            "channels": [
+              {
+                "type": "WHATSAPP",
+                "value": "+201000000000"
+              },
+              {
+                "type": "WEBSITE",
+                "value": "https://example.com/cleanora-provider"
+              }
+            ],
+            "version": 3
+          },
+          "media": {
+            "providerId": "provider_example_01",
+            "logo": {
+              "id": "media_logo_01",
+              "type": "LOGO",
+              "status": "READY",
+              "url": "https://res.cloudinary.com/example/image/upload/provider-logo.webp"
+            },
+            "cover": {
+              "id": "media_cover_01",
+              "type": "COVER",
+              "status": "READY",
+              "url": "https://res.cloudinary.com/example/image/upload/provider-cover.webp"
+            },
+            "gallery": [
+              {
+                "id": "gallery_image_01",
+                "type": "GALLERY_IMAGE",
+                "status": "READY",
+                "position": 1,
+                "url": "https://res.cloudinary.com/example/image/upload/gallery-01.webp"
+              }
+            ],
+            "version": 6
+          },
+          "completion": {
+            "policyVersion": "r1-p05-v1",
+            "percentage": 100,
+            "checks": [
+              {
+                "code": "ELIGIBLE_CATEGORY_VERIFIED",
+                "satisfied": true
+              },
+              {
+                "code": "MATCHING_CUSTOMER_PROFILE_COMPLETE",
+                "satisfied": true
+              },
+              {
+                "code": "ARABIC_DISPLAY_NAME",
+                "satisfied": true
+              },
+              {
+                "code": "ARABIC_DESCRIPTION",
+                "satisfied": true
+              },
+              {
+                "code": "OPERATIONAL_EMAIL",
+                "satisfied": true
+              },
+              {
+                "code": "OPERATIONAL_PHONE",
+                "satisfied": true
+              },
+              {
+                "code": "ACTIVE_COUNTRY",
+                "satisfied": true
+              },
+              {
+                "code": "READY_LOGO",
+                "satisfied": true
+              },
+              {
+                "code": "READY_COVER",
+                "satisfied": true
+              },
+              {
+                "code": "MIN_READY_GALLERY_IMAGES",
+                "satisfied": true
+              }
+            ],
+            "missingRequirementCodes": []
+          },
+          "readiness": {
+            "gates": [
+              {
+                "key": "profileComplete",
+                "status": "SATISFIED",
+                "satisfied": true,
+                "owningPhase": "R1-P05"
+              },
+              {
+                "key": "applicationApproved",
+                "status": "SATISFIED",
+                "satisfied": true,
+                "owningPhase": "R1-P05"
+              },
+              {
+                "key": "documentsVerified",
+                "status": "NOT_REQUIRED",
+                "satisfied": true,
+                "owningPhase": "R1-P05"
+              },
+              {
+                "key": "payoutDestinationReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P06"
+              },
+              {
+                "key": "workersReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P07"
+              },
+              {
+                "key": "servicesReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P09"
+              },
+              {
+                "key": "coverageReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P10"
+              },
+              {
+                "key": "availabilityReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P10"
+              },
+              {
+                "key": "capacityReady",
+                "status": "NOT_STARTED",
+                "satisfied": false,
+                "owningPhase": "R1-P10"
+              },
+              {
+                "key": "operationalLive",
+                "status": "BLOCKED",
+                "satisfied": false,
+                "owningPhase": "R1-P05"
+              },
+              {
+                "key": "eligibleForPublicBrowse",
+                "status": "BLOCKED",
+                "satisfied": false,
+                "owningPhase": "R1-P12"
+              }
+            ],
+            "eligibleForPublicBrowse": false
+          },
+          "submittedAt": "2026-08-13T10:00:00.000Z"
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

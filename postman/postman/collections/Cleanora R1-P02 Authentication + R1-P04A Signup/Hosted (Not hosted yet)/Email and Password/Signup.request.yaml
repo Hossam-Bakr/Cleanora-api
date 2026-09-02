@@ -1,0 +1,29 @@
+$kind: http-request
+description: Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant.
+url: "{{hostUrl}}/auth/signup"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "accountCategory": "INDIVIDUAL",
+      "fullName": "{{individualFullName}}",
+      "phone": "{{testPhone}}",
+      "email": "{{testEmail}}",
+      "password": "{{testPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+      pm.test('Uses the Cleanora response envelope', () => {
+        pm.expect(body.success).to.eql(true);
+        pm.expect(body.requestId).to.be.a('string');
+      });
+      if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);
+      if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);
+    language: text/javascript
+examples: ./.resources/Signup.resources/examples
+order: 1000

@@ -1,0 +1,29 @@
+$kind: http-request
+description: R1-P06 createProviderDocumentDraft.
+url: "{{baseUrl}}/providers/{{providerId}}/verification/documents"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "typeCode": "COMMERCIAL_REGISTRATION",
+      "countryCode": "EG",
+      "documentNumber": "SYNTHETIC-DOC-0001",
+      "legalName": "Synthetic Cleanora Company",
+      "issuerName": "Synthetic Registry Authority",
+      "issueDate": "2026-01-01",
+      "expiresAt": null,
+      "commandId": "00000000-0000-4000-8000-000000000005"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([201, 409, 422 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+    language: text/javascript
+examples: ./.resources/createProviderDocumentDraft.resources/examples
+order: 4000

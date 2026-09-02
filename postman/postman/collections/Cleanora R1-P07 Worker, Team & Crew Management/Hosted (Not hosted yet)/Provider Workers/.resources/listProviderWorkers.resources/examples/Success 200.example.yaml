@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/providers/{{providerId}}/workers"
+  method: GET
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+response:
+  statusCode: 200
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+    Cache-Control: no-store, private
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "outcomeCode": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000007"
+      }
+order: 1000

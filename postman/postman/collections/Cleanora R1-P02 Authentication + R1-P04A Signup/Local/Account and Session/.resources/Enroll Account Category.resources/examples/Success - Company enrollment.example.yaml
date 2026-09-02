@@ -1,0 +1,38 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/auth/account-categories"
+  method: POST
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "accountCategory": "COMPANY",
+        "companyName": "{{companyName}}",
+        "representativeFullName": "{{representativeFullName}}"
+      }
+response:
+  statusCode: 202
+  statusText: Accepted
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "accepted": true,
+          "challengeId": "<challenge-id>",
+          "nextAction": "VERIFY_ACCOUNT",
+          "accountCategory": "COMPANY",
+          "purpose": "CATEGORY_VERIFICATION",
+          "channel": "EMAIL",
+          "maskedDestination": "cl***@example.test",
+          "expiresAt": "2026-08-24T12:10:00.000Z",
+          "resendAvailableAt": "2026-08-24T12:01:00.000Z"
+        },
+        "requestId": "7ebf45ad-7384-41ab-8e74-e864ae048d30"
+      }
+order: 1000

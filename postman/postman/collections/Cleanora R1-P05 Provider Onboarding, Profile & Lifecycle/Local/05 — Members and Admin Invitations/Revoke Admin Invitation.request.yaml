@@ -1,0 +1,36 @@
+$kind: http-request
+description: Revokes a pending Provider Admin invitation.
+url: "{{baseUrl}}/providers/{{providerId}}/admin-invitations/{{invitationId}}/revoke"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "expectedVersion": {{providerVersion}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([200]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          const succeeded = pm.response.code >= 200 && pm.response.code < 300;
+          pm.expect(body.success).to.eql(succeeded);
+          pm.expect(body.requestId).to.be.a("string");
+          if (!succeeded) { pm.expect(body.error.statusCode).to.eql(pm.response.code); }
+        });
+        if (body.success === true && body.data && typeof body.data === "object") {
+          const data = body.data;
+          const currentVersion = data.version ?? data.provider?.version ?? data.application?.version;
+          if (Number.isInteger(currentVersion) && currentVersion > 0) {
+            pm.environment.set("providerVersion", String(currentVersion));
+          }
+        }
+      }
+    language: text/javascript
+examples: ./.resources/Revoke Admin Invitation.resources/examples
+order: 6000

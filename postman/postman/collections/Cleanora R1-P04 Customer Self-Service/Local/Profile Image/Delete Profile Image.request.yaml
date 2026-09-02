@@ -1,0 +1,29 @@
+$kind: http-request
+description: Clears the current association using CAS. Provider deletion continues through durable cleanup.
+url: "{{baseUrl}}/customers/profile-image"
+method: DELETE
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "expectedAssociationVersion": {{profileImageAssociationVersion}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([200]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.requestId).to.be.a("string");
+        });
+        const version = body.data?.profileImage?.associationVersion ?? body.data?.associationVersion;
+        if (version) pm.environment.set("profileImageAssociationVersion", version);
+      }
+    language: text/javascript
+examples: ./.resources/Delete Profile Image.resources/examples
+order: 3000

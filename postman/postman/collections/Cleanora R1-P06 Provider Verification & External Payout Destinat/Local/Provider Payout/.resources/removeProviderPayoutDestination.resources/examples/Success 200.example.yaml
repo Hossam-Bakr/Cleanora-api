@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/providers/{{providerId}}/payout-destinations/{{destinationVersionId}}/remove"
+  method: POST
+  headers:
+    Accept: application/json
+    x-request-id: "{{requestId}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "expectedVersion": 1,
+        "expectedPrimaryVersion": 0,
+        "replacementPrimaryDestinationVersionId": null,
+        "acknowledgeReadinessLoss": true,
+        "reason": "Owner confirms payout readiness will be removed",
+        "reauthenticationProof": "{{sensitiveActionProof}}",
+        "commandId": "00000000-0000-4000-8000-000000000029"
+      }
+response:
+  statusCode: 200
+  statusText: Synthetic success
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "status": "SYNTHETIC_SUCCESS"
+        },
+        "requestId": "00000000-0000-4000-8000-000000000006"
+      }
+order: 1000

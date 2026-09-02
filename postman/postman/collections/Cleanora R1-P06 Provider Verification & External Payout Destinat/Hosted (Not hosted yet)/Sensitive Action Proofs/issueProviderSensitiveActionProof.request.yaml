@@ -1,0 +1,27 @@
+$kind: http-request
+description: Issues one short-lived, one-use, exact actor/session/purpose/provider/destination/request proof after current-password verification.
+url: "{{hostUrl}}/auth/sensitive-action-proofs"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "currentPassword": "{{currentPassword}}",
+      "purpose": "STAFF_PAYOUT_REVEAL",
+      "providerId": "{{providerId}}",
+      "destinationVersionId": "{{destinationVersionId}}",
+      "requestId": "{{requestId}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 401, 409 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+      if (pm.response.code === 201) pm.collectionVariables.set("sensitiveActionProof", pm.response.json().data.opaqueProof);
+    language: text/javascript
+examples: ./.resources/issueProviderSensitiveActionProof.resources/examples
+order: 1000

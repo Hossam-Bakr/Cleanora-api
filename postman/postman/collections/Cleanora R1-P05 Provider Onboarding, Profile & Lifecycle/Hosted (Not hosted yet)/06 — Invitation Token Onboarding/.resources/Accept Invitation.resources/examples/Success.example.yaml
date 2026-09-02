@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/provider-admin-invitations/accept"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "token": "{{providerAdminInvitationToken}}"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "providerId": "provider_example_01",
+          "membership": {
+            "userId": "user_invited_admin_01",
+            "role": "ADMIN",
+            "enabled": true
+          },
+          "invitationStatus": "ACCEPTED",
+          "version": 14
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

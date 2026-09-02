@@ -1,0 +1,27 @@
+$kind: http-request
+description: R1-P06 revealPendingPayoutDestination.
+url: "{{hostUrl}}/staff/providers/{{providerId}}/payout-destinations/{{destinationVersionId}}/reveal"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "expectedVersion": 1,
+      "purpose": "MANUAL_PAYOUT_DESTINATION_VERIFICATION",
+      "reason": "Manual beneficiary lookup before Staff decision",
+      "stepUpProof": "{{sensitiveActionProof}}",
+      "commandId": "00000000-0000-4000-8000-000000000034"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([200, 409, 429, 503 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+      if (pm.response.code === 200) pm.collectionVariables.set("revealAttemptId", pm.response.json().data.revealAttemptId);
+    language: text/javascript
+examples: ./.resources/revealPendingPayoutDestination.resources/examples
+order: 3000

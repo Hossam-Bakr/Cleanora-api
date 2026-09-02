@@ -1,0 +1,15 @@
+$kind: http-request
+description: R1-P06 selectProviderPrimaryPayoutDestination.
+url: "{{baseUrl}}/providers/{{providerId}}/payout-destinations/primary"
+method: PUT
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([200, 409 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+    language: text/javascript
+examples: ./.resources/selectProviderPrimaryPayoutDestination.resources/examples
+order: 9000

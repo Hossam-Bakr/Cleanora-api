@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/providers/{{providerId}}/admin-invitations/{{invitationId}}/revoke"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "expectedVersion": {{providerVersion}}
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "invitation": {
+            "id": "invitation_example_01",
+            "providerId": "provider_example_01",
+            "email": "provider.admin@example.com",
+            "status": "REVOKED",
+            "expiresAt": "2026-08-20T10:00:00.000Z",
+            "createdAt": "2026-08-13T10:00:00.000Z"
+          },
+          "version": 13
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

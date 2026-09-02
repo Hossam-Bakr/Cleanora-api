@@ -1,0 +1,47 @@
+$kind: http-request
+description: DEC-032 full replacement. version, language, reminders, promotional, and mandatory notice fields are all required.
+url: "{{hostUrl}}/customers/preferences"
+method: PUT
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "version": {{preferencesVersion}},
+      "language": "EN",
+      "reminders": {
+        "sms": true,
+        "push": true
+      },
+      "promotional": {
+        "sms": false,
+        "push": true
+      },
+      "mandatory": {
+        "security": {
+          "sms": true,
+          "push": true
+        },
+        "activeService": {
+          "sms": true,
+          "push": true
+        }
+      }
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([200]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.requestId).to.be.a("string");
+        });
+        if (body.data?.version) pm.environment.set("preferencesVersion", body.data.version);
+      }
+    language: text/javascript
+examples: ./.resources/Replace Preferences.resources/examples
+order: 3000

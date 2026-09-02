@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/auth/password/forgot"
+  method: POST
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "accountCategory": "INDIVIDUAL",
+        "identifier": "{{testEmail}}"
+      }
+response:
+  statusCode: 202
+  statusText: Accepted
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "accepted": true,
+          "challengeId": "<reset-challenge-id>"
+        },
+        "requestId": "7ebf45ad-7384-41ab-8e74-e864ae048d30"
+      }
+order: 1000

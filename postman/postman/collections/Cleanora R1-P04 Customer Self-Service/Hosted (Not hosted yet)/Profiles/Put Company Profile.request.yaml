@@ -1,0 +1,30 @@
+$kind: http-request
+description: Creates or replaces the owned Company profile, including nullable commercial and tax registration identifiers.
+url: "{{hostUrl}}/customers/profiles/company"
+method: PUT
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "companyName": "{{companyName}}",
+      "representativeFullName": "{{representativeFullName}}",
+      "commercialRegistrationNumber": "{{commercialRegistrationNumber}}",
+      "taxRegistrationNumber": "{{taxRegistrationNumber}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([200]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.requestId).to.be.a("string");
+        });
+      }
+    language: text/javascript
+examples: ./.resources/Put Company Profile.resources/examples
+order: 4000

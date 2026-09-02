@@ -1,0 +1,31 @@
+$kind: http-request
+description: Returns 200 when healthy or 503 DATABASE_UNAVAILABLE without leaking infrastructure details.
+url: "{{hostUrl}}/system/health/database"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+      pm.test("Expected health status", () => pm.expect([200, 503]).to.include(pm.response.code));
+      pm.test('Uses a correlated Cleanora response envelope', () => {
+        pm.expect(body.requestId).to.be.a('string');
+        pm.expect(pm.response.headers.get('x-request-id')).to.eql(body.requestId);
+        if (pm.response.code === 200) {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.data.status).to.eql('up');
+        }
+      });
+      if (pm.response.code === 503) {
+        pm.test('Returns a safe dependency failure', () => {
+          pm.expect(body.success).to.eql(false);
+          pm.expect(body.error).to.include({ code: 'DATABASE_UNAVAILABLE', statusCode: 503 });
+          pm.expect(JSON.stringify(body)).not.to.match(/postgres(?:ql)?:\/\/|DATABASE_URL|SELECT\s/i);
+        });
+      }
+    language: text/javascript
+examples: ./.resources/Database.resources/examples
+order: 3000

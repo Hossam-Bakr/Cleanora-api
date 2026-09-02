@@ -1,0 +1,3 @@
+$kind: collection
+description: Health requests using {{hostUrl}}. Configure/select the hosted environment before use.
+order: 1000

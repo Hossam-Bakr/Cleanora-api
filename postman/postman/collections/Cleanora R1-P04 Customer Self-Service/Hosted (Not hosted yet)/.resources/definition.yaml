@@ -1,0 +1,3 @@
+$kind: collection
+description: Customer self-service requests using {{hostUrl}}. Select the hosted environment before use.
+order: 1000

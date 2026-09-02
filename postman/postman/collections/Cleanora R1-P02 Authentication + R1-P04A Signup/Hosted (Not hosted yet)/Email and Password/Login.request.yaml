@@ -1,0 +1,26 @@
+$kind: http-request
+description: Creates a session, stores accessToken, and returns the canonical safe user. The refresh token is only an HttpOnly cookie. Invalid credentials are documented as a 401 response in Swagger.
+url: "{{hostUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "phone": "{{testPhone}}",
+      "password": "{{testPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+      pm.test('Uses the Cleanora response envelope', () => {
+        pm.expect(body.success).to.eql(true);
+        pm.expect(body.requestId).to.be.a('string');
+      });
+      if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);
+      if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);
+    language: text/javascript
+examples: ./.resources/Login.resources/examples
+order: 4000

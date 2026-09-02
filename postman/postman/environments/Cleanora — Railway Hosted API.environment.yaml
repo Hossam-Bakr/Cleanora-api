@@ -1,0 +1,191 @@
+name: Cleanora — Railway Hosted API
+values:
+  - key: hostUrl
+    value: 'https://cleanora-production.up.railway.app/api/v1'
+    description: Selected Cleanora API root. Every collection request resolves from this variable.
+  - key: swaggerUrl
+    value: 'https://cleanora-production.up.railway.app/api/v1/docs'
+    description: Interactive Swagger documentation for the selected API.
+  - key: frontendUrl
+    value: 'http://localhost:5173'
+    description: Frontend callback origin used by local browser flows.
+  - key: origin
+    value: 'http://localhost:5173'
+    description: Trusted Origin header for cookie-mutating requests; must be allowed by the backend.
+  - key: testEmail
+    value: ''
+    description: Test account email; provide only in your private workspace
+  - key: testPhone
+    value: ''
+    description: Test account phone in E.164 format
+  - key: testPassword
+    value: ''
+    description: Current test password
+  - key: newPassword
+    value: ''
+    description: Replacement test password
+  - key: emailOtp
+    value: ''
+    description: Signup/account six-digit OTP; never export a real value
+  - key: challengeId
+    value: ''
+    description: Latest opaque verification challenge; captured automatically
+  - key: passwordResetCode
+    value: ''
+    description: Four-digit password-reset code received through the recovery channel
+  - key: accessToken
+    value: ''
+    description: Short-lived Bearer access token; captured automatically
+  - key: individualFullName
+    value: Cleanora Individual
+    description: Sample Individual profile name
+  - key: companyName
+    value: Cleanora Services
+    description: Sample Company profile name
+  - key: representativeFullName
+    value: Cleanora Representative
+    description: Sample Company representative
+  - key: commercialRegistrationNumber
+    value: CR-EXAMPLE-001
+    description: Optional Company commercial registration number; send null to clear
+  - key: taxRegistrationNumber
+    value: TAX-EXAMPLE-001
+    description: Optional Company tax registration number; send null to clear
+  - key: engineerFullName
+    value: Cleanora Engineer
+    description: Sample Engineer profile name
+  - key: professionalTitle
+    value: Cleaning Engineer
+    description: Sample Engineer title
+  - key: profileImagePath
+    value: ''
+    description: Local JPEG/PNG/WebP path selected privately in Postman
+  - key: profileImageAssociationVersion
+    value: '1'
+    description: Current profile-image association CAS version
+  - key: countryCode
+    value: EG
+    description: Active ISO alpha-2 country code
+  - key: city
+    value: Cairo
+    description: Sample address city
+  - key: district
+    value: Nasr City
+    description: Sample address district
+  - key: addressText
+    value: Example Street
+    description: Sample text address
+  - key: building
+    value: '10'
+    description: Optional building value
+  - key: floor
+    value: '2'
+    description: Optional floor value
+  - key: addressNotes
+    value: ''
+    description: Optional address notes
+  - key: addressId
+    value: ''
+    description: Created address ID; captured automatically
+  - key: addressVersion
+    value: '1'
+    description: Current address CAS version; captured automatically
+  - key: preferencesVersion
+    value: '1'
+    description: Current preference CAS version; captured automatically
+  - key: privacyPurpose
+    value: EXPORT
+    description: 'DEACTIVATION, DELETION, or EXPORT'
+  - key: privacyRequestId
+    value: ''
+    description: Submitted privacy request ID; captured automatically
+  - key: baseUrl
+    value: 'https://YOUR-HOSTED-DOMAIN.example/api/v1'
+    description: Future active hosted API root; replace after deployment.
+  - key: localHostUrl
+    value: 'http://localhost:8000'
+    description: Local scheme and host without /api/v1.
+  - key: localBaseUrl
+    value: 'http://localhost:8000/api/v1'
+    description: Local R1-P05 API root.
+  - key: hostedHostUrl
+    value: 'https://YOUR-HOSTED-DOMAIN.example'
+    description: Future hosted scheme and host; replace only after deployment.
+  - key: hostedBaseUrl
+    value: 'https://YOUR-HOSTED-DOMAIN.example/api/v1'
+    description: Future hosted R1-P05 API root; the hosted API is not configured yet.
+  - key: providerKind
+    value: INDIVIDUAL_TEAM
+    description: INDIVIDUAL_TEAM or REGISTERED_COMPANY.
+  - key: alternateProviderKind
+    value: REGISTERED_COMPANY
+    description: Kind used by the never-submitted kind-change example.
+  - key: providerId
+    value: ''
+    description: Current Provider ID; captured automatically after create/get.
+  - key: providerVersion
+    value: '1'
+    description: Current Provider optimistic-concurrency version; updated after successful responses.
+  - key: providerDisplayNameAr
+    value: فريق كلينورا للنظافة
+    description: Sample Arabic Provider display name.
+  - key: providerDisplayNameEn
+    value: Cleanora Cleaning Team
+    description: Sample English Provider display name.
+  - key: providerDescriptionAr
+    value: فريق متخصص في تنظيف المنازل والشقق باحترافية وجودة عالية.
+    description: Sample Arabic Provider description.
+  - key: providerDescriptionEn
+    value: A professional team specializing in high-quality home and apartment cleaning.
+    description: Sample English Provider description.
+  - key: providerOperationalEmail
+    value: provider.ops@example.com
+    description: Safe sample private operational email; replace privately for real testing.
+  - key: providerOperationalPhone
+    value: '+201000000000'
+    description: Safe sample private operational phone in E.164 format.
+  - key: providerWhatsApp
+    value: '+201000000000'
+    description: Safe sample WhatsApp channel.
+  - key: providerWebsite
+    value: 'https://example.com/cleanora-provider'
+    description: Safe sample Provider website.
+  - key: providerLogoPath
+    value: ''
+    description: Private local path for a valid logo image; never export a real user file path.
+  - key: providerCoverPath
+    value: ''
+    description: Private local path for a valid cover image.
+  - key: providerGalleryImagePath
+    value: ''
+    description: Private local path for a valid gallery image.
+  - key: providerGalleryVideoPath
+    value: ''
+    description: Private local path for a valid gallery video.
+  - key: galleryItemId
+    value: ''
+    description: Current gallery item ID; captured automatically after upload when available.
+  - key: providerAdminInviteEmail
+    value: provider.admin@example.com
+    description: Safe sample email for a Provider Admin invitation.
+  - key: providerAdminInvitationToken
+    value: ''
+    description: Raw one-time Provider Admin invitation token; enter privately and never export.
+  - key: invitationId
+    value: ''
+    description: Current Provider Admin invitation ID; captured automatically when available.
+  - key: invitedAdminPhone
+    value: '+201111111111'
+    description: Safe sample E.164 phone for invitation-only onboarding.
+  - key: userId
+    value: ''
+    description: Provider Admin user ID targeted by the disable request.
+  - key: staffReviewReason
+    value: Please update the profile description and provide clearer gallery images.
+    description: Sample Staff request-changes reason.
+  - key: staffRejectionReason
+    value: The application does not satisfy the Provider onboarding policy.
+    description: Sample Staff rejection reason.
+  - key: staffLifecycleReason
+    value: Provider lifecycle action performed after an authorized Staff review.
+    description: Sample Staff suspend or reinstate reason.

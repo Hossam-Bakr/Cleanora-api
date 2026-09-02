@@ -1,0 +1,26 @@
+$kind: http-request
+description: Consumes the six-digit account verification code. Invalid, expired, used, mismatched, and exhausted challenges share the documented safe error.
+url: "{{hostUrl}}/auth/otp/verify"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "challengeId": "{{challengeId}}",
+      "code": "{{emailOtp}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+      pm.test('Uses the Cleanora response envelope', () => {
+        pm.expect(body.success).to.eql(true);
+        pm.expect(body.requestId).to.be.a('string');
+      });
+      if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);
+      if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);
+    language: text/javascript
+examples: ./.resources/Verify OTP.resources/examples
+order: 3000

@@ -1,0 +1,45 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/auth/refresh"
+  method: POST
+  headers:
+    Origin: "{{origin}}"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "accessToken": "<access-token>",
+          "accessExpiresAt": "2026-07-27T12:15:00.000Z",
+          "verificationOnly": false,
+          "user": {
+            "id": "<user-id>",
+            "displayName": "Aly Oser",
+            "avatarUrl": "https://lh3.googleusercontent.com/a/example",
+            "email": "user@example.test",
+            "phone": "+201234567890",
+            "emailVerified": true,
+            "phoneVerified": false,
+            "status": "ACTIVE",
+            "accountCategories": [
+              "INDIVIDUAL"
+            ],
+            "verifiedCategories": [
+              "INDIVIDUAL"
+            ],
+            "pendingCategories": []
+          },
+          "identity": {
+            "userId": "<user-id>",
+            "sessionId": "<session-id>"
+          }
+        },
+        "requestId": "7ebf45ad-7384-41ab-8e74-e864ae048d30"
+      }
+order: 1000

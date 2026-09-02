@@ -1,0 +1,13 @@
+$kind: collection
+description: Runs the same 41 R1-P05 operations against hostedHostUrl/hostedBaseUrl. The hosted API is not deployed yet; replace the placeholders before use.
+scripts:
+  - type: http:beforeRequest
+    code: |-
+      const selectedHostUrl = pm.environment.get("hostedHostUrl") || pm.collectionVariables.get("hostedHostUrl");
+      const selectedBaseUrl = pm.environment.get("hostedBaseUrl") || pm.collectionVariables.get("hostedBaseUrl");
+      if (!selectedHostUrl || !selectedBaseUrl) { throw new Error("Hosted deployment URL variables are not configured."); }
+      if (selectedHostUrl.includes("YOUR-HOSTED-DOMAIN")) { throw new Error("Hosted API is not configured yet. Set hostedHostUrl and hostedBaseUrl in the selected Postman environment."); }
+      pm.variables.set("hostUrl", selectedHostUrl);
+      pm.variables.set("baseUrl", selectedBaseUrl);
+    language: text/javascript
+order: 1000

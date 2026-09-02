@@ -1,0 +1,22 @@
+$kind: http-request
+description: Returns a fresh authenticated signed URL and safe metadata, or 204 when no image is associated.
+url: "{{hostUrl}}/customers/profile-image"
+method: GET
+headers:
+  Accept: application/json
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected HTTP status", () => pm.expect([200,204]).to.include(pm.response.code));
+      if (pm.response.code !== 204) {
+        const body = pm.response.json();
+        pm.test("Uses the Cleanora response envelope", () => {
+          pm.expect(body.success).to.eql(true);
+          pm.expect(body.requestId).to.be.a("string");
+        });
+        const version = body.data?.profileImage?.associationVersion ?? body.data?.associationVersion;
+        if (version) pm.environment.set("profileImageAssociationVersion", version);
+      }
+    language: text/javascript
+examples: ./.resources/Get Profile Image.resources/examples
+order: 1000

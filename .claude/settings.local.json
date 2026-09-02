@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs wc -l)",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const p=JSON.parse\\(d\\);console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)}\\)\")",
+      "Bash(npm run *)"
+    ]
+  },
+  "disabledMcpjsonServers": [
+    "atomicviz"
+  ]
+}

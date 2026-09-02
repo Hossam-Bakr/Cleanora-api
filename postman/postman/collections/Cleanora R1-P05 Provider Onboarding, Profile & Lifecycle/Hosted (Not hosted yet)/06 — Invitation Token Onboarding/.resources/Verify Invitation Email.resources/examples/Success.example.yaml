@@ -1,0 +1,40 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/provider-admin-invitations/onboarding/verify-email"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "token": "{{providerAdminInvitationToken}}",
+        "challengeId": "{{challengeId}}",
+        "code": "{{emailOtp}}"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "userId": "user_invited_admin_01",
+          "emailNormalized": "provider.admin@example.com",
+          "capability": "PROVIDER_ADMIN_INVITATION_ONBOARDING",
+          "allowedActions": [
+            "ACCEPT_PROVIDER_ADMIN_INVITATION"
+          ],
+          "accessToken": "<access-token>",
+          "accessExpiresAt": "2026-08-13T10:15:00.000Z",
+          "refreshToken": "<refresh-token-set-in-secure-client-storage>",
+          "refreshExpiresAt": "2026-09-12T10:00:00.000Z"
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

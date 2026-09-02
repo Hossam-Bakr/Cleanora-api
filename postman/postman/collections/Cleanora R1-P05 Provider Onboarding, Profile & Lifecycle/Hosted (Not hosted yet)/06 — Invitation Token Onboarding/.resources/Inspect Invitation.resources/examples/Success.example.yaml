@@ -1,0 +1,33 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/provider-admin-invitations/inspect"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "token": "{{providerAdminInvitationToken}}"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "providerId": "provider_example_01",
+          "providerDisplayName": "Cleanora Cleaning Team",
+          "invitedEmailMasked": "pr********@example.com",
+          "expiresAt": "2026-08-20T10:00:00.000Z",
+          "nextAction": "START_ONBOARDING"
+        },
+        "requestId": "request_example_01"
+      }
+order: 1000

@@ -1,0 +1,16 @@
+$kind: http-request
+description: R1-P07 listProviderTeams.
+url: "{{hostUrl}}/providers/{{providerId}}/teams"
+method: GET
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected documented status", () => pm.expect(pm.response.code).to.be.oneOf([200, 403 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+      pm.test("Private response is not cached", () => { const value = pm.response.headers.get("Cache-Control"); if (value) pm.expect(value).to.include("no-store"); });
+    language: text/javascript
+examples: ./.resources/listProviderTeams.resources/examples
+order: 1000

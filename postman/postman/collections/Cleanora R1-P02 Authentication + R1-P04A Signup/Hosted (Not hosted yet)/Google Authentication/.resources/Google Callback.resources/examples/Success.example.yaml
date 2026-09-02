@@ -1,0 +1,13 @@
+$kind: http-example
+request:
+  url: "{{hostUrl}}/auth/google/callback"
+  method: GET
+response:
+  statusCode: 302
+  statusText: Found
+  headers:
+    Location: "{{frontendUrl}}/auth/google/callback?status=success"
+  body:
+    type: text
+    content: ""
+order: 1000

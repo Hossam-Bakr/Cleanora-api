@@ -1,0 +1,31 @@
+$kind: http-request
+description: R1-P06 uploadProviderDocumentEvidence.
+url: "{{baseUrl}}/providers/{{providerId}}/verification/documents/{{documentVersionId}}/evidence"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - "{{verificationEvidenceFile}}"
+    - type: text
+      key: position
+      value: "0"
+    - type: text
+      key: expectedVersion
+      value: "1"
+    - type: text
+      key: commandId
+      value: 00000000-0000-4000-8000-000000000008
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([202, 409, 413, 415, 422 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+    language: text/javascript
+examples: ./.resources/uploadProviderDocumentEvidence.resources/examples
+order: 7000

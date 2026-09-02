@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/providers/{{providerId}}/history"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": [
+          {
+            "id": "history_example_01",
+            "eventType": "APPLICATION_SUBMITTED",
+            "occurredAt": "2026-08-13T10:00:00.000Z",
+            "actorType": "APPLICATION_OWNER"
+          }
+        ],
+        "requestId": "request_example_01",
+        "meta": {
+          "nextCursor": null
+        }
+      }
+order: 1000

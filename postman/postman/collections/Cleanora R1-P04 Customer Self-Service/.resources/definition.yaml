@@ -1,0 +1,101 @@
+$kind: collection
+description: |+
+  # Cleanora R1-P04 — Customer Self-Service
+
+  > **API version:** `/api/v1`  
+  > **Collection environments:** `Hosted (Not hosted yet)` and `Local`  
+  > **Prerequisite:** authenticate with R1-P02 and populate `accessToken`
+
+  R1-P04 provides authenticated self-service customer profiles, profile images,
+  peer text addresses, authoritative contact state, complete notification
+  preferences, and privacy-request intake.
+
+  ## Collection Structure
+
+  ```text
+  Hosted (Not hosted yet)
+  ├── Profiles
+  ├── Profile Image
+  ├── Addresses
+  ├── Contact and Preferences
+  └── Privacy Requests
+
+  Local
+  ├── Profiles
+  ├── Profile Image
+  ├── Addresses
+  ├── Contact and Preferences
+  └── Privacy Requests
+  ```
+
+  Hosted requests use `{{hostUrl}}`; Local requests use `{{baseUrl}}`.
+
+  ## Authentication and Ownership
+
+  All requests use the current authenticated customer:
+
+  ```http
+  Authorization: Bearer {{accessToken}}
+  ```
+
+  The API derives ownership from the trusted principal. A customer cannot supply
+  another user's ID to access a profile, image, address, preferences, or privacy
+  request.
+
+  ## Profiles
+
+  Individual, Company, and Engineer profiles use separate endpoints and strict
+  full-replacement bodies. The authenticated identity must hold the matching
+  verified category. Company commercial and tax registration identifiers are
+  nullable profile fields.
+
+  ## Profile Image
+
+  Upload/replace uses `multipart/form-data` with:
+
+  ```text
+  file = {{profileImagePath}}
+  expectedAssociationVersion = {{profileImageAssociationVersion}}
+  ```
+
+  Supported images are JPEG, PNG, and WebP up to 5 MiB. The collection captures
+  the latest association version from successful responses.
+
+  ## Addresses
+
+  Addresses are peer text addresses; none is implicitly primary. Create captures
+  `addressId` and `addressVersion`. Update and delete use the current version to
+  prevent stale writes.
+
+  ## Preferences
+
+  Preference replacement is a complete matrix. The request must include the
+  current version, language, reminder choices, promotional choices, and mandatory
+  security/active-service delivery settings.
+
+  ## Privacy Requests
+
+  The API accepts `DEACTIVATION`, `DELETION`, or `EXPORT`. Submission records the
+  request; it does not claim that the privacy operation has already been
+  executed. Only a pending request may be cancelled.
+
+  ## Saved Examples
+
+  Every request contains a Saved Example named `Success`. Each example includes
+  the original request and required body when applicable, the correct HTTP
+  success status, and a representative response envelope. GET requests have no
+  request body by design.
+
+  ## Local URLs
+
+  ```text
+  API:     http://localhost:8000/api/v1
+  Swagger: http://localhost:8000/api/v1/docs
+  ```
+
+auth:
+  - id: 1ec9de13-7113-4969-8d57-360e9a4f9736
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{accessToken}}"

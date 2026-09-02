@@ -1,0 +1,15 @@
+$kind: http-request
+description: R1-P06 getProviderDocumentVersion.
+url: "{{baseUrl}}/providers/{{providerId}}/verification/documents/{{documentVersionId}}"
+method: GET
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected status", () => pm.expect(pm.response.code).to.be.oneOf([200, 404 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+    language: text/javascript
+examples: ./.resources/getProviderDocumentVersion.resources/examples
+order: 5000

@@ -1,0 +1,29 @@
+$kind: http-request
+description: R1-P07 uploadProviderWorkerAvatar.
+url: "{{hostUrl}}/providers/{{providerId}}/workers/{{workerId}}/avatar"
+method: POST
+headers:
+  Accept: application/json
+  x-request-id: "{{requestId}}"
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - "{{workerAvatarFile}}"
+    - type: text
+      key: expectedVersion
+      value: "1"
+    - type: text
+      key: idempotencyKey
+      value: 00000000-0000-4000-8000-000000000005
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Expected documented status", () => pm.expect(pm.response.code).to.be.oneOf([202, 400, 409, 413, 415 ]));
+      pm.test("Envelope status code", () => { const body = pm.response.json(); if (!body.success) pm.expect(body.error.statusCode).to.eql(pm.response.code); });
+      pm.test("Private response is not cached", () => { const value = pm.response.headers.get("Cache-Control"); if (value) pm.expect(value).to.include("no-store"); });
+    language: text/javascript
+examples: ./.resources/uploadProviderWorkerAvatar.resources/examples
+order: 5000
