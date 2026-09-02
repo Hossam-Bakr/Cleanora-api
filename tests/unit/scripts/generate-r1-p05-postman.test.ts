@@ -38,7 +38,7 @@ function collectRequests(items: readonly PostmanItem[]): PostmanItem[] {
 
 describe("generate-r1-p05-postman (T147)", () => {
   const collectionPath = resolve(
-    "postman/Cleanora-R1-P05.postman_collection.json",
+    "postman/Cleanora-R1-P05-Provider-Onboarding.postman_collection.json",
   );
 
   it("ships identical 41-request Hosted and Local trees aligned to the R1-P05 contract", () => {

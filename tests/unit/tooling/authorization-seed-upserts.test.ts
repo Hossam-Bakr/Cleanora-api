@@ -27,7 +27,9 @@ describe("authorization seed upserts", () => {
   });
 
   it("reuses an injected Prisma client and caps standalone seed pools at one connection", () => {
-    expect(seedSource).toMatch(/export async function seed\(existingClient\?: PrismaClient\)/u);
+    expect(seedSource).toMatch(/export async function seed\(/u);
+    expect(seedSource).toMatch(/existingClient\?: PrismaClient/u);
+    expect(seedSource).toMatch(/options\?: Readonly<\{ skipCatalogSeed\?: boolean; skipCatalogAuth\?: boolean \}>/u);
     expect(seedSource).toMatch(/max:\s*1/u);
     expect(seedSource).toMatch(/ownsClient/u);
     expect(seedSource).toMatch(/if \(ownsClient\)/u);

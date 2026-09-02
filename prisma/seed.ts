@@ -8,6 +8,14 @@ import {
   PRIVILEGED_ACTION_REASONS,
   ROLE_PERMISSION_MAP,
 } from "../src/modules/authentication/domain/authorization.catalog.js";
+import {
+  EGYPT_HOUSEKEEPING_SEED,
+  assertCategoryActivationContent,
+  assertServiceActivationPolicy,
+  assertServiceConfigurationGraph,
+  decideCatalogSeedRowAction,
+} from "../src/modules/catalog/catalog.policy.js";
+import type { CatalogLocaleCode } from "../src/modules/catalog/catalog.policy.js";
 
 /**
  * Seed the R1-P03 authorization definitions only: roles, permissions, the
@@ -22,8 +30,28 @@ import {
  * holders inside a transaction with bounded P2002/P2034 retry.
  */
 async function seedAuthorizationDefinitions(
-  prisma: PrismaClient
+  prisma: PrismaClient,
+  options?: Readonly<{ skipCatalogAuth?: boolean }>,
 ): Promise<void> {
+  const permissions = options?.skipCatalogAuth === true
+    ? AUTHORIZATION_PERMISSIONS.filter(
+        (permission) => !permission.code.startsWith("catalog."),
+      )
+    : AUTHORIZATION_PERMISSIONS;
+  const reasons = options?.skipCatalogAuth === true
+    ? PRIVILEGED_ACTION_REASONS.filter(
+        (reason) => reason.operation !== "CATALOG_MANAGEMENT_WRITE",
+      )
+    : PRIVILEGED_ACTION_REASONS;
+  const rolePermissionMap = options?.skipCatalogAuth === true
+    ? Object.fromEntries(
+        Object.entries(ROLE_PERMISSION_MAP).map(([roleCode, permissionCodes]) => [
+          roleCode,
+          permissionCodes.filter((permissionCode) => !permissionCode.startsWith("catalog.")),
+        ]),
+      )
+    : ROLE_PERMISSION_MAP;
+
   for (const role of AUTHORIZATION_ROLES) {
     await prisma.role.upsert({
       where: { code: role.code },
@@ -32,7 +60,7 @@ async function seedAuthorizationDefinitions(
     });
   }
 
-  for (const permission of AUTHORIZATION_PERMISSIONS) {
+  for (const permission of permissions) {
     await prisma.permission.upsert({
       where: { code: permission.code },
       create: { code: permission.code, name: permission.name },
@@ -48,7 +76,7 @@ async function seedAuthorizationDefinitions(
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       await prisma.$transaction(async (transaction) => {
-        for (const reason of PRIVILEGED_ACTION_REASONS) {
+        for (const reason of reasons) {
           await transaction.privilegedActionReason.deleteMany({
             where: {
               operation: reason.operation,
@@ -70,7 +98,7 @@ async function seedAuthorizationDefinitions(
             },
           });
         }
-      });
+      }, { maxWait: 60_000, timeout: 60_000 });
       break;
     } catch (error) {
       const retryable =
@@ -96,7 +124,7 @@ async function seedAuthorizationDefinitions(
   );
 
   for (const [roleCode, permissionCodes] of Object.entries(
-    ROLE_PERMISSION_MAP
+    rolePermissionMap
   )) {
     const roleId = roleIdsByCode.get(roleCode);
     if (roleId === undefined) {
@@ -184,6 +212,415 @@ async function seedR1P06StableTypes(prisma: PrismaClient): Promise<void> {
   }
 }
 
+export type SeedCatalogCountry = {
+  readonly id: string;
+  readonly code: string;
+};
+
+type CatalogSeedTransactionClient = Omit<
+  PrismaClient,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends" | "$use"
+>;
+
+/**
+ * @desc Choose a seed display order that preserves empty-baseline positions.
+ * @explanation When a scope already has owner-managed rows, append the next
+ * free position instead of colliding with existing unique display-order keys.
+ */
+export function resolveSeedDisplayOrder(
+  existingOrders: readonly number[],
+  seedDisplayOrder: number,
+): number {
+  if (existingOrders.length === 0) {
+    return seedDisplayOrder;
+  }
+  return Math.max(...existingOrders) + 1;
+}
+
+/**
+ * @desc Validate the DEC-044 Egypt housekeeping seed graph before persistence.
+ * @explanation Seed writes must fail closed with the same Catalog policies used
+ * by protected management instead of inventing a parallel validation path.
+ */
+export function validateEgyptHousekeepingSeedConfiguration(): void {
+  const seed = EGYPT_HOUSEKEEPING_SEED;
+
+  assertCategoryActivationContent({
+    isActive: seed.category.isActive,
+    nameAr: seed.category.nameAr,
+    nameEn: seed.category.nameEn,
+    descriptionAr: seed.category.descriptionAr,
+    descriptionEn: seed.category.descriptionEn,
+  });
+
+  const { priceUnits, fields } = assertServiceConfigurationGraph({
+    priceUnits: seed.priceUnits.map((unit) => ({
+      code: unit.code,
+      labelAr: unit.labelAr,
+      labelEn: unit.labelEn,
+      isActive: unit.isActive,
+    })),
+    fields: seed.fields.map((field) => ({
+      code: field.code,
+      kind: field.kind,
+      labelAr: field.labelAr,
+      labelEn: field.labelEn,
+      helpTextAr: null,
+      helpTextEn: null,
+      isRequired: field.isRequired,
+      isActive: field.isActive,
+      minLength: field.minLength,
+      maxLength: field.maxLength,
+      numberMode: field.numberMode,
+      minValue: field.minValue,
+      maxValue: field.maxValue,
+      minSelections: null,
+      maxSelections: null,
+      options: [],
+    })),
+  });
+
+  assertServiceActivationPolicy({
+    action: "ACTIVATE",
+    categoryIsActive: seed.category.isActive,
+    translations: [
+      {
+        locale: "AR",
+        name: seed.service.nameAr,
+        description: seed.service.descriptionAr,
+      },
+      {
+        locale: "EN",
+        name: seed.service.nameEn,
+        description: seed.service.descriptionEn,
+      },
+    ],
+    priceUnits,
+    fields: fields.map((field) => ({
+      code: field.code,
+      isActive: field.isActive,
+      labelAr: field.labelAr,
+      labelEn: field.labelEn,
+      options: [],
+    })),
+  });
+}
+
+async function seedCategoryRow(
+  tx: CatalogSeedTransactionClient,
+): Promise<{ readonly id: string; readonly code: string }> {
+  const seed = EGYPT_HOUSEKEEPING_SEED.category;
+  const existing = await tx.serviceCategory.findUnique({
+    where: { code: seed.code },
+  });
+
+  const rowAction = decideCatalogSeedRowAction({
+    stableCode: seed.code,
+    existing:
+      existing === null
+        ? null
+        : {
+            code: existing.code,
+            isActive: existing.isActive,
+            version: existing.version,
+          },
+  });
+
+  if (rowAction === "PRESERVE") {
+    if (existing === null) {
+      throw new Error(`Seed preserve decision missing existing category ${seed.code}`);
+    }
+    await tx.serviceCategory.update({
+      where: { id: existing.id },
+      data: {},
+    });
+    return existing;
+  }
+
+  const scopeOrders = (
+    await tx.serviceCategory.findMany({ select: { displayOrder: true } })
+  ).map((row) => row.displayOrder);
+  const displayOrder = resolveSeedDisplayOrder(scopeOrders, seed.displayOrder);
+
+  return tx.serviceCategory.create({
+    data: {
+      code: seed.code,
+      nameAr: seed.nameAr,
+      nameEn: seed.nameEn,
+      descriptionAr: seed.descriptionAr,
+      descriptionEn: seed.descriptionEn,
+      displayOrder,
+      isActive: seed.isActive,
+      version: 1,
+    },
+  });
+}
+
+async function seedServiceRow(
+  tx: CatalogSeedTransactionClient,
+  categoryId: string,
+): Promise<{ readonly id: string; readonly code: string }> {
+  const seed = EGYPT_HOUSEKEEPING_SEED.service;
+  const existing = await tx.service.findUnique({
+    where: { code: seed.code },
+  });
+
+  const rowAction = decideCatalogSeedRowAction({
+    stableCode: seed.code,
+    existing:
+      existing === null
+        ? null
+        : {
+            code: existing.code,
+            isActive: existing.isActive,
+            version: existing.version,
+          },
+  });
+
+  if (rowAction === "PRESERVE") {
+    if (existing === null) {
+      throw new Error(`Seed preserve decision missing existing service ${seed.code}`);
+    }
+    await tx.service.update({
+      where: { id: existing.id },
+      data: {},
+    });
+    return existing;
+  }
+
+  const scopeOrders = (
+    await tx.service.findMany({
+      where: { categoryId },
+      select: { displayOrder: true },
+    })
+  ).map((row) => row.displayOrder);
+  const displayOrder = resolveSeedDisplayOrder(scopeOrders, seed.displayOrder);
+
+  return tx.service.create({
+    data: {
+      categoryId,
+      code: seed.code,
+      displayOrder,
+      isActive: seed.isActive,
+      version: 1,
+    },
+  });
+}
+
+async function seedServiceTranslations(
+  tx: CatalogSeedTransactionClient,
+  serviceId: string,
+): Promise<void> {
+  const seed = EGYPT_HOUSEKEEPING_SEED.service;
+  const translations: readonly {
+    readonly locale: CatalogLocaleCode;
+    readonly name: string;
+    readonly description: string;
+  }[] = [
+    {
+      locale: "AR",
+      name: seed.nameAr,
+      description: seed.descriptionAr,
+    },
+    {
+      locale: "EN",
+      name: seed.nameEn,
+      description: seed.descriptionEn,
+    },
+  ];
+
+  for (const translation of translations) {
+    const existing = await tx.serviceTranslation.findUnique({
+      where: {
+        serviceId_locale: {
+          serviceId,
+          locale: translation.locale,
+        },
+      },
+    });
+
+    if (existing === null) {
+      await tx.serviceTranslation.create({
+        data: {
+          serviceId,
+          locale: translation.locale,
+          name: translation.name,
+          description: translation.description,
+        },
+      });
+      continue;
+    }
+
+    await tx.serviceTranslation.update({
+      where: { id: existing.id },
+      data: {},
+    });
+  }
+}
+
+async function seedPriceUnitRow(
+  tx: CatalogSeedTransactionClient,
+  serviceId: string,
+  unit: (typeof EGYPT_HOUSEKEEPING_SEED.priceUnits)[number],
+): Promise<void> {
+  const existing = await tx.servicePriceUnit.findUnique({
+    where: {
+      serviceId_code: {
+        serviceId,
+        code: unit.code,
+      },
+    },
+  });
+
+  if (existing !== null) {
+    await tx.servicePriceUnit.update({
+      where: { id: existing.id },
+      data: {},
+    });
+    return;
+  }
+
+  const scopeOrders = (
+    await tx.servicePriceUnit.findMany({
+      where: { serviceId },
+      select: { displayOrder: true },
+    })
+  ).map((row) => row.displayOrder);
+  const displayOrder = resolveSeedDisplayOrder(scopeOrders, unit.displayOrder);
+
+  await tx.servicePriceUnit.create({
+    data: {
+      serviceId,
+      code: unit.code,
+      labelAr: unit.labelAr,
+      labelEn: unit.labelEn,
+      displayOrder,
+      isActive: unit.isActive,
+    },
+  });
+}
+
+async function seedFieldRow(
+  tx: CatalogSeedTransactionClient,
+  serviceId: string,
+  field: (typeof EGYPT_HOUSEKEEPING_SEED.fields)[number],
+): Promise<void> {
+  const existing = await tx.serviceField.findUnique({
+    where: {
+      serviceId_code: {
+        serviceId,
+        code: field.code,
+      },
+    },
+  });
+
+  if (existing !== null) {
+    await tx.serviceField.update({
+      where: { id: existing.id },
+      data: {},
+    });
+    return;
+  }
+
+  const scopeOrders = (
+    await tx.serviceField.findMany({
+      where: { serviceId },
+      select: { displayOrder: true },
+    })
+  ).map((row) => row.displayOrder);
+  const displayOrder = resolveSeedDisplayOrder(scopeOrders, field.displayOrder);
+
+  await tx.serviceField.create({
+    data: {
+      serviceId,
+      code: field.code,
+      kind: field.kind,
+      labelAr: field.labelAr,
+      labelEn: field.labelEn,
+      helpTextAr: null,
+      helpTextEn: null,
+      isRequired: field.isRequired,
+      isActive: field.isActive,
+      minLength: field.minLength,
+      maxLength: field.maxLength,
+      numberMode: field.numberMode,
+      minValue:
+        field.minValue === null ? null : new Prisma.Decimal(field.minValue),
+      maxValue:
+        field.maxValue === null ? null : new Prisma.Decimal(field.maxValue),
+      minSelections: null,
+      maxSelections: null,
+      displayOrder,
+    },
+  });
+}
+
+async function seedAvailabilityRow(
+  tx: CatalogSeedTransactionClient,
+  serviceId: string,
+  countryId: string,
+): Promise<void> {
+  const seed = EGYPT_HOUSEKEEPING_SEED.availability;
+  const existing = await tx.serviceCountryAvailability.findUnique({
+    where: {
+      serviceId_countryId: {
+        serviceId,
+        countryId,
+      },
+    },
+  });
+
+  if (existing !== null) {
+    await tx.serviceCountryAvailability.update({
+      where: { id: existing.id },
+      data: {},
+    });
+    return;
+  }
+
+  await tx.serviceCountryAvailability.create({
+    data: {
+      serviceId,
+      countryId,
+      isAvailable: seed.isAvailable,
+    },
+  });
+}
+
+/**
+ * @desc Create-if-missing DEC-044 Egypt housekeeping Catalog rows in one transaction.
+ * @explanation Existing stable identities keep empty update branches so owner-managed
+ * lifecycle, localization, ordering, and versions are never rewritten by seed.
+ */
+export async function seedR1P08Catalog(
+  prisma: PrismaClient,
+  country: SeedCatalogCountry,
+): Promise<void> {
+  validateEgyptHousekeepingSeedConfiguration();
+
+  if (country.code !== EGYPT_HOUSEKEEPING_SEED.availability.countryCode) {
+    throw new Error(
+      `Catalog seed requires authoritative country ${EGYPT_HOUSEKEEPING_SEED.availability.countryCode}`,
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const category = await seedCategoryRow(tx);
+    const service = await seedServiceRow(tx, category.id);
+    await seedServiceTranslations(tx, service.id);
+
+    for (const unit of EGYPT_HOUSEKEEPING_SEED.priceUnits) {
+      await seedPriceUnitRow(tx, service.id, unit);
+    }
+
+    for (const field of EGYPT_HOUSEKEEPING_SEED.fields) {
+      await seedFieldRow(tx, service.id, field);
+    }
+
+    await seedAvailabilityRow(tx, service.id, country.id);
+  }, { timeout: 60_000 });
+}
+
 /**
  * Seed R1-P01 reference data and R1-P03 authorization definitions. Every write
  * uses its approved natural key so repeated runs stay idempotent.
@@ -192,7 +629,10 @@ async function seedR1P06StableTypes(prisma: PrismaClient): Promise<void> {
  * disconnect. Standalone CLI seed opens a dedicated max-1 pool so it cannot
  * exhaust shared Neon connection budgets during Vitest coverage runs.
  */
-export async function seed(existingClient?: PrismaClient): Promise<void> {
+export async function seed(
+  existingClient?: PrismaClient,
+  options?: Readonly<{ skipCatalogSeed?: boolean; skipCatalogAuth?: boolean }>,
+): Promise<void> {
   let prisma = existingClient;
   let ownsClient = false;
 
@@ -368,7 +808,12 @@ export async function seed(existingClient?: PrismaClient): Promise<void> {
       update: { value: "EGP", valueKind: "STRING" }
     });
 
-    await seedAuthorizationDefinitions(prisma);
+    await seedAuthorizationDefinitions(prisma, {
+      skipCatalogAuth: options?.skipCatalogAuth === true,
+    });
+    if (options?.skipCatalogSeed !== true) {
+      await seedR1P08Catalog(prisma, country);
+    }
   } finally {
     if (ownsClient) {
       await prisma.$disconnect();

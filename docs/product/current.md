@@ -3,15 +3,73 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `None — R1-P07 is complete; the next phase is not activated` |
-| Status | `R1-P07 Complete — implementation, clean/upgrade migration proofs, all tests and coverage, independent review, evidence reconciliation, and owner completion approval passed` |
-| Backend Branch | `r1-p07-worker-team-crew-management; ready for the guarded Git workflow but not staged, committed, or pushed` |
-| Frontend Branch | `Not created — R1-P07 specification is technology-agnostic` |
-| Backend Owner | `Complete — no implementation owner is active` |
-| Frontend Owner | `Not assigned — no frontend application exists` |
-| Started At | `2026-08-22` |
-| Completed At | `2026-08-24 — explicit human-owner instruction to complete R1-P07 and mark it completed` |
-| Last Updated | `2026-08-27` (R1-P07 remains complete; the desktop-web UX/API handoff and executable contract-parity corrections passed their focused revalidation) |
+| Current Phase | `None — no phase is active` |
+| Status | `No active phase` — R1-P08 Complete under DEC-046; Git publication still requires a separate exact `commit and push`; R1-P09 is not activated |
+| Backend Branch | `r1-p08-catalog-localization-service-requirements` (uncommitted R1-P08 worktree preserved; not published) |
+| Frontend Branch | `Not created — no R1-P08 frontend application or frontend scope was authorized` |
+| Backend Owner | `Not assigned — no active phase` |
+| Frontend Owner | `Not assigned` |
+| Started At | `Not applicable — no active phase` |
+| Completed At | `2026-09-03` — R1-P08 Complete by explicit owner instruction |
+| Last Updated | `2026-09-03` — owner marked R1-P08 Complete (DEC-046). Evidence gates remain green from the DEC-045 dual-target closeout. No commit, push, merge, deployment, production migration, or R1-P09 activation. |
+
+## Most recently completed phase — R1-P08
+
+R1-P08 (`Catalog, Localization & Service Requirements`) is **Complete** as of
+`2026-09-03`, by explicit human-owner instruction:
+
+```text
+mark it as complete now
+```
+
+DEC-041–DEC-045 remain the canonical product and closeout decisions; DEC-046
+records completion and the unchanged Git/production boundaries.
+
+Delivered behavior includes staff-admin-only protected Catalog management for
+localized categories and services, closed Release 1 field kinds, price units,
+lifecycle/order/country availability, Media associations through the Media
+public contract, actor-scoped command/idempotency/audit safety, DEC-044 Egypt
+seed composition, and an internal selectable/snapshot `CatalogDefinitionReader`.
+No anonymous Browse HTTP, Provider pricing, Booking mutation, wallet behavior,
+frontend application, Docker, cloud, or production work was introduced.
+
+Final evidence:
+
+- FR-001–FR-052 and SC-001–SC-012 map to completed tasks T001–T156;
+- clean chronological installation passed with 15 migrations and 76 exact
+  public tables, including live constraint probes and double-seed idempotency;
+- populated R1-P07 upgrade preserved baseline digests and workforce truth;
+- R1-P08 tests passed: 54 files / 333 tests / 0 skipped, with phase coverage
+  85.41% statements, 76.04% branches, 83.37% functions, and 85.21% lines;
+- under DEC-045, full integration passed: 169 files passed / 3 skipped,
+  601 tests passed / 5 skipped;
+- full repository coverage passed at 83.69% statements, 75.03% branches,
+  86.46% functions, and 85.61% lines;
+- Prisma, typecheck, lint, build, OpenAPI, Postman, documentation, module
+  boundaries, privacy/redaction, and both migration validators passed;
+- independent review finding M-04 is resolved; no unresolved BLOCKER or MAJOR
+  remains.
+
+Canonical completion artifacts:
+
+- `specs/R1-P08-catalog-localization-service-requirements/spec.md`
+- `specs/R1-P08-catalog-localization-service-requirements/plan.md`
+- `specs/R1-P08-catalog-localization-service-requirements/tasks.md`
+- `specs/R1-P08-catalog-localization-service-requirements/contracts/`
+- `specs/R1-P08-catalog-localization-service-requirements/migration-review.md`
+- `specs/R1-P08-catalog-localization-service-requirements/migration-evidence.md`
+- `specs/R1-P08-catalog-localization-service-requirements/module-boundary-review.md`
+- `specs/R1-P08-catalog-localization-service-requirements/security-validation.md`
+- `specs/R1-P08-catalog-localization-service-requirements/review-resolution.md`
+- `specs/R1-P08-catalog-localization-service-requirements/implementation-summary.md`
+- `specs/R1-P08-catalog-localization-service-requirements/implementation-review-report.md`
+- `specs/R1-P08-catalog-localization-service-requirements/completion-report.md`
+- DEC-041–DEC-046
+
+The feature branch preserves the dirty worktree and remains unstaged,
+uncommitted, unpushed, unmerged, and undeployed. Completion is not Git
+authorization: publication requires a new human message exactly equal to
+`commit and push`. No subsequent roadmap phase is active.
 
 ## Previously completed phase — R1-P06
 
@@ -82,7 +140,7 @@ Canonical artifacts for this completed phase:
 - `specs/R1-P06-provider-verification-external-payout-destinations/completion-report.md`
 - DEC-037
 
-## Most recently completed phase — R1-P07
+## Previously completed phase — R1-P07
 
 R1-P07 (`Worker, Team & Crew Management`) is **Complete** as of 2026-08-24.
 The human owner explicitly instructed Codex to complete the phase, make it
@@ -139,7 +197,8 @@ gate; the repository `.env` database and installed PostgreSQL service were not
 modified. The feature branch preserves the dirty worktree and remains unstaged,
 uncommitted, unpushed, unmerged, and undeployed. Completion is not Git
 authorization: publication requires a new human message exactly equal to
-`commit and push`. No subsequent phase is active.
+`commit and push`. At the recorded R1-P07 closure, no subsequent phase was
+active; R1-P08 was separately activated on 2026-08-30.
 
 ### 2026-08-27 frontend handoff addendum
 

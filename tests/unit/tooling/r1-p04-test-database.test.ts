@@ -1,4 +1,5 @@
 import {
+  APPROVED_R1_P04_CURRENT_PROOF_NAME,
   APPROVED_R1_P04_PROOF_NAME,
   requireR1P04TestDatabase,
 } from "../../helpers/r1-p04-test-database.js";
@@ -32,6 +33,16 @@ describe("requireR1P04TestDatabase (T103)", () => {
   it("accepts a valid R1-P04 proof database", () => {
     expect(requireR1P04TestDatabase(approvedEnv())).toEqual({
       databaseName: APPROVED_R1_P04_PROOF_NAME,
+    });
+  });
+
+  it("accepts the DEC-045 current-schema integration proof name", () => {
+    const approved = urlFor(APPROVED_R1_P04_CURRENT_PROOF_NAME);
+    expect(requireR1P04TestDatabase(approvedEnv({
+      TEST_DATABASE_URL: approved,
+      TEST_MIGRATION_DATABASE_URL: approved,
+    }))).toEqual({
+      databaseName: APPROVED_R1_P04_CURRENT_PROOF_NAME,
     });
   });
 

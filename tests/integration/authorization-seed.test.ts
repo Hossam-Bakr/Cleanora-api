@@ -13,6 +13,8 @@ import {
   stopTestDatabaseLifecycle,
 } from "../helpers/test-database-lifecycle.js";
 
+vi.setConfig({ hookTimeout: 300_000, testTimeout: 300_000 });
+
 const hasDatabase = hasApprovedTestDatabaseUrl();
 
 const expectedRolePermissionCount = Object.values(ROLE_PERMISSION_MAP).reduce(
@@ -60,7 +62,7 @@ describe.skipIf(!hasDatabase)("R1-P03 authorization definition seed", () => {
         expect(reason.isActive).toBe(true);
       }
     },
-    60_000,
+    300_000,
   );
 
   it(
@@ -84,6 +86,6 @@ describe.skipIf(!hasDatabase)("R1-P03 authorization definition seed", () => {
         await prisma.userRole.count({ where: { roleId: staffAdmin.id } }),
       ).toBe(staffAdminGrantsBeforeSeed);
     },
-    60_000,
+    300_000,
   );
 });

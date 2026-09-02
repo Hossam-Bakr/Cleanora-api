@@ -11,6 +11,10 @@ import { PrismaPayoutRevealAuditGate } from "../src/modules/admin/infrastructure
 import { PrismaProviderPayoutRepository } from "../src/modules/providers/infrastructure/prisma-provider-payout.repository.js";
 
 const executeFile = promisify(execFile);
+const MIGRATION_PROBE_TRANSACTION_OPTIONS = {
+  maxWait: 120_000,
+  timeout: 120_000,
+} as const;
 const migrationNames = [
   'r1_p01_foundation_country_configuration',
   'r1_p02_complete_authentication',
@@ -25,7 +29,8 @@ const migrationNames = [
   'r1_p04a_category_aware_customer_signup_verification',
   'r1_p05_provider_onboarding_profile_lifecycle',
   'r1_p06_provider_verification_external_payout_destinations',
-  'r1_p07_worker_team_crew_management'
+  'r1_p07_worker_team_crew_management',
+  'r1_p08_catalog_localization_service_requirements'
 ] as const;
 const expectedTables = [
   "currencies",
@@ -93,7 +98,16 @@ const expectedTables = [
   "provider_team_memberships",
   "provider_workforce_history",
   "provider_workforce_commands",
-  "provider_workforce_notification_intents"
+  "provider_workforce_notification_intents",
+  "service_categories",
+  "services",
+  "service_translations",
+  "service_price_units",
+  "service_fields",
+  "service_field_options",
+  "service_country_availability",
+  "service_media_associations",
+  "catalog_command_requests"
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -176,6 +190,17 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "provider_workforce_history",
     "provider_workforce_commands",
     "provider_workforce_notification_intents"
+  ],
+  r1_p08_catalog_localization_service_requirements: [
+    "service_categories",
+    "services",
+    "service_translations",
+    "service_price_units",
+    "service_fields",
+    "service_field_options",
+    "service_country_availability",
+    "service_media_associations",
+    "catalog_command_requests"
   ]
 };
 const expectedPostDeployTables = ["_prisma_migrations", ...expectedTables] as const;
@@ -580,6 +605,47 @@ export function assertR1P07DisposableDatabaseUrl(
   }
 }
 
+export const APPROVED_R1_P08_TARGET_PATTERN =
+  /^cleanora_r1_p08(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
+
+/** Require an explicitly named R1-P08 disposable target for Catalog proofs. */
+export function assertR1P08DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  let targetName: string;
+  try {
+    const url = new URL(connectionString);
+    targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  } catch {
+    throw new Error("R1-P08 database URL is not a valid URL");
+  }
+  if (!APPROVED_R1_P08_TARGET_PATTERN.test(targetName)) {
+    throw new Error(
+      `Refusing R1-P08 database work against unapproved target "${targetName}"`,
+    );
+  }
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+}
+
+/**
+ * Resolve the separate R1-P08 live/proof URL under DEC-045.
+ * Integration `TEST_MIGRATION_DATABASE_URL` may name the current-schema
+ * R1-P04 proof and must not be reused for Catalog disposable proofs.
+ */
+export function requireR1P08ProofDatabaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const value = env["CLEANORA_R1_P08_DATABASE_URL"];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      "CLEANORA_R1_P08_DATABASE_URL is required for R1-P08 disposable proofs",
+    );
+  }
+  assertR1P08DisposableDatabaseUrl(value);
+  return value;
+}
+
 /** Accept only the forward-only R1-P06 table/enums/index/constraint inventory. */
 export function assertR1P06MigrationSql(sql: string): void {
   if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/iu.test(sql)) {
@@ -651,6 +717,55 @@ export function assertR1P07MigrationSql(sql: string): void {
   }
   if (!sql.includes("ON DELETE RESTRICT") || /\bON DELETE CASCADE\b/iu.test(sql)) {
     throw new Error("R1-P07 workforce foreign keys must use ON DELETE RESTRICT");
+  }
+}
+
+export const R1_P08_MIGRATION = "r1_p08_catalog_localization_service_requirements";
+
+export const R1_P08_CATALOG_TABLES = [
+  "service_categories",
+  "services",
+  "service_translations",
+  "service_price_units",
+  "service_fields",
+  "service_field_options",
+  "service_country_availability",
+  "service_media_associations",
+  "catalog_command_requests",
+] as const;
+
+/** Accept only the additive, phase-owned R1-P08 Catalog migration inventory. */
+export function assertR1P08MigrationSql(sql: string): void {
+  if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/iu.test(sql)) {
+    throw new Error("R1-P08 catalog migration contains destructive SQL");
+  }
+  const tables = migrationOwnedTables[R1_P08_MIGRATION] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P08 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 9) {
+    throw new Error("R1-P08 migration must create exactly nine Catalog tables");
+  }
+  for (const required of [
+    "CatalogLocale",
+    "ServiceFieldKind",
+    "ServiceNumberMode",
+    "CatalogCommandStatus",
+    "CATALOG_SERVICE_IMAGE",
+    "CATALOG_MANAGEMENT_WRITE",
+    "service_categories_code_format_check",
+    "service_fields_information_required_check",
+    "service_fields_number_mode_check",
+    "catalog_command_requests_completed_shape_check",
+    "service_media_associations_media_file_id_key",
+    "ON DELETE RESTRICT",
+  ]) {
+    if (!sql.includes(required)) throw new Error(`R1-P08 migration is missing ${required}`);
+  }
+  if (/\bON DELETE CASCADE\b/iu.test(sql)) {
+    throw new Error("R1-P08 Catalog foreign keys must not cascade-delete parent rows");
   }
 }
 
@@ -738,6 +853,10 @@ async function validateMigrationFolder(): Promise<void> {
       assertR1P07MigrationSql(sql);
       continue;
     }
+    if (migrationName === R1_P08_MIGRATION) {
+      assertR1P08MigrationSql(sql);
+      continue;
+    }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
       if (!sql.includes(`"${table}"`)) throw new Error(`Migration ${migrationName} is missing expected table ${table}`);
     }
@@ -794,6 +913,7 @@ export async function assertPostDeployState(
     await probeR1P05Constraints(prisma);
     await probeR1P06Constraints(prisma);
     await probeR1P07Constraints(prisma);
+    await probeR1P08Constraints(prisma);
   } finally {
     await prisma.$disconnect();
   }
@@ -808,19 +928,60 @@ async function readSeedCounts(prisma: PrismaClient): Promise<{
   readonly currencies: number;
   readonly verificationDocumentTypes: number;
   readonly payoutDestinationTypes: number;
+  readonly serviceCategories: number;
+  readonly services: number;
+  readonly serviceTranslations: number;
+  readonly servicePriceUnits: number;
+  readonly serviceFields: number;
+  readonly serviceCountryAvailability: number;
 }> {
-  const [roles, permissions, rolePermissions, privilegedReasons, countries, currencies, verificationDocumentTypes, payoutDestinationTypes] =
-    await Promise.all([
-      prisma.role.count(),
-      prisma.permission.count(),
-      prisma.rolePermission.count(),
-      prisma.privilegedActionReason.count(),
-      prisma.country.count(),
-      prisma.currency.count(),
-      prisma.verificationDocumentType.count(),
-      prisma.payoutDestinationType.count(),
-    ]);
-  return { roles, permissions, rolePermissions, privilegedReasons, countries, currencies, verificationDocumentTypes, payoutDestinationTypes };
+  const [
+    roles,
+    permissions,
+    rolePermissions,
+    privilegedReasons,
+    countries,
+    currencies,
+    verificationDocumentTypes,
+    payoutDestinationTypes,
+    serviceCategories,
+    services,
+    serviceTranslations,
+    servicePriceUnits,
+    serviceFields,
+    serviceCountryAvailability,
+  ] = await Promise.all([
+    prisma.role.count(),
+    prisma.permission.count(),
+    prisma.rolePermission.count(),
+    prisma.privilegedActionReason.count(),
+    prisma.country.count(),
+    prisma.currency.count(),
+    prisma.verificationDocumentType.count(),
+    prisma.payoutDestinationType.count(),
+    prisma.serviceCategory.count(),
+    prisma.service.count(),
+    prisma.serviceTranslation.count(),
+    prisma.servicePriceUnit.count(),
+    prisma.serviceField.count(),
+    prisma.serviceCountryAvailability.count(),
+  ]);
+  return {
+    roles,
+    permissions,
+    rolePermissions,
+    privilegedReasons,
+    countries,
+    currencies,
+    verificationDocumentTypes,
+    payoutDestinationTypes,
+    serviceCategories,
+    services,
+    serviceTranslations,
+    servicePriceUnits,
+    serviceFields,
+    serviceCountryAvailability,
+  };
 }
 
 export function readDatabaseSqlState(error: unknown): string | null {
@@ -926,7 +1087,7 @@ async function probeR1P07Constraints(prisma: PrismaClient): Promise<void> {
         1, 'WORKER_CREATED', 'r1p07-proof-owner-a', 'r1p07-proof-request'
       );
     `);
-  });
+  }, MIGRATION_PROBE_TRANSACTION_OPTIONS);
 
   await expectR1P07ConstraintRejection("a zero Provider workforce version", "23514", () =>
     prisma.$executeRawUnsafe(`UPDATE "providers" SET "workforce_state_version" = 0 WHERE "id" = 'r1p07-proof-provider-a'`));
@@ -934,7 +1095,7 @@ async function probeR1P07Constraints(prisma: PrismaClient): Promise<void> {
     prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
       INSERT INTO "provider_workers" ("id", "provider_id", "status", "updated_at")
       VALUES ('r1p07-proof-profileless', 'r1p07-proof-provider-a', 'DRAFT', CURRENT_TIMESTAMP)
-    `)));
+    `), MIGRATION_PROBE_TRANSACTION_OPTIONS));
   await expectR1P07ConstraintRejection("a duplicate current identity engagement", "23505", () =>
     prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
       INSERT INTO "provider_workers" ("id", "provider_id", "identity_user_id", "status", "updated_at")
@@ -945,7 +1106,7 @@ async function probeR1P07Constraints(prisma: PrismaClient): Promise<void> {
         'r1p07-proof-identity-duplicate', 'R1-P07 Duplicate Identity', 'FEMALE',
         '+201000000704', 'CLEANING_STAFF', CURRENT_TIMESTAMP
       )
-    `)));
+    `), MIGRATION_PROBE_TRANSACTION_OPTIONS));
   await expectR1P07ConstraintRejection("a second pending invitation", "23505", () =>
     prisma.$executeRawUnsafe(`
       INSERT INTO "provider_worker_invitations" (
@@ -972,32 +1133,32 @@ async function probeR1P07Constraints(prisma: PrismaClient): Promise<void> {
         INSERT INTO "provider_team_memberships" ("id", "team_id", "worker_id", "cleans", "updated_at")
         VALUES ('r1p07-proof-membership-second', 'r1p07-proof-team-second', 'r1p07-proof-cleaner', true, CURRENT_TIMESTAMP)
       `);
-    }));
+    }, MIGRATION_PROBE_TRANSACTION_OPTIONS));
   await expectR1P07ConstraintRejection("an Escort membership with cleans=true", "23514", () =>
     prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
       INSERT INTO "provider_team_memberships" ("id", "team_id", "worker_id", "cleans", "updated_at")
       VALUES ('r1p07-proof-escort-cleans', 'r1p07-proof-team', 'r1p07-proof-escort', true, CURRENT_TIMESTAMP)
-    `)));
+    `), MIGRATION_PROBE_TRANSACTION_OPTIONS));
   await expectR1P07ConstraintRejection("a cross-Provider Team membership", "23514", () =>
     prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
       INSERT INTO "provider_team_memberships" ("id", "team_id", "worker_id", "cleans", "updated_at")
       VALUES ('r1p07-proof-cross-provider', 'r1p07-proof-team', 'r1p07-proof-foreign-worker', false, CURRENT_TIMESTAMP)
-    `)));
+    `), MIGRATION_PROBE_TRANSACTION_OPTIONS));
   await expectR1P07ConstraintRejection("removal of an active Team's final cleaner", "23514", () =>
     prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
       UPDATE "provider_team_memberships" SET "ended_at" = CURRENT_TIMESTAMP, "updated_at" = CURRENT_TIMESTAMP
       WHERE "id" = 'r1p07-proof-membership'
-    `)));
+    `), MIGRATION_PROBE_TRANSACTION_OPTIONS));
   await expectR1P07ConstraintRejection("an ineligible primary Supervisor", "23514", () =>
     prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
       UPDATE "provider_teams" SET "primary_supervisor_worker_id" = 'r1p07-proof-cleaner', "updated_at" = CURRENT_TIMESTAMP
       WHERE "id" = 'r1p07-proof-team'
-    `)));
+    `), MIGRATION_PROBE_TRANSACTION_OPTIONS));
   await expectR1P07ConstraintRejection("mismatched login-access invitation ownership", "23514", () =>
     prisma.$transaction((transaction) => transaction.$executeRawUnsafe(`
       INSERT INTO "provider_worker_login_access" ("worker_id", "status", "current_invitation_id", "updated_at")
       VALUES ('r1p07-proof-escort', 'INVITED', 'r1p07-proof-invitation', CURRENT_TIMESTAMP)
-    `)));
+    `), MIGRATION_PROBE_TRANSACTION_OPTIONS));
   await expectR1P07ConstraintRejection("a notification intent without exactly one recipient", "23514", () =>
     prisma.$executeRawUnsafe(`
       INSERT INTO "provider_workforce_notification_intents" (
@@ -1414,21 +1575,23 @@ async function probeR1P06Constraints(prisma: PrismaClient): Promise<void> {
         status: "ACTIVE",
       },
     });
-    const gate = new PrismaPayoutRevealAuditGate(prisma);
     const attempts = await Promise.all(
       Array.from({ length: 6 }, (_, index) =>
-        gate.commitAcceptedReveal({
-          actorUserId: revealActor.id,
-          providerId: "r1p06-proof-reveal-provider",
-          destinationVersionId: `r1p06-proof-reveal-destination-${index}`,
-          expectedVersion: 1,
-          purpose: "MANUAL_PAYOUT_DESTINATION_VERIFICATION",
-          reasonCode: "MANUAL_VERIFICATION_PREPARATION",
-          requestId: `r1p06-proof-reveal-request-${index}`,
-          encryptionKeyIds: ["proof-encryption-key"],
-          lookupKeyIds: ["proof-lookup-key"],
-          now: new Date(),
-        }),
+        prisma.$transaction(
+          (transaction) => new PrismaPayoutRevealAuditGate(transaction).commitAcceptedReveal({
+            actorUserId: revealActor.id,
+            providerId: "r1p06-proof-reveal-provider",
+            destinationVersionId: `r1p06-proof-reveal-destination-${index}`,
+            expectedVersion: 1,
+            purpose: "MANUAL_PAYOUT_DESTINATION_VERIFICATION",
+            reasonCode: "MANUAL_VERIFICATION_PREPARATION",
+            requestId: `r1p06-proof-reveal-request-${index}`,
+            encryptionKeyIds: ["proof-encryption-key"],
+            lookupKeyIds: ["proof-lookup-key"],
+            now: new Date(),
+          }),
+          MIGRATION_PROBE_TRANSACTION_OPTIONS,
+        ),
       ),
     );
     if (attempts.filter((attempt) => attempt.accepted).length !== 5) {
@@ -1571,6 +1734,119 @@ async function probeR1P05Constraints(prisma: PrismaClient): Promise<void> {
   `);
 }
 
+async function probeR1P08Constraints(prisma: PrismaClient): Promise<void> {
+  const counts = await readSeedCounts(prisma);
+  if (
+    counts.serviceCategories !== 1
+    || counts.services !== 1
+    || counts.serviceTranslations !== 2
+    || counts.servicePriceUnits !== 2
+    || counts.serviceFields !== 5
+    || counts.serviceCountryAvailability !== 1
+  ) {
+    throw new Error(
+      "R1-P08 seed counts must be exactly 1 category, 1 service, 2 translations, 2 units, 5 fields, and 1 availability row",
+    );
+  }
+
+  await prisma.$executeRawUnsafe(`
+    INSERT INTO "service_categories" (
+      "id", "code", "display_order", "is_active", "version", "updated_at"
+    ) VALUES (
+      'r1p08-proof-category', 'R1P08_PROOF_CATEGORY', 99, false, 1, CURRENT_TIMESTAMP
+    );
+  `);
+
+  await expectR1P07ConstraintRejection("a lowercase category code", "23514", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "service_categories" (
+        "id", "code", "display_order", "is_active", "version", "updated_at"
+      ) VALUES (
+        'r1p08-invalid-code', 'home_cleaning', 98, false, 1, CURRENT_TIMESTAMP
+      )
+    `));
+  await expectR1P07ConstraintRejection("a duplicate category code", "23505", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "service_categories" (
+        "id", "code", "display_order", "is_active", "version", "updated_at"
+      ) VALUES (
+        'r1p08-duplicate-code', 'R1P08_PROOF_CATEGORY', 97, false, 1, CURRENT_TIMESTAMP
+      )
+    `));
+  await expectR1P07ConstraintRejection("a zero service version", "23514", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "services" (
+        "id", "category_id", "code", "display_order", "is_active", "version", "updated_at"
+      ) VALUES (
+        'r1p08-invalid-version', 'r1p08-proof-category', 'INVALID_VERSION', 0, false, 0, CURRENT_TIMESTAMP
+      )
+    `));
+
+  const service = await prisma.service.findFirstOrThrow({
+    where: { code: "STANDARD_HOME_CLEANING" },
+    select: { id: true },
+  });
+
+  await expectR1P07ConstraintRejection("INFORMATION marked required", "23514", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "service_fields" (
+        "id", "service_id", "code", "kind", "is_required", "display_order", "is_active", "updated_at"
+      ) VALUES (
+        'r1p08-invalid-information', '${service.id}', 'INVALID_INFORMATION',
+        'INFORMATION', true, 99, false, CURRENT_TIMESTAMP
+      )
+    `));
+  await expectR1P07ConstraintRejection("NUMBER without number_mode", "23514", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "service_fields" (
+        "id", "service_id", "code", "kind", "is_required", "display_order", "is_active", "updated_at"
+      ) VALUES (
+        'r1p08-invalid-number', '${service.id}', 'INVALID_NUMBER',
+        'NUMBER', false, 98, false, CURRENT_TIMESTAMP
+      )
+    `));
+  await expectR1P07ConstraintRejection("a malformed command hash", "23514", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "catalog_command_requests" (
+        "id", "actor_user_id", "scope_key", "idempotency_key", "request_hash", "status",
+        "target_type", "reserved_media_file_id", "updated_at"
+      ) VALUES (
+        'r1p08-invalid-hash', 'r1p08-proof-actor', 'service:${service.id}',
+        'r1p08-invalid-hash', 'not-a-sha256', 'PENDING', 'SERVICE',
+        'r1p08-proof-media', CURRENT_TIMESTAMP
+      )
+    `));
+  await expectR1P07ConstraintRejection(
+    "a PENDING command without reserved media identity",
+    "23514",
+    () =>
+      prisma.$executeRawUnsafe(`
+        INSERT INTO "catalog_command_requests" (
+          "id", "actor_user_id", "scope_key", "idempotency_key", "request_hash", "status",
+          "target_type", "updated_at"
+        ) VALUES (
+          'r1p08-pending-missing-media', 'r1p08-proof-actor', 'service:${service.id}',
+          'r1p08-pending-missing-media', repeat('b', 64), 'PENDING', 'SERVICE',
+          CURRENT_TIMESTAMP
+        )
+      `),
+  );
+  await expectR1P07ConstraintRejection("a completed command without completion facts", "23514", () =>
+    prisma.$executeRawUnsafe(`
+      INSERT INTO "catalog_command_requests" (
+        "id", "actor_user_id", "scope_key", "idempotency_key", "request_hash", "status",
+        "target_type", "updated_at"
+      ) VALUES (
+        'r1p08-invalid-completed', 'r1p08-proof-actor', 'service:${service.id}',
+        'r1p08-invalid-completed', repeat('a', 64), 'COMPLETED', 'SERVICE', CURRENT_TIMESTAMP
+      )
+    `));
+
+  await prisma.$executeRawUnsafe(`
+    DELETE FROM "service_categories" WHERE "id" = 'r1p08-proof-category';
+  `);
+}
+
 async function run(): Promise<void> {
   await validateMigrationFolder();
   console.info(`Validated migration folders: ${migrationNames.join(', ')}`);
@@ -1579,16 +1855,9 @@ async function run(): Promise<void> {
     "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
   );
 
-  const configuredConnectionString = process.env["TEST_MIGRATION_DATABASE_URL"];
-  if (configuredConnectionString === undefined || configuredConnectionString.length === 0) {
-    throw new Error(
-      "TEST_MIGRATION_DATABASE_URL is required for clean-apply database proof."
-    );
-  }
-
-  assertR1P07DisposableDatabaseUrl(configuredConnectionString);
+  const configuredConnectionString = requireR1P08ProofDatabaseUrl();
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p07_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p08_proof_${process.pid}_${Date.now()}`;
   proofUrl.searchParams.set("schema", proofSchema);
   proofUrl.searchParams.set("options", `-c search_path=${proofSchema}`);
   const connectionString = proofUrl.toString();
@@ -1611,7 +1880,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact tables, full history, double-seed idempotency, and live R1-P05/R1-P06/R1-P07 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact 76 tables, 15-migration history, double-seed idempotency, DEC-044 Catalog counts, and live R1-P05/R1-P06/R1-P07/R1-P08 constraint probes.`,
   );
 }
 

@@ -1,0 +1,2508 @@
+{
+  "info": {
+    "_postman_id": "91076ea2-1262-4ee5-99ab-42a13ecb2ed5",
+    "name": "Cleanora R1-P02 Authentication + R1-P04A Signup",
+    "description": "# Cleanora R1-P02 — Authentication & Category-Aware Signup\n\n> **API version:** `/api/v1`  \n> **Collection environments:** `Hosted (Not hosted yet)` and `Local`  \n> **Authentication:** Bearer access token plus HttpOnly refresh-cookie flows\n\nR1-P02 documents Cleanora email/password identity, email OTP verification,\npassword recovery, Google authentication, category enrollment, session\nrefresh, password changes, and logout. R1-P04A category-aware signup fields are\nincluded because Authentication owns the atomic account-and-profile enrollment\ntransaction.\n\n## Collection Structure\n\n```text\nHosted (Not hosted yet)\n├── Email and Password\n├── Google Authentication\n└── Account and Session\n\nLocal\n├── Email and Password\n├── Google Authentication\n└── Account and Session\n```\n\nHosted requests use `{{hostUrl}}`; Local requests use `{{baseUrl}}`.\n\n## Recommended Flow\n\n```text\n1. Signup\n2. Request OTP when a resend is needed\n3. Verify OTP\n4. Login\n5. Current User\n6. Refresh Session when the access token expires\n7. Change Password or Logout when required\n```\n\n## Signup Variants\n\nThe `Signup` request contains separate Saved Success Examples for each strict\nrequest body supported by the existing contract:\n\n- Individual\n- Company\n- Engineer\n\n`PROVIDER_OWNER` is intentionally excluded from public signup and ordinary\ncategory enrollment. R1-P05 grants Provider ownership only after Staff approval\nof an eligible Individual or Company Provider application.\n\nOpen the appropriate Saved Example and copy its required body. Every supported\npublic category currently activates through email OTP. Phone is stored as an\nunverified contact identifier.\n\n## Token and Cookie Handling\n\nSuccessful Login, Refresh, and verification flows capture `accessToken` or\n`challengeId` when returned. The refresh credential stays in Postman's cookie\njar as an HttpOnly cookie and must not be copied into an environment variable.\n\n```http\nAuthorization: Bearer {{accessToken}}\n```\n\nKeep `testEmail`, `testPhone`, `testPassword`, `newPassword`, `emailOtp`,\n`passwordResetCode`, `challengeId`, and `accessToken` private and empty in\nexported files.\n\n## Google Browser Operations\n\n`Start Google Browser Sign-In` and `Google Callback` are browser navigation\ncontracts. Their Saved Success Examples use `302 Found`; they are documentation\nexamples, not a replacement for completing the OAuth flow in the same browser\nthat owns the correlation cookie.\n\n## Saved Examples\n\nEvery request has at least one Saved Success Example. Requests with JSON bodies\nstore the required body in `originalRequest`; bodyless GET/POST operations show\nthe method, URL, headers, and representative success response or redirect.\n\n## Local URLs\n\n```text\nAPI:     http://localhost:8000/api/v1\nSwagger: http://localhost:8000/api/v1/docs\n```\n\nUse the R1-P02 collection before R1-P04 or R1-P05 so those collections can\nreuse the captured `accessToken`.\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Hosted (Not hosted yet)",
+      "description": "Authentication requests using {{hostUrl}}. Select the hosted environment and configure the hosted URL before use.",
+      "item": [
+        {
+          "name": "Email and Password",
+          "auth": {
+            "type": "noauth"
+          },
+          "item": [
+            {
+              "name": "Signup",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"fullName\": \"{{individualFullName}}\",\n  \"phone\": \"{{testPhone}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/auth/signup",
+                "description": "Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant."
+              },
+              "response": [
+                {
+                  "name": "Success - Individual (email activation)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"fullName\": \"{{individualFullName}}\",\n  \"phone\": \"{{testPhone}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/signup",
+                    "description": "Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"INDIVIDUAL\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                },
+                {
+                  "name": "Success - Company (email activation)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"COMPANY\",\n  \"companyName\": \"{{companyName}}\",\n  \"representativeFullName\": \"{{representativeFullName}}\",\n  \"phone\": \"{{testPhone}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/signup",
+                    "description": "Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"COMPANY\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                },
+                {
+                  "name": "Success - Engineer (email activation)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"ENGINEER\",\n  \"fullName\": \"{{engineerFullName}}\",\n  \"professionalTitle\": \"{{professionalTitle}}\",\n  \"phone\": \"{{testPhone}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/signup",
+                    "description": "Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"ENGINEER\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Request OTP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"challengeId\": \"{{challengeId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/auth/otp/request",
+                "description": "Requests/resends the existing challenge. Cooldown applies. Possible invalid, expired, and rate-limit responses are in Swagger."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"challengeId\": \"{{challengeId}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/otp/request",
+                    "description": "Requests/resends the existing challenge. Cooldown applies. Possible invalid, expired, and rate-limit responses are in Swagger."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"INDIVIDUAL\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Verify OTP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{emailOtp}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/auth/otp/verify",
+                "description": "Consumes the six-digit account verification code. Invalid, expired, used, mismatched, and exhausted challenges share the documented safe error."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{emailOtp}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/otp/verify",
+                    "description": "Consumes the six-digit account verification code. Invalid, expired, used, mismatched, and exhausted challenges share the documented safe error."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"verified\": true,\n    \"nextAction\": \"LOGIN\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/auth/login",
+                "description": "Creates a session, stores accessToken, and returns the canonical safe user. The refresh token is only an HttpOnly cookie. Invalid credentials are documented as a 401 response in Swagger."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/login",
+                    "description": "Creates a session, stores accessToken, and returns the canonical safe user. The refresh token is only an HttpOnly cookie. Invalid credentials are documented as a 401 response in Swagger."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"<access-token>\",\n    \"accessExpiresAt\": \"2026-07-27T12:15:00.000Z\",\n    \"verificationOnly\": false,\n    \"user\": {\n      \"id\": \"<user-id>\",\n      \"displayName\": \"Aly Oser\",\n      \"avatarUrl\": \"https://lh3.googleusercontent.com/a/example\",\n      \"email\": \"user@example.test\",\n      \"phone\": \"+201234567890\",\n      \"emailVerified\": true,\n      \"phoneVerified\": false,\n      \"status\": \"ACTIVE\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": []\n    },\n    \"identity\": {\n      \"userId\": \"<user-id>\",\n      \"sessionId\": \"<session-id>\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": [],\n      \"status\": \"ACTIVE\",\n      \"verificationOnly\": false\n    }\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Forgot Password",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"identifier\": \"{{testEmail}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/auth/password/forgot",
+                "description": "Enumeration-safe recovery request. Every valid request returns an opaque challengeId. Existing eligible accounts receive a four-digit code out of band."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"identifier\": \"{{testEmail}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/password/forgot",
+                    "description": "Enumeration-safe recovery request. Every valid request returns an opaque challengeId. Existing eligible accounts receive a four-digit code out of band."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<reset-challenge-id>\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Reset Password",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{passwordResetCode}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/auth/password/reset",
+                "description": "Combines the opaque challengeId returned by forgot-password with the four-digit passwordResetCode delivered to the user."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{passwordResetCode}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/password/reset",
+                    "description": "Combines the opaque challengeId returned by forgot-password with the four-digit passwordResetCode delivered to the user."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"passwordReset\": true,\n    \"nextAction\": \"LOGIN\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Google Authentication",
+          "item": [
+            {
+              "name": "Inspect Google Authorization URL",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [],
+                "url": "{{hostUrl}}/auth/google",
+                "description": "JSON inspection endpoint. For a real Chrome flow use Start Google Browser Sign-In so the same browser owns the correlation cookie."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [],
+                    "url": "{{hostUrl}}/auth/google",
+                    "description": "JSON inspection endpoint. For a real Chrome flow use Start Google Browser Sign-In so the same browser owns the correlation cookie."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"authorizationUrl\": \"https://accounts.google.com/o/oauth2/v2/auth?<one-time-query>\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Start Google Browser Sign-In",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Browser navigation endpoint is documented', () => {",
+                      "  pm.expect(pm.request.url.toString()).to.include('/auth/google/');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [],
+                "url": "{{hostUrl}}/auth/google/browser",
+                "description": "Open this URL as top-level browser navigation. It redirects to Google and must not be started in Postman then continued in Chrome."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [],
+                    "url": "{{hostUrl}}/auth/google/browser",
+                    "description": "Open this URL as top-level browser navigation. It redirects to Google and must not be started in Postman then continued in Chrome."
+                  },
+                  "status": "Found",
+                  "code": 302,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Location",
+                      "value": "{{frontendUrl}}/auth/google/callback?status=success"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": ""
+                }
+              ]
+            },
+            {
+              "name": "Google Callback",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Browser navigation endpoint is documented', () => {",
+                      "  pm.expect(pm.request.url.toString()).to.include('/auth/google/');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [],
+                "url": "{{hostUrl}}/auth/google/callback",
+                "description": "Provider-owned browser callback. Google supplies state/code. On success the backend writes the refresh cookie and redirects to frontendUrl/auth/google/callback with safe markers only. Do not manually send it in normal Postman testing."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [],
+                    "url": "{{hostUrl}}/auth/google/callback",
+                    "description": "Provider-owned browser callback. Google supplies state/code. On success the backend writes the refresh cookie and redirects to frontendUrl/auth/google/callback with safe markers only. Do not manually send it in normal Postman testing."
+                  },
+                  "status": "Found",
+                  "code": 302,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Location",
+                      "value": "{{frontendUrl}}/auth/google/callback?status=success"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": ""
+                }
+              ]
+            },
+            {
+              "name": "Start Google Link",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{hostUrl}}/auth/google/link",
+                "description": "Creates a deliberate LINK transaction for the current fully verified Individual. Navigate to the returned URL in the same browser."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{hostUrl}}/auth/google/link",
+                    "description": "Creates a deliberate LINK transaction for the current fully verified Individual. Navigate to the returned URL in the same browser."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"authorizationUrl\": \"https://accounts.google.com/o/oauth2/v2/auth?<one-time-query>\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Unlink Google",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{hostUrl}}/auth/social/google",
+                "description": "Unlinks Google only when another recoverable password credential remains."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{hostUrl}}/auth/social/google",
+                    "description": "Unlinks Google only when another recoverable password credential remains."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"unlinked\": true\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Account and Session",
+          "item": [
+            {
+              "name": "Refresh Session",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/auth/refresh",
+                "description": "Uses the HttpOnly refresh cookie in the Postman/browser cookie jar, stores the new accessToken, and returns the canonical safe user. Browser code must use credentials: include."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [
+                      {
+                        "key": "Origin",
+                        "value": "{{origin}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/auth/refresh",
+                    "description": "Uses the HttpOnly refresh cookie in the Postman/browser cookie jar, stores the new accessToken, and returns the canonical safe user. Browser code must use credentials: include."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"<access-token>\",\n    \"accessExpiresAt\": \"2026-07-27T12:15:00.000Z\",\n    \"verificationOnly\": false,\n    \"user\": {\n      \"id\": \"<user-id>\",\n      \"displayName\": \"Aly Oser\",\n      \"avatarUrl\": \"https://lh3.googleusercontent.com/a/example\",\n      \"email\": \"user@example.test\",\n      \"phone\": \"+201234567890\",\n      \"emailVerified\": true,\n      \"phoneVerified\": false,\n      \"status\": \"ACTIVE\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": []\n    },\n    \"identity\": {\n      \"userId\": \"<user-id>\",\n      \"sessionId\": \"<session-id>\"\n    }\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Current User",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{hostUrl}}/auth/me",
+                "description": "Canonical session bootstrap/read endpoint using the Bearer token."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{hostUrl}}/auth/me",
+                    "description": "Canonical session bootstrap/read endpoint using the Bearer token."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": \"<user-id>\",\n      \"displayName\": \"Aly Oser\",\n      \"avatarUrl\": \"https://lh3.googleusercontent.com/a/example\",\n      \"email\": \"user@example.test\",\n      \"phone\": \"+201234567890\",\n      \"emailVerified\": true,\n      \"phoneVerified\": false,\n      \"status\": \"ACTIVE\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": []\n    },\n    \"verificationOnly\": false\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Enroll Account Category",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accountCategory\": \"COMPANY\",\n  \"companyName\": \"{{companyName}}\",\n  \"representativeFullName\": \"{{representativeFullName}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/auth/account-categories",
+                "description": "Adds one supported category to the current fully authenticated identity."
+              },
+              "response": [
+                {
+                  "name": "Success - Company enrollment",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"COMPANY\",\n  \"companyName\": \"{{companyName}}\",\n  \"representativeFullName\": \"{{representativeFullName}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/account-categories",
+                    "description": "Adds one supported category to the current fully authenticated identity."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"COMPANY\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                },
+                {
+                  "name": "Success - Individual enrollment",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"fullName\": \"{{individualFullName}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/account-categories",
+                    "description": "Adds one supported category to the current fully authenticated identity."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"INDIVIDUAL\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                },
+                {
+                  "name": "Success - Engineer enrollment",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"ENGINEER\",\n  \"fullName\": \"{{engineerFullName}}\",\n  \"professionalTitle\": \"{{professionalTitle}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/account-categories",
+                    "description": "Adds one supported category to the current fully authenticated identity."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"ENGINEER\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Change Password",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"currentPassword\": \"{{testPassword}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/auth/password/change",
+                "description": "Requires Bearer access, the refresh cookie, and trusted Origin. Rotates the current session and returns the same safe user shape."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Origin",
+                        "value": "{{origin}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"{{testPassword}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{hostUrl}}/auth/password/change",
+                    "description": "Requires Bearer access, the refresh cookie, and trusted Origin. Rotates the current session and returns the same safe user shape."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"<access-token>\",\n    \"accessExpiresAt\": \"2026-07-27T12:15:00.000Z\",\n    \"verificationOnly\": false,\n    \"user\": {\n      \"id\": \"<user-id>\",\n      \"displayName\": \"Aly Oser\",\n      \"avatarUrl\": \"https://lh3.googleusercontent.com/a/example\",\n      \"email\": \"user@example.test\",\n      \"phone\": \"+201234567890\",\n      \"emailVerified\": true,\n      \"phoneVerified\": false,\n      \"status\": \"ACTIVE\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": []\n    },\n    \"identity\": {\n      \"userId\": \"<user-id>\",\n      \"sessionId\": \"<session-id>\"\n    }\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Logout",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/auth/logout",
+                "description": "Revokes the current Bearer/cookie session and clears the refresh cookie."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Origin",
+                        "value": "{{origin}}"
+                      }
+                    ],
+                    "url": "{{hostUrl}}/auth/logout",
+                    "description": "Revokes the current Bearer/cookie session and clears the refresh cookie."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"loggedOut\": true\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Logout All",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": "{{hostUrl}}/auth/logout-all",
+                "description": "Revokes every session owned by the current user."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{hostUrl}}/auth/logout-all",
+                    "description": "Revokes every session owned by the current user."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"loggedOut\": true\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Local",
+      "description": "Authentication requests using {{baseUrl}}. Default local API root: http://localhost:8000/api/v1.",
+      "item": [
+        {
+          "name": "Email and Password",
+          "auth": {
+            "type": "noauth"
+          },
+          "item": [
+            {
+              "name": "Signup",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"fullName\": \"{{individualFullName}}\",\n  \"phone\": \"{{testPhone}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/auth/signup",
+                "description": "Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant."
+              },
+              "response": [
+                {
+                  "name": "Success - Individual (email activation)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"fullName\": \"{{individualFullName}}\",\n  \"phone\": \"{{testPhone}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/signup",
+                    "description": "Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"INDIVIDUAL\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                },
+                {
+                  "name": "Success - Company (email activation)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"COMPANY\",\n  \"companyName\": \"{{companyName}}\",\n  \"representativeFullName\": \"{{representativeFullName}}\",\n  \"phone\": \"{{testPhone}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/signup",
+                    "description": "Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"COMPANY\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                },
+                {
+                  "name": "Success - Engineer (email activation)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"ENGINEER\",\n  \"fullName\": \"{{engineerFullName}}\",\n  \"professionalTitle\": \"{{professionalTitle}}\",\n  \"phone\": \"{{testPhone}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/signup",
+                    "description": "Creates the account and required category profile atomically, then stores challengeId. Every supported category currently uses email OTP; phone verification and SMS providers are deferred. Open the saved examples for each strict request variant."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"ENGINEER\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Request OTP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"challengeId\": \"{{challengeId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/auth/otp/request",
+                "description": "Requests/resends the existing challenge. Cooldown applies. Possible invalid, expired, and rate-limit responses are in Swagger."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"challengeId\": \"{{challengeId}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/otp/request",
+                    "description": "Requests/resends the existing challenge. Cooldown applies. Possible invalid, expired, and rate-limit responses are in Swagger."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"INDIVIDUAL\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Verify OTP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{emailOtp}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/auth/otp/verify",
+                "description": "Consumes the six-digit account verification code. Invalid, expired, used, mismatched, and exhausted challenges share the documented safe error."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{emailOtp}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/otp/verify",
+                    "description": "Consumes the six-digit account verification code. Invalid, expired, used, mismatched, and exhausted challenges share the documented safe error."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"verified\": true,\n    \"nextAction\": \"LOGIN\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/auth/login",
+                "description": "Creates a session, stores accessToken, and returns the canonical safe user. The refresh token is only an HttpOnly cookie. Invalid credentials are documented as a 401 response in Swagger."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/login",
+                    "description": "Creates a session, stores accessToken, and returns the canonical safe user. The refresh token is only an HttpOnly cookie. Invalid credentials are documented as a 401 response in Swagger."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"<access-token>\",\n    \"accessExpiresAt\": \"2026-07-27T12:15:00.000Z\",\n    \"verificationOnly\": false,\n    \"user\": {\n      \"id\": \"<user-id>\",\n      \"displayName\": \"Aly Oser\",\n      \"avatarUrl\": \"https://lh3.googleusercontent.com/a/example\",\n      \"email\": \"user@example.test\",\n      \"phone\": \"+201234567890\",\n      \"emailVerified\": true,\n      \"phoneVerified\": false,\n      \"status\": \"ACTIVE\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": []\n    },\n    \"identity\": {\n      \"userId\": \"<user-id>\",\n      \"sessionId\": \"<session-id>\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": [],\n      \"status\": \"ACTIVE\",\n      \"verificationOnly\": false\n    }\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Forgot Password",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"identifier\": \"{{testEmail}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/auth/password/forgot",
+                "description": "Enumeration-safe recovery request. Every valid request returns an opaque challengeId. Existing eligible accounts receive a four-digit code out of band."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"identifier\": \"{{testEmail}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/password/forgot",
+                    "description": "Enumeration-safe recovery request. Every valid request returns an opaque challengeId. Existing eligible accounts receive a four-digit code out of band."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<reset-challenge-id>\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Reset Password",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{passwordResetCode}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/auth/password/reset",
+                "description": "Combines the opaque challengeId returned by forgot-password with the four-digit passwordResetCode delivered to the user."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"{{passwordResetCode}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/password/reset",
+                    "description": "Combines the opaque challengeId returned by forgot-password with the four-digit passwordResetCode delivered to the user."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"passwordReset\": true,\n    \"nextAction\": \"LOGIN\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Google Authentication",
+          "item": [
+            {
+              "name": "Inspect Google Authorization URL",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [],
+                "url": "{{baseUrl}}/auth/google",
+                "description": "JSON inspection endpoint. For a real Chrome flow use Start Google Browser Sign-In so the same browser owns the correlation cookie."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [],
+                    "url": "{{baseUrl}}/auth/google",
+                    "description": "JSON inspection endpoint. For a real Chrome flow use Start Google Browser Sign-In so the same browser owns the correlation cookie."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"authorizationUrl\": \"https://accounts.google.com/o/oauth2/v2/auth?<one-time-query>\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Start Google Browser Sign-In",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Browser navigation endpoint is documented', () => {",
+                      "  pm.expect(pm.request.url.toString()).to.include('/auth/google/');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [],
+                "url": "{{baseUrl}}/auth/google/browser",
+                "description": "Open this URL as top-level browser navigation. It redirects to Google and must not be started in Postman then continued in Chrome."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [],
+                    "url": "{{baseUrl}}/auth/google/browser",
+                    "description": "Open this URL as top-level browser navigation. It redirects to Google and must not be started in Postman then continued in Chrome."
+                  },
+                  "status": "Found",
+                  "code": 302,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Location",
+                      "value": "{{frontendUrl}}/auth/google/callback?status=success"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": ""
+                }
+              ]
+            },
+            {
+              "name": "Google Callback",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Browser navigation endpoint is documented', () => {",
+                      "  pm.expect(pm.request.url.toString()).to.include('/auth/google/');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [],
+                "url": "{{baseUrl}}/auth/google/callback",
+                "description": "Provider-owned browser callback. Google supplies state/code. On success the backend writes the refresh cookie and redirects to frontendUrl/auth/google/callback with safe markers only. Do not manually send it in normal Postman testing."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [],
+                    "url": "{{baseUrl}}/auth/google/callback",
+                    "description": "Provider-owned browser callback. Google supplies state/code. On success the backend writes the refresh cookie and redirects to frontendUrl/auth/google/callback with safe markers only. Do not manually send it in normal Postman testing."
+                  },
+                  "status": "Found",
+                  "code": 302,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Location",
+                      "value": "{{frontendUrl}}/auth/google/callback?status=success"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": ""
+                }
+              ]
+            },
+            {
+              "name": "Start Google Link",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/auth/google/link",
+                "description": "Creates a deliberate LINK transaction for the current fully verified Individual. Navigate to the returned URL in the same browser."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{baseUrl}}/auth/google/link",
+                    "description": "Creates a deliberate LINK transaction for the current fully verified Individual. Navigate to the returned URL in the same browser."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"authorizationUrl\": \"https://accounts.google.com/o/oauth2/v2/auth?<one-time-query>\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Unlink Google",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{baseUrl}}/auth/social/google",
+                "description": "Unlinks Google only when another recoverable password credential remains."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{baseUrl}}/auth/social/google",
+                    "description": "Unlinks Google only when another recoverable password credential remains."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"unlinked\": true\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Account and Session",
+          "item": [
+            {
+              "name": "Refresh Session",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/auth/refresh",
+                "description": "Uses the HttpOnly refresh cookie in the Postman/browser cookie jar, stores the new accessToken, and returns the canonical safe user. Browser code must use credentials: include."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [
+                      {
+                        "key": "Origin",
+                        "value": "{{origin}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/auth/refresh",
+                    "description": "Uses the HttpOnly refresh cookie in the Postman/browser cookie jar, stores the new accessToken, and returns the canonical safe user. Browser code must use credentials: include."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"<access-token>\",\n    \"accessExpiresAt\": \"2026-07-27T12:15:00.000Z\",\n    \"verificationOnly\": false,\n    \"user\": {\n      \"id\": \"<user-id>\",\n      \"displayName\": \"Aly Oser\",\n      \"avatarUrl\": \"https://lh3.googleusercontent.com/a/example\",\n      \"email\": \"user@example.test\",\n      \"phone\": \"+201234567890\",\n      \"emailVerified\": true,\n      \"phoneVerified\": false,\n      \"status\": \"ACTIVE\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": []\n    },\n    \"identity\": {\n      \"userId\": \"<user-id>\",\n      \"sessionId\": \"<session-id>\"\n    }\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Current User",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/auth/me",
+                "description": "Canonical session bootstrap/read endpoint using the Bearer token."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{baseUrl}}/auth/me",
+                    "description": "Canonical session bootstrap/read endpoint using the Bearer token."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": \"<user-id>\",\n      \"displayName\": \"Aly Oser\",\n      \"avatarUrl\": \"https://lh3.googleusercontent.com/a/example\",\n      \"email\": \"user@example.test\",\n      \"phone\": \"+201234567890\",\n      \"emailVerified\": true,\n      \"phoneVerified\": false,\n      \"status\": \"ACTIVE\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": []\n    },\n    \"verificationOnly\": false\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Enroll Account Category",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accountCategory\": \"COMPANY\",\n  \"companyName\": \"{{companyName}}\",\n  \"representativeFullName\": \"{{representativeFullName}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/auth/account-categories",
+                "description": "Adds one supported category to the current fully authenticated identity."
+              },
+              "response": [
+                {
+                  "name": "Success - Company enrollment",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"COMPANY\",\n  \"companyName\": \"{{companyName}}\",\n  \"representativeFullName\": \"{{representativeFullName}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/account-categories",
+                    "description": "Adds one supported category to the current fully authenticated identity."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"COMPANY\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                },
+                {
+                  "name": "Success - Individual enrollment",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"INDIVIDUAL\",\n  \"fullName\": \"{{individualFullName}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/account-categories",
+                    "description": "Adds one supported category to the current fully authenticated identity."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"INDIVIDUAL\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                },
+                {
+                  "name": "Success - Engineer enrollment",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"accountCategory\": \"ENGINEER\",\n  \"fullName\": \"{{engineerFullName}}\",\n  \"professionalTitle\": \"{{professionalTitle}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/account-categories",
+                    "description": "Adds one supported category to the current fully authenticated identity."
+                  },
+                  "status": "Accepted",
+                  "code": 202,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accepted\": true,\n    \"challengeId\": \"<challenge-id>\",\n    \"nextAction\": \"VERIFY_ACCOUNT\",\n    \"accountCategory\": \"ENGINEER\",\n    \"purpose\": \"CATEGORY_VERIFICATION\",\n    \"channel\": \"EMAIL\",\n    \"maskedDestination\": \"cl***@example.test\",\n    \"expiresAt\": \"2026-08-24T12:10:00.000Z\",\n    \"resendAvailableAt\": \"2026-08-24T12:01:00.000Z\"\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Change Password",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"currentPassword\": \"{{testPassword}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/auth/password/change",
+                "description": "Requires Bearer access, the refresh cookie, and trusted Origin. Rotates the current session and returns the same safe user shape."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Origin",
+                        "value": "{{origin}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"{{testPassword}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": "{{baseUrl}}/auth/password/change",
+                    "description": "Requires Bearer access, the refresh cookie, and trusted Origin. Rotates the current session and returns the same safe user shape."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"<access-token>\",\n    \"accessExpiresAt\": \"2026-07-27T12:15:00.000Z\",\n    \"verificationOnly\": false,\n    \"user\": {\n      \"id\": \"<user-id>\",\n      \"displayName\": \"Aly Oser\",\n      \"avatarUrl\": \"https://lh3.googleusercontent.com/a/example\",\n      \"email\": \"user@example.test\",\n      \"phone\": \"+201234567890\",\n      \"emailVerified\": true,\n      \"phoneVerified\": false,\n      \"status\": \"ACTIVE\",\n      \"accountCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"verifiedCategories\": [\n        \"INDIVIDUAL\"\n      ],\n      \"pendingCategories\": []\n    },\n    \"identity\": {\n      \"userId\": \"<user-id>\",\n      \"sessionId\": \"<session-id>\"\n    }\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Logout",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/auth/logout",
+                "description": "Revokes the current Bearer/cookie session and clears the refresh cookie."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Origin",
+                        "value": "{{origin}}"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/auth/logout",
+                    "description": "Revokes the current Bearer/cookie session and clears the refresh cookie."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"loggedOut\": true\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Logout All",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('Uses the Cleanora response envelope', () => {",
+                      "  pm.expect(body.success).to.eql(true);",
+                      "  pm.expect(body.requestId).to.be.a('string');",
+                      "});",
+                      "if (body.data?.challengeId) pm.environment.set('challengeId', body.data.challengeId);",
+                      "if (body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": "{{baseUrl}}/auth/logout-all",
+                "description": "Revokes every session owned by the current user."
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{baseUrl}}/auth/logout-all",
+                    "description": "Revokes every session owned by the current user."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"loggedOut\": true\n  },\n  \"requestId\": \"7ebf45ad-7384-41ab-8e74-e864ae048d30\"\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

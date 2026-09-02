@@ -202,9 +202,9 @@ async function main(): Promise<void> {
       environmentFolder("Local", "{{baseUrl}}"),
     ],
   };
-  const outputPath = resolve("postman/cleanora-r1-p07-provider-workforce.postman_collection.json");
+  const outputPath = resolve("postman/Cleanora-R1-P07-Worker-Team-Crew-Management.postman_collection.json");
   await writeFile(outputPath, `${JSON.stringify(collection, null, 2)}\n`, "utf8");
-  process.stdout.write(`${JSON.stringify({ ok: true, outputPath: "postman/cleanora-r1-p07-provider-workforce.postman_collection.json", requestsPerEnvironment: 25, totalRequests: 50 })}\n`);
+  process.stdout.write(`${JSON.stringify({ ok: true, outputPath: "postman/Cleanora-R1-P07-Worker-Team-Crew-Management.postman_collection.json", requestsPerEnvironment: 25, totalRequests: 50 })}\n`);
 }
 
 void main();

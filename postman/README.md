@@ -7,11 +7,14 @@ the implemented Cleanora Release 1 backend surface.
 
 | Phase | Collection | Operations per environment | Documentation |
 |---|---|---:|---|
-| R1-P00 | `R1-P00-foundation.postman_collection.json` | 2 | `readme_R1-P00.md` |
-| R1-P01 | `R1-P01-foundation-country-configuration.postman_collection.json` | 3 | `readme_R1-P01.md` |
-| R1-P02 + R1-P04A | `R1-P02-authentication.postman_collection.json` | 17 | `readme_R1-P02.md` |
-| R1-P04 | `R1-P04-customer-self-service.postman_collection.json` | 21 | `readme_R1-P04.md` |
-| R1-P05 | `Cleanora-R1-P05.postman_collection.json` | 41 | `readme_R1-P05.md` |
+| R1-P00 | `Cleanora-R1-P00-Foundation.postman_collection.json` | 2 | `readme_R1-P00.md` |
+| R1-P01 | `Cleanora-R1-P01-Foundation-Country-Configuration.postman_collection.json` | 3 | `readme_R1-P01.md` |
+| R1-P02 + R1-P04A | `Cleanora-R1-P02-Authentication.postman_collection.json` | 17 | `readme_R1-P02.md` |
+| R1-P04 | `Cleanora-R1-P04-Customer-Self-Service.postman_collection.json` | 21 | `readme_R1-P04.md` |
+| R1-P05 | `Cleanora-R1-P05-Provider-Onboarding.postman_collection.json` | 41 | `readme_R1-P05.md` |
+| R1-P06 | `Cleanora-R1-P06-Provider-Verification.postman_collection.json` | 37 | — |
+| R1-P07 | `Cleanora-R1-P07-Worker-Team-Crew-Management.postman_collection.json` | 25 | — |
+| R1-P08 | `Cleanora-R1-P08-Catalog-Management.postman_collection.json` | 19 | — |
 
 R1-P03 and R1-P03A privileged role-provisioning operations are intentionally
 not duplicated into a public phase collection. Their exposure rules remain

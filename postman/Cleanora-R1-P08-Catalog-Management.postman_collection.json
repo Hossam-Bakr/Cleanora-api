@@ -1,0 +1,896 @@
+{
+  "info": {
+    "_postman_id": "00000000-p008-4000-8000-000000000008",
+    "name": "Cleanora R1-P08 Catalog Management",
+    "description": "Protected staff Catalog management only under /staff/catalog. No anonymous Browse routes. Operations: listCatalogCategoriesForManagement, createCatalogCategory, getCatalogCategoryForManagement, replaceCatalogCategoryContent, changeCatalogCategoryLifecycle, replaceCatalogCategoryOrder, listCatalogServicesForManagement, createCatalogService, getCatalogServiceForManagement, moveCatalogServiceToCategory, changeCatalogServiceLifecycle, replaceCatalogServiceOrder, replaceCatalogServiceAvailability, replaceCatalogServiceConfiguration, uploadCatalogServiceImage, replaceCatalogServiceMediaOrder, removeCatalogServiceImage.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "hostUrl",
+      "value": "https://YOUR-HOSTED-DOMAIN.example"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "serviceId",
+      "value": ""
+    },
+    {
+      "key": "associationId",
+      "value": ""
+    },
+    {
+      "key": "catalogServiceImagePath",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Hosted (Not hosted yet)",
+      "item": [
+        {
+          "name": "US1 Taxonomy",
+          "item": [
+            {
+              "name": "List categories",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/staff/catalog/categories"
+              }
+            },
+            {
+              "name": "Create category",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000001\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"code\": \"HOME_CLEANING\",\n  \"nameEn\": \"Home Cleaning\",\n  \"nameAr\": \"تنظيف المنازل\",\n  \"descriptionEn\": \"Home cleaning and housekeeping services.\",\n  \"descriptionAr\": \"خدمات تنظيف المنازل والتدبير المنزلي.\"\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/categories"
+              }
+            },
+            {
+              "name": "Get category",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/staff/catalog/categories/{{categoryId}}"
+              }
+            },
+            {
+              "name": "Replace category content",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000002\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"nameEn\": \"Home Cleaning\",\n  \"nameAr\": \"تنظيف المنازل\",\n  \"descriptionEn\": \"Updated description\",\n  \"descriptionAr\": \"وصف محدث\"\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/categories/{{categoryId}}"
+              }
+            },
+            {
+              "name": "Change category lifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000003\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 2,\n  \"action\": \"ACTIVATE\"\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/categories/{{categoryId}}/lifecycle"
+              }
+            },
+            {
+              "name": "List services",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services?categoryId={{categoryId}}"
+              }
+            },
+            {
+              "name": "Create service",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000004\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"code\": \"STANDARD_HOME_CLEANING\",\n  \"translations\": [\n    {\n      \"locale\": \"EN\",\n      \"name\": \"Standard Home Cleaning\",\n      \"description\": \"Routine home cleaning.\"\n    },\n    {\n      \"locale\": \"AR\",\n      \"name\": \"تنظيف منزلي قياسي\",\n      \"description\": \"تنظيف منزلي دوري.\"\n    }\n  ]\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services"
+              }
+            },
+            {
+              "name": "Get service",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}"
+              }
+            },
+            {
+              "name": "Move service",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000005\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"categoryId\": \"{{categoryId}}\"\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}"
+              }
+            },
+            {
+              "name": "Change service lifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000006\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"action\": \"ACTIVATE\"\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}/lifecycle"
+              }
+            }
+          ]
+        },
+        {
+          "name": "US2 Configuration",
+          "item": [
+            {
+              "name": "Replace service configuration (valid six kinds)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000007\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"translations\": [\n    {\n      \"locale\": \"EN\",\n      \"name\": \"Standard Home Cleaning\",\n      \"description\": \"Routine.\"\n    }\n  ],\n  \"priceUnits\": [\n    {\n      \"code\": \"PER_VISIT\",\n      \"labelAr\": null,\n      \"labelEn\": \"Per visit\",\n      \"isActive\": false\n    }\n  ],\n  \"fields\": [\n    {\n      \"code\": \"PREP_INFO\",\n      \"kind\": \"INFORMATION\",\n      \"labelAr\": null,\n      \"labelEn\": \"Preparation\",\n      \"helpTextAr\": null,\n      \"helpTextEn\": null,\n      \"isRequired\": false,\n      \"isActive\": false,\n      \"minLength\": null,\n      \"maxLength\": null,\n      \"numberMode\": null,\n      \"minValue\": null,\n      \"maxValue\": null,\n      \"minSelections\": null,\n      \"maxSelections\": null,\n      \"options\": []\n    },\n    {\n      \"code\": \"BEDROOMS\",\n      \"kind\": \"NUMBER\",\n      \"labelAr\": null,\n      \"labelEn\": \"Bedrooms\",\n      \"helpTextAr\": null,\n      \"helpTextEn\": null,\n      \"isRequired\": true,\n      \"isActive\": false,\n      \"minLength\": null,\n      \"maxLength\": null,\n      \"numberMode\": \"INTEGER\",\n      \"minValue\": \"1\",\n      \"maxValue\": \"10\",\n      \"minSelections\": null,\n      \"maxSelections\": null,\n      \"options\": []\n    },\n    {\n      \"code\": \"PETS\",\n      \"kind\": \"BOOLEAN\",\n      \"labelAr\": null,\n      \"labelEn\": \"Pets\",\n      \"helpTextAr\": null,\n      \"helpTextEn\": null,\n      \"isRequired\": false,\n      \"isActive\": false,\n      \"minLength\": null,\n      \"maxLength\": null,\n      \"numberMode\": null,\n      \"minValue\": null,\n      \"maxValue\": null,\n      \"minSelections\": null,\n      \"maxSelections\": null,\n      \"options\": []\n    }\n  ]\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}/configuration"
+              }
+            },
+            {
+              "name": "Replace service configuration (invalid NUMBER without mode)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000008\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"translations\": [\n    {\n      \"locale\": \"EN\",\n      \"name\": \"Draft\",\n      \"description\": null\n    }\n  ],\n  \"priceUnits\": [],\n  \"fields\": [\n    {\n      \"code\": \"AREA\",\n      \"kind\": \"NUMBER\",\n      \"labelAr\": null,\n      \"labelEn\": \"Area\",\n      \"helpTextAr\": null,\n      \"helpTextEn\": null,\n      \"isRequired\": false,\n      \"isActive\": false,\n      \"minLength\": null,\n      \"maxLength\": null,\n      \"minValue\": null,\n      \"maxValue\": null,\n      \"minSelections\": null,\n      \"maxSelections\": null,\n      \"options\": []\n    }\n  ]\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}/configuration"
+              }
+            }
+          ]
+        },
+        {
+          "name": "US3 Lifecycle Order Availability",
+          "item": [
+            {
+              "name": "Replace category order",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000301\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"items\": [\n    {\n      \"id\": \"{{categoryId}}\",\n      \"expectedVersion\": 1\n    }\n  ]\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/categories/order"
+              }
+            },
+            {
+              "name": "Replace service order",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000302\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"items\": [\n    {\n      \"id\": \"{{serviceId}}\",\n      \"expectedVersion\": 1\n    }\n  ]\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/order"
+              }
+            },
+            {
+              "name": "Replace service availability (EG)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000303\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"countries\": [\n    {\n      \"countryCode\": \"EG\",\n      \"isAvailable\": true\n    }\n  ]\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}/availability"
+              }
+            }
+          ]
+        },
+        {
+          "name": "US4 Service Media",
+          "item": [
+            {
+              "name": "Upload service media (multipart)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "{{catalogServiceImagePath}}",
+                      "description": "JPEG/PNG/WebP service image, max 5 MiB"
+                    },
+                    {
+                      "key": "expectedVersion",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "idempotencyKey",
+                      "value": "00000000-0000-4000-8000-000000000401",
+                      "type": "text"
+                    },
+                    {
+                      "key": "reasonCode",
+                      "value": "catalog_management_change",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}/media"
+              }
+            },
+            {
+              "name": "Reorder service media",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000402\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 2,\n  \"orderedAssociationIds\": [\n    \"{{associationId}}\"\n  ]\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}/media/order"
+              }
+            },
+            {
+              "name": "Remove service media association",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000403\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 3\n}"
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}/media/{{associationId}}/remove"
+              }
+            },
+            {
+              "name": "Upload service media — invalid Media example",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "{{catalogServiceImagePath}}",
+                      "description": "Intentionally unsupported GIF to exercise CATALOG_MEDIA_INVALID"
+                    },
+                    {
+                      "key": "expectedVersion",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "idempotencyKey",
+                      "value": "00000000-0000-4000-8000-000000000404",
+                      "type": "text"
+                    },
+                    {
+                      "key": "reasonCode",
+                      "value": "catalog_management_change",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": "{{hostUrl}}/api/v1/staff/catalog/services/{{serviceId}}/media"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Local",
+      "item": [
+        {
+          "name": "US1 Taxonomy",
+          "item": [
+            {
+              "name": "List categories",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/staff/catalog/categories"
+              }
+            },
+            {
+              "name": "Create category",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000001\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"code\": \"HOME_CLEANING\",\n  \"nameEn\": \"Home Cleaning\",\n  \"nameAr\": \"تنظيف المنازل\",\n  \"descriptionEn\": \"Home cleaning and housekeeping services.\",\n  \"descriptionAr\": \"خدمات تنظيف المنازل والتدبير المنزلي.\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/categories"
+              }
+            },
+            {
+              "name": "Get category",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/staff/catalog/categories/{{categoryId}}"
+              }
+            },
+            {
+              "name": "Replace category content",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000002\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"nameEn\": \"Home Cleaning\",\n  \"nameAr\": \"تنظيف المنازل\",\n  \"descriptionEn\": \"Updated description\",\n  \"descriptionAr\": \"وصف محدث\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/categories/{{categoryId}}"
+              }
+            },
+            {
+              "name": "Change category lifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000003\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 2,\n  \"action\": \"ACTIVATE\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/categories/{{categoryId}}/lifecycle"
+              }
+            },
+            {
+              "name": "List services",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services?categoryId={{categoryId}}"
+              }
+            },
+            {
+              "name": "Create service",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000004\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"code\": \"STANDARD_HOME_CLEANING\",\n  \"translations\": [\n    {\n      \"locale\": \"EN\",\n      \"name\": \"Standard Home Cleaning\",\n      \"description\": \"Routine home cleaning.\"\n    },\n    {\n      \"locale\": \"AR\",\n      \"name\": \"تنظيف منزلي قياسي\",\n      \"description\": \"تنظيف منزلي دوري.\"\n    }\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services"
+              }
+            },
+            {
+              "name": "Get service",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}"
+              }
+            },
+            {
+              "name": "Move service",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000005\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"categoryId\": \"{{categoryId}}\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}"
+              }
+            },
+            {
+              "name": "Change service lifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000006\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"action\": \"ACTIVATE\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}/lifecycle"
+              }
+            }
+          ]
+        },
+        {
+          "name": "US2 Configuration",
+          "item": [
+            {
+              "name": "Replace service configuration (valid six kinds)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000007\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"translations\": [\n    {\n      \"locale\": \"EN\",\n      \"name\": \"Standard Home Cleaning\",\n      \"description\": \"Routine.\"\n    }\n  ],\n  \"priceUnits\": [\n    {\n      \"code\": \"PER_VISIT\",\n      \"labelAr\": null,\n      \"labelEn\": \"Per visit\",\n      \"isActive\": false\n    }\n  ],\n  \"fields\": [\n    {\n      \"code\": \"PREP_INFO\",\n      \"kind\": \"INFORMATION\",\n      \"labelAr\": null,\n      \"labelEn\": \"Preparation\",\n      \"helpTextAr\": null,\n      \"helpTextEn\": null,\n      \"isRequired\": false,\n      \"isActive\": false,\n      \"minLength\": null,\n      \"maxLength\": null,\n      \"numberMode\": null,\n      \"minValue\": null,\n      \"maxValue\": null,\n      \"minSelections\": null,\n      \"maxSelections\": null,\n      \"options\": []\n    },\n    {\n      \"code\": \"BEDROOMS\",\n      \"kind\": \"NUMBER\",\n      \"labelAr\": null,\n      \"labelEn\": \"Bedrooms\",\n      \"helpTextAr\": null,\n      \"helpTextEn\": null,\n      \"isRequired\": true,\n      \"isActive\": false,\n      \"minLength\": null,\n      \"maxLength\": null,\n      \"numberMode\": \"INTEGER\",\n      \"minValue\": \"1\",\n      \"maxValue\": \"10\",\n      \"minSelections\": null,\n      \"maxSelections\": null,\n      \"options\": []\n    },\n    {\n      \"code\": \"PETS\",\n      \"kind\": \"BOOLEAN\",\n      \"labelAr\": null,\n      \"labelEn\": \"Pets\",\n      \"helpTextAr\": null,\n      \"helpTextEn\": null,\n      \"isRequired\": false,\n      \"isActive\": false,\n      \"minLength\": null,\n      \"maxLength\": null,\n      \"numberMode\": null,\n      \"minValue\": null,\n      \"maxValue\": null,\n      \"minSelections\": null,\n      \"maxSelections\": null,\n      \"options\": []\n    }\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}/configuration"
+              }
+            },
+            {
+              "name": "Replace service configuration (invalid NUMBER without mode)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000008\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"translations\": [\n    {\n      \"locale\": \"EN\",\n      \"name\": \"Draft\",\n      \"description\": null\n    }\n  ],\n  \"priceUnits\": [],\n  \"fields\": [\n    {\n      \"code\": \"AREA\",\n      \"kind\": \"NUMBER\",\n      \"labelAr\": null,\n      \"labelEn\": \"Area\",\n      \"helpTextAr\": null,\n      \"helpTextEn\": null,\n      \"isRequired\": false,\n      \"isActive\": false,\n      \"minLength\": null,\n      \"maxLength\": null,\n      \"minValue\": null,\n      \"maxValue\": null,\n      \"minSelections\": null,\n      \"maxSelections\": null,\n      \"options\": []\n    }\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}/configuration"
+              }
+            }
+          ]
+        },
+        {
+          "name": "US3 Lifecycle Order Availability",
+          "item": [
+            {
+              "name": "Replace category order",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000301\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"items\": [\n    {\n      \"id\": \"{{categoryId}}\",\n      \"expectedVersion\": 1\n    }\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/categories/order"
+              }
+            },
+            {
+              "name": "Replace service order",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000302\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"items\": [\n    {\n      \"id\": \"{{serviceId}}\",\n      \"expectedVersion\": 1\n    }\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/order"
+              }
+            },
+            {
+              "name": "Replace service availability (EG)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000303\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 1,\n  \"countries\": [\n    {\n      \"countryCode\": \"EG\",\n      \"isAvailable\": true\n    }\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}/availability"
+              }
+            }
+          ]
+        },
+        {
+          "name": "US4 Service Media",
+          "item": [
+            {
+              "name": "Upload service media (multipart)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "{{catalogServiceImagePath}}",
+                      "description": "JPEG/PNG/WebP service image, max 5 MiB"
+                    },
+                    {
+                      "key": "expectedVersion",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "idempotencyKey",
+                      "value": "00000000-0000-4000-8000-000000000401",
+                      "type": "text"
+                    },
+                    {
+                      "key": "reasonCode",
+                      "value": "catalog_management_change",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}/media"
+              }
+            },
+            {
+              "name": "Reorder service media",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000402\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 2,\n  \"orderedAssociationIds\": [\n    \"{{associationId}}\"\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}/media/order"
+              }
+            },
+            {
+              "name": "Remove service media association",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000403\",\n  \"reasonCode\": \"catalog_management_change\",\n  \"expectedVersion\": 3\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}/media/{{associationId}}/remove"
+              }
+            },
+            {
+              "name": "Upload service media — invalid Media example",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "{{catalogServiceImagePath}}",
+                      "description": "Intentionally unsupported GIF to exercise CATALOG_MEDIA_INVALID"
+                    },
+                    {
+                      "key": "expectedVersion",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "idempotencyKey",
+                      "value": "00000000-0000-4000-8000-000000000404",
+                      "type": "text"
+                    },
+                    {
+                      "key": "reasonCode",
+                      "value": "catalog_management_change",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/staff/catalog/services/{{serviceId}}/media"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

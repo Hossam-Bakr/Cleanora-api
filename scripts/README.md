@@ -24,9 +24,11 @@ execution are configured consistently.
 
 Useful commands: `npm run seed`, `npm run db:validate-clean-migration`,
 `npm run docs:check`, and `npm run openapi:validate`.
-The clean-migration proof reads only `TEST_MIGRATION_DATABASE_URL` and must
-target a clean, non-production test database.
+The clean-migration and R1-P08 upgrade proofs read
+`CLEANORA_R1_P08_DATABASE_URL` and must target a named R1-P08 disposable
+database (`cleanora_r1_p08_*_(test|proof|clean|ci)`).
 Automated Vitest suites prefer `TEST_DATABASE_URL` (pooled Neon endpoint to the
-same isolated test database) and never print connection strings. Use an
-explicitly empty, non-production PostgreSQL database for first-time
-clean-migration validation.
+same isolated current-schema proof named `cleanora_r1_p04_*_proof`) and never
+print connection strings. `TEST_MIGRATION_DATABASE_URL` must name that same
+R1-P04 proof database. Do not point either family at `Cleanora` or the
+historical `cleanora_r1_p04_clean_proof`.

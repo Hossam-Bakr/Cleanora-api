@@ -18,6 +18,8 @@ export default defineConfig({
     include: ["tests/**/*.test.ts", "src/**/*.test.ts"],
     restoreMocks: true,
     clearMocks: true,
+    // Remote Neon disconnect/setup can exceed Vitest's 10s hook default after a timed-out query.
+    hookTimeout: 180_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json-summary"],

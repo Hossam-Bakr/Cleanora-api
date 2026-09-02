@@ -17,9 +17,15 @@ export type CapturedTestLogError = {
 
 export class TestLogger implements Logger {
   lastError: CapturedTestLogError | undefined;
+  readonly infoCalls: {
+    readonly message: string;
+    readonly context: LogContext | undefined;
+  }[] = [];
 
   debug(_message: string, _context?: LogContext): void {}
-  info(_message: string, _context?: LogContext): void {}
+  info(message: string, context?: LogContext): void {
+    this.infoCalls.push({ message, context });
+  }
   warn(_message: string, _context?: LogContext): void {}
   error(message: string, context?: LogContext): void {
     const captured: {

@@ -23,6 +23,7 @@ export const MEDIA_OWNER_TYPES = [
   "PROVIDER_COVER",
   "PROVIDER_GALLERY_IMAGE",
   "PROVIDER_GALLERY_VIDEO",
+  "CATALOG_SERVICE_IMAGE",
 ] as const;
 
 export type MediaOwnerType = (typeof MEDIA_OWNER_TYPES)[number];
@@ -150,6 +151,20 @@ export interface ProviderMediaSafeView {
 
 export const PROFILE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const PROFILE_IMAGE_MAX_EDGE = 1200;
+
+/** Catalog service-image byte ceiling (FR-038); identical to profile-image limit. */
+export const CATALOG_SERVICE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+/** Catalog service-image max edge after normalization (FR-038). */
+export const CATALOG_SERVICE_IMAGE_MAX_EDGE = 1200;
+
+export const CATALOG_SERVICE_IMAGE_ALLOWED_CONTENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+export type CatalogServiceImageContentType =
+  (typeof CATALOG_SERVICE_IMAGE_ALLOWED_CONTENT_TYPES)[number];
 
 export const PROVIDER_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const PROVIDER_VIDEO_MAX_BYTES = 40 * 1024 * 1024;

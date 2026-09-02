@@ -1,0 +1,1271 @@
+{
+  "workflow": "speckit",
+  "specName": "Catalog, Localization & Service Requirements",
+  "branch": "r1-p08-catalog-localization-service-requirements",
+  "currentStep": "implement",
+  "status": "implementing",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-08-30T12:53:40.748Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-30T13:54:07.857Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-30T14:02:46.562Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-08-30T14:26:45.333Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:34:56.956Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:34:58.344Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T003",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:34:59.765Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T004",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:01.534Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T005",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:02.996Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T006",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:04.569Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T007",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:06.128Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T008",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:07.949Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T009",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:09.131Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T010",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:10.069Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T011",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:10.932Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T012",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:11.790Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T013",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:12.510Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T014",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:13.140Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T015",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:13.655Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T016",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:14.223Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T017",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:14.871Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T018",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:15.477Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T019",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:15.968Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T020",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:16.439Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T021",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:16.920Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T022",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:17.479Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T023",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:19.232Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T024",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:20.899Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T025",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:22.028Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T026",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:23.062Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T027",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:24.669Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T028",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:27.424Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T029",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:29.608Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T030",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:31.829Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T031",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:33.995Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T032",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-08-30T15:35:35.881Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T033",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T035",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T036",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T037",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T039",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T040",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T041",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T042",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T043",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T044",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T045",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T046",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T047",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T048",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T049",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T050",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T051",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T053",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T054",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T055",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T056",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T057",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T059",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T061",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T063",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T064",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T065",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T066",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T067",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.703Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T068",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T069",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T072",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T073",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T074",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T075",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T076",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T077",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T079",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T081",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T083",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T084",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T088",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T089",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T091",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T092",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T093",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T094",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T096",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T097",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T15:33:35.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T098",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.944Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T099",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.945Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T100",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.945Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T101",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.945Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T102",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.945Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T103",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.945Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T104",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.945Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T105",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.945Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T106",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.945Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T107",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.946Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T108",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.946Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T109",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.946Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T110",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.946Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T111",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.946Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T112",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.946Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T113",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.946Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T114",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.947Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T115",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.947Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T116",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.947Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T117",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.947Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T118",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-08-31T20:31:29.947Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T119",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.071Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T120",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.071Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T121",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.071Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T122",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.071Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T123",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.071Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T124",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.071Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T125",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.071Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T126",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.071Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T127",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.071Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T128",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T129",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T130",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T131",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T132",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T133",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T134",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T135",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T136",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T137",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T138",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T139",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-09-01T08:02:22.072Z"
+    }
+  ],
+  "telemetryInstanceId": "b6af3f7f-febb-46bf-9fc3-8fc8b0e8dee0",
+  "currentTask": "T034",
+  "task_summaries": {
+    "T001": {
+      "status": "DONE",
+      "did": "Recorded branch, feature pointer, paths, dirty-worktree boundaries in implementation-summary",
+      "files": [
+        "specs/R1-P08-catalog-localization-service-requirements/implementation-summary.md"
+      ]
+    },
+    "T002": {
+      "status": "DONE",
+      "did": "Created lean Catalog module files without generic barrels",
+      "files": [
+        "src/modules/catalog/catalog.routes.ts",
+        "src/modules/catalog/catalog.controller.ts",
+        "src/modules/catalog/catalog.service.ts",
+        "src/modules/catalog/catalog.repository.ts",
+        "src/modules/catalog/catalog.schema.ts",
+        "src/modules/catalog/catalog.public.ts",
+        "src/modules/catalog/catalog.policy.ts",
+        "src/modules/catalog/catalog.errors.ts"
+      ]
+    },
+    "T003": {
+      "status": "DONE",
+      "did": "Created focused R1-P08 test directories without Docker/Testcontainers",
+      "files": [
+        "tests/unit/catalog",
+        "tests/integration/catalog",
+        "tests/integration/http",
+        "tests/integration/database"
+      ]
+    },
+    "T004": {
+      "status": "DONE",
+      "did": "Added vitest.r1-p08.config.ts and npm test:r1-p08 coverage scripts",
+      "files": [
+        "vitest.r1-p08.config.ts",
+        "package.json"
+      ]
+    },
+    "T005": {
+      "status": "DONE",
+      "did": "Created runtime OpenAPI and Postman scaffolds for R1-P08",
+      "files": [
+        "src/swagger/r1-p08-openapi.paths.ts",
+        "scripts/generate-r1-p08-postman.ts"
+      ]
+    },
+    "T006": {
+      "status": "DONE",
+      "did": "Added guarded migration/seed validator test scaffolds",
+      "files": [
+        "tests/unit/scripts/validate-r1-p08-upgrade.test.ts",
+        "tests/unit/catalog/catalog-seed.test.ts",
+        "scripts/validate-r1-p08-upgrade.ts"
+      ]
+    },
+    "T007": {
+      "status": "DONE",
+      "did": "Added implementation evidence ledger placeholders",
+      "files": [
+        "specs/R1-P08-catalog-localization-service-requirements/implementation-summary.md"
+      ]
+    },
+    "T008": {
+      "status": "DONE",
+      "did": "Recorded typecheck/lint/unit baselines; typecheck and test:r1-p08 green after foundation",
+      "files": [
+        "specs/R1-P08-catalog-localization-service-requirements/implementation-summary.md"
+      ]
+    },
+    "T009": {
+      "status": "DONE",
+      "did": "Added Catalog management permission/operation/reason assertions to authorization-catalog tests",
+      "files": [
+        "tests/unit/modules/authentication/authorization-catalog.test.ts"
+      ]
+    },
+    "T010": {
+      "status": "DONE",
+      "did": "Added staff_admin-only Catalog separation tests",
+      "files": [
+        "tests/unit/modules/authentication/authorization-staff-separation.test.ts"
+      ]
+    },
+    "T011": {
+      "status": "DONE",
+      "did": "Added Catalog/Media public-contract type tests",
+      "files": [
+        "tests/unit/modules/r1-p08-public-contracts.test.ts"
+      ]
+    },
+    "T012": {
+      "status": "DONE",
+      "did": "Added Catalog import/ownership boundary guards",
+      "files": [
+        "tests/unit/modules/r1-p08-module-boundaries.test.ts"
+      ]
+    },
+    "T013": {
+      "status": "DONE",
+      "did": "Added static migration guard for R1-P08 SQL shape",
+      "files": [
+        "tests/unit/catalog/r1-p08-database-guard.test.ts"
+      ]
+    },
+    "T014": {
+      "status": "DONE",
+      "did": "Added static PostgreSQL constraint-contract tests; live DB skipped without approved target",
+      "files": [
+        "tests/integration/database/r1-p08-migration-contract.test.ts"
+      ]
+    },
+    "T015": {
+      "status": "DONE",
+      "did": "Added command fingerprint/replay/reservation policy tests",
+      "files": [
+        "tests/unit/catalog/catalog-idempotency.policy.test.ts"
+      ]
+    },
+    "T016": {
+      "status": "DONE",
+      "did": "Extended authorization catalog with DEC-043 Catalog permissions and CATALOG_MANAGEMENT_WRITE",
+      "files": [
+        "src/modules/authentication/domain/authorization.types.ts",
+        "src/modules/authentication/domain/authorization.catalog.ts"
+      ]
+    },
+    "T017": {
+      "status": "DONE",
+      "did": "Kept Catalog auth additions reachable through authentication.public findPrivilegedActionReason",
+      "files": [
+        "src/modules/authentication/authentication.public.ts"
+      ]
+    },
+    "T018": {
+      "status": "DONE",
+      "did": "Added CATALOG_SERVICE_IMAGE public Media contracts and READY authorizer types",
+      "files": [
+        "src/modules/media/domain/media.types.ts",
+        "src/modules/media/media.public.ts"
+      ]
+    },
+    "T019": {
+      "status": "DONE",
+      "did": "Moved Catalog READY reservation/status authorizer into prisma-media.repository; decoupled from worker-avatar",
+      "files": [
+        "src/modules/media/infrastructure/prisma-media.repository.ts",
+        "src/modules/media/infrastructure/media-provider.factory.ts",
+        "src/modules/media/infrastructure/worker-avatar.adapter.ts"
+      ]
+    },
+    "T020": {
+      "status": "DONE",
+      "did": "Added nine Catalog models/enums and Country/Media opposite relations to Prisma schema",
+      "files": [
+        "prisma/schema.prisma"
+      ]
+    },
+    "T021": {
+      "status": "DONE",
+      "did": "Created forward-only R1-P08 migration after R1-P07",
+      "files": [
+        "prisma/migrations/r1_p08_catalog_localization_service_requirements/migration.sql"
+      ]
+    },
+    "T022": {
+      "status": "DONE",
+      "did": "Documented migration SQL checks/indexes and risks",
+      "files": [
+        "prisma/migrations/r1_p08_catalog_localization_service_requirements/migration.sql",
+        "specs/R1-P08-catalog-localization-service-requirements/migration-review.md"
+      ]
+    },
+    "T023": {
+      "status": "DONE",
+      "did": "Updated entity ownership for service_media_associations and catalog_command_requests",
+      "files": [
+        "docs/architecture/entity-ownership.md"
+      ]
+    },
+    "T024": {
+      "status": "DONE",
+      "did": "Implemented stable-code, fingerprint, scope, advisory-lock, and order primitives",
+      "files": [
+        "src/modules/catalog/catalog.policy.ts",
+        "src/modules/catalog/catalog.errors.ts"
+      ]
+    },
+    "T025": {
+      "status": "DONE",
+      "did": "Implemented common Catalog Zod command/idempotency/reason schemas",
+      "files": [
+        "src/modules/catalog/catalog.schema.ts"
+      ]
+    },
+    "T026": {
+      "status": "DONE",
+      "did": "Defined Catalog repository/UoW ports with Catalog as transaction owner",
+      "files": [
+        "src/modules/catalog/catalog.repository.ts"
+      ]
+    },
+    "T027": {
+      "status": "DONE",
+      "did": "Implemented advisory lock and PENDING/COMPLETED idempotency receipts",
+      "files": [
+        "src/modules/catalog/catalog.repository.ts"
+      ]
+    },
+    "T028": {
+      "status": "DONE",
+      "did": "Injected country reader, Media READY authorizer, and privileged audit into Catalog UoW",
+      "files": [
+        "src/modules/catalog/catalog.repository.ts",
+        "src/composition.ts"
+      ]
+    },
+    "T029": {
+      "status": "DONE",
+      "did": "Implemented shared protected read/write gates and safe audit-context helper",
+      "files": [
+        "src/modules/catalog/catalog.service.ts"
+      ]
+    },
+    "T030": {
+      "status": "DONE",
+      "did": "Composed Catalog repository/service in composition without new infra",
+      "files": [
+        "src/composition.ts"
+      ]
+    },
+    "T031": {
+      "status": "DONE",
+      "did": "Mounted optional staff Catalog router under /staff/catalog",
+      "files": [
+        "src/routes/index.ts",
+        "src/modules/catalog/catalog.routes.ts"
+      ]
+    },
+    "T032": {
+      "status": "DONE",
+      "did": "Foundation repair gates green: prisma validate/generate, typecheck, lint, test:r1-p08 76 pass/1 skip, git diff --check",
+      "files": [
+        "specs/R1-P08-catalog-localization-service-requirements/implementation-summary.md"
+      ]
+    }
+  }
+}

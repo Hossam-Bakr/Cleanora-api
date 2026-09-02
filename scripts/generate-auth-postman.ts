@@ -681,7 +681,7 @@ async function main(): Promise<void> {
   );
   await Promise.all([
     writeFile(
-      resolve("postman/R1-P02-authentication.postman_collection.json"),
+      resolve("postman/Cleanora-R1-P02-Authentication.postman_collection.json"),
       `${JSON.stringify(exportedCollection, null, 2)}\n`,
       "utf8",
     ),

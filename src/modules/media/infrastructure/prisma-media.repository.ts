@@ -5,6 +5,11 @@ import type {
   Prisma,
 } from "#generated/prisma/client";
 import { getPrismaClient } from "#database/prisma";
+import type { TransactionalCatalogServiceImageAuthorizer } from "../media.public.js";
+import type {
+  CatalogServiceMediaSafeFact,
+  TransactionalCatalogServiceMediaFactsReader,
+} from "../media.public.js";
 
 export type MediaFileRow = MediaFile;
 
@@ -201,5 +206,142 @@ export class PrismaMediaRepository {
       where: { id: mediaId },
       data: { status, ...extra },
     });
+  }
+
+  /**
+   * @desc Reserve a PENDING Catalog service-image media row for later ingest.
+   * @explanation Catalog supplies the stable media identity and trusted uploader;
+   * Media stores only owner type, status, and file facts—no service association.
+   */
+  public async reserveCatalogServiceImage(input: {
+    readonly id: string;
+    readonly ownerUserId: string;
+    readonly ownerType?: "CATALOG_SERVICE_IMAGE";
+    readonly storageProvider?: "CLOUDINARY";
+    readonly storageKey: string;
+    readonly contentType: string;
+    readonly byteSize: number;
+    readonly width?: number | null;
+    readonly height?: number | null;
+  }): Promise<MediaFileRow> {
+    return this.createPendingUpload({
+      id: input.id,
+      ownerUserId: input.ownerUserId,
+      ownerType: input.ownerType ?? "CATALOG_SERVICE_IMAGE",
+      storageProvider: input.storageProvider ?? "CLOUDINARY",
+      storageKey: input.storageKey,
+      contentType: input.contentType,
+      byteSize: input.byteSize,
+      width: input.width ?? null,
+      height: input.height ?? null,
+      status: "PENDING_UPLOAD",
+    });
+  }
+
+  /**
+   * @desc Read Catalog service-image ownership/status facts for a READY recheck.
+   * @explanation Catalog associates only READY CATALOG_SERVICE_IMAGE rows; Media
+   * never interprets service identity, version, or presentation order.
+   */
+  public async readCatalogServiceImageAuthorizationFacts(
+    mediaFileId: string,
+  ): Promise<{
+    readonly ownerUserId: string;
+    readonly ownerType: string;
+    readonly status: string;
+    readonly width: number | null;
+    readonly height: number | null;
+  } | null> {
+    const row = await this.findById(mediaFileId);
+    if (row === null || row.ownerType !== "CATALOG_SERVICE_IMAGE") {
+      return null;
+    }
+    return {
+      ownerUserId: row.ownerUserId,
+      ownerType: row.ownerType,
+      status: row.status,
+      width: row.width,
+      height: row.height,
+    };
+  }
+}
+
+function toCatalogServiceMediaSafeFact(row: MediaFileRow): CatalogServiceMediaSafeFact | null {
+  const contentType = row.contentType;
+  if (
+    contentType !== "image/jpeg" &&
+    contentType !== "image/png" &&
+    contentType !== "image/webp"
+  ) {
+    return null;
+  }
+  return {
+    mediaFileId: row.id,
+    contentType,
+    width: row.width,
+    height: row.height,
+    status: row.status,
+    ownerUserId: row.ownerUserId,
+  };
+}
+
+/**
+ * Transaction-bound Media-owned reader for Catalog service-image associations.
+ */
+export class PrismaTransactionalCatalogServiceMediaFactsReader
+  implements TransactionalCatalogServiceMediaFactsReader
+{
+  public constructor(private readonly repository: PrismaMediaRepository) {}
+
+  public async readCatalogServiceMediaFacts(
+    mediaFileIds: readonly string[],
+  ): Promise<ReadonlyMap<string, CatalogServiceMediaSafeFact>> {
+    const uniqueIds = [...new Set(mediaFileIds)];
+    if (uniqueIds.length === 0) {
+      return new Map();
+    }
+    const rows = await Promise.all(
+      uniqueIds.map((mediaFileId) => this.repository.findById(mediaFileId)),
+    );
+    const facts = new Map<string, CatalogServiceMediaSafeFact>();
+    for (const row of rows) {
+      if (row === null || row.ownerType !== "CATALOG_SERVICE_IMAGE") {
+        continue;
+      }
+      const fact = toCatalogServiceMediaSafeFact(row);
+      if (fact !== null) {
+        facts.set(fact.mediaFileId, fact);
+      }
+    }
+    return facts;
+  }
+}
+
+/**
+ * Transaction-bound Media READY/owner/purpose recheck for Catalog service images.
+ * Persistence ownership stays on PrismaMediaRepository; this authorizer only
+ * evaluates Media facts and carries no Catalog business meaning.
+ */
+export class PrismaTransactionalCatalogServiceImageAuthorizer
+  implements TransactionalCatalogServiceImageAuthorizer
+{
+  public constructor(private readonly repository: PrismaMediaRepository) {}
+
+  public async assertReadyCatalogServiceImage(
+    input: Parameters<
+      TransactionalCatalogServiceImageAuthorizer["assertReadyCatalogServiceImage"]
+    >[0],
+  ): Promise<boolean> {
+    const row = await this.repository.readCatalogServiceImageAuthorizationFacts(
+      input.mediaFileId,
+    );
+    return (
+      row !== null &&
+      row.ownerUserId === input.uploaderUserId &&
+      row.ownerType === "CATALOG_SERVICE_IMAGE" &&
+      row.status === "READY" &&
+      row.width !== null &&
+      row.height !== null
+    );
   }
 }

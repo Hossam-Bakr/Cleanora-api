@@ -49,6 +49,7 @@ describe("Vitest runner identity", () => {
     );
 
     expect(config).toContain("globals: true");
+    expect(config).toContain("hookTimeout: 180_000");
     expect(config).toContain(
       'dedupe: ["vitest", "@vitest/runner", "@vitest/expect", "@vitest/utils"]'
     );

@@ -537,7 +537,7 @@ async function main(): Promise<void> {
     ],
   };
   await writeFile(
-    resolve("postman/R1-P04-customer-self-service.postman_collection.json"),
+    resolve("postman/Cleanora-R1-P04-Customer-Self-Service.postman_collection.json"),
     `${JSON.stringify(exportedCollection, null, 2)}\n`,
     "utf8",
   );

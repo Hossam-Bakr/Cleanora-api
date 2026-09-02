@@ -1063,13 +1063,13 @@ async function main(): Promise<void> {
   };
 
   const outputPath = resolve(
-    "postman/Cleanora-R1-P05.postman_collection.json",
+    "postman/Cleanora-R1-P05-Provider-Onboarding.postman_collection.json",
   );
   await writeFile(outputPath, `${JSON.stringify(collection, null, 2)}\n`, "utf8");
   process.stdout.write(
     `${JSON.stringify({
       ok: true,
-      outputPath: "postman/Cleanora-R1-P05.postman_collection.json",
+      outputPath: "postman/Cleanora-R1-P05-Provider-Onboarding.postman_collection.json",
       environments: 2,
       requestsPerEnvironment: 41,
       totalRequests: 82,
