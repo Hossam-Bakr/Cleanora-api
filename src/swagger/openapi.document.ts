@@ -2,11 +2,13 @@ import { buildImplementedR1P05SwaggerFragments } from "./r1-p05-openapi.paths.js
 import { buildImplementedR1P06SwaggerFragments } from "./r1-p06-openapi.paths.js";
 import { buildImplementedR1P07SwaggerFragments } from "./r1-p07-openapi.paths.js";
 import { buildImplementedR1P08SwaggerFragments } from "./r1-p08-openapi.paths.js";
+import { buildImplementedR1P09SwaggerFragments } from "./r1-p09-openapi.paths.js";
 
 const r1P05Fragments = buildImplementedR1P05SwaggerFragments();
 const r1P06Fragments = buildImplementedR1P06SwaggerFragments();
 const r1P07Fragments = buildImplementedR1P07SwaggerFragments();
 const r1P08Fragments = buildImplementedR1P08SwaggerFragments();
+const r1P09Fragments = buildImplementedR1P09SwaggerFragments();
 
 const apiErrorResponse = { $ref: "#/components/responses/ApiError" } as const;
 const rateLimitResponse = {
@@ -89,9 +91,9 @@ export const cleanoraOpenApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Cleanora API",
-    version: "1.0.0-r1-p08",
+    version: "1.0.0-r1-p09",
     summary:
-      "Cleanora Release 1 through R1-P08 protected Staff Catalog management APIs",
+      "Cleanora Release 1 through R1-P09 protected Provider services and Staff price approval APIs",
     description: [
       "Professional living documentation for the implemented Cleanora modular-monolith API.",
       "",
@@ -102,6 +104,7 @@ export const cleanoraOpenApiDocument = {
       "R1-P02 authentication is Complete. R1-P03A adds owner staff-admin provisioning and staff-admin role-grant commands under DEC-030.",
       "R1-P05 adds authenticated Provider onboarding, profile/media, Staff review, and operational suspend/reinstate. There is no anonymous Provider browse surface.",
       "R1-P08 Staff Catalog documents protected management only under /api/v1/staff/catalog. Bilingual AR/EN activation requires exact locale content with no locale fallback. There is no anonymous or customer Catalog Browse HTTP surface.",
+      "R1-P09 documents protected Provider service and pricing management under /api/v1/providers/:providerId/services plus Staff pending price approval under /api/v1/staff/providers. There is no anonymous Browse or Booking HTTP surface, no client-calculated totals, and snapshot reads remain an internal module contract.",
     ].join("\n"),
     contact: {
       name: "Cleanora Engineering",
@@ -179,12 +182,14 @@ export const cleanoraOpenApiDocument = {
     ...r1P06Fragments.tags,
     ...r1P07Fragments.tags,
     ...r1P08Fragments.tags,
+    ...r1P09Fragments.tags,
   ],
   paths: {
     ...r1P05Fragments.paths,
     ...r1P06Fragments.paths,
     ...r1P07Fragments.paths,
     ...r1P08Fragments.paths,
+    ...r1P09Fragments.paths,
     "/system/health/live": {
       get: {
         tags: ["System Health"],
@@ -1122,6 +1127,7 @@ export const cleanoraOpenApiDocument = {
       ...r1P06Fragments.parameters,
       ...r1P07Fragments.parameters,
       ...r1P08Fragments.parameters,
+      ...r1P09Fragments.parameters,
     },
     requestBodies: {
       ...r1P05Fragments.requestBodies,
@@ -1161,6 +1167,7 @@ export const cleanoraOpenApiDocument = {
       ...r1P06Fragments.schemas,
       ...r1P07Fragments.schemas,
       ...r1P08Fragments.schemas,
+      ...r1P09Fragments.schemas,
       AccountCategory: {
         type: "string",
         enum: [

@@ -455,6 +455,7 @@ model Currency {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   countries     Country[] @relation("CountryDefaultCurrency")
+  providerServicePrices ProviderServicePrice[]
 
   @@index([isActive])
   @@map("currencies")
@@ -481,6 +482,7 @@ model Country {
   payoutCountryPolicies        PayoutCountryPolicy[]
   payoutDestinationVersions    ProviderPayoutDestinationVersion[]
   serviceCountryAvailability   ServiceCountryAvailability[]
+  providerServicePricesAtProposal ProviderServicePrice[] @relation("ProviderServicePriceCountryAtProposal")
 
   @@index([isActive])
   @@index([defaultCurrencyId])
@@ -577,6 +579,9 @@ model User {
   workforceHistoryActions          ProviderWorkforceHistory[]  @relation("ProviderWorkforceHistoryActor")
   workforceCommands                ProviderWorkforceCommand[]  @relation("ProviderWorkforceCommandActor")
   workforceNotificationRecipients  ProviderWorkforceNotificationIntent[] @relation("ProviderWorkforceNotificationRecipient")
+  providerServicePricesProposed   ProviderServicePrice[]                 @relation("ProviderServicePriceProposer")
+  providerServicePriceHistoryActions ProviderServicePriceHistory[]       @relation("ProviderServicePriceHistoryActor")
+  providerServiceStatusHistoryActions ProviderServiceStatusHistory[]     @relation("ProviderServiceStatusHistoryActor")
 
   @@index([status])
   @@map("users")
@@ -1010,6 +1015,10 @@ model Provider {
   workforceCommands       ProviderWorkforceCommand[]
   workforceNotifications  ProviderWorkforceNotificationIntent[]
   workforceStateVersion   Int                        @default(1) @map("workforce_state_version")
+  services                ProviderService[]
+  servicePrices           ProviderServicePrice[]
+  servicePriceHistory     ProviderServicePriceHistory[]
+  serviceStatusHistory    ProviderServiceStatusHistory[]
 
   @@index([applicationStatus, kind, lastSubmittedAt, id])
   @@index([operationalStatus, id])
@@ -1979,6 +1988,7 @@ model Service {
   fields          ServiceField[]
   countryRows     ServiceCountryAvailability[]
   mediaAssociations ServiceMediaAssociation[]
+  providerServices ProviderService[]
 
   @@unique([categoryId, displayOrder])
   @@index([categoryId, isActive, displayOrder])
@@ -2010,9 +2020,11 @@ model ServicePriceUnit {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
   service      Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  providerServicePrices ProviderServicePrice[]
 
   @@unique([serviceId, code])
   @@unique([serviceId, displayOrder])
+  @@unique([id, serviceId])
   @@map("service_price_units")
 }
 
@@ -2110,4 +2122,160 @@ model CatalogCommandRequest {
   @@unique([actorUserId, scopeKey, idempotencyKey])
   @@index([actorUserId, createdAt])
   @@map("catalog_command_requests")
+}
+
+// ---------------------------------------------------------------------------
+// R1-P09 — Provider Services, Pricing & Historical Snapshots
+// ---------------------------------------------------------------------------
+
+enum ProviderServicePriceStatus {
+  PENDING
+  EFFECTIVE
+  REJECTED
+  SUPERSEDED
+}
+
+enum ProviderServicePriceHistoryEvent {
+  PRICE_PROPOSED_PENDING
+  PRICE_EFFECTIVE_IMMEDIATE
+  PRICE_APPROVED
+  PRICE_REJECTED
+  PRICE_SUPERSEDED_PENDING
+  PRICE_SUPERSEDED_EFFECTIVE
+}
+
+enum ProviderServiceStatusHistoryEvent {
+  OFFERING_CREATED
+  CONFIGURATION_UPDATED
+  OFFERING_ENABLED
+  OFFERING_DISABLED
+}
+
+model ProviderService {
+  id                        String   @id @default(cuid())
+  providerId                String   @map("provider_id")
+  catalogServiceId          String   @map("catalog_service_id")
+  enabled                   Boolean  @default(false)
+  estimatedDurationMinutes  Int      @map("estimated_duration_minutes")
+  noteAr                    String?  @map("note_ar") @db.VarChar(1000)
+  noteEn                    String?  @map("note_en") @db.VarChar(1000)
+  version                   Int      @default(1)
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+  provider                  Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  catalogService            Service  @relation(fields: [catalogServiceId], references: [id], onDelete: Restrict)
+  prices                    ProviderServicePrice[] @relation("ProviderServicePriceOfferingProvider")
+  pricesByCatalogService    ProviderServicePrice[] @relation("ProviderServicePriceOfferingCatalog")
+  priceHistory              ProviderServicePriceHistory[]
+  statusHistory             ProviderServiceStatusHistory[]
+
+  @@unique([providerId, catalogServiceId])
+  @@unique([id, providerId])
+  @@unique([id, catalogServiceId])
+  @@index([providerId, enabled, id])
+  @@index([catalogServiceId, providerId])
+  @@map("provider_services")
+}
+
+model ProviderServicePrice {
+  id                              String                      @id @default(cuid())
+  providerId                      String                      @map("provider_id")
+  providerServiceId               String                      @map("provider_service_id")
+  catalogServiceId                String                      @map("catalog_service_id")
+  catalogPriceUnitId              String                      @map("catalog_price_unit_id")
+  priceUnitCodeAtProposal         String                      @map("price_unit_code_at_proposal") @db.VarChar(64)
+  countryIdAtProposal             String                      @map("country_id_at_proposal")
+  countryCodeAtProposal           String                      @map("country_code_at_proposal") @db.VarChar(2)
+  currencyId                      String                      @map("currency_id")
+  currencyCode                    String                      @map("currency_code") @db.VarChar(3)
+  currencyDecimalPlaces           Int                         @map("currency_decimal_places")
+  providerPriceMinorUnits         Decimal                     @map("provider_price_minor_units") @db.Decimal(65, 0)
+  minimumChargeMinorUnits         Decimal                     @map("minimum_charge_minor_units") @db.Decimal(65, 0)
+  maximumPriceMinorUnitsAtProposal Decimal                    @map("maximum_price_minor_units_at_proposal") @db.Decimal(65, 0)
+  approvalRequiredAtProposal      Boolean                     @map("approval_required_at_proposal")
+  status                          ProviderServicePriceStatus
+  proposedByUserId                String                      @map("proposed_by_user_id")
+  effectiveAt                     DateTime?                   @map("effective_at")
+  rejectedAt                      DateTime?                   @map("rejected_at")
+  supersededAt                    DateTime?                   @map("superseded_at")
+  createdAt                       DateTime                    @default(now()) @map("created_at")
+  provider                        Provider                    @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  providerService                 ProviderService             @relation("ProviderServicePriceOfferingProvider", fields: [providerServiceId, providerId], references: [id, providerId], onDelete: Restrict)
+  providerServiceForCatalog       ProviderService             @relation("ProviderServicePriceOfferingCatalog", fields: [providerServiceId, catalogServiceId], references: [id, catalogServiceId], onDelete: Restrict)
+  catalogPriceUnit                ServicePriceUnit            @relation(fields: [catalogPriceUnitId, catalogServiceId], references: [id, serviceId], onDelete: Restrict)
+  countryAtProposal               Country                     @relation("ProviderServicePriceCountryAtProposal", fields: [countryIdAtProposal], references: [id], onDelete: Restrict)
+  currency                        Currency                    @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  proposedBy                      User                        @relation("ProviderServicePriceProposer", fields: [proposedByUserId], references: [id], onDelete: Restrict)
+  history                         ProviderServicePriceHistory[]
+
+  @@unique([id, providerServiceId, providerId])
+  @@index([providerServiceId, createdAt, id])
+  @@index([providerId, status, createdAt, id])
+  @@map("provider_service_prices")
+}
+
+model ProviderServicePriceHistory {
+  id                     String                            @id @default(cuid())
+  providerId             String                            @map("provider_id")
+  providerServiceId      String                            @map("provider_service_id")
+  providerServicePriceId String                            @map("provider_service_price_id")
+  event                  ProviderServicePriceHistoryEvent
+  fromStatus             ProviderServicePriceStatus?       @map("from_status")
+  toStatus               ProviderServicePriceStatus        @map("to_status")
+  actorUserId            String                            @map("actor_user_id")
+  reasonCode             String                            @map("reason_code") @db.VarChar(100)
+  reasonText             String?                           @map("reason_text") @db.VarChar(1000)
+  safeBefore             Json?                             @map("safe_before")
+  safeAfter              Json                              @map("safe_after")
+  requestId              String                            @map("request_id") @db.VarChar(200)
+  aggregateVersion       Int                               @map("aggregate_version")
+  scopeKey               String?                           @map("scope_key") @db.VarChar(240)
+  idempotencyKey         String?                           @map("idempotency_key") @db.VarChar(200)
+  requestFingerprint     String?                           @map("request_fingerprint") @db.Char(64)
+  safeResultCode         String?                           @map("safe_result_code") @db.VarChar(100)
+  safeResultJson         Json?                             @map("safe_result_json")
+  operationKey           String                            @unique @map("operation_key") @db.VarChar(240)
+  createdAt              DateTime                          @default(now()) @map("created_at")
+  provider               Provider                          @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  providerService        ProviderService                   @relation(fields: [providerServiceId, providerId], references: [id, providerId], onDelete: Restrict)
+  providerServicePrice   ProviderServicePrice              @relation(fields: [providerServicePriceId, providerServiceId, providerId], references: [id, providerServiceId, providerId], onDelete: Restrict)
+  actor                  User                              @relation("ProviderServicePriceHistoryActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([providerId, providerServiceId, createdAt, id])
+  @@index([providerServicePriceId, createdAt, id])
+  @@index([actorUserId, createdAt])
+  @@index([requestId, event])
+  @@map("provider_service_price_history")
+}
+
+model ProviderServiceStatusHistory {
+  id                 String                              @id @default(cuid())
+  providerId         String                              @map("provider_id")
+  providerServiceId  String                              @map("provider_service_id")
+  event              ProviderServiceStatusHistoryEvent
+  fromEnabled        Boolean?                            @map("from_enabled")
+  toEnabled          Boolean                             @map("to_enabled")
+  actorUserId        String                              @map("actor_user_id")
+  reasonCode         String                              @map("reason_code") @db.VarChar(100)
+  reasonText         String?                             @map("reason_text") @db.VarChar(1000)
+  safeBefore         Json?                               @map("safe_before")
+  safeAfter          Json                                @map("safe_after")
+  requestId          String                              @map("request_id") @db.VarChar(200)
+  aggregateVersion   Int                                 @map("aggregate_version")
+  scopeKey           String                              @map("scope_key") @db.VarChar(240)
+  idempotencyKey     String                              @map("idempotency_key") @db.VarChar(200)
+  requestFingerprint String                              @map("request_fingerprint") @db.Char(64)
+  safeResultCode     String                              @map("safe_result_code") @db.VarChar(100)
+  safeResultJson     Json                                @map("safe_result_json")
+  operationKey       String                              @unique @map("operation_key") @db.VarChar(240)
+  createdAt          DateTime                            @default(now()) @map("created_at")
+  provider           Provider                            @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  providerService    ProviderService                     @relation(fields: [providerServiceId, providerId], references: [id, providerId], onDelete: Restrict)
+  actor              User                                @relation("ProviderServiceStatusHistoryActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([scopeKey, idempotencyKey])
+  @@index([providerId, providerServiceId, createdAt, id])
+  @@index([actorUserId, createdAt])
+  @@index([requestId, event])
+  @@map("provider_service_status_history")
 }

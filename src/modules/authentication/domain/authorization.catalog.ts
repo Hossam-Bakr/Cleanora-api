@@ -78,6 +78,10 @@ export const AUTHORIZATION_PERMISSIONS: readonly PermissionDefinitionSeed[] = [
     name: "Verify provider payout destinations",
   },
   {
+    code: "providers.services.prices.approve",
+    name: "Approve or reject provider service prices",
+  },
+  {
     code: "catalog.management.read",
     name: "Read Catalog management definitions",
   },
@@ -108,6 +112,7 @@ export const ROLE_PERMISSION_MAP: Readonly<
     "providers.verification.documents.review",
     "providers.verification.policies.manage",
     "providers.payout-destinations.verify",
+    "providers.services.prices.approve",
     "catalog.management.read",
     "catalog.management.write",
   ],
@@ -323,6 +328,14 @@ const PROVIDER_STAFF_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
   {
     operationId: "providers.payout-destinations.verify",
     permissionCode: "providers.payout-destinations.verify",
+    ownership: "NONE",
+    scope: "GLOBAL",
+    privileged: false,
+    publicHttp: false,
+  },
+  {
+    operationId: "providers.services.prices.approve",
+    permissionCode: "providers.services.prices.approve",
     ownership: "NONE",
     scope: "GLOBAL",
     privileged: false,

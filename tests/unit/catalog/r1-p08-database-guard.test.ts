@@ -30,9 +30,10 @@ describe("R1-P08 static migration guard", () => {
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .sort();
-    expect(folders).toHaveLength(15);
-    expect(folders.at(-1)).toBe(R1_P08_MIGRATION);
-    expect(folders.at(-2)).toBe("r1_p07_worker_team_crew_management");
+    expect(folders).toHaveLength(16);
+    expect(folders.at(-1)).toBe("r1_p09_provider_services_pricing_historical_snapshots");
+    expect(folders.at(-2)).toBe(R1_P08_MIGRATION);
+    expect(folders.at(-3)).toBe("r1_p07_worker_team_crew_management");
     expect(R1_P08_MIGRATION).toBe("r1_p08_catalog_localization_service_requirements");
   });
 

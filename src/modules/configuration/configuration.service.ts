@@ -11,6 +11,14 @@ import {
   type CurrencyRecord,
   type EffectiveConfig,
 } from "./configuration.repository.js";
+import type {
+  ProviderServicePricingPolicy,
+  ProviderServicePricingPolicyResult,
+} from "./configuration.public.js";
+
+const PROVIDER_SERVICE_PRICING_POLICY_KEY = "providers.service_pricing_policy";
+const MAX_MINOR_UNIT_DIGITS = 65;
+const MAX_CURRENCY_DECIMAL_PLACES = 30;
 
 function configurationError(code: string, message: string): AppError {
   return new AppError({ code, message, statusCode: 400 });
@@ -197,6 +205,152 @@ export async function resolveEffectiveConfig<T = unknown>(
     key,
     countryCode,
   );
+}
+
+/**
+ * @desc Convert a canonical decimal string into whole minor-unit digits.
+ * @explanation Rejects excess fractional scale and values wider than 65 digits
+ * so Configuration never invents a production maximum that Prisma/PostgreSQL
+ * cannot store exactly as `numeric(65,0)`.
+ */
+export function convertCanonicalDecimalToMinorUnitDigits(
+  decimal: string,
+  decimalPlaces: number,
+): string | null {
+  if (
+    !Number.isInteger(decimalPlaces) ||
+    decimalPlaces < 0 ||
+    decimalPlaces > MAX_CURRENCY_DECIMAL_PLACES
+  ) {
+    return null;
+  }
+  if (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/u.test(decimal)) {
+    return null;
+  }
+  if (/^0(?:\.0+)?$/u.test(decimal)) {
+    return null;
+  }
+
+  const separatorIndex = decimal.indexOf(".");
+  const whole =
+    separatorIndex === -1 ? decimal : decimal.slice(0, separatorIndex);
+  const fraction =
+    separatorIndex === -1 ? "" : decimal.slice(separatorIndex + 1);
+  if (fraction.length > decimalPlaces) {
+    return null;
+  }
+  const paddedFraction = fraction.padEnd(decimalPlaces, "0");
+  const combined = `${whole}${paddedFraction}`.replace(/^0+/u, "") || "0";
+  if (combined === "0" || combined.length > MAX_MINOR_UNIT_DIGITS) {
+    return null;
+  }
+  return combined;
+}
+
+type ProviderServicePricingPolicyValue = {
+  readonly approvalRequired: boolean;
+  readonly maximumPrice: string;
+};
+
+/**
+ * @desc Resolve the country-required provider service pricing policy.
+ * @explanation Returns explicit UNAVAILABLE codes instead of inventing defaults;
+ * currency scale and maximum minor-unit width are validated before AVAILABLE.
+ */
+export async function readProviderServicePricingPolicyWith(
+  repositories: ConfigurationRepositories,
+  countryCode: string,
+): Promise<ProviderServicePricingPolicyResult> {
+  const country = await repositories.country.findByCode(countryCode);
+  if (country === undefined || !country.isActive) {
+    return { status: "UNAVAILABLE", code: "COUNTRY_UNAVAILABLE" };
+  }
+
+  const currency = await repositories.currency.findByCode(
+    country.defaultCurrencyCode,
+  );
+  if (
+    currency === undefined ||
+    !currency.isActive ||
+    !Number.isInteger(currency.decimalPlaces) ||
+    currency.decimalPlaces < 0 ||
+    currency.decimalPlaces > MAX_CURRENCY_DECIMAL_PLACES
+  ) {
+    return { status: "UNAVAILABLE", code: "CURRENCY_UNAVAILABLE" };
+  }
+
+  const definition = getConfigKeyDefinition(PROVIDER_SERVICE_PRICING_POLICY_KEY);
+  const appConfig = await repositories.appConfig.findByKey(
+    PROVIDER_SERVICE_PRICING_POLICY_KEY,
+  );
+  if (
+    definition === undefined ||
+    appConfig === undefined ||
+    appConfig.resolutionPolicy !== definition.resolutionPolicy ||
+    appConfig.valueKind !== definition.valueKind
+  ) {
+    return {
+      status: "UNAVAILABLE",
+      code: "PROVIDER_SERVICE_PRICING_POLICY_UNAVAILABLE",
+    };
+  }
+
+  const countryConfig = await repositories.countryConfig.findByCountryIdAndKey(
+    country.id,
+    PROVIDER_SERVICE_PRICING_POLICY_KEY,
+  );
+  if (
+    countryConfig === undefined ||
+    countryConfig.valueKind !== definition.valueKind ||
+    countryConfig.valueKind !== appConfig.valueKind
+  ) {
+    return {
+      status: "UNAVAILABLE",
+      code: "PROVIDER_SERVICE_PRICING_POLICY_UNAVAILABLE",
+    };
+  }
+
+  let parsed: ProviderServicePricingPolicyValue;
+  try {
+    assertConfigValueIsNotSecret(
+      PROVIDER_SERVICE_PRICING_POLICY_KEY,
+      countryConfig.value,
+    );
+    parsed = definition.valueSchema.parse(
+      countryConfig.value,
+    ) as ProviderServicePricingPolicyValue;
+  } catch {
+    return {
+      status: "UNAVAILABLE",
+      code: "PROVIDER_SERVICE_PRICING_POLICY_UNAVAILABLE",
+    };
+  }
+
+  if (
+    convertCanonicalDecimalToMinorUnitDigits(
+      parsed.maximumPrice,
+      currency.decimalPlaces,
+    ) === null
+  ) {
+    return {
+      status: "UNAVAILABLE",
+      code: "PROVIDER_SERVICE_PRICING_POLICY_UNAVAILABLE",
+    };
+  }
+
+  const value: ProviderServicePricingPolicy = {
+    countryId: country.id,
+    countryCode: country.code,
+    currency: {
+      id: currency.id,
+      code: currency.code,
+      decimalPlaces: currency.decimalPlaces,
+    },
+    approvalRequired: parsed.approvalRequired,
+    maximumPrice: parsed.maximumPrice,
+  };
+
+  return { status: "AVAILABLE", value };
 }
 
 export type { CountryRecord, CurrencyRecord, EffectiveConfig };

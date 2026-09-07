@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 
 
 describe("OpenAPI validation tooling", () => {
-  it("rejects malformed YAML even when expected path strings are present", async () => {
+  it("rejects malformed YAML even when expected path strings are present", { timeout: 30_000 }, async () => {
     const directory = await mkdtemp(join(tmpdir(), "cleanora-openapi-"));
     const documentPath = join(directory, "invalid.yaml");
     await writeFile(

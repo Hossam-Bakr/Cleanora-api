@@ -754,6 +754,21 @@ export async function seed(
         resolutionPolicy: "COUNTRY_REQUIRED"
       }
     });
+    await prisma.appConfig.upsert({
+      where: { key: "providers.service_pricing_policy" },
+      create: {
+        key: "providers.service_pricing_policy",
+        value: Prisma.JsonNull,
+        valueKind: "OBJECT",
+        resolutionPolicy: "COUNTRY_REQUIRED",
+        description: "Country-required provider service pricing policy metadata"
+      },
+      update: {
+        value: Prisma.JsonNull,
+        valueKind: "OBJECT",
+        resolutionPolicy: "COUNTRY_REQUIRED"
+      }
+    });
 
     for (const config of [
       { key: 'auth.signin_policy', value: { maxFailures: 5, windowSeconds: 900, lockSeconds: 900 } },

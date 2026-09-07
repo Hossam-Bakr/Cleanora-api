@@ -267,7 +267,11 @@ async function run(): Promise<void> {
   const directoryNames = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
   const expected = new Set<string>([...R1_P07_UPGRADE_BASELINE_MIGRATIONS, R1_P08_MIGRATION]);
   const missing = [...expected].filter((name) => !directoryNames.includes(name));
-  const unexpected = directoryNames.filter((name) => !expected.has(name));
+  const unexpected = directoryNames.filter(
+    (name) =>
+      !expected.has(name) &&
+      name !== "r1_p09_provider_services_pricing_historical_snapshots",
+  );
   if (missing.length > 0 || unexpected.length > 0) {
     throw new Error(`Upgrade migration inventory differs; missing=[${missing.join(", ")}], unexpected=[${unexpected.join(", ")}]`);
   }

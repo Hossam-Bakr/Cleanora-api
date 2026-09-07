@@ -3,15 +3,45 @@
 | Field | Value |
 |---|---|
 | Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `None — no phase is active` |
-| Status | `No active phase` — R1-P08 Complete under DEC-046; Git publication still requires a separate exact `commit and push`; R1-P09 is not activated |
-| Backend Branch | `r1-p08-catalog-localization-service-requirements` (uncommitted R1-P08 worktree preserved; not published) |
-| Frontend Branch | `Not created — no R1-P08 frontend application or frontend scope was authorized` |
-| Backend Owner | `Not assigned — no active phase` |
-| Frontend Owner | `Not assigned` |
-| Started At | `Not applicable — no active phase` |
-| Completed At | `2026-09-03` — R1-P08 Complete by explicit owner instruction |
-| Last Updated | `2026-09-03` — owner marked R1-P08 Complete (DEC-046). Evidence gates remain green from the DEC-045 dual-target closeout. No commit, push, merge, deployment, production migration, or R1-P09 activation. |
+| Current Phase | `R1-P09 — Provider Services, Pricing & Historical Snapshots` |
+| Status | `Technically ready for commit-and-push workflow; human phase completion pending` |
+| Backend Branch | `codex/r1-p09-provider-services-pricing-historical-snapshots` from reviewed base `e3383fb` |
+| Backend Owner | `Codex — review, verified fixes, and quality gates` |
+| Frontend Scope | No frontend application is part of this phase |
+| Started At | `2026-09-04` |
+| Completed At | Not complete; human phase approval has not been given |
+| Last Updated | `2026-09-07` |
+
+## Active phase — R1-P09
+
+R1-P09 remains the sole active phase. DEC-047–DEC-051 govern its four
+user stories, FR-001–FR-046, and SC-001–SC-012. The owner subsequently
+instructed Codex to review Phase 9, fix errors, and make the intended changes
+ready for the separately triggered `commit and push` workflow. This supersedes
+the preparation-only execution boundary recorded on 2026-09-05.
+
+The worktree contains Provider-owned offering, pricing, histories, optional
+Staff approval, dynamic services readiness, and internal snapshot behavior,
+plus a four-table additive migration, protected HTTP/OpenAPI/Postman contracts,
+and phase tests. No Browse or Booking behavior is introduced.
+
+The current review found empty integration tests behind earlier passing totals,
+missing current pricing-policy checks, and pre-transaction identity facts used
+for authorization. All findings are resolved with real database regression evidence. Phase 9 tests
+(168 passed), full regression (1894 passed), five supplemental Phase 7 tests,
+phase/full coverage, clean/upgrade migration proofs, build and artifact gates
+passed. All 84 tasks are checked, and Companion records implement/implemented.
+See the active phase review and implementation evidence for exact results.
+
+Verification uses a new disposable PostgreSQL 18 cluster on `127.0.0.1:55439`,
+with explicit local Phase 9, regression, and Catalog proof databases. Repository
+`.env` and remote databases are not modified by this review.
+
+The owner subsequently authorized `commit and push` on 2026-09-07. Publication
+uses the feature branch above. Phase completion, merge, deployment, production
+migration and R1-P10 remain separately unapproved.
+The preparation artifacts remain historical design evidence; their original
+preparation-only status does not describe the current implementation work.
 
 ## Most recently completed phase — R1-P08
 
@@ -66,10 +96,10 @@ Canonical completion artifacts:
 - `specs/R1-P08-catalog-localization-service-requirements/completion-report.md`
 - DEC-041–DEC-046
 
-The feature branch preserves the dirty worktree and remains unstaged,
-uncommitted, unpushed, unmerged, and undeployed. Completion is not Git
-authorization: publication requires a new human message exactly equal to
-`commit and push`. No subsequent roadmap phase is active.
+R1-P08 was subsequently committed and merged into `origin/main` through PR #8
+at merge commit `e3383fb` (feature commit `879f1ed`). That Git publication did
+not authorize deployment or production migration. R1-P09 was separately
+activated for specification preparation on `2026-09-04`.
 
 ## Previously completed phase — R1-P06
 

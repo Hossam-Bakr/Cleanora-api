@@ -34,6 +34,10 @@ export interface RouteDependencies {
   readonly providerWorkerSelfRouter?: Router;
   /** R1-P07 Worker invitation inspect/onboarding/accept routes. */
   readonly providerWorkforceInvitationRouter?: Router;
+  /** R1-P09 Provider Service management routes. */
+  readonly providerServiceRouter?: Router;
+  /** R1-P09 Staff Provider Service price-approval routes. */
+  readonly staffProviderServiceRouter?: Router;
   /** R1-P08 protected staff Catalog management routes. */
   readonly staffCatalogRouter?: Router;
 }
@@ -83,6 +87,10 @@ export function mountRoutes(
     app.use(`${apiPrefix}/providers`, dependencies.providerWorkforceRouter);
   }
 
+  if (dependencies.providerServiceRouter !== undefined) {
+    app.use(`${apiPrefix}/providers`, dependencies.providerServiceRouter);
+  }
+
   if (dependencies.providerWorkerSelfRouter !== undefined) {
     app.use(`${apiPrefix}/workers`, dependencies.providerWorkerSelfRouter);
   }
@@ -95,6 +103,13 @@ export function mountRoutes(
     app.use(
       `${apiPrefix}/provider-admin-invitations`,
       dependencies.providerAdminInvitationRouter,
+    );
+  }
+
+  if (dependencies.staffProviderServiceRouter !== undefined) {
+    app.use(
+      `${apiPrefix}/staff/providers`,
+      dependencies.staffProviderServiceRouter,
     );
   }
 

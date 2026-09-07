@@ -24,6 +24,7 @@ const EXPECTED = [
   "r1_p06_provider_verification_external_payout_destinations",
   "r1_p07_worker_team_crew_management",
   "r1_p08_catalog_localization_service_requirements",
+  "r1_p09_provider_services_pricing_historical_snapshots",
 ] as const;
 
 const r1P07MigrationSql = readFileSync(

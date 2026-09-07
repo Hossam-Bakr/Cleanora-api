@@ -2067,3 +2067,229 @@ DEC-041–DEC-045.
   rewriting. The guarded Git workflow activates only on a new human message
   whose entire content is exactly `commit and push`.
 - No later roadmap phase (including R1-P09) is activated by this decision.
+
+## DEC-047 — R1-P09 Provider OWNER-and-ADMIN offering management
+
+**Date:** 2026-09-05
+**Status:** Approved — first R1-P09 product clarification
+
+The human owner accepted the recommended Provider-service authority model.
+
+### Provider-scoped authority
+
+- Active Provider `OWNER` and `ADMIN` members may both list, read, create,
+  edit, enable, and disable Provider-service offerings for their exact
+  Provider.
+- Every operation still requires a trusted active identity, the required
+  enabled global capability, active membership for the exact Provider, valid
+  Provider state, and the command's version, idempotency, and audit checks.
+- Caller-supplied actor or Provider scope is never authoritative, and
+  cross-Provider access fails closed without disclosing private offering,
+  price, note, history, or approval facts.
+- This offering-management authority does not grant an `ADMIN` Provider
+  ownership, ownership transfer, or membership-administration powers. Existing
+  OWNER-only membership and ownership rules remain unchanged.
+
+### Boundary
+
+This decision resolves only R1-P09 Provider membership authority. It does not
+choose price-approval policy, monetary semantics, effective-price history,
+snapshot/readiness details, or authorize implementation, schema or migration
+changes, database operations, Git actions, deployment, production work, phase
+completion, or R1-P10.
+
+## DEC-048 — R1-P09 country-configured staff-admin price approval
+
+**Date:** 2026-09-05
+**Status:** Approved — second R1-P09 product clarification
+
+The human owner accepted the recommended Provider-price approval policy.
+
+### Configuration and authority
+
+- The authoritative approval-required setting is country-scoped and belongs
+  to Configuration. Providers consumes the resolved setting through
+  Configuration's public contract and does not query Configuration tables.
+- Where approval is required, only an active `staff_admin` may approve or
+  reject a Provider-price proposal. The later plan may declare the smallest
+  additive Authentication-owned permission needed for this Staff operation;
+  Providers must not inspect role persistence.
+- Where approval is disabled, no Staff task or hidden pending approval state is
+  created.
+
+### Effective-price behavior
+
+- An initial price proposal in an approval-required country is pending and is
+  not effective. The offering cannot be enabled and cannot satisfy
+  `servicesReady` until that price is approved.
+- When an already approved effective price has a pending replacement, the
+  existing approved price remains effective. A rejection preserves it.
+- Approval atomically makes the pending replacement effective and supersedes
+  the preceding effective price. Pending, rejected, and superseded prices are
+  never returned as current effective truth.
+- An active Provider `OWNER` or `ADMIN` may disable an offering immediately;
+  price approval is not required for disablement. Re-enablement requires a
+  still-valid effective price and current Catalog conditions but does not by
+  itself create another price-approval decision.
+
+### Integrity and boundary
+
+Every Staff decision requires a permitted reason, expected version,
+idempotency, and atomic privileged audit evidence. This decision does not
+choose decimal/currency rules, detailed price-history cardinality, the final
+snapshot/readiness contract, or authorize implementation, schema or migration
+changes, database operations, Git actions, deployment, production work, phase
+completion, or R1-P10.
+
+## DEC-049 — R1-P09 country-currency decimal and duration contract
+
+**Date:** 2026-09-05
+**Status:** Approved — third R1-P09 product clarification
+
+The human owner accepted the recommended Provider-service monetary and
+estimated-duration contract.
+
+### Currency and decimal rules
+
+- The Provider's authoritative country determines its active default currency
+  through Configuration. The caller cannot select or override currency.
+- Authoritative monetary values cross command, response, and module-public
+  boundaries as plain decimal strings using that currency's configured decimal
+  places. Accepted values may gain required trailing zeros for canonical
+  output, but are never rounded silently.
+- Exponent notation, grouping separators, explicit plus signs, non-canonical
+  syntax, or fractional precision beyond the configured currency scale is
+  rejected. Binary floating-point arithmetic is prohibited for authoritative
+  money.
+- Provider price and minimum charge must both be greater than zero. Minimum
+  charge must be at least the Provider price.
+- Both amounts must be no greater than a required Provider-service price
+  maximum resolved for the Provider's country. Missing, inactive, or invalid
+  country, currency, or maximum-price configuration fails closed; there is no
+  hidden numeric fallback.
+
+### Estimated duration
+
+Estimated duration is a whole number of minutes from 1 through 1440 inclusive.
+It is descriptive service configuration and does not represent coverage,
+scheduling, availability, or capacity.
+
+### Boundary
+
+This decision does not authorize currency conversion, client-calculated totals,
+taxes, fees, discounts, commissions, deposits, dynamic pricing, or any payment
+behavior. It does not choose detailed effective-price history or the final
+snapshot/readiness contract, and does not authorize implementation, schema or
+migration changes, database operations, Git actions, deployment, production
+work, phase completion, or R1-P10.
+
+## DEC-050 — R1-P09 retained price proposals and aggregate concurrency
+
+**Date:** 2026-09-05
+**Status:** Approved — fourth R1-P09 product clarification
+
+The human owner accepted the recommended current-price, price-history, pending-
+replacement, and optimistic-concurrency policy.
+
+### Accepted proposals and history
+
+- Every Provider-price proposal that passes authorization, business validation,
+  expected-version, and idempotency checks is an accepted proposal and is
+  retained even if it is pending, later rejected, or superseded.
+- Price history is append-only and records proposal creation plus every accepted
+  pending, effective, approved, rejected, and superseded transition with safe
+  before/after facts, actor, time, reason where required, request correlation,
+  and resulting aggregate version.
+- Invalid, unauthorized, stale, or idempotency-conflicting attempts do not enter
+  domain price history. Separately required security or privileged-denial audit
+  evidence remains governed by the owning audit policy.
+- At most one pending proposal exists for an offering. A newer authorized,
+  valid, accepted Provider proposal atomically supersedes an older pending
+  proposal and records both outcomes.
+- In a country where approval is disabled, a newly accepted price becomes
+  effective immediately and atomically supersedes the preceding effective
+  price.
+
+### Concurrency and idempotency
+
+- One Provider Service aggregate version guards every offering configuration,
+  price-proposal, enable/disable, and Staff price-decision mutation.
+- Every mutation supplies the current expected aggregate version. Each accepted
+  mutation increments it exactly once; a stale writer changes no current,
+  price, history, readiness, or audit state.
+- Identical retries return the original safe result without duplicate state or
+  history. Reusing an idempotency identity for different content fails without
+  mutation.
+
+### Boundary
+
+This decision does not authorize hard deletion, editing retained commercial
+values in place, recording malformed attempts as price history, or adding event
+sourcing, CQRS, a generic state machine, or a pricing engine. It does not choose
+the final snapshot/readiness contract and does not authorize implementation,
+schema or migration changes, database operations, Git actions, deployment,
+production work, phase completion, or R1-P10.
+
+## DEC-051 — R1-P09 usable-offering readiness and snapshot-ready contract
+
+**Date:** 2026-09-05
+**Status:** Approved — fifth and final R1-P09 product clarification
+
+The human owner accepted the recommended `servicesReady`, Catalog-change,
+localized-note, and internal snapshot-ready policy.
+
+### Usable offering and readiness
+
+- `servicesReady` is satisfied when an approved Provider has at least one
+  currently usable offering: Provider-enabled, currently selectable for the
+  Provider's country, using a currently active allowed price unit, with a valid
+  effective price, configured currency and maximum, valid duration, and either
+  no notes or a complete valid localized note pair.
+- When no usable offering exists, only applicable stable blocker codes are
+  exposed: `NO_PROVIDER_SERVICES`, `NO_ENABLED_PROVIDER_SERVICE`,
+  `CATALOG_SERVICE_UNAVAILABLE`, `PRICE_UNIT_UNAVAILABLE`,
+  `NO_EFFECTIVE_PRICE`, `PRICE_APPROVAL_PENDING`, and
+  `OFFERING_CONFIGURATION_INVALID`.
+- `servicesReady` does not decide coverage, scheduling availability, capacity,
+  Provider operational LIVE state, or final public eligibility.
+  `eligibleForPublicBrowse` remains false in R1-P09.
+
+### Catalog changes and localized notes
+
+- Later Catalog service, country-availability, or selected price-unit
+  deactivation makes an enabled offering temporarily unusable without changing
+  its Provider-controlled enabled state or fabricating a Provider status
+  transition. Restoration of the same qualifying Catalog truth automatically
+  requalifies the unchanged offering when all other conditions still pass.
+- Service notes are optional. If either localized note is present, Arabic and
+  English must both be present and contain 1–1000 characters after trimming.
+  Management sees the pair; safe consumers receive only the exact requested-
+  locale note. There is no locale fallback and no OQ-002 materials rule.
+
+### Internal snapshot-ready contract
+
+- The input is Provider ID, Catalog service code, country code, and exact
+  supported locale.
+- A successful result contains Provider ID; Provider Service ID and aggregate
+  version; Catalog service ID/code/version; estimated-duration minutes; exact-
+  locale service note or null; Provider Service Price ID; canonical price and
+  minimum-charge strings; currency code; effective-at time; selected price-unit
+  ID/code/exact-locale label; and the complete exact-locale country-scoped
+  Catalog snapshot-ready definition including category, fields, options, and
+  media references.
+- The result is available only for a currently usable enabled offering and the
+  current effective price. It exposes no private contacts, raw persistence,
+  pending/rejected/superseded prices, Staff reasons, or hidden approval data.
+- A disabled or unusable offering returns one safe unavailable outcome. If
+  Catalog, offering, or price truth changes during the read, the operation
+  retries within a bounded policy or returns a stable conflict; it never returns
+  mixed versions.
+- R1-P09 creates no Booking record, price breakdown, answer, snapshot table, or
+  Booking HTTP behavior. The future Booking owner decides when to copy and
+  persist the returned values.
+
+### Boundary
+
+This decision completes R1-P09 product clarification. It does not authorize
+implementation, schema or migration changes, database operations, Git actions,
+deployment, production work, phase completion, or R1-P10.

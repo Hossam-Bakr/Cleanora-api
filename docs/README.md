@@ -47,12 +47,17 @@ Precedence:
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
 
-**Live pointer:** `R1-P08 — Catalog, Localization & Service Requirements` is
-the sole active phase. `docs/product/current.md` is the authority for its live
-state and approval boundary. The R1-P08 Swagger and Postman material documents
-the implemented protected-management contract only; it does not authorize
-database operations, Git actions, deployment, production work, or phase
-completion. Completed R1-P07 artifacts remain historical closure evidence.
+**Live pointer:** `R1-P09 — Provider Services, Pricing & Historical Snapshots`
+is the sole active phase. Specification, clarification, planning, and tasks are
+complete; implementation of the protected Provider-service surface is in
+progress. Protected HTTP/OpenAPI/Postman contracts live under
+`docs/api/provider-services.md` and `src/swagger/r1-p09-openapi.paths.ts`.
+`docs/product/current.md` is the authority for its live state and approval
+boundary. R1-P08 is Complete and merged through PR #8; its Swagger, Postman,
+Catalog public contract, and completion artifacts remain historical dependency
+evidence. Live migration deploy gates (T079) require an owner-approved
+`CLEANORA_R1_P09_DATABASE_URL` disposable target and must not run against
+unknown databases.
 
 ## Current backend navigation
 

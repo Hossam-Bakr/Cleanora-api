@@ -121,6 +121,9 @@ describe("catalog.public DTOs and factory", () => {
     const reader = createCatalogDefinitionReader({
       listSelectable: async () => ({ items: [], nextCursor: null }),
       getSnapshotReadyDefinition: async () => null,
+      resolveSelectableProviderOffering: async () => null,
+      getProviderOfferingReference: async () => null,
+      getSnapshotReadyDefinitionById: async () => null,
     });
     await expect(
       reader.listSelectable({ countryCode: "EG", locale: "EN" }),
@@ -130,6 +133,12 @@ describe("catalog.public DTOs and factory", () => {
         serviceCode: "X",
         countryCode: "EG",
         locale: "AR",
+      }),
+    ).resolves.toBeNull();
+    await expect(
+      reader.resolveSelectableProviderOffering({
+        serviceCode: "X",
+        countryCode: "EG",
       }),
     ).resolves.toBeNull();
   });

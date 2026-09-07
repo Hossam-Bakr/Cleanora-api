@@ -103,11 +103,12 @@ describe.skipIf(!hasDatabase)("US6 staff review queue (T071)", () => {
       const ids = (queue.body.data as Array<{ id: string }>).map(
         (item) => item.id,
       );
-      expect(queue.body.meta).toEqual({ nextCursor: null });
+      // Other PENDING_REVIEW rows are pushed to a far-future submittedAt so these
+      // two stay first; a shared disposable DB may still paginate beyond limit.
       const firstIndex = ids.indexOf(first.providerId);
       const secondIndex = ids.indexOf(second.providerId);
-      expect(firstIndex).toBeGreaterThanOrEqual(0);
-      expect(secondIndex).toBeGreaterThan(firstIndex);
+      expect(firstIndex).toBe(0);
+      expect(secondIndex).toBe(1);
 
       const dossier = await request(context.app)
         .get(`/api/v1/staff/providers/applications/${first.providerId}`)

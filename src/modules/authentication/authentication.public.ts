@@ -5,6 +5,7 @@ import type {
   SessionCapability,
   UserStatus,
 } from "./domain/authentication.types.js";
+export { createTransactionalProviderIdentityReader } from "./infrastructure/prisma-provider-identity.reader.js";
 import { findPrivilegedActionReason } from "./domain/authorization.catalog.js";
 import {
   INVITATION_ONBOARDING_ALLOWED_ACTIONS,
@@ -87,6 +88,25 @@ export interface TransactionalStaffPermissionAuthorizer {
 export type TransactionalStaffPermissionAuthorizerFactory = (
   transaction: unknown,
 ) => TransactionalStaffPermissionAuthorizer;
+
+/**
+ * Staff permission for Provider service price approval decisions (R1-P09).
+ * Mapped only to active staff_admin.
+ */
+export type ProviderServiceStaffPermissionCode =
+  "providers.services.prices.approve";
+
+/** Transaction-bound Authentication permission read for Staff price decisions. */
+export interface TransactionalProviderServiceStaffAuthorizer {
+  authorize(
+    actorUserId: string,
+    permission: ProviderServiceStaffPermissionCode,
+  ): Promise<boolean>;
+}
+
+export type TransactionalProviderServiceStaffAuthorizerFactory = (
+  transaction: unknown,
+) => TransactionalProviderServiceStaffAuthorizer;
 
 /** Transaction-bound recheck of an already consumed one-use proof. */
 export interface TransactionalAuthenticationProofUseAuthorizer {

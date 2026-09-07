@@ -17,6 +17,7 @@ function createRepositories(
       findByCode: async (code) =>
         code === "XX"
           ? {
+              id: "country-xx",
               code: "XX",
               nameEn: "Example",
               nameAr: "مثال",
