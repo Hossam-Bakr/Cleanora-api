@@ -15,6 +15,7 @@ the implemented Cleanora Release 1 backend surface.
 | R1-P06 | `Cleanora-R1-P06-Provider-Verification.postman_collection.json` | 37 | — |
 | R1-P07 | `Cleanora-R1-P07-Worker-Team-Crew-Management.postman_collection.json` | 25 | — |
 | R1-P08 | `Cleanora-R1-P08-Catalog-Management.postman_collection.json` | 19 | — |
+| R1-P09 | `Cleanora-R1-P09-Provider-Services.postman_collection.json` | 11 | `docs/api/provider-services.md` |
 
 R1-P03 and R1-P03A privileged role-provisioning operations are intentionally
 not duplicated into a public phase collection. Their exposure rules remain

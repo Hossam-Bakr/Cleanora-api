@@ -81,6 +81,22 @@ export const CONFIG_KEY_CATALOG = {
     valueKind: "STRING",
     resolutionPolicy: "COUNTRY_REQUIRED",
   },
+  "providers.service_pricing_policy": {
+    valueSchema: z
+      .object({
+        approvalRequired: z.boolean(),
+        maximumPrice: z
+          .string()
+          .regex(/^(?:0|[1-9]\d*)(?:\.\d+)?$/u)
+          .refine(
+            (value) => !/^0(?:\.0+)?$/u.test(value),
+            "maximumPrice must be a positive canonical decimal string",
+          ),
+      })
+      .strict(),
+    valueKind: "OBJECT",
+    resolutionPolicy: "COUNTRY_REQUIRED",
+  },
 } as const satisfies Record<string, ConfigKeyDefinition>;
 
 const secretKeyPattern =

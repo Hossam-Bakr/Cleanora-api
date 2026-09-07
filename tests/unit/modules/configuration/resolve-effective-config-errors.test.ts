@@ -19,6 +19,7 @@ function createRepositories(
     currency: { findByCode: async () => undefined },
     country: {
       findByCode: async () => ({
+        id: "country-xx",
         code: "XX",
         nameEn: "Example",
         nameAr: "مثال",

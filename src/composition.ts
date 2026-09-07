@@ -33,6 +33,7 @@ import { AuthorizationRepository } from "#modules/authentication/infrastructure/
 import {
   PrismaAuthenticationProofConsumption,
   PrismaAuthenticationProofUseAuthorizer,
+  PrismaProviderServiceStaffAuthorizer,
   PrismaR1P06StaffPermissionAuthorizer,
 } from "#modules/authentication/infrastructure/prisma-r1-p06-security.adapters";
 import { ProviderSensitiveActionProofVerifier } from "#modules/authentication/infrastructure/provider-sensitive-action-proof.verifier";
@@ -179,13 +180,28 @@ import { AppError } from "#shared/errors/app-error";
 import { createCatalogRouter } from "#modules/catalog/catalog.routes";
 import { CatalogService } from "#modules/catalog/catalog.service";
 import { PrismaCatalogRepository } from "#modules/catalog/catalog.repository";
-import { createCatalogDefinitionReader } from "#modules/catalog/catalog.public";
+import {
+  createCatalogDefinitionReader,
+  createTransactionalCatalogDefinitionReaderFactory,
+} from "#modules/catalog/catalog.public";
 import type { CatalogDefinitionReader } from "#modules/catalog/catalog.public";
+import { createTransactionalProviderServicePricingPolicyReader } from "#modules/configuration/configuration.public";
 import {
   createCatalogServiceImagePort,
   createTransactionalCatalogServiceImageAuthorizer,
   createTransactionalCatalogServiceMediaFactsReader,
 } from "#modules/media/infrastructure/media-provider.factory";
+import { PrismaProviderServiceUnitOfWork } from "#modules/providers/infrastructure/prisma-provider-service.unit-of-work";
+import { ProviderServiceService } from "#modules/providers/provider-service.service";
+import { ProviderServiceQueryService } from "#modules/providers/provider-service-query.service";
+import { ProviderServiceSnapshotService } from "#modules/providers/provider-service-snapshot.service";
+import { createProviderServiceRouter, createStaffProviderServiceRouter } from "#modules/providers/provider-service.routes";
+import {
+  createProviderServiceSnapshotReader,
+  createProviderServicesReadyFactsReader,
+  type ProviderServiceSnapshotReader,
+  type ProviderServicesReadyFactsReader,
+} from "#modules/providers/providers.public";
 
 function adaptProviderActiveCountryReader(
   reader = createActiveCountryReader(),
@@ -297,6 +313,16 @@ export interface RuntimeDependencies {
   readonly startCustomersBackgroundTasks: (() => () => void) | undefined;
   /** Internal Catalog reader for future module wiring; not an HTTP surface. */
   readonly catalogDefinitionReader: CatalogDefinitionReader;
+  /**
+   * Internal R1-P09 readiness/snapshot readers for composition-authorized
+   * consumers only — never mounted as customer/anonymous HTTP.
+   */
+  readonly providerServicesReadyFactsReader:
+    | ProviderServicesReadyFactsReader
+    | undefined;
+  readonly providerServiceSnapshotReader:
+    | ProviderServiceSnapshotReader
+    | undefined;
 }
 
 /**
@@ -409,6 +435,13 @@ export function createRuntimeDependencies(
     environment: environment.NODE_ENV,
   });
   const database = new PrismaLifecycle(environment.DATABASE_URL);
+  /**
+   * Late-bound so Provider projections (composed earlier) can consume dynamic
+   * R1-P09 servicesReady facts once the Provider-service UoW exists.
+   */
+  const servicesReadyFactsHolder: {
+    current: ProviderServicesReadyFactsReader | null;
+  } = { current: null };
   const rateLimiter = new MemoryRateLimiterAdapter();
   const { authorization, roleManagement } = createAuthorizationDependencies();
   const ownerStaffAdminProvision = createOwnerStaffAdminProvision(environment);
@@ -641,6 +674,22 @@ export function createRuntimeDependencies(
                     blockerCodes: truth.blockerCodes,
                   },
                   payoutDestinationReady: await payoutRepository.isPayoutDestinationReady(provider.id),
+                };
+              },
+            },
+            servicesReadyFacts: {
+              async read(providerId) {
+                const reader = servicesReadyFactsHolder.current;
+                if (reader === null) {
+                  return null;
+                }
+                const facts = await reader.getServicesReady(providerId);
+                if (facts === null) {
+                  return null;
+                }
+                return {
+                  satisfied: facts.servicesReady,
+                  blockerCodes: facts.blockerCodes,
                 };
               },
             },
@@ -1111,46 +1160,141 @@ export function createRuntimeDependencies(
   const providerWorkerSelfRouter = providersComposition?.providerWorkerSelfRouter;
   const providerWorkforceInvitationRouter = providersComposition?.providerWorkforceInvitationRouter;
 
-  // Internal CatalogDefinitionReader is a module-public contract for future
-  // module wiring. Compose it independently of Authentication / staff HTTP.
-  const catalogDefinitionReader = createCatalogDefinitionReader(
-    new CatalogService({
-      authorization,
-      logger,
-      repository: new PrismaCatalogRepository(
-        database.client,
-        createTransactionalActiveCountryReader,
-        createPrismaPrivilegedAuditWriter,
-        createTransactionalCatalogServiceImageAuthorizer,
-        createTransactionalCatalogServiceMediaFactsReader,
-      ),
-    }),
+  // Shared Catalog service for public definition reads and Providers UoW binding.
+  const catalogRepository = new PrismaCatalogRepository(
+    database.client,
+    createTransactionalActiveCountryReader,
+    createPrismaPrivilegedAuditWriter,
+    createTransactionalCatalogServiceImageAuthorizer,
+    createTransactionalCatalogServiceMediaFactsReader,
   );
+  const catalogService = new CatalogService({
+    authorization,
+    logger,
+    repository: catalogRepository,
+  });
+  const catalogDefinitionReader = createCatalogDefinitionReader(catalogService);
+
+  let providerServicesReadyFactsReader:
+    | ProviderServicesReadyFactsReader
+    | undefined;
+  let providerServiceSnapshotReader: ProviderServiceSnapshotReader | undefined;
+
+  let staffProviderServiceRouter: ReturnType<
+    typeof createStaffProviderServiceRouter
+  > | undefined;
+
+  const providerServiceRouter =
+    authentication === undefined
+      ? undefined
+      : (() => {
+          const createCatalogReader =
+            createTransactionalCatalogDefinitionReaderFactory((transaction) =>
+              catalogService.forTransaction(transaction),
+            );
+          const outerStaffAuthorizer = new PrismaProviderServiceStaffAuthorizer(
+            database.client as ConstructorParameters<
+              typeof PrismaProviderServiceStaffAuthorizer
+            >[0],
+          );
+          const providerServiceUnitOfWork = new PrismaProviderServiceUnitOfWork(
+            createCatalogReader,
+            (transaction) =>
+              createTransactionalProviderServicePricingPolicyReader(transaction),
+            (transaction) =>
+              new PrismaProviderServiceStaffAuthorizer(
+                transaction as ConstructorParameters<
+                  typeof PrismaProviderServiceStaffAuthorizer
+                >[0],
+              ),
+            createPrismaGeneralTransactionalAuditWriter,
+            database.client,
+          );
+          const providerServiceIdentityReader =
+            createPrismaProviderIdentityReader(database.client);
+          const providerServiceCommands = new ProviderServiceService({
+            unitOfWork: providerServiceUnitOfWork,
+            identityReader: providerServiceIdentityReader,
+            staffAuthorizer: outerStaffAuthorizer,
+          });
+          const providerServiceQueries = new ProviderServiceQueryService({
+            unitOfWork: providerServiceUnitOfWork,
+            identityReader: providerServiceIdentityReader,
+            staffAuthorizer: outerStaffAuthorizer,
+          });
+          providerServicesReadyFactsReader =
+            createProviderServicesReadyFactsReader(providerServiceQueries);
+          servicesReadyFactsHolder.current = providerServicesReadyFactsReader;
+          providerServiceSnapshotReader = createProviderServiceSnapshotReader(
+            new ProviderServiceSnapshotService({
+              unitOfWork: providerServiceUnitOfWork,
+            }),
+          );
+          staffProviderServiceRouter = createStaffProviderServiceRouter({
+            authenticateAccess: authentication.authenticateAccess,
+            service: {
+              decidePriceProposal:
+                providerServiceCommands.decidePriceProposal.bind(
+                  providerServiceCommands,
+                ),
+              listStaffPendingPriceProposals:
+                providerServiceQueries.listStaffPendingPriceProposals.bind(
+                  providerServiceQueries,
+                ),
+              getStaffPendingPriceDossier:
+                providerServiceQueries.getStaffPendingPriceDossier.bind(
+                  providerServiceQueries,
+                ),
+            },
+          });
+          return createProviderServiceRouter({
+            authenticateAccess: authentication.authenticateAccess,
+            service: {
+              createOffering:
+                providerServiceCommands.createOffering.bind(
+                  providerServiceCommands,
+                ),
+              replaceConfiguration:
+                providerServiceCommands.replaceConfiguration.bind(
+                  providerServiceCommands,
+                ),
+              proposePrice:
+                providerServiceCommands.proposePrice.bind(
+                  providerServiceCommands,
+                ),
+              applyLifecycle:
+                providerServiceCommands.applyLifecycle.bind(
+                  providerServiceCommands,
+                ),
+              list: providerServiceQueries.list.bind(providerServiceQueries),
+              get: providerServiceQueries.get.bind(providerServiceQueries),
+              listPriceHistory:
+                providerServiceQueries.listPriceHistory.bind(
+                  providerServiceQueries,
+                ),
+              listStatusHistory:
+                providerServiceQueries.listStatusHistory.bind(
+                  providerServiceQueries,
+                ),
+            },
+          });
+        })();
 
   const staffCatalogRouter =
     authentication === undefined
       ? undefined
-      : (() => {
-          const catalogRepository = new PrismaCatalogRepository(
-            database.client,
-            createTransactionalActiveCountryReader,
-            createPrismaPrivilegedAuditWriter,
-            createTransactionalCatalogServiceImageAuthorizer,
-            createTransactionalCatalogServiceMediaFactsReader,
-          );
-          return createCatalogRouter({
-            authenticateAccess: authentication.authenticateAccess,
-            catalogService: new CatalogService({
-              authorization,
-              logger,
-              catalogServiceImage: createCatalogServiceImagePort({
-                environment,
-                database: database.client,
-              }),
-              repository: catalogRepository,
+      : createCatalogRouter({
+          authenticateAccess: authentication.authenticateAccess,
+          catalogService: new CatalogService({
+            authorization,
+            logger,
+            catalogServiceImage: createCatalogServiceImagePort({
+              environment,
+              database: database.client,
             }),
-          });
-        })();
+            repository: catalogRepository,
+          }),
+        });
 
   return {
     database,
@@ -1162,6 +1306,8 @@ export function createRuntimeDependencies(
     privacyPrivileged,
     startCustomersBackgroundTasks,
     catalogDefinitionReader,
+    providerServicesReadyFactsReader,
+    providerServiceSnapshotReader,
     routes: {
       environment,
       logger,
@@ -1184,6 +1330,10 @@ export function createRuntimeDependencies(
       ...(customersRouter === undefined ? {} : { customersRouter }),
       ...(providersRouter === undefined ? {} : { providersRouter }),
       ...(providerWorkforceRouter === undefined ? {} : { providerWorkforceRouter }),
+      ...(providerServiceRouter === undefined ? {} : { providerServiceRouter }),
+      ...(staffProviderServiceRouter === undefined
+        ? {}
+        : { staffProviderServiceRouter }),
       ...(providerWorkerSelfRouter === undefined ? {} : { providerWorkerSelfRouter }),
       ...(providerWorkforceInvitationRouter === undefined
         ? {}

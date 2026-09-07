@@ -4,6 +4,10 @@ import { getPrismaClient } from "#database/prisma";
 import type { Prisma } from "#generated/prisma/client";
 
 import type { AuthenticationProofConsumptionPort } from "./provider-sensitive-action-proof.verifier.js";
+import type {
+  ProviderServiceStaffPermissionCode,
+  R1P06StaffPermissionCode,
+} from "../authentication.public.js";
 
 interface SignedProofClaims {
   readonly proofId: string;
@@ -99,7 +103,7 @@ export class PrismaR1P06StaffPermissionAuthorizer {
 
   public async authorize(
     actorUserId: string,
-    permission: "providers.verification.documents.review" | "providers.verification.policies.manage" | "providers.payout-destinations.verify",
+    permission: R1P06StaffPermissionCode | ProviderServiceStaffPermissionCode,
   ): Promise<boolean> {
     const grant = await this.db.userRole.findFirst({
       where: {
@@ -114,6 +118,27 @@ export class PrismaR1P06StaffPermissionAuthorizer {
       select: { id: true },
     });
     return grant !== null;
+  }
+}
+
+/**
+ * @desc Authorize Staff Admin Provider service price approval inside a transaction.
+ * @explanation Mirrors the R1-P06 staff authorizer so Providers UoW can re-check
+ * `providers.services.prices.approve` without importing Authentication internals.
+ */
+export class PrismaProviderServiceStaffAuthorizer {
+  public constructor(
+    private readonly db: Prisma.TransactionClient | ReturnType<typeof getPrismaClient> = getPrismaClient(),
+  ) {}
+
+  public async authorize(
+    actorUserId: string,
+    permission: ProviderServiceStaffPermissionCode,
+  ): Promise<boolean> {
+    return new PrismaR1P06StaffPermissionAuthorizer(this.db).authorize(
+      actorUserId,
+      permission,
+    );
   }
 }
 

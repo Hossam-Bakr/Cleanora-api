@@ -8,7 +8,7 @@ application services, admin actions, migrations, or production runbooks.
   prints users, credentials, sessions, tokens, OTP values, or passwords.
 - `seed.ts` runs the repository-owned idempotent Prisma seed entry.
 - `validate-clean-migration.ts` reviews every phase-owned migration through
-  R1-P04A (rejecting destructive, unrelated, or implicit-backfill SQL), verifies
+  R1-P09 (rejecting destructive, unrelated, or implicit-backfill SQL), verifies
   the exact product-table set and one successful history row per migration, and
   deploys only after the explicit empty non-production target checks pass.
 - `resolve-test-database-url.cjs` selects the approved automated-test database
@@ -24,11 +24,23 @@ execution are configured consistently.
 
 Useful commands: `npm run seed`, `npm run db:validate-clean-migration`,
 `npm run docs:check`, and `npm run openapi:validate`.
-The clean-migration and R1-P08 upgrade proofs read
-`CLEANORA_R1_P08_DATABASE_URL` and must target a named R1-P08 disposable
-database (`cleanora_r1_p08_*_(test|proof|clean|ci)`).
+The clean-migration and R1-P09 upgrade proofs read
+`CLEANORA_R1_P09_DATABASE_URL` and must target a named R1-P09 disposable
+database (`cleanora_r1_p09_*_(test|proof|clean|ci)`).
+Historical R1-P08 Catalog proofs still read `CLEANORA_R1_P08_DATABASE_URL`
+(`cleanora_r1_p08_*_(test|proof|clean|ci)`).
 Automated Vitest suites prefer `TEST_DATABASE_URL` (pooled Neon endpoint to the
 same isolated current-schema proof named `cleanora_r1_p04_*_proof`) and never
 print connection strings. `TEST_MIGRATION_DATABASE_URL` must name that same
 R1-P04 proof database. Do not point either family at `Cleanora` or the
 historical `cleanora_r1_p04_clean_proof`.
+
+R1-P09 Postman generation: `npm run postman:generate:r1-p09`.
+R1-P09 upgrade proof: `npm run db:validate-r1-p09-upgrade` (owner-approved
+disposable only; T079 remains blocked without it).
+
+Both current validators call `probe-r1-p09-constraints.ts` against their isolated
+schema. It verifies 28 expected database rejections, valid retained-price
+transitions, and an exact 65-digit money round trip. Savepoints recover each
+expected rejection; the fixture transaction rolls back entirely, leaving the
+four Phase 9 tables empty. No immutable history is deleted or trigger disabled.

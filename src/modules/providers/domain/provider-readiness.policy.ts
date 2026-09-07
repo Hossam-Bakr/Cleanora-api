@@ -20,6 +20,14 @@ export interface ProviderReadinessFacts {
     readonly blockerCodes: readonly string[];
   };
   readonly payoutDestinationReady?: boolean;
+  /**
+   * Dynamic R1-P09 servicesReady facts. When omitted, the gate stays deferred
+   * for older callers; projection injects live facts once composed.
+   */
+  readonly servicesReady?: {
+    readonly satisfied: boolean;
+    readonly blockerCodes: readonly string[];
+  };
 }
 
 function gate(input: {
@@ -125,11 +133,23 @@ export function calculateMarketplaceReadiness(
       "R1-P07",
       "WORKERS_DEFERRED_R1_P07",
     ),
-    servicesReady: laterPhaseGate(
-      "servicesReady",
-      "R1-P09",
-      "SERVICES_DEFERRED_R1_P09",
-    ),
+    servicesReady:
+      facts.servicesReady === undefined
+        ? laterPhaseGate(
+            "servicesReady",
+            "R1-P09",
+            "SERVICES_DEFERRED_R1_P09",
+          )
+        : gate({
+            key: "servicesReady",
+            applicable: true,
+            status: facts.servicesReady.satisfied ? "SATISFIED" : "BLOCKED",
+            satisfied: facts.servicesReady.satisfied,
+            blockerCodes: facts.servicesReady.satisfied
+              ? []
+              : facts.servicesReady.blockerCodes,
+            owningPhase: "R1-P09",
+          }),
     coverageReady: laterPhaseGate(
       "coverageReady",
       "R1-P10",

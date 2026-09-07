@@ -132,23 +132,31 @@ describe("R1-P08 Catalog module boundaries", () => {
     const composition = readFileSync(compositionPath, "utf8");
     const routes = readFileSync(routesPath, "utf8");
 
+    const catalogServiceIndex = composition.indexOf(
+      "const catalogService = new CatalogService",
+    );
     const readerFactoryIndex = composition.indexOf(
       "const catalogDefinitionReader = createCatalogDefinitionReader",
     );
     const staffRouterIndex = composition.indexOf("const staffCatalogRouter");
+    expect(catalogServiceIndex).toBeGreaterThan(-1);
     expect(readerFactoryIndex).toBeGreaterThan(-1);
     expect(staffRouterIndex).toBeGreaterThan(-1);
+    expect(catalogServiceIndex).toBeLessThan(readerFactoryIndex);
     expect(readerFactoryIndex).toBeLessThan(staffRouterIndex);
 
     expect(composition).not.toMatch(
       /catalogDefinitionReader:\s*staffCatalogRouter\?\.catalogDefinitionReader/u,
     );
 
-    const readerBlock = composition.slice(readerFactoryIndex, staffRouterIndex);
-    expect(readerBlock).toMatch(/new CatalogService\(\{/u);
-    expect(readerBlock).toMatch(/repository:/u);
-    expect(readerBlock).not.toMatch(/catalogServiceImage:/u);
-    expect(readerBlock).not.toMatch(/createCatalogServiceImagePort/u);
+    const sharedCatalogBlock = composition.slice(
+      catalogServiceIndex,
+      readerFactoryIndex,
+    );
+    expect(sharedCatalogBlock).toMatch(/new CatalogService\(\{/u);
+    expect(sharedCatalogBlock).toMatch(/repository:/u);
+    expect(sharedCatalogBlock).not.toMatch(/catalogServiceImage:/u);
+    expect(sharedCatalogBlock).not.toMatch(/createCatalogServiceImagePort/u);
 
     expect(routes).toMatch(/\$\{apiPrefix\}\/staff\/catalog/u);
     expect(routes).not.toMatch(/\$\{apiPrefix\}\/catalog(?:\/|"|'|`|\s|,)/u);

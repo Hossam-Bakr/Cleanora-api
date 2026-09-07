@@ -39,9 +39,21 @@ describe("R1-P08 public contracts", () => {
       async getSnapshotReadyDefinition() {
         return null;
       },
+      async resolveSelectableProviderOffering() {
+        return null;
+      },
+      async getProviderOfferingReference() {
+        return null;
+      },
+      async getSnapshotReadyDefinitionById() {
+        return null;
+      },
     };
     expect(typeof reader.listSelectable).toBe("function");
     expect(typeof reader.getSnapshotReadyDefinition).toBe("function");
+    expect(typeof reader.resolveSelectableProviderOffering).toBe("function");
+    expect(typeof reader.getProviderOfferingReference).toBe("function");
+    expect(typeof reader.getSnapshotReadyDefinitionById).toBe("function");
   });
 
   it("exports a narrow createCatalogDefinitionReader factory for composition", () => {

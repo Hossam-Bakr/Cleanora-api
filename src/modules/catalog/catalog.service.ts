@@ -22,6 +22,7 @@ import type {
   CatalogLocale,
   CatalogMediaReference,
   CatalogServiceManagementDto,
+  ProviderOfferingCatalogReference,
   SelectableCatalogServiceSummary,
   SnapshotReadyCatalogServiceDefinition,
 } from "./catalog.public.js";
@@ -114,6 +115,28 @@ export interface CatalogCommandMeta {
 export class CatalogService implements CatalogDefinitionReader {
   constructor(private readonly deps: CatalogServiceDependencies) {}
 
+  /**
+   * @desc Bind definition reads to an opaque shared transaction.
+   * @explanation Providers UoW supplies the transaction; Catalog never exposes
+   * Prisma types on the public seam and does not open a nested Catalog txn.
+   */
+  forTransaction(transactionContext: unknown): CatalogDefinitionReader {
+    const uow = this.deps.repository.unitOfWork.bindToTransaction(
+      transactionContext,
+    );
+    return {
+      listSelectable: (input) => this.listSelectableWith(uow, input),
+      getSnapshotReadyDefinition: (input) =>
+        this.getSnapshotReadyDefinitionWith(uow, input),
+      resolveSelectableProviderOffering: (input) =>
+        this.resolveSelectableProviderOfferingWith(uow, input),
+      getProviderOfferingReference: (input) =>
+        this.getProviderOfferingReferenceWith(uow, input),
+      getSnapshotReadyDefinitionById: (input) =>
+        this.getSnapshotReadyDefinitionByIdWith(uow, input),
+    };
+  }
+
   async listSelectable(input: {
     readonly countryCode: string;
     readonly locale: CatalogLocale;
@@ -123,30 +146,9 @@ export class CatalogService implements CatalogDefinitionReader {
     readonly items: readonly SelectableCatalogServiceSummary[];
     readonly nextCursor: string | null;
   }> {
-    return this.deps.repository.unitOfWork.runInReadSnapshot(async (uow) => {
-      const country = await resolveCatalogCountryForAvailability(
-        uow.activeCountryReader,
-        input.countryCode,
-      );
-      const page = await this.deps.repository.listSelectableServiceCandidates(
-        uow.tx,
-        {
-          countryId: country.id,
-          ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
-          ...(input.limit === undefined ? {} : { limit: input.limit }),
-        },
-      );
-
-      const items: SelectableCatalogServiceSummary[] = [];
-      for (const candidate of page.items) {
-        const summary = this.toSelectableSummary(candidate, input.locale, true);
-        if (summary !== null) {
-          items.push(summary);
-        }
-      }
-
-      return { items, nextCursor: page.nextCursor };
-    });
+    return this.deps.repository.unitOfWork.runInReadSnapshot((uow) =>
+      this.listSelectableWith(uow, input),
+    );
   }
 
   async getSnapshotReadyDefinition(input: {
@@ -154,80 +156,311 @@ export class CatalogService implements CatalogDefinitionReader {
     readonly countryCode: string;
     readonly locale: CatalogLocale;
   }): Promise<SnapshotReadyCatalogServiceDefinition | null> {
-    return this.deps.repository.unitOfWork.runInReadSnapshot(async (uow) => {
-      const country = await resolveCatalogCountryForAvailability(
-        uow.activeCountryReader,
-        input.countryCode,
-      );
-      const candidate = await this.deps.repository.findSelectableServiceByCode(
-        uow.tx,
-        {
-          serviceCode: input.serviceCode,
-          countryId: country.id,
-        },
-      );
-      if (candidate === null) {
-        return null;
-      }
+    return this.deps.repository.unitOfWork.runInReadSnapshot((uow) =>
+      this.getSnapshotReadyDefinitionWith(uow, input),
+    );
+  }
 
+  async resolveSelectableProviderOffering(input: {
+    readonly serviceCode: string;
+    readonly countryCode: string;
+  }): Promise<ProviderOfferingCatalogReference | null> {
+    return this.deps.repository.unitOfWork.runInReadSnapshot((uow) =>
+      this.resolveSelectableProviderOfferingWith(uow, input),
+    );
+  }
+
+  async getProviderOfferingReference(input: {
+    readonly serviceId: string;
+    readonly countryCode: string;
+  }): Promise<ProviderOfferingCatalogReference | null> {
+    return this.deps.repository.unitOfWork.runInReadSnapshot((uow) =>
+      this.getProviderOfferingReferenceWith(uow, input),
+    );
+  }
+
+  async getSnapshotReadyDefinitionById(input: {
+    readonly serviceId: string;
+    readonly countryCode: string;
+    readonly locale: CatalogLocale;
+  }): Promise<SnapshotReadyCatalogServiceDefinition | null> {
+    return this.deps.repository.unitOfWork.runInReadSnapshot((uow) =>
+      this.getSnapshotReadyDefinitionByIdWith(uow, input),
+    );
+  }
+
+  private async listSelectableWith(
+    uow: CatalogUnitOfWorkDependencies,
+    input: {
+      readonly countryCode: string;
+      readonly locale: CatalogLocale;
+      readonly cursor?: string;
+      readonly limit?: number;
+    },
+  ): Promise<{
+    readonly items: readonly SelectableCatalogServiceSummary[];
+    readonly nextCursor: string | null;
+  }> {
+    const country = await resolveCatalogCountryForAvailability(
+      uow.activeCountryReader,
+      input.countryCode,
+    );
+    const page = await this.deps.repository.listSelectableServiceCandidates(
+      uow.tx,
+      {
+        countryId: country.id,
+        ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+        ...(input.limit === undefined ? {} : { limit: input.limit }),
+      },
+    );
+
+    const items: SelectableCatalogServiceSummary[] = [];
+    for (const candidate of page.items) {
       const summary = this.toSelectableSummary(candidate, input.locale, true);
-      if (summary === null) {
-        return null;
+      if (summary !== null) {
+        items.push(summary);
       }
+    }
 
-      const configuration = projectSnapshotReadyConfiguration({
-        service: candidate.service,
-        locale: input.locale,
-      });
-      if (configuration === null) {
-        return null;
-      }
+    return { items, nextCursor: page.nextCursor };
+  }
 
-      const associations = await this.deps.repository.listServiceMediaAssociations(
-        uow.tx,
-        candidate.service.id,
+  private async getSnapshotReadyDefinitionWith(
+    uow: CatalogUnitOfWorkDependencies,
+    input: {
+      readonly serviceCode: string;
+      readonly countryCode: string;
+      readonly locale: CatalogLocale;
+    },
+  ): Promise<SnapshotReadyCatalogServiceDefinition | null> {
+    const country = await resolveCatalogCountryForAvailability(
+      uow.activeCountryReader,
+      input.countryCode,
+    );
+    const candidate = await this.deps.repository.findSelectableServiceByCode(
+      uow.tx,
+      {
+        serviceCode: input.serviceCode,
+        countryId: country.id,
+      },
+    );
+    return this.toSnapshotReadyDefinition(
+      uow,
+      candidate,
+      country.code,
+      input.locale,
+    );
+  }
+
+  private async resolveSelectableProviderOfferingWith(
+    uow: CatalogUnitOfWorkDependencies,
+    input: {
+      readonly serviceCode: string;
+      readonly countryCode: string;
+    },
+  ): Promise<ProviderOfferingCatalogReference | null> {
+    const country = await this.resolveActiveCountryOrNull(
+      uow,
+      input.countryCode,
+    );
+    if (country === null) {
+      return null;
+    }
+    const candidate = await this.deps.repository.findSelectableServiceByCode(
+      uow.tx,
+      {
+        serviceCode: input.serviceCode,
+        countryId: country.id,
+      },
+    );
+    if (candidate === null) {
+      return null;
+    }
+    return this.toProviderOfferingReference(candidate, true);
+  }
+
+  private async getProviderOfferingReferenceWith(
+    uow: CatalogUnitOfWorkDependencies,
+    input: {
+      readonly serviceId: string;
+      readonly countryCode: string;
+    },
+  ): Promise<ProviderOfferingCatalogReference | null> {
+    const country = await this.resolveActiveCountryOrNull(
+      uow,
+      input.countryCode,
+    );
+    if (country === null) {
+      return null;
+    }
+    const candidate = await this.deps.repository.findSelectableServiceById(
+      uow.tx,
+      {
+        serviceId: input.serviceId,
+        countryId: country.id,
+      },
+    );
+    if (candidate === null) {
+      return null;
+    }
+    return this.toProviderOfferingReference(candidate, true);
+  }
+
+  private async getSnapshotReadyDefinitionByIdWith(
+    uow: CatalogUnitOfWorkDependencies,
+    input: {
+      readonly serviceId: string;
+      readonly countryCode: string;
+      readonly locale: CatalogLocale;
+    },
+  ): Promise<SnapshotReadyCatalogServiceDefinition | null> {
+    const country = await resolveCatalogCountryForAvailability(
+      uow.activeCountryReader,
+      input.countryCode,
+    );
+    const candidate = await this.deps.repository.findSelectableServiceById(
+      uow.tx,
+      {
+        serviceId: input.serviceId,
+        countryId: country.id,
+      },
+    );
+    return this.toSnapshotReadyDefinition(
+      uow,
+      candidate,
+      country.code,
+      input.locale,
+    );
+  }
+
+  private async resolveActiveCountryOrNull(
+    uow: CatalogUnitOfWorkDependencies,
+    countryCode: string,
+  ): Promise<{ readonly id: string; readonly code: string } | null> {
+    try {
+      return await resolveCatalogCountryForAvailability(
+        uow.activeCountryReader,
+        countryCode,
       );
-      const media = this.toSelectableMediaReferences(associations);
+    } catch (error) {
+      if (error instanceof CatalogError) {
+        return null;
+      }
+      throw error;
+    }
+  }
 
-      const serviceContent = resolveExactLocaleContent({
-        translations: candidate.service.translations,
-        locale: input.locale,
-      });
-      const categoryContent = resolveExactLocaleContent({
-        translations: [
-          {
-            locale: "AR",
-            name: candidate.category.nameAr,
-            description: candidate.category.descriptionAr,
-          },
-          {
-            locale: "EN",
-            name: candidate.category.nameEn,
-            description: candidate.category.descriptionEn,
-          },
-        ],
-        locale: input.locale,
-      });
+  private toProviderOfferingReference(
+    candidate: SelectableServiceCandidateRow,
+    countryIsAuthoritativeAndActive: boolean,
+  ): ProviderOfferingCatalogReference {
+    const activePriceUnits = candidate.service.priceUnits
+      .filter((unit) => unit.isActive)
+      .map((unit) => ({ id: unit.id, code: unit.code }));
 
-      return {
-        serviceId: candidate.service.id,
-        serviceCode: candidate.service.code,
-        serviceVersion: candidate.service.version,
-        category: {
-          id: candidate.category.id,
-          code: candidate.category.code,
-          name: categoryContent.name,
-          description: categoryContent.description,
-        },
-        locale: input.locale,
-        countryCode: country.code,
-        name: serviceContent.name,
-        description: serviceContent.description,
-        priceUnits: configuration.priceUnits,
-        fields: configuration.fields,
-        media,
-      };
+    let selectableForCountry = false;
+    if (
+      countryIsAuthoritativeAndActive &&
+      candidate.category.isActive &&
+      candidate.service.isActive &&
+      candidate.countryAvailabilityIsAvailable
+    ) {
+      try {
+        assertActiveServiceStoredConfiguration({
+          categoryIsActive: candidate.category.isActive,
+          translations: candidate.service.translations,
+          priceUnits: candidate.service.priceUnits.map((unit) => ({
+            code: unit.code,
+            isActive: unit.isActive,
+            labelAr: unit.labelAr,
+            labelEn: unit.labelEn,
+          })),
+          fields: this.storedConfigurationForActivation(candidate.service),
+        });
+        selectableForCountry = true;
+      } catch (error) {
+        if (!(error instanceof CatalogError)) {
+          throw error;
+        }
+      }
+    }
+
+    return {
+      serviceId: candidate.service.id,
+      serviceCode: candidate.service.code,
+      serviceVersion: candidate.service.version,
+      selectableForCountry,
+      activePriceUnits,
+    };
+  }
+
+  private async toSnapshotReadyDefinition(
+    uow: CatalogUnitOfWorkDependencies,
+    candidate: SelectableServiceCandidateRow | null,
+    countryCode: string,
+    locale: CatalogLocale,
+  ): Promise<SnapshotReadyCatalogServiceDefinition | null> {
+    if (candidate === null) {
+      return null;
+    }
+
+    const summary = this.toSelectableSummary(candidate, locale, true);
+    if (summary === null) {
+      return null;
+    }
+
+    const configuration = projectSnapshotReadyConfiguration({
+      service: candidate.service,
+      locale,
     });
+    if (configuration === null) {
+      return null;
+    }
+
+    const associations = await this.deps.repository.listServiceMediaAssociations(
+      uow.tx,
+      candidate.service.id,
+    );
+    const media = this.toSelectableMediaReferences(associations);
+
+    const serviceContent = resolveExactLocaleContent({
+      translations: candidate.service.translations,
+      locale,
+    });
+    const categoryContent = resolveExactLocaleContent({
+      translations: [
+        {
+          locale: "AR",
+          name: candidate.category.nameAr,
+          description: candidate.category.descriptionAr,
+        },
+        {
+          locale: "EN",
+          name: candidate.category.nameEn,
+          description: candidate.category.descriptionEn,
+        },
+      ],
+      locale,
+    });
+
+    return {
+      serviceId: candidate.service.id,
+      serviceCode: candidate.service.code,
+      serviceVersion: candidate.service.version,
+      category: {
+        id: candidate.category.id,
+        code: candidate.category.code,
+        name: categoryContent.name,
+        description: categoryContent.description,
+      },
+      locale,
+      countryCode,
+      name: serviceContent.name,
+      description: serviceContent.description,
+      priceUnits: configuration.priceUnits,
+      fields: configuration.fields,
+      media,
+    };
   }
 
   /**

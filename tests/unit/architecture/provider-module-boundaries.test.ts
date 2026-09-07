@@ -68,6 +68,10 @@ describe("R1-P05 provider module boundaries", () => {
       "media/media.public",
       "admin/audit.public.js",
       "admin/audit.public",
+      "configuration/configuration.public.js",
+      "configuration/configuration.public",
+      "catalog/catalog.public.js",
+      "catalog/catalog.public",
     ];
     const violations: string[] = [];
     for (const file of files) {

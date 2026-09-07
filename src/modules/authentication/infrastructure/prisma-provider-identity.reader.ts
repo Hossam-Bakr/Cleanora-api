@@ -17,6 +17,11 @@ type UserRow = NonNullable<
 
 type DbClient = Prisma.TransactionClient | ReturnType<typeof getPrismaClient>;
 
+/** Bind Provider identity checks to the caller's owned transaction. */
+export function createTransactionalProviderIdentityReader(transaction: unknown): ProviderIdentityReader {
+  return createPrismaProviderIdentityReader(transaction as DbClient);
+}
+
 async function toSnapshot(user: UserRow, db: DbClient): Promise<ProviderIdentitySnapshot> {
   const providerAdminGrant = await db.userRole.findFirst({
     where: {

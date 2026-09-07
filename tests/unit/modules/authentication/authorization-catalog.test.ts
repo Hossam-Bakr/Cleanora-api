@@ -42,6 +42,7 @@ const expectedPermissionCodes = [
   "providers.verification.documents.review",
   "providers.verification.policies.manage",
   "providers.payout-destinations.verify",
+  "providers.services.prices.approve",
   "catalog.management.read",
   "catalog.management.write",
 ];
@@ -61,6 +62,7 @@ const expectedRolePermissionMap: Record<string, string[]> = {
     "providers.verification.documents.review",
     "providers.verification.policies.manage",
     "providers.payout-destinations.verify",
+    "providers.services.prices.approve",
     "catalog.management.read",
     "catalog.management.write",
   ],
@@ -145,6 +147,7 @@ describe("FR-002 authorization catalog", () => {
       "providers.verification.documents.review",
       "providers.verification.policies.manage",
       "providers.payout-destinations.verify",
+      "providers.services.prices.approve",
     ]);
     for (const forbidden of [
       "provider",
@@ -174,6 +177,7 @@ describe("FR-002 authorization catalog", () => {
       "providers.verification.documents.review",
       "providers.verification.policies.manage",
       "providers.payout-destinations.verify",
+      "providers.services.prices.approve",
     ]) {
       const holders = Object.entries(ROLE_PERMISSION_MAP)
         .filter(([, codes]) => codes.includes(permissionCode))

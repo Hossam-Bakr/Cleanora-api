@@ -1,0 +1,496 @@
+{
+  "info": {
+    "_postman_id": "9f0a0c09-4000-8000-8000-000000000009",
+    "name": "Cleanora R1-P09 Provider Services",
+    "description": "Protected Provider service management under /providers/:providerId/services and Staff approval under /staff/providers. No anonymous Browse or Booking routes. Operations: listProviderServices, createProviderService, getProviderService, replaceProviderServiceConfiguration, proposeProviderServicePrice, changeProviderServiceLifecycle, listProviderServicePriceHistory, listProviderServiceStatusHistory, listStaffPendingServicePriceProposals, getStaffPendingServicePriceProposal, decideStaffServicePriceProposal.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "hostUrl",
+      "value": "https://YOUR-HOSTED-DOMAIN.example"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "providerId",
+      "value": ""
+    },
+    {
+      "key": "providerServiceId",
+      "value": ""
+    },
+    {
+      "key": "providerServicePriceId",
+      "value": ""
+    },
+    {
+      "key": "catalogPriceUnitId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Hosted (Not hosted yet)",
+      "item": [
+        {
+          "name": "Provider management",
+          "item": [
+            {
+              "name": "List provider services",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/services"
+              }
+            },
+            {
+              "name": "Create provider service",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"catalogServiceCode\": \"STANDARD_HOME_CLEANING\",\n  \"catalogPriceUnitId\": \"{{catalogPriceUnitId}}\",\n  \"price\": \"250.00\",\n  \"minimumCharge\": \"300.00\",\n  \"estimatedDurationMinutes\": 120,\n  \"noteAr\": \"ملاحظات اختيارية\",\n  \"noteEn\": \"Optional notes\",\n  \"expectedVersion\": 0,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000001\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/services"
+              }
+            },
+            {
+              "name": "Get provider service",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}"
+              }
+            },
+            {
+              "name": "Replace provider service configuration",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"estimatedDurationMinutes\": 150,\n  \"noteAr\": null,\n  \"noteEn\": null,\n  \"expectedVersion\": 4,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000002\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/configuration"
+              }
+            },
+            {
+              "name": "Propose provider service price",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"catalogPriceUnitId\": \"{{catalogPriceUnitId}}\",\n  \"price\": \"275.00\",\n  \"minimumCharge\": \"325.00\",\n  \"reason\": \"Updated operating cost\",\n  \"expectedVersion\": 5,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000003\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/price-proposals"
+              }
+            },
+            {
+              "name": "Change provider service lifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"ENABLE\",\n  \"reason\": \"Offering is ready for use\",\n  \"expectedVersion\": 6,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000004\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/lifecycle"
+              }
+            },
+            {
+              "name": "List provider service price history",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/price-history"
+              }
+            },
+            {
+              "name": "List provider service status history",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/status-history"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Staff price approval",
+          "item": [
+            {
+              "name": "List staff pending price proposals",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/staff/providers/service-price-proposals"
+              }
+            },
+            {
+              "name": "Get staff pending price proposal",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/staff/providers/{{providerId}}/services/{{providerServiceId}}/price-proposals/{{providerServicePriceId}}"
+              }
+            },
+            {
+              "name": "Decide staff price proposal",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"decision\": \"APPROVE\",\n  \"reason\": \"Price evidence accepted\",\n  \"expectedVersion\": 7,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000005\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/staff/providers/{{providerId}}/services/{{providerServiceId}}/price-proposals/{{providerServicePriceId}}/decisions"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Local",
+      "item": [
+        {
+          "name": "Provider management",
+          "item": [
+            {
+              "name": "List provider services",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/services"
+              }
+            },
+            {
+              "name": "Create provider service",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"catalogServiceCode\": \"STANDARD_HOME_CLEANING\",\n  \"catalogPriceUnitId\": \"{{catalogPriceUnitId}}\",\n  \"price\": \"250.00\",\n  \"minimumCharge\": \"300.00\",\n  \"estimatedDurationMinutes\": 120,\n  \"noteAr\": \"ملاحظات اختيارية\",\n  \"noteEn\": \"Optional notes\",\n  \"expectedVersion\": 0,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000001\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/services"
+              }
+            },
+            {
+              "name": "Get provider service",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}"
+              }
+            },
+            {
+              "name": "Replace provider service configuration",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"estimatedDurationMinutes\": 150,\n  \"noteAr\": null,\n  \"noteEn\": null,\n  \"expectedVersion\": 4,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000002\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/configuration"
+              }
+            },
+            {
+              "name": "Propose provider service price",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"catalogPriceUnitId\": \"{{catalogPriceUnitId}}\",\n  \"price\": \"275.00\",\n  \"minimumCharge\": \"325.00\",\n  \"reason\": \"Updated operating cost\",\n  \"expectedVersion\": 5,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000003\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/price-proposals"
+              }
+            },
+            {
+              "name": "Change provider service lifecycle",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"ENABLE\",\n  \"reason\": \"Offering is ready for use\",\n  \"expectedVersion\": 6,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000004\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/lifecycle"
+              }
+            },
+            {
+              "name": "List provider service price history",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/price-history"
+              }
+            },
+            {
+              "name": "List provider service status history",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/services/{{providerServiceId}}/status-history"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Staff price approval",
+          "item": [
+            {
+              "name": "List staff pending price proposals",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/staff/providers/service-price-proposals"
+              }
+            },
+            {
+              "name": "Get staff pending price proposal",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/staff/providers/{{providerId}}/services/{{providerServiceId}}/price-proposals/{{providerServicePriceId}}"
+              }
+            },
+            {
+              "name": "Decide staff price proposal",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"decision\": \"APPROVE\",\n  \"reason\": \"Price evidence accepted\",\n  \"expectedVersion\": 7,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000005\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/staff/providers/{{providerId}}/services/{{providerServiceId}}/price-proposals/{{providerServicePriceId}}/decisions"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -62,6 +62,12 @@ export interface ProviderProjectionServiceDependencies {
       readonly payoutDestinationReady: boolean;
     }>;
   };
+  readonly servicesReadyFacts?: {
+    read(providerId: string): Promise<{
+      readonly satisfied: boolean;
+      readonly blockerCodes: readonly string[];
+    } | null>;
+  };
 }
 
 export interface ProviderProjectionReaders {
@@ -435,12 +441,18 @@ export class ProviderProjectionService {
     );
     const completion = calculateProfileCompletion(collected.facts);
     const verification = await this.dependencies.verificationFacts?.read(provider);
+    const servicesReady = await this.dependencies.servicesReadyFacts?.read(
+      provider.id,
+    );
     const readiness = calculateMarketplaceReadiness({
       kind: provider.kind,
       applicationStatus: provider.applicationStatus,
       operationalStatus: provider.operationalStatus,
       profileCompletionPercentage: completion.percentage,
       ...(verification === undefined ? {} : verification),
+      ...(servicesReady === null || servicesReady === undefined
+        ? {}
+        : { servicesReady }),
     });
 
     return {

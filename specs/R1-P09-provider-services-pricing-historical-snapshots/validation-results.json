@@ -1,0 +1,93 @@
+{
+  "date": "2026-09-07",
+  "baseCommit": "e3383fb2d4f57ba4439d6783e5939c62670984d8",
+  "branch": "main",
+  "technicalReadiness": true,
+  "humanPhaseCompletionApproved": false,
+  "gitPublicationPerformed": false,
+  "fullTests": {
+    "passed": 1894,
+    "failed": 0,
+    "skipped": 6
+  },
+  "phaseTests": {
+    "passed": 168,
+    "skipped": 1
+  },
+  "supplementalPhase7": {
+    "passed": 5,
+    "failed": 0
+  },
+  "phaseCoverage": {
+    "lines": {
+      "total": 1680,
+      "covered": 1490,
+      "skipped": 0,
+      "pct": 88.69
+    },
+    "statements": {
+      "total": 1720,
+      "covered": 1519,
+      "skipped": 0,
+      "pct": 88.31
+    },
+    "functions": {
+      "total": 346,
+      "covered": 298,
+      "skipped": 0,
+      "pct": 86.12
+    },
+    "branches": {
+      "total": 1188,
+      "covered": 952,
+      "skipped": 0,
+      "pct": 80.13
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "repositoryCoverage": {
+    "lines": {
+      "total": 12634,
+      "covered": 10920,
+      "skipped": 0,
+      "pct": 86.43
+    },
+    "statements": {
+      "total": 13316,
+      "covered": 11279,
+      "skipped": 0,
+      "pct": 84.7
+    },
+    "functions": {
+      "total": 2713,
+      "covered": 2377,
+      "skipped": 0,
+      "pct": 87.61
+    },
+    "branches": {
+      "total": 10189,
+      "covered": 7754,
+      "skipped": 0,
+      "pct": 76.1
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "migration": {
+    "sha256": "F991C6386EDC6B623F4B38BFFDFFF01D2C06F1A53C5F34DC8D7EE73B744F0E0F",
+    "clean": "passed",
+    "populatedUpgrade": "passed",
+    "liveExpectedRejections": 28
+  },
+  "logsDirectory": "C:/Users/ALYOSER/AppData/Local/Temp/cleanora-r1-p09-review-20260906/",
+  "disposableClusterState": "stopped after verification; local data and logs retained"
+}

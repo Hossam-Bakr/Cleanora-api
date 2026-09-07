@@ -119,6 +119,17 @@ export interface SnapshotReadyCatalogServiceDefinition {
  * permission surface; a later Browse phase owns that and its authorization.
  * `null` means not selectable or not found, with no draft-leaking distinction.
  */
+export interface ProviderOfferingCatalogReference {
+  readonly serviceId: string;
+  readonly serviceCode: string;
+  readonly serviceVersion: number;
+  readonly selectableForCountry: boolean;
+  readonly activePriceUnits: readonly {
+    readonly id: string;
+    readonly code: string;
+  }[];
+}
+
 export interface CatalogDefinitionReader {
   listSelectable(input: {
     readonly countryCode: string;
@@ -135,7 +146,35 @@ export interface CatalogDefinitionReader {
     readonly countryCode: string;
     readonly locale: CatalogLocale;
   }): Promise<SnapshotReadyCatalogServiceDefinition | null>;
+
+  /**
+   * Non-localized creation lookup. Selectability and active units are Catalog-
+   * owned; Providers never invent a locale here.
+   */
+  resolveSelectableProviderOffering(input: {
+    readonly serviceCode: string;
+    readonly countryCode: string;
+  }): Promise<ProviderOfferingCatalogReference | null>;
+
+  /**
+   * ID-based current lookup for existing offerings without storing Catalog
+   * code/name/labels in mutable Provider state.
+   */
+  getProviderOfferingReference(input: {
+    readonly serviceId: string;
+    readonly countryCode: string;
+  }): Promise<ProviderOfferingCatalogReference | null>;
+
+  getSnapshotReadyDefinitionById(input: {
+    readonly serviceId: string;
+    readonly countryCode: string;
+    readonly locale: CatalogLocale;
+  }): Promise<SnapshotReadyCatalogServiceDefinition | null>;
 }
+
+export type TransactionalCatalogDefinitionReaderFactory = (
+  transactionContext: unknown,
+) => CatalogDefinitionReader;
 
 /**
  * @desc Composition factory exposing only the internal Catalog reader surface.
@@ -147,7 +186,25 @@ export function createCatalogDefinitionReader(
     listSelectable: (input) => source.listSelectable(input),
     getSnapshotReadyDefinition: (input) =>
       source.getSnapshotReadyDefinition(input),
+    resolveSelectableProviderOffering: (input) =>
+      source.resolveSelectableProviderOffering(input),
+    getProviderOfferingReference: (input) =>
+      source.getProviderOfferingReference(input),
+    getSnapshotReadyDefinitionById: (input) =>
+      source.getSnapshotReadyDefinitionById(input),
   };
+}
+
+/**
+ * @desc Pass-through for composition to supply a transaction-bound Catalog reader.
+ * @explanation Providers UoW receives this factory with an opaque transaction and
+ * never imports Catalog repositories or Prisma types.
+ */
+export function createTransactionalCatalogDefinitionReaderFactory(
+  createBoundReader: TransactionalCatalogDefinitionReaderFactory,
+): TransactionalCatalogDefinitionReaderFactory {
+  return (transactionContext) =>
+    createCatalogDefinitionReader(createBoundReader(transactionContext));
 }
 
 /** Management-safe category DTO without raw Prisma or audit fields. */

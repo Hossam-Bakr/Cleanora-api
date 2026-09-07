@@ -191,6 +191,10 @@ describe("R1-P01 migration boundary", () => {
       "service_country_availability",
       "service_media_associations",
       "catalog_command_requests",
+      "provider_services",
+      "provider_service_prices",
+      "provider_service_price_history",
+      "provider_service_status_history",
     );
     expect(() => assertExactPostDeployTables(expected)).not.toThrow();
     expect(() =>
@@ -276,6 +280,12 @@ describe("R1-P01 migration boundary", () => {
         },
         {
           migration_name: "r1_p08_catalog_localization_service_requirements",
+          finished_at: new Date(),
+          rolled_back_at: null
+        },
+        {
+          migration_name:
+            "r1_p09_provider_services_pricing_historical_snapshots",
           finished_at: new Date(),
           rolled_back_at: null
         }

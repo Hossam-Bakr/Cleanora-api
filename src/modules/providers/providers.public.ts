@@ -2,6 +2,8 @@
  * Public cross-module contract for later approved phases.
  * Contact-free preview projections reuse the Providers allowlisted mapper.
  */
+import type { SnapshotReadyCatalogServiceDefinition } from "#modules/catalog/catalog.public";
+
 import {
   mapContactFreeProviderPreview,
   PROVIDER_PREVIEW_FIELD_ALLOWLIST,
@@ -33,6 +35,97 @@ export interface ProviderWorkersReadyFacts {
     | "WORKER_ACCOUNT_OR_ROLE_INACTIVE"
     | "WORKER_LOGIN_ACCESS_INACTIVE"
   )[];
+}
+
+export type ProviderServicesReadyBlockerCode =
+  | "NO_PROVIDER_SERVICES"
+  | "NO_ENABLED_PROVIDER_SERVICE"
+  | "CATALOG_SERVICE_UNAVAILABLE"
+  | "PRICE_UNIT_UNAVAILABLE"
+  | "NO_EFFECTIVE_PRICE"
+  | "PRICE_APPROVAL_PENDING"
+  | "OFFERING_CONFIGURATION_INVALID";
+
+export interface ProviderServicesReadyFacts {
+  readonly providerId: string;
+  readonly servicesReady: boolean;
+  readonly qualifyingOfferingCount: number;
+  readonly blockerCodes: readonly ProviderServicesReadyBlockerCode[];
+}
+
+export interface ProviderServicesReadyFactsReader {
+  getServicesReady(
+    providerId: string,
+  ): Promise<ProviderServicesReadyFacts | null>;
+}
+
+export type ProviderServiceExactLocale = "AR" | "EN";
+
+export interface ProviderServiceSnapshotReadyValue {
+  readonly providerId: string;
+  readonly providerServiceId: string;
+  readonly providerServiceVersion: number;
+  readonly catalogServiceId: string;
+  readonly catalogServiceCode: string;
+  readonly catalogServiceVersion: number;
+  readonly estimatedDurationMinutes: number;
+  readonly serviceNote: string | null;
+  readonly providerServicePriceId: string;
+  readonly price: string;
+  readonly minimumCharge: string;
+  readonly currencyCode: string;
+  readonly effectiveAt: string;
+  readonly priceUnit: {
+    readonly id: string;
+    readonly code: string;
+    readonly label: string;
+  };
+  readonly catalogDefinition: SnapshotReadyCatalogServiceDefinition;
+}
+
+export type ProviderServiceSnapshotReadyResult =
+  | {
+      readonly status: "AVAILABLE";
+      readonly value: ProviderServiceSnapshotReadyValue;
+    }
+  | { readonly status: "UNAVAILABLE" }
+  | {
+      readonly status: "CONFLICT";
+      readonly code: "PROVIDER_SERVICE_SNAPSHOT_CONFLICT";
+    };
+
+export interface ProviderServiceSnapshotReader {
+  getSnapshotReadyFacts(input: {
+    readonly providerId: string;
+    readonly catalogServiceCode: string;
+    readonly countryCode: string;
+    readonly locale: ProviderServiceExactLocale;
+  }): Promise<ProviderServiceSnapshotReadyResult>;
+}
+
+/**
+ * @desc Narrow public factory for composition-authorized servicesReady readers.
+ * @access Public contract
+ */
+export function createProviderServicesReadyFactsReader(
+  source: ProviderServicesReadyFactsReader,
+): ProviderServicesReadyFactsReader {
+  return {
+    getServicesReady: (providerId) => source.getServicesReady(providerId),
+  };
+}
+
+/**
+ * @desc Narrow public factory for composition-authorized snapshot readers.
+ * @access Public contract
+ * @explanation Never exposes repositories, Prisma clients, or HTTP adapters.
+ */
+export function createProviderServiceSnapshotReader(
+  source: ProviderServiceSnapshotReader,
+): ProviderServiceSnapshotReader {
+  return {
+    getSnapshotReadyFacts: (input) => source.getSnapshotReadyFacts(input),
+  };
 }
 
 export interface BookingSafeTeamMemberFact {

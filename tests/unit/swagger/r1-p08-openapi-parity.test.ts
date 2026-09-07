@@ -93,10 +93,9 @@ describe("R1-P08 design/runtime OpenAPI parity", () => {
   });
 
   it("describes R1-P08 Staff Catalog in OpenAPI info metadata", () => {
-    expect(cleanoraOpenApiDocument.info.version).toBe("1.0.0-r1-p08");
-    expect(cleanoraOpenApiDocument.info.summary).toMatch(/R1-P08/u);
-    expect(cleanoraOpenApiDocument.info.summary).toMatch(/Staff Catalog/u);
+    expect(cleanoraOpenApiDocument.info.version).toBe("1.0.0-r1-p09");
     expect(cleanoraOpenApiDocument.info.description).toMatch(/R1-P08/u);
+    expect(cleanoraOpenApiDocument.info.description).toMatch(/Staff Catalog/u);
     expect(cleanoraOpenApiDocument.info.description).toMatch(
       /\/api\/v1\/staff\/catalog/u,
     );

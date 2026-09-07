@@ -1,4 +1,14 @@
 import { createPrismaActiveCountryReader } from "./infrastructure/prisma-active-country.reader.js";
+import { createPrismaProviderServicePricingPolicyReader, createPrismaProviderServiceCountryIdentityReader } from "./infrastructure/prisma-provider-service-pricing-policy.reader.js";
+
+export interface ProviderServiceCountryIdentityReader {
+  getCountryCodeById(countryId: string): Promise<string | null>;
+}
+
+/** Resolve identity only; current country/currency validity stays with the pricing policy. */
+export function createTransactionalProviderServiceCountryIdentityReader(transaction: unknown): ProviderServiceCountryIdentityReader {
+  return createPrismaProviderServiceCountryIdentityReader(transaction);
+}
 
 /**
  * Approved public surface for cross-module consumers.
@@ -57,4 +67,63 @@ export function createTransactionalActiveCountryReader(
   transactionContext: unknown,
 ): ActiveCountryReader {
   return createPrismaActiveCountryReader(transactionContext);
+}
+
+/**
+ * Country-bound provider service pricing policy resolved with the active
+ * default currency. Never invents production approval or maximum values.
+ */
+export interface ProviderServicePricingPolicy {
+  readonly countryId: string;
+  readonly countryCode: string;
+  readonly currency: {
+    readonly id: string;
+    readonly code: string;
+    readonly decimalPlaces: number;
+  };
+  readonly approvalRequired: boolean;
+  readonly maximumPrice: string;
+}
+
+export type ProviderServicePricingPolicyResult =
+  | {
+      readonly status: "AVAILABLE";
+      readonly value: ProviderServicePricingPolicy;
+    }
+  | {
+      readonly status: "UNAVAILABLE";
+      readonly code:
+        | "COUNTRY_UNAVAILABLE"
+        | "CURRENCY_UNAVAILABLE"
+        | "PROVIDER_SERVICE_PRICING_POLICY_UNAVAILABLE";
+    };
+
+export interface ProviderServicePricingPolicyReader {
+  readForCountry(input: {
+    readonly countryCode: string;
+  }): Promise<ProviderServicePricingPolicyResult>;
+}
+
+export type TransactionalProviderServicePricingPolicyReaderFactory = (
+  transactionContext: unknown,
+) => ProviderServicePricingPolicyReader;
+
+/**
+ * @desc Create the non-transactional provider pricing-policy reader.
+ * @explanation Composition and Providers receive only this interface; raw
+ * config tables and Prisma types stay inside Configuration.
+ */
+export function createProviderServicePricingPolicyReader(): ProviderServicePricingPolicyReader {
+  return createPrismaProviderServicePricingPolicyReader();
+}
+
+/**
+ * @desc Bind the pricing-policy reader to an opaque shared transaction.
+ * @explanation Mirrors createTransactionalActiveCountryReader so Providers UoW
+ * can validate policy inside one serializable or repeatable-read snapshot.
+ */
+export function createTransactionalProviderServicePricingPolicyReader(
+  transactionContext: unknown,
+): ProviderServicePricingPolicyReader {
+  return createPrismaProviderServicePricingPolicyReader(transactionContext);
 }

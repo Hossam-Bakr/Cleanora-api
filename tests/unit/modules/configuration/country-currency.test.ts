@@ -20,6 +20,7 @@ function createRepositories(
         options.countryExists === false
           ? undefined
           : {
+              id: "country-xx",
               code: "XX",
               nameEn: "Example",
               nameAr: "مثال",
@@ -35,6 +36,7 @@ function createRepositories(
         options.currencyExists === false
           ? undefined
           : {
+              id: "currency-xxx",
               code: "XXX",
               nameEn: "Example Currency",
               nameAr: "عملة مثال",

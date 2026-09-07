@@ -12,6 +12,7 @@ API documentation is organized by roadmap phase.
 | R1-P03A owner staff-admin provisioning | [OpenAPI owner staff-admins](openapi/r1-p03a-owner-staff-admins.yaml) | Implemented under DEC-030 |
 | R1-P06 Provider verification and external payout destinations | [OpenAPI Provider verification and payout destinations](openapi/r1-p06-provider-verification-external-payout-destinations.yaml) | Implemented; phase Complete |
 | R1-P08 Catalog, localization, and service requirements | [Protected Staff Catalog Swagger reference](../swagger/README.md#r1-p08--staff-catalog-management) | Implemented protected-management routes; active-phase validation and owner completion approval remain pending |
+| R1-P09 Provider services, pricing, and historical snapshots | [Provider services API](../api/provider-services.md) | Implemented protected Provider/Staff routes (11 operations); live migration gates require disposable `CLEANORA_R1_P09_DATABASE_URL` |
 | Runtime API reference | [Interactive Swagger documentation](../swagger/README.md) | Implemented at `/api/v1/docs` |
 
 Every document must state whether an endpoint is `Implemented`, `Prepared`, or
@@ -26,3 +27,6 @@ The corresponding R1-P08 protected-management collection is
 `postman/Cleanora-R1-P08-Catalog-Management.postman_collection.json`; it contains no
 anonymous Browse request and is generated from the runtime R1-P08 OpenAPI
 source.
+The R1-P09 protected Provider-services collection is
+`postman/Cleanora-R1-P09-Provider-Services.postman_collection.json` (exactly 11
+operations; no Browse/Booking); regenerate with `npm run postman:generate:r1-p09`.

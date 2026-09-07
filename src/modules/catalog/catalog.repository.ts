@@ -198,6 +198,11 @@ export interface CatalogUnitOfWork {
   runInReadSnapshot<T>(
     work: (deps: CatalogUnitOfWorkDependencies) => Promise<T>,
   ): Promise<T>;
+  /**
+   * Bind Catalog collaborators to an opaque shared transaction without opening
+   * a nested Catalog-owned transaction.
+   */
+  bindToTransaction(transactionContext: unknown): CatalogUnitOfWorkDependencies;
 }
  
 export interface CatalogPage<TItem> {
@@ -376,6 +381,13 @@ export interface CatalogRepository {
     tx: CatalogTransactionClient,
     input: {
       readonly serviceCode: string;
+      readonly countryId: string;
+    },
+  ): Promise<SelectableServiceCandidateRow | null>;
+  findSelectableServiceById(
+    tx: CatalogTransactionClient,
+    input: {
+      readonly serviceId: string;
       readonly countryId: string;
     },
   ): Promise<SelectableServiceCandidateRow | null>;
@@ -789,6 +801,16 @@ export class PrismaCatalogRepository implements CatalogRepository {
             ...CATALOG_UNIT_OF_WORK_TRANSACTION_OPTIONS,
           },
         ),
+      bindToTransaction: (transactionContext) => {
+        const tx = transactionContext as CatalogTransactionClient;
+        return {
+          tx,
+          activeCountryReader: this.createActiveCountryReader(tx),
+          privilegedAuditWriter: this.createPrivilegedAuditWriter(tx),
+          catalogServiceImageAuthorizer:
+            this.createCatalogServiceImageAuthorizer(tx),
+        };
+      },
     };
   }
  
@@ -1921,7 +1943,37 @@ export class PrismaCatalogRepository implements CatalogRepository {
       countryAvailabilityIsAvailable: availability?.isAvailable ?? false,
     };
   }
- 
+
+  async findSelectableServiceById(
+    tx: CatalogTransactionClient,
+    input: {
+      readonly serviceId: string;
+      readonly countryId: string;
+    },
+  ): Promise<SelectableServiceCandidateRow | null> {
+    const row = await tx.service.findUnique({
+      where: { id: input.serviceId },
+      include: {
+        translations: true,
+        priceUnits: true,
+        fields: { include: { options: true } },
+        category: true,
+        countryRows: {
+          where: { countryId: input.countryId },
+        },
+      },
+    });
+    if (row === null) {
+      return null;
+    }
+    const availability = row.countryRows[0];
+    return {
+      category: mapCategory(row.category),
+      service: mapServiceWithConfiguration(row),
+      countryAvailabilityIsAvailable: availability?.isAvailable ?? false,
+    };
+  }
+
   async listServiceMediaAssociations(
     tx: CatalogTransactionClient,
     serviceId: string,
