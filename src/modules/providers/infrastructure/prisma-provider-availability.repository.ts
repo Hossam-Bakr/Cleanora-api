@@ -1094,6 +1094,12 @@ export class PrismaProviderAvailabilityRepository
                     version: true,
                     status: true,
                     endedAt: true,
+                    profile: {
+                      select: {
+                        gender: true,
+                        workerType: true,
+                      },
+                    },
                     schedules: {
                       orderBy: [
                         { weekday: "asc" },
@@ -1145,6 +1151,18 @@ export class PrismaProviderAvailabilityRepository
             membership.worker.endedAt === null
               ? membership.worker.status
               : "INACTIVE",
+          gender:
+            membership.worker.profile?.gender === "MALE"
+              ? ("male" as const)
+              : membership.worker.profile?.gender === "FEMALE"
+                ? ("female" as const)
+                : ("other_or_unspecified" as const),
+          workerType:
+            membership.worker.profile?.workerType === "ESCORT"
+              ? ("ESCORT" as const)
+              : membership.worker.profile?.workerType === "OTHER"
+                ? ("OTHER" as const)
+                : ("CLEANING_STAFF" as const),
           weeklyPeriods: membership.worker.schedules.map(
             toWorkerWeeklyScheduleSnapshot,
           ),

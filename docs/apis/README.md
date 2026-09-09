@@ -14,6 +14,7 @@ API documentation is organized by roadmap phase.
 | R1-P08 Catalog, localization, and service requirements | [Protected Staff Catalog Swagger reference](../swagger/README.md#r1-p08--staff-catalog-management) | Implemented protected-management routes; active-phase validation and owner completion approval remain pending |
 | R1-P09 Provider services, pricing, and historical snapshots | [Provider services API](../api/provider-services.md) | Implemented protected Provider/Staff routes (11 operations); live migration gates require disposable `CLEANORA_R1_P09_DATABASE_URL` |
 | R1-P10 Availability, capacity, and textual coverage | [OpenAPI availability contract](openapi/r1-p10-availability-capacity-textual-coverage.yaml) | Implemented protected Staff localities/time-zone and Provider availability routes (19 operations); phase Complete under DEC-061 |
+| R1-P11 Eligibility Engine V1 | [Phase HTTP decision](../../specs/R1-P11-eligibility-engine-v1/contracts/http-api.md) | **Zero new HTTP / OpenAPI operations** (DEC-070 / DEC-072). In-process `evaluateEligibility`, `getStandardBrowseCandidates`, and `purgeExpiredEvaluations` only; Browse HTTP remains R1-P12 |
 | Runtime API reference | [Interactive Swagger documentation](../swagger/README.md) | Implemented at `/api/v1/docs` |
 
 Every document must state whether an endpoint is `Implemented`, `Prepared`, or

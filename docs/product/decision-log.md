@@ -2444,3 +2444,345 @@ No next phase is activated by this decision. Completion does not authorize
 staging, commit, push, merge, deployment, production migration, history
 rewriting or destructive cleanup. Git publication still requires a separate
 human message whose entire content is exactly `commit and push`.
+
+## DEC-062 — R1-P11 activation and delegated owner authority
+
+**Date:** 2026-09-09
+**Status:** Approved — explicit human-owner phase activation with delegated
+Codex decision and completion authority for R1-P11 only
+
+The human owner activated `R1-P11 — Eligibility Engine V1` and authorized:
+
+- Local feature branch `codex/r1-p11-eligibility-engine-v1` from the verified
+  P10 baseline (`38f3efa` on
+  `codex/r1-p10-availability-capacity-textual-coverage`), preserving all
+  inherited dirty-tree work.
+- Full preparation through completion for P11 only.
+- Codex as project manager, product decision-maker, architecture authority,
+  reviewer, and completion approver under delegated owner authority.
+- Cursor as implementer for Codex-assigned or Codex-approved tasks.
+- Codex to select its reasoned recommended option for every in-scope product or
+  technical decision without asking the human, and to approve phase completion
+  once required evidence passes.
+- Automatic progression through phase gates once their actual requirements pass.
+
+Locked product constraints remain binding. This decision does **not** authorize
+staging, commit, push, merge, deployment, production migration, destructive
+operations on existing user data, history rewriting, or activation of P12.
+Git publication still requires a separate human message whose entire content is
+exactly `commit and push`.
+
+Canonical activation: `specs/R1-P11-eligibility-engine-v1/activation.md`.
+## DEC-063 — Eligibility module ownership and dependency direction
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Introduce one substantive `eligibility` module. It owns orchestration, eligibility
+policies, reason vocabulary, evaluation persistence and tables
+`eligibility_rule_versions`, `eligibility_evaluations`, and
+`eligibility_candidate_results`. Public entry:
+`src/modules/eligibility/eligibility.public.ts`.
+Providers/Catalog/Configuration retain ownership of their facts; Eligibility
+accesses them only through explicit public contracts. Composition may construct
+adapters; Eligibility must not import private services, repositories or Prisma
+models of other modules.
+Rejected: Providers-owned eligibility, shared generic engine, separate
+deployable, Browse/Bookings module in P11.
+
+## DEC-064 — Evaluation order, complete applicable reasons and candidate scope
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Validate request, trusted invocation and active rule version first. Fixed order:
+(1) Catalog service/country applicability; (2) Provider approval/verification/live;
+(3) Offering and effective price usability; (4) Textual coverage; (5) Provider
+schedule/suspension/pause; (6) Complete-Team validity and whole-interval member
+availability; (7) Crew preference; (8) Capacity after crew filtering; (9)
+Configured performance gate. Collect all independently evaluable failures with
+deduplicated machine-readable reasons. Dependent rules become `NOT_EVALUATED`
+when prerequisites fail. Outcomes: `PASS`, `FAIL`, `NOT_APPLICABLE`,
+`NOT_EVALUATED`. Normal discovery reuses P10 textual-area candidate lookup;
+providers outside discovery scope are not claimed evaluated. Optional internal
+explicit-candidate entry point may evaluate a bounded Provider-ID set (not HTTP).
+Rejected: first-failure-only, invented defaults, global Provider scans for local search.
+
+## DEC-065 — UTC input, P10 zone semantics and service duration
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Require explicit canonical UTC interval `[startsAt, endsAt)`, active textual
+country/city, optional district, exact service identity, crew preference and
+positive required complete-Team units. Reuse DEC-053/054 calendar behavior via
+Configuration country IANA zone. Interval must cover offering estimated duration;
+too short excludes with `REQUESTED_INTERVAL_TOO_SHORT`. V1 bounds: positive
+duration up to 24 elapsed hours; required units 1–50. Capture one trusted
+evaluation clock per invocation. Reject ambiguous local timestamps and
+caller-controlled historical-time live APIs.
+
+## DEC-066 — Consistency and deterministic-result boundaries
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+One Eligibility-owned bounded `RepeatableRead` transaction binds discovery,
+rule version, database-backed readers and successful persistence. Extend public
+factories for transaction-bound execution. Deterministic function:
+normalized request + pinned rule/config + captured facts + evaluation time +
+engine/calendar version → semantic result. Metadata includes contract/engine
+version, rule-version ID/checksum, input/evidence/result hashes, source versions,
+zone, calendar runtime version, discovery scope/counts and completeness.
+Canonical ID and reason ordering; decimal money strings only. Generated IDs and
+timestamps are operational, not semantic equality. Preserve safe decision evidence
+within retention.
+Rejected: claiming equal query text always yields equal live results; wall-clock
+inside rules; indefinite replay of old code.
+
+## DEC-067 — Immutable rule versions and configuration
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+`eligibility_rule_versions` stores immutable country-scoped rule bundles
+(schema version, engine compatibility, rule order, typed parameters,
+effective-from, checksum, provenance). Select latest compatible version effective
+at evaluation time. Unique country/version and country/effective-from. Seed one
+deterministic V1 bundle for Release 1 country; seed is idempotent for identical
+content and must not overwrite changed content. Missing/invalid version is hard
+error. No rule-authoring HTTP or dynamic code loading. Configuration retains
+country/zone/pricing ownership; Eligibility records consumed values/versions.
+
+## DEC-068 — Performance data, freshness and cold start
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Ship initial performance gate **disabled**. Provide typed trusted evidence port
+and implement/test enabled-gate behavior. Enabled bundle specifies metric key,
+minimum threshold, minimum sample count and max evidence age. Below-threshold
+excludes with `PERFORMANCE_GATE_FAILED`. Missing/insufficient/stale evidence does
+**not** exclude in V1; record distinct `NOT_EVALUATED` diagnostics. Malformed or
+reader-outage evidence is technical failure. No production metric producer or
+Ratings module in P11; tests supply controlled evidence.
+Rejected: missing equals zero; silently enabling invented ratings.
+
+## DEC-069 — Evaluation persistence, atomicity and retention
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Persist every successful completed application evaluation (including empty
+candidates) atomically with Provider/Team result rows. Pure policy tests need not
+persist. Store normalized non-contact inputs, pinned rule metadata, safe evidence,
+ordered outcomes/reasons and sorting facts. No raw addresses, customer identity,
+Worker identities, contacts, verification docs or payout identifiers. Typed
+candidate identities with separate uniqueness for Provider-only and Team rows.
+Immutable while retained. **30-day** retention from completion; Eligibility-owned
+bounded idempotent purge (scheduling optional). Persistence failure fails the
+operation. Fresh evaluations per invocation; request hash is not a unique key.
+Does not authorize deleting inherited/existing user data.
+
+## DEC-070 — Internal API, privacy and authorization
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+P11 exposes **in-process public module contracts only** — no eligibility HTTP.
+Composition supplies the service to approved consumers. Separate detailed
+internal diagnostic result from safe Browse-consumer projection (eligible
+identities + allowlisted commercial/availability facts; omit rejected diagnostics
+and member-level evidence). No historical-evaluation browsing surface.
+Rejected: public diagnostic endpoints; exposing internal reasons because labelled
+“internal.”
+
+## DEC-071 — Expected exclusions versus technical failures
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Expected business failures exclude the candidate and continue evaluation.
+Malformed global input, missing rule version, dependency/DB failure, invalid DTO,
+exhausted transaction conflict or persistence failure fails the **whole
+evaluation** with typed error — no apparently complete partial list. Retry whole
+transaction at most three attempts for recognised retryable failures. Preserve
+P09 `CONFLICT` as technical failure, never `UNAVAILABLE`.
+Rejected: catch-all empty arrays; silent per-candidate technical drops.
+
+## DEC-072 — Minimum honest Browse integration
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Implement Eligibility-owned composition-wired facade `getStandardBrowseCandidates`
+calling the same evaluator and mapping to the safe candidate projection. No
+independent filtering, HTTP, marketplace cards, ranking, pagination or Bookings.
+Integration tests invoke the composed facade against real P09/P10-backed facts.
+DoD: **P11 supplies and proves the Browse-use application contract; P12 mounts
+the marketplace consumer.** Preserve `eligibleForPublicBrowse: false` placeholder
+on Providers setup readiness; do not treat it as a P11 exclusion filter.
+
+## DEC-073 — Reuse and exact public-contract extensions
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Reuse Catalog, ProviderServiceSnapshotReader, ProviderPublicReader,
+ProviderOperationalAvailabilityReader, ProviderWorkforcePublicReader and
+Configuration readers; add transaction-bound paths and minimal Team-level /
+eligibility projections as required for atomic evaluation. Applicable
+verification uses Providers-owned satisfied/not-required rules. No direct foreign
+Prisma access or copied calendar/price logic inside Eligibility.
+
+## DEC-074 — Crew preference and capacity after filtering
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Crew preferences: `all_male`, `all_female`, `any`. Apply gender preference to
+members with `cleans=true`. Escorts (`cleans=false`) add no capacity units but
+must be active/available with the complete Team; escort gender does not
+disqualify cleaning-crew gender match. Capacity = count of complete, available,
+crew-matching Teams, capped by Provider simultaneous-Team limit. Return all
+qualifying Team alternatives with aggregate capacity limit (alternatives do not
+imply simultaneous booking of all).
+
+## DEC-075 — Sorting inputs and bounded work
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Return price, minimum charge, currency, price-unit identity, estimated duration,
+matching capacity, optional valid performance facts and stable Provider/Team IDs.
+Canonical order: Provider ID then Team ID. Bounds: **500** discovered/explicit
+Providers and **5,000** Team results per evaluation. Overflow →
+`EVALUATION_LIMIT_EXCEEDED` (no silent truncation). No premium boosts or
+synthetic ratings.
+
+## DEC-076 — Migration scope
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+One additive migration `prisma/migrations/r1_p11_eligibility_engine_v1/`. Add
+three tables, constraints/indexes and deterministic rule seed. Clean proof:
+complete chronological history. Upgrade proof: populated P10 → P11 preserving
+earlier data. Expected ~18 migrations / ~96 tables under P10 counting convention,
+verified not assumed. No applied-migration edits or geo tables.
+
+## DEC-077 — R3 extension boundary
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Keep typed rule context and versioned identities for future geo rules. P11
+accepts textual location only; reject unsupported geographic input explicitly.
+No coordinates, radius, distance, geo module or dormant geographic persistence.
+
+## DEC-078 — Validation scope and automatic progression
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+P11 requires phase tests/coverage **and** repository regression gates. Phase
+coverage ≥ 80% statements, 75% branches, 80% functions, 80% lines including new
+code and changed seams. Repository coverage meets configured thresholds. P10
+phase-only exemption does not carry forward. Inherited failures reported with
+baseline evidence. Automatic progression after actual gates pass. Completion is
+not Git/deploy authorization.
+
+## DEC-079 — Concrete participant and public projection design
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Composition-supplied transaction-bound factories with opaque transaction context; bound readers must not open nested/independent transactions. ID-based Eligibility inputs; resolve country via Configuration public reader and service via Catalog ID lookup. Locale-independent Providers eligibility pricing projection reusing P09 selection/usability (no invented locale). Separate normal-discovery and explicit-Provider entry points; `providerIds` forbidden on Browse facade. Providers return Team validity/availability plus aggregate cleaner-gender counts and Escort-validity facts — no Worker IDs/raw member arrays at Eligibility boundary. Methods return Promise<SuccessDto>; business exclusions are successful diagnostics; technical errors reject. Refines DEC-066/070/073.
+
+## DEC-080 — Rule prerequisites and final eligibility
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Evaluation order is presentation order, not universal prerequisites. Preconditions are required facts; independent readable facts still evaluate on non-live Providers. Unknown/inactive textual ancestry is global validation failure. Provider eligibility requires all applicable Provider gates, sufficient crew-filtered capacity, and ≥1 qualifying Team. Disabled/missing/stale optional performance does not falsify that predicate. Team eligibility requires Team qualifies AND Provider qualifies. Provider capacity/performance failure excludes all Team alternatives. One invalid Team does not exclude a Provider with other qualifying Teams. Disabled performance = NOT_APPLICABLE (port not called). Enabled missing/stale/insufficient = NOT_EVALUATED informational. Rejected rows need ≥1 real exclusion reason; informational diagnostics are not exclusion reasons. Refines DEC-064/068/074.
+
+## DEC-081 — Invocation clock and reproducible evidence
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Capture evaluatedAt once before the retry loop; reuse across ≤3 attempts. Each retry gets a fresh DB snapshot and reselects the effective bundle against the same captured instant; discard failed-attempt evidence. SHA-256 over UTF-8 canonical JSON (sorted keys, defined array order, no undefined, UTC timestamps, canonical decimals). evaluatedAt is semantic; only generated IDs/trace/duration/persistence timestamps are non-semantic. Performance evidence includes metric identity, policy/version identity, decimal value, sample count, observedAt; Eligibility computes freshness. No slow external calls inside the transaction. Persist normalized rule inputs and owned-reader outcomes sufficient for Eligibility decision replay without Worker identities. Refines DEC-065/066/068.
+
+## DEC-082 — Persistence and seed invariants
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Text-backed IDs; evaluation/candidate IDs UUID strings; fixed deterministic text ID for seeded rule bundle. schemaVersion text; rowKind enum PROVIDER_SUMMARY | TEAM_RESULT. Exactly one Provider summary per evaluated Provider (including excluded/nonexistent explicit). Team rows only for actual evaluated Teams. Enforce rowKind/teamId XOR and both partial uniqueness constraints. Restrictive FKs for rule country and evaluation→rule; evaluation country agrees with selected rule. Provider/Team result IDs are historical logical references without live FKs (explicit nonexistent Providers must remain representable). Required createdAt; expiresAt = completedAt + 30 elapsed days. Purge: fixed cutoff per invocation, order (expiresAt, id), default batch 100, max 500, return deleted counts + moreRemaining. Initial bundle r1-v1 for Egypt EG effective 2026-09-09T00:00:00.000Z. Seed verifies all immutable fields including country/version/effective, not checksum alone. Refines DEC-067/069/076.
+
+## DEC-083 — Minimal Batch A and evidence requirements
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+T007 creates only substantive approved declarations in eligibility.public.ts — no empty layer folders, barrels, fake runtime stubs. Later tasks add concrete files when needed under compact module convention. T006 must pass before Batch A acceptance. Phase selection is exact allowlist of P11 suites plus explicitly named changed-seam suites. Batch A must pass selection/boundary tests, fixture compilation, typecheck and relevant lint with actual outcomes. Coverage scripts may exist before substantial coverage; do not claim coverage pass early. Refines Batch A / DEC-063 scaffolding.
+
+## DEC-084 — Final P11 contract and persistence clarifications
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Refines DEC-079–082. Does not reopen phase scope. Full repair instructions:
+`specs/R1-P11-eligibility-engine-v1/preparation-rereview-report.md`.
+
+**Dependency contracts:** Name actual reused Catalog/Configuration methods
+(`createTransactionalActiveCountryReader` / `getActiveCountryById`; locality/TZ
+readers; `createTransactionalCatalogDefinitionReaderFactory`,
+`getProviderOfferingReference`, `resolveSelectableProviderOffering`). Mutually
+exclusive pricing: `AVAILABLE` (non-null money facts) | `UNAVAILABLE` (business
+reason) | technical `CONFLICT` rejects. Explicit business-result variants for
+missing Provider/config facts (no invented zeros). Bounded Team retrieval with
+remaining Team budget + `OVERFLOW`; Providers evaluated in canonical order;
+query at most budget+1 sentinel. Lifecycle/Team aggregate invariants; Escort
+fields express Providers-owned validity and do not require every Team to
+contain an Escort.
+
+**Outcomes/reasons:** Required typed `evaluationOutcomes` on
+`DiagnosticResult` / persisted semantic result (Catalog outcome even with zero
+Providers). Closed `EligibilityRuleId` union. Well-formed unknown/inactive/
+unavailable service → Catalog business outcome (not hard error); malformed
+service input and unknown/inactive textual ancestry remain global validation
+failures. Expected absence → dependent `NOT_EVALUATED`; reader outage/invalid
+DTO → whole-evaluation failure. Team-scoped `TEAM_STRUCTURALLY_INVALID`;
+`NO_VALID_COMPLETE_TEAM` remains Provider summary. Public `EligibilityError` is
+an interface extending `Error` (declaration-only for T007).
+
+**Evidence/hashes:** Typed `EligibilityEvidenceSnapshot`. Exact hash inputs:
+`requestHash` / `evidenceHash` / `resultHash` with null-vs-omit and array
+ordering defined. Performance port returns complete evidence or `MISSING` only;
+Eligibility checks samples/freshness/value; request includes rule-version
+identity; returned `policyVersionId` must match. Concurrent mutation may
+succeed on one consistent snapshot; retry only recognised transaction failures.
+
+**Persistence/purge:** Rule versions unique `(id, countryId)`; evaluations
+composite FK `(ruleVersionId, countryId)`. Retention **720 elapsed hours**
+(`interval '720 hours'`). Purge `batchSize` integer 1–500 only (default 100);
+reject invalid. No caller-supplied `asOf` on production purge; composition clock.
+
+## DEC-085 — R1-P11 Complete
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+R1-P11 — Eligibility Engine V1 is Complete. Live evaluate, overflow, concurrent
+snapshot and Browse-facade proofs passed on disposable `cleanora_r1_p11_proof`.
+Phase coverage meets FR-032. Clean chronological install and populated R1-P10
+upgrade validators passed. Review verdict is PASS with no unresolved BLOCKER or
+MAJOR. Companion records `implement/completed`.
+
+This decision does **not** activate R1-P12, and does **not** authorize merge,
+deployment, production migration, force-push, or history rewriting. Git
+publication of the local feature branch remains a separate owner-requested
+action and still excludes those operations.
+
+Canonical closure: `specs/R1-P11-eligibility-engine-v1/completion-report.md`.

@@ -47,17 +47,13 @@ Precedence:
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
 
-**Live pointer:** `R1-P09 — Provider Services, Pricing & Historical Snapshots`
-is the sole active phase. Specification, clarification, planning, and tasks are
-complete; implementation of the protected Provider-service surface is in
-progress. Protected HTTP/OpenAPI/Postman contracts live under
-`docs/api/provider-services.md` and `src/swagger/r1-p09-openapi.paths.ts`.
-`docs/product/current.md` is the authority for its live state and approval
-boundary. R1-P08 is Complete and merged through PR #8; its Swagger, Postman,
-Catalog public contract, and completion artifacts remain historical dependency
-evidence. Live migration deploy gates (T079) require an owner-approved
-`CLEANORA_R1_P09_DATABASE_URL` disposable target and must not run against
-unknown databases.
+**Live pointer:** `R1-P11 — Eligibility Engine V1` is **Complete** under
+DEC-062 / DEC-085. Feature artifacts live in
+`specs/R1-P11-eligibility-engine-v1/`. `docs/product/current.md` is the
+authority for live state. No next phase is activated; Browse HTTP remains
+R1-P12. R1-P10 is Complete under DEC-061; R1-P09 is Complete and merged
+through PR #9. P11 introduces no new public HTTP. Disposable proofs used
+`CLEANORA_R1_P11_DATABASE_URL` only.
 
 ## Current backend navigation
 

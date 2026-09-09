@@ -338,3 +338,209 @@ export function createUnavailableProviderPublicReader(): ProviderPublicReader {
     },
   };
 }
+
+/** Opaque transaction handle shared with Eligibility (DEC-079). */
+export type ProvidersEligibilityTransactionContext = unknown;
+
+// --- R1-P11 Eligibility projections (DEC-084 / dependency-readers.md) ---
+
+export type EligibilityPricingFacts =
+  | {
+      readonly status: "AVAILABLE";
+      readonly providerId: string;
+      readonly serviceId: string;
+      readonly priceAmount: string;
+      readonly minimumChargeAmount: string;
+      readonly currencyCode: string;
+      readonly priceUnitId: string;
+      readonly estimatedDurationMinutes: number;
+      readonly sourceVersion: string;
+    }
+  | {
+      readonly status: "UNAVAILABLE";
+      readonly providerId: string;
+      readonly serviceId: string;
+      readonly reason: "OFFERING_OR_PRICE_UNAVAILABLE";
+      readonly sourceVersion: string | null;
+    };
+
+export interface EligibilityPricingReader {
+  getEligibilityPricingFacts(input: {
+    readonly providerId: string;
+    readonly serviceId: string;
+    readonly countryId: string;
+  }): Promise<EligibilityPricingFacts>;
+}
+
+export type TransactionalEligibilityPricingReaderFactory = (
+  tx: ProvidersEligibilityTransactionContext,
+) => EligibilityPricingReader;
+
+/**
+ * @desc Narrow public factory for Eligibility pricing projections.
+ * @access Public contract
+ */
+export function createEligibilityPricingReader(
+  source: EligibilityPricingReader,
+): EligibilityPricingReader {
+  return {
+    getEligibilityPricingFacts: (input) =>
+      source.getEligibilityPricingFacts(input),
+  };
+}
+
+/**
+ * @desc Pass-through for composition-supplied tx-bound Eligibility pricing.
+ * @access Public contract
+ */
+export function createTransactionalEligibilityPricingReaderFactory(
+  createBoundReader: TransactionalEligibilityPricingReaderFactory,
+): TransactionalEligibilityPricingReaderFactory {
+  return (tx) => createEligibilityPricingReader(createBoundReader(tx));
+}
+
+export type EligibilityProviderLifecycleFacts =
+  | {
+      readonly status: "MISSING";
+      readonly providerId: string;
+    }
+  | {
+      readonly status: "PRESENT";
+      readonly providerId: string;
+      readonly approved: boolean;
+      readonly live: boolean;
+      readonly suspended: boolean;
+      readonly verificationSatisfiedOrNotRequired: boolean;
+      readonly aggregateVersion: string;
+    };
+
+export interface EligibilityProviderLifecycleReader {
+  getLifecycleFacts(
+    providerId: string,
+  ): Promise<EligibilityProviderLifecycleFacts>;
+}
+
+export type TransactionalEligibilityProviderLifecycleReaderFactory = (
+  tx: ProvidersEligibilityTransactionContext,
+) => EligibilityProviderLifecycleReader;
+
+/**
+ * @desc Narrow public factory for Eligibility lifecycle projections.
+ * @access Public contract
+ */
+export function createEligibilityProviderLifecycleReader(
+  source: EligibilityProviderLifecycleReader,
+): EligibilityProviderLifecycleReader {
+  return {
+    getLifecycleFacts: (providerId) => source.getLifecycleFacts(providerId),
+  };
+}
+
+/**
+ * @desc Pass-through for composition-supplied tx-bound Eligibility lifecycle.
+ * @access Public contract
+ */
+export function createTransactionalEligibilityProviderLifecycleReaderFactory(
+  createBoundReader: TransactionalEligibilityProviderLifecycleReaderFactory,
+): TransactionalEligibilityProviderLifecycleReaderFactory {
+  return (tx) => createEligibilityProviderLifecycleReader(createBoundReader(tx));
+}
+
+export interface EligibilityTeamAvailabilityFacts {
+  readonly teamId: string;
+  readonly structurallyValid: boolean;
+  readonly membersAvailableForWholeInterval: boolean;
+  readonly cleanerGenderCounts: {
+    readonly male: number;
+    readonly female: number;
+    readonly otherOrUnspecified: number;
+  };
+  readonly escortFacts: {
+    readonly escortRequired: boolean;
+    readonly escortPresentAndValid: boolean;
+    readonly escortsAvailableForWholeInterval: boolean;
+  };
+}
+
+export type EligibilityMissingConfigurationKind =
+  | "COVERAGE"
+  | "PROVIDER_SCHEDULE"
+  | "CAPACITY_RULE";
+
+export interface EligibilityReadableAvailabilityFacts {
+  readonly providerId: string;
+  readonly coverageMatch: boolean;
+  readonly providerScheduleAvailable: boolean;
+  readonly paused: boolean;
+  readonly suspended: boolean;
+  readonly simultaneousTeamLimit: number | null;
+  readonly teams: readonly EligibilityTeamAvailabilityFacts[];
+}
+
+export type EligibilityProviderAvailabilityFacts =
+  | ({
+      readonly status: "MISSING_CONFIGURATION";
+      readonly missingConfiguration: readonly EligibilityMissingConfigurationKind[];
+    } & EligibilityReadableAvailabilityFacts)
+  | ({
+      readonly status: "AVAILABLE_FACTS";
+      readonly simultaneousTeamLimit: number;
+    } & Omit<EligibilityReadableAvailabilityFacts, "simultaneousTeamLimit">)
+  | {
+      readonly status: "OVERFLOW";
+      readonly providerId: string;
+      readonly acceptedTeams: readonly EligibilityTeamAvailabilityFacts[];
+    };
+
+export interface EligibilityAvailabilityReader {
+  discoverProviderIds(input: {
+    readonly countryId: string;
+    readonly cityId: string;
+    readonly districtId?: string;
+    readonly limit: number;
+  }): Promise<
+    | { readonly status: "OK"; readonly providerIds: readonly string[] }
+    | { readonly status: "OVERFLOW" }
+  >;
+
+  getAvailabilityFacts(input: {
+    readonly providerId: string;
+    readonly startsAt: string;
+    readonly endsAt: string;
+    readonly countryId: string;
+    readonly cityId: string;
+    readonly districtId?: string;
+    readonly remainingTeamBudget: number;
+  }): Promise<EligibilityProviderAvailabilityFacts>;
+}
+
+export type TransactionalEligibilityAvailabilityReaderFactory = (
+  tx: ProvidersEligibilityTransactionContext,
+) => EligibilityAvailabilityReader;
+
+/**
+ * @desc Narrow public factory for Eligibility availability projections.
+ * @access Public contract
+ */
+export function createEligibilityAvailabilityReader(
+  source: EligibilityAvailabilityReader,
+): EligibilityAvailabilityReader {
+  return {
+    discoverProviderIds: (input) => source.discoverProviderIds(input),
+    getAvailabilityFacts: (input) => source.getAvailabilityFacts(input),
+  };
+}
+
+/**
+ * @desc Pass-through for composition-supplied tx-bound Eligibility availability.
+ * @access Public contract
+ */
+export function createTransactionalEligibilityAvailabilityReaderFactory(
+  createBoundReader: TransactionalEligibilityAvailabilityReaderFactory,
+): TransactionalEligibilityAvailabilityReaderFactory {
+  return (tx) => createEligibilityAvailabilityReader(createBoundReader(tx));
+}
+
+export { createBoundEligibilityPricingReader } from "./eligibility-pricing.reader.js";
+export { createBoundEligibilityProviderLifecycleReader } from "./eligibility-lifecycle.reader.js";
+export { createBoundEligibilityAvailabilityReader } from "./eligibility-availability.reader.js";

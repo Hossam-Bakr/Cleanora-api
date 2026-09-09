@@ -1,0 +1,38 @@
+# Codex PM Brief — R1-P11 preparation review / acceptance
+
+You are Codex under DEC-062 (delegated owner authority). Read-only. Do NOT
+implement, edit files, commit, push, or ask the human for in-scope decisions.
+
+## Context
+
+- Phase: R1-P11 Eligibility Engine V1 (sole active)
+- Branch: `codex/r1-p11-eligibility-engine-v1` @ `38f3efa`
+- Prior PM session (optional continuity): `01a0860b-6c46-7c61-bab3-478a2a8c5efc`
+- Decisions DEC-063–078 recorded in `docs/product/decision-log.md`
+- Preparation artifacts written under `specs/R1-P11-eligibility-engine-v1/`
+- Analysis report claims CLEAN
+- Spec Kit pointer: `.specify/feature.json` → P11
+- No src/tests/prisma/package.json changes in preparation batch (correct)
+
+## Review scope
+
+Adversarial preparation review against DEC-063–078, roadmap P11 Done When,
+modular-monolith boundaries, and preparation→implementation acceptance
+conditions from your prior PM report.
+
+Inspect at least: spec.md, plan.md, tasks.md, data-model.md, research.md,
+all contracts/*, migration-plan.md, test-strategy.md, security-design.md,
+checklists/*, analysis-report.md, implementation-prompt.md, activation.md,
+baseline-boundary.md, pm-preparation-report.md.
+
+## Required verdict
+
+1. **Verdict**: PREPARATION_ACCEPTED | CHANGES_REQUIRED | BLOCKED
+2. **Findings** with severity, path evidence, remediation (BLOCKER/MAJOR/MINOR)
+3. **Decision consistency** check DEC-063–078 vs artifacts
+4. If ACCEPTED: authorize Cursor Batch A (T001–T007) exactly; state acceptance
+   conditions; list any residual MINOR that may defer
+5. If CHANGES_REQUIRED: exact Cursor repair list before implementation
+6. Confirm do-not-implement / do-not-ask-human
+
+Choose any remaining in-scope prep decisions yourself under DEC-062.

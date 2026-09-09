@@ -1,0 +1,79 @@
+import { defineConfig } from "vitest/config";
+
+/**
+ * R1-P11 phase coverage. Exact allowlist of Phase 11 suites plus named
+ * changed-seam suites (DEC-083). Live database suites remain DB-gated.
+ */
+export default defineConfig({
+  resolve: {
+    conditions: ["development"],
+    dedupe: ["vitest", "@vitest/runner", "@vitest/expect", "@vitest/utils"],
+  },
+  test: {
+    environment: "node",
+    globals: true,
+    // Vitest 4: serialize shared disposable-DB suites (poolOptions removed).
+    fileParallelism: false,
+    maxWorkers: 1,
+    isolate: false,
+    pool: "forks",
+    include: [
+      "tests/unit/scripts/r1-p11-test-selection.test.ts",
+      "tests/unit/modules/r1-p11-module-boundaries.test.ts",
+      "tests/unit/modules/eligibility/eligibility.reasons.test.ts",
+      "tests/unit/modules/eligibility/eligibility.rules.test.ts",
+      "tests/unit/modules/eligibility/crew-capacity.test.ts",
+      "tests/unit/modules/eligibility/performance-gate.test.ts",
+      "tests/unit/modules/eligibility/determinism.test.ts",
+      "tests/unit/modules/eligibility/retry-clock.test.ts",
+      "tests/unit/modules/eligibility/browse-projection.test.ts",
+      "tests/unit/modules/eligibility/privacy-negatives.test.ts",
+      "tests/unit/modules/eligibility/purge-batch-size.test.ts",
+      "tests/unit/modules/eligibility/eligibility.unit-of-work.test.ts",
+      "tests/unit/modules/eligibility/eligibility-readers.unit.test.ts",
+      "tests/unit/modules/eligibility/evaluate-orchestration.test.ts",
+      "tests/unit/modules/eligibility/prisma-eligibility.repository.test.ts",
+      "tests/unit/modules/eligibility/eligibility-availability.reader.test.ts",
+      "tests/integration/database/r1-p11-schema-constraints.test.ts",
+      "tests/integration/eligibility/r1-p11-rule-seed.test.ts",
+      "tests/integration/providers/r1-p11-eligibility-readers.test.ts",
+      "tests/integration/eligibility/r1-p11-evaluate.test.ts",
+      "tests/integration/eligibility/r1-p11-browse-facade.test.ts",
+      "tests/integration/eligibility/r1-p11-concurrent-snapshot.test.ts",
+      "tests/integration/eligibility/r1-p11-retention.test.ts",
+      "tests/unit/scripts/validate-r1-p11-upgrade.test.ts",
+    ],
+    restoreMocks: true,
+    clearMocks: true,
+    hookTimeout: 180_000,
+    testTimeout: 180_000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "json-summary"],
+      reportsDirectory: "coverage/r1-p11",
+      reportOnFailure: true,
+      include: [
+        "src/modules/eligibility/eligibility.public.ts",
+        "src/modules/eligibility/eligibility.errors.ts",
+        "src/modules/eligibility/eligibility.reasons.ts",
+        "src/modules/eligibility/eligibility.rules.ts",
+        "src/modules/eligibility/eligibility.crew-capacity.ts",
+        "src/modules/eligibility/eligibility.performance.ts",
+        "src/modules/eligibility/performance-evidence.port.ts",
+        "src/modules/eligibility/eligibility.hashes.ts",
+        "src/modules/eligibility/eligibility.service.ts",
+        "src/modules/eligibility/infrastructure/eligibility.unit-of-work.ts",
+        "src/modules/eligibility/infrastructure/prisma-eligibility.repository.ts",
+        "src/modules/providers/eligibility-pricing.reader.ts",
+        "src/modules/providers/eligibility-lifecycle.reader.ts",
+        "src/modules/providers/eligibility-availability.reader.ts",
+      ],
+      thresholds: {
+        statements: 80,
+        branches: 75,
+        functions: 80,
+        lines: 80,
+      },
+    },
+  },
+});

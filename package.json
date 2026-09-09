@@ -25,6 +25,8 @@
     "test:coverage:r1-p09": "node --require ./scripts/clean-coverage.cjs --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p09.config.ts --coverage",
     "test:r1-p10": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p10.config.ts",
     "test:coverage:r1-p10": "node --require ./scripts/clean-coverage.cjs --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p10.config.ts --coverage",
+    "test:r1-p11": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p11.config.ts",
+    "test:coverage:r1-p11": "node --require ./scripts/clean-coverage.cjs --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p11.config.ts --coverage",
     "test:performance:sc008": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run tests/integration/customers/sc008-workload.test.ts",
     "db:check": "node --env-file=.env --conditions=development --import tsx scripts/check-database.ts",
     "auth:inspect": "node --env-file=.env --conditions=development --import tsx scripts/inspect-auth.ts",
@@ -59,6 +61,7 @@
     "db:validate-r1-p08-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p08-upgrade.ts",
     "db:validate-r1-p09-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p09-upgrade.ts",
     "db:validate-r1-p10-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p10-upgrade.ts",
+    "db:validate-r1-p11-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p11-upgrade.ts",
     "smoke:cloudinary-profile-image": "node --env-file=.env --require ./scripts/register-env.cjs --conditions=development --import tsx scripts/smoke-cloudinary-profile-image.ts"
   },
   "imports": {

@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -710,6 +710,183 @@ async function upsertCountryConfigCompatible(
   );
 }
 
+/** Frozen R1-P11 V1 eligibility rule seed identity (DEC-082 / rule-version-contract). */
+export const R1_P11_ELIGIBILITY_RULE_SEED = {
+  id: "eligibility_rule_r1_v1_eg",
+  versionLabel: "r1-v1",
+  countryCode: "EG",
+  effectiveFrom: new Date("2026-09-09T00:00:00.000Z"),
+  schemaVersion: "eligibility.rules.v1",
+  engineCompatibility: "eligibility-engine.r1.v1",
+  createdByProvenance: "prisma.seed.r1_p11_eligibility_rule_r1_v1_eg",
+  ruleOrder: [
+    "CATALOG_APPLICABILITY",
+    "PROVIDER_APPROVAL_VERIFICATION_LIVE",
+    "OFFERING_PRICE_USABILITY",
+    "TEXTUAL_COVERAGE",
+    "PROVIDER_SCHEDULE_PAUSE",
+    "COMPLETE_TEAM_VALIDITY_AVAILABILITY",
+    "CREW_PREFERENCE",
+    "CAPACITY_AFTER_CREW_FILTER",
+    "PERFORMANCE_GATE",
+  ],
+  parameters: {
+    maxProvidersPerEvaluation: 500,
+    maxTeamResultsPerEvaluation: 5000,
+    maxIntervalHours: 24,
+    minRequiredTeamUnits: 1,
+    maxRequiredTeamUnits: 50,
+    crewPreferences: ["all_male", "all_female", "any"],
+    performanceGate: {
+      enabled: false,
+      metricKey: null,
+      minimumThreshold: null,
+      minimumSampleCount: null,
+      maxEvidenceAgeSeconds: null,
+    },
+  },
+} as const;
+
+/**
+ * @desc Canonical JSON for Eligibility checksums (DEC-081): sorted object keys,
+ * defined array order, no undefined, UTC timestamps as ISO-8601 with Z.
+ */
+function eligibilityCanonicalJson(value: unknown): string {
+  if (value === undefined) {
+    throw new Error("Eligibility canonical JSON forbids undefined");
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => eligibilityCanonicalJson(entry)).join(",")}]`;
+  }
+  if (value instanceof Date) {
+    return JSON.stringify(value.toISOString());
+  }
+  if (value !== null && typeof value === "object") {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(
+        ([key, entry]) =>
+          `${JSON.stringify(key)}:${eligibilityCanonicalJson(entry)}`,
+      )
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * @desc SHA-256 hex of canonical JSON over schemaVersion, engineCompatibility,
+ * ruleOrder, and parameters (DEC-082 checksum excludes provenance/id).
+ */
+export function computeR1P11EligibilityRuleContentChecksum(input: {
+  readonly schemaVersion: string;
+  readonly engineCompatibility: string;
+  readonly ruleOrder: unknown;
+  readonly parameters: unknown;
+}): string {
+  const payload = {
+    schemaVersion: input.schemaVersion,
+    engineCompatibility: input.engineCompatibility,
+    ruleOrder: input.ruleOrder,
+    parameters: input.parameters,
+  };
+  return createHash("sha256")
+    .update(eligibilityCanonicalJson(payload), "utf8")
+    .digest("hex");
+}
+
+function eligibilityJsonEquals(left: unknown, right: unknown): boolean {
+  return eligibilityCanonicalJson(left) === eligibilityCanonicalJson(right);
+}
+
+/**
+ * @desc Idempotent V1 Egypt eligibility rule-version seed (DEC-082).
+ * @explanation Identical immutable fields → no-op; any drift → throw without
+ * overwrite. Country is resolved by code EG.
+ */
+export async function seedR1P11EligibilityRuleVersion(
+  prisma: PrismaClient,
+): Promise<void> {
+  const country = await prisma.country.findUnique({
+    where: { code: R1_P11_ELIGIBILITY_RULE_SEED.countryCode },
+    select: { id: true, code: true },
+  });
+  if (country === null) {
+    throw new Error(
+      `Eligibility rule seed requires country ${R1_P11_ELIGIBILITY_RULE_SEED.countryCode}`,
+    );
+  }
+
+  const contentChecksum = computeR1P11EligibilityRuleContentChecksum({
+    schemaVersion: R1_P11_ELIGIBILITY_RULE_SEED.schemaVersion,
+    engineCompatibility: R1_P11_ELIGIBILITY_RULE_SEED.engineCompatibility,
+    ruleOrder: R1_P11_ELIGIBILITY_RULE_SEED.ruleOrder,
+    parameters: R1_P11_ELIGIBILITY_RULE_SEED.parameters,
+  });
+
+  const expected = {
+    id: R1_P11_ELIGIBILITY_RULE_SEED.id,
+    countryId: country.id,
+    versionLabel: R1_P11_ELIGIBILITY_RULE_SEED.versionLabel,
+    schemaVersion: R1_P11_ELIGIBILITY_RULE_SEED.schemaVersion,
+    engineCompatibility: R1_P11_ELIGIBILITY_RULE_SEED.engineCompatibility,
+    ruleOrder: R1_P11_ELIGIBILITY_RULE_SEED.ruleOrder,
+    parameters: R1_P11_ELIGIBILITY_RULE_SEED.parameters,
+    effectiveFrom: R1_P11_ELIGIBILITY_RULE_SEED.effectiveFrom,
+    contentChecksum,
+  };
+
+  const existing = await prisma.eligibilityRuleVersion.findUnique({
+    where: { id: expected.id },
+  });
+
+  if (existing !== null) {
+    const driftFields: string[] = [];
+    if (existing.countryId !== expected.countryId) driftFields.push("countryId");
+    if (existing.versionLabel !== expected.versionLabel) {
+      driftFields.push("versionLabel");
+    }
+    if (existing.schemaVersion !== expected.schemaVersion) {
+      driftFields.push("schemaVersion");
+    }
+    if (existing.engineCompatibility !== expected.engineCompatibility) {
+      driftFields.push("engineCompatibility");
+    }
+    if (!eligibilityJsonEquals(existing.ruleOrder, expected.ruleOrder)) {
+      driftFields.push("ruleOrder");
+    }
+    if (!eligibilityJsonEquals(existing.parameters, expected.parameters)) {
+      driftFields.push("parameters");
+    }
+    if (existing.effectiveFrom.getTime() !== expected.effectiveFrom.getTime()) {
+      driftFields.push("effectiveFrom");
+    }
+    if (existing.contentChecksum !== expected.contentChecksum) {
+      driftFields.push("contentChecksum");
+    }
+    if (driftFields.length > 0) {
+      throw new Error(
+        `Eligibility rule seed drift for ${expected.id}: immutable fields diverged (${driftFields.join(", ")}); refusing overwrite`,
+      );
+    }
+    return;
+  }
+
+  await prisma.eligibilityRuleVersion.create({
+    data: {
+      id: expected.id,
+      countryId: expected.countryId,
+      versionLabel: expected.versionLabel,
+      schemaVersion: expected.schemaVersion,
+      engineCompatibility: expected.engineCompatibility,
+      ruleOrder: expected.ruleOrder,
+      parameters: expected.parameters,
+      effectiveFrom: expected.effectiveFrom,
+      contentChecksum: expected.contentChecksum,
+      createdByProvenance: R1_P11_ELIGIBILITY_RULE_SEED.createdByProvenance,
+    },
+  });
+}
+
 /**
  * Seed R1-P01 reference data and R1-P03 authorization definitions. Every write
  * uses its approved natural key so repeated runs stay idempotent.
@@ -910,6 +1087,21 @@ export async function seed(
     });
     if (options?.skipCatalogSeed !== true) {
       await seedR1P08Catalog(prisma, country);
+    }
+
+    // R1-P11: deterministic V1 eligibility rule bundle for Egypt. Skip when the
+    // phase migration has not been applied yet (populated upgrade fixtures may
+    // still run the shared seed against a pre-P11 schema).
+    const eligibilityRuleTable = await prisma.$queryRaw<Array<{ exists: boolean }>>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = current_schema()
+          AND table_name = 'eligibility_rule_versions'
+      ) AS "exists"
+    `;
+    if (eligibilityRuleTable[0]?.exists === true) {
+      await seedR1P11EligibilityRuleVersion(prisma);
     }
   } finally {
     if (ownsClient) {

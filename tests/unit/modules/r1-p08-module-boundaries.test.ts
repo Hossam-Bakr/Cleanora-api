@@ -56,8 +56,8 @@ describe("R1-P08 Catalog module boundaries", () => {
     expect(violations).toEqual([]);
   });
 
-  it("does not create Browse, Booking, Eligibility, or Workers modules", () => {
-    for (const name of ["browse", "bookings", "eligibility", "workers"]) {
+  it("does not create Browse, Booking, or Workers modules", () => {
+    for (const name of ["browse", "bookings", "workers"]) {
       expect(() =>
         statSync(join(repositoryRoot, "src", "modules", name)),
       ).toThrow();

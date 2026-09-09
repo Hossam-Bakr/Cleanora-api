@@ -1,0 +1,32 @@
+# Codex PM Brief — R1-P11 focused re-review after PM-04 narrow fix
+
+You are Codex under DEC-062. Read-only. Do NOT implement, edit, commit, push,
+or ask the human.
+
+## Continuity
+
+- Session: `01a0860b-6c46-7c61-bab3-478a2a8c5efc`
+- PM-04: CHANGES_REQUIRED; only P11-PREP-01 open (narrow)
+- Cursor applied the three PM-04 corrections:
+  A) MISSING_CONFIGURATION preserves independent facts + missingConfiguration
+     kinds + CAPACITY_RULE_MISSING; Team budget still applies
+  B) Pricing UNAVAILABLE reason is OFFERING_OR_PRICE_UNAVAILABLE only;
+     Eligibility owns REQUESTED_INTERVAL_TOO_SHORT
+  C) Escort vacuous vs present-unavailable clarified; test case added
+
+Inspect mainly:
+- contracts/dependency-readers.md (availability + pricing + escort)
+- contracts/eligibility-public-contract.md (evidence availability mirror +
+  CAPACITY_RULE_MISSING reason)
+- contracts/reason-codes.md
+- test-strategy.md crew/escort/missing-config cases
+- analysis-report.md disposition
+
+## Required response
+
+1. Verdict: PREPARATION_ACCEPTED | CHANGES_REQUIRED | BLOCKED
+2. P11-PREP-01 disposition with evidence
+3. If ACCEPTED: explicitly authorize Cursor Batch A T001–T007 under DEC-083
+   with acceptance conditions
+4. If still CHANGES_REQUIRED: minimal remaining edits only
+5. Do-not-ask-human confirmation
