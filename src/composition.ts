@@ -79,6 +79,8 @@ import { getActiveCountryIdByCode } from "#modules/configuration/configuration.s
 import {
   createActiveCountryReader,
   createTransactionalActiveCountryReader,
+  createTransactionalCountryTimeZoneReader,
+  createTransactionalLocalityReader,
 } from "#modules/configuration/configuration.public";
 import { createPrismaLocalityRepository, withLocalityTransaction } from "#modules/configuration/infrastructure/prisma-locality.repository";
 import { LocalityService } from "#modules/configuration/locality.service";
@@ -212,10 +214,21 @@ import {
   createProviderServiceSnapshotReader,
   createProviderServicesReadyFactsReader,
   createProviderOperationalAvailabilityReader,
+  createBoundEligibilityAvailabilityReader,
+  createBoundEligibilityPricingReader,
+  createBoundEligibilityProviderLifecycleReader,
+  createTransactionalEligibilityAvailabilityReaderFactory,
+  createTransactionalEligibilityPricingReaderFactory,
+  createTransactionalEligibilityProviderLifecycleReaderFactory,
   type ProviderOperationalAvailabilityReader,
   type ProviderServiceSnapshotReader,
   type ProviderServicesReadyFactsReader,
 } from "#modules/providers/providers.public";
+import {
+  createEligibilityApplicationService,
+  type EligibilityApplicationService,
+} from "#modules/eligibility/eligibility.public";
+import { EligibilityUnitOfWork } from "#modules/eligibility/infrastructure/eligibility.unit-of-work";
 
 function adaptProviderActiveCountryReader(
   reader = createActiveCountryReader(),
@@ -340,6 +353,11 @@ export interface RuntimeDependencies {
   readonly providerOperationalAvailabilityReader:
     | ProviderOperationalAvailabilityReader
     | undefined;
+  /**
+   * In-process Eligibility application surface (R1-P11). Composition-only —
+   * no Eligibility HTTP routes in this phase.
+   */
+  readonly eligibilityApplicationService: EligibilityApplicationService;
 }
 
 /**
@@ -1377,6 +1395,39 @@ export function createRuntimeDependencies(
           }),
         });
 
+  // R1-P11 Eligibility Engine — in-process only (zero new HTTP).
+  const eligibilityUnitOfWork = new EligibilityUnitOfWork(database.client);
+  const createEligibilityCatalogReader =
+    createTransactionalCatalogDefinitionReaderFactory((transaction) =>
+      catalogService.forTransaction(transaction),
+    );
+  const createEligibilityPricingReader =
+    createTransactionalEligibilityPricingReaderFactory((transaction) =>
+      createBoundEligibilityPricingReader(
+        transaction,
+        catalogService.forTransaction(transaction),
+      ),
+    );
+  const createEligibilityLifecycleReader =
+    createTransactionalEligibilityProviderLifecycleReaderFactory((transaction) =>
+      createBoundEligibilityProviderLifecycleReader(transaction),
+    );
+  const createEligibilityAvailabilityReader =
+    createTransactionalEligibilityAvailabilityReaderFactory((transaction) =>
+      createBoundEligibilityAvailabilityReader(transaction),
+    );
+  const eligibilityApplicationService = createEligibilityApplicationService({
+    unitOfWork: eligibilityUnitOfWork,
+    clock: () => new Date(),
+    createCatalogReader: createEligibilityCatalogReader,
+    createActiveCountryReader: createTransactionalActiveCountryReader,
+    createLocalityReader: createTransactionalLocalityReader,
+    createCountryTimeZoneReader: createTransactionalCountryTimeZoneReader,
+    createPricingReader: createEligibilityPricingReader,
+    createLifecycleReader: createEligibilityLifecycleReader,
+    createAvailabilityReader: createEligibilityAvailabilityReader,
+  });
+
   return {
     database,
     logger,
@@ -1390,6 +1441,7 @@ export function createRuntimeDependencies(
     providerServicesReadyFactsReader,
     providerServiceSnapshotReader,
     providerOperationalAvailabilityReader,
+    eligibilityApplicationService,
     routes: {
       environment,
       logger,

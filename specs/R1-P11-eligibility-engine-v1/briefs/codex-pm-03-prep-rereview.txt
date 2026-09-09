@@ -1,0 +1,43 @@
+# Codex PM Brief — R1-P11 preparation RE-REVIEW after DEC-079–083 repairs
+
+You are Codex under DEC-062. Read-only. Do NOT implement, edit, commit, push,
+or ask the human for in-scope decisions.
+
+## Continuity
+
+- Resume session: `01a0860b-6c46-7c61-bab3-478a2a8c5efc`
+- Prior verdict: CHANGES_REQUIRED (P11-PREP-01–08) with DEC-079–083
+- Cursor completed documentation repair batch only (no Batch A / no src code)
+
+## State
+
+- Branch: `codex/r1-p11-eligibility-engine-v1` @ `38f3efa`
+- Feature dir: `specs/R1-P11-eligibility-engine-v1/`
+- Decisions: DEC-062–083 in `docs/product/decision-log.md`
+- Analysis: `analysis-report.md` now `PREPARATION_READY_FOR_REREVIEW` with
+  P11-PREP-01–08 marked RESOLVED (not CLEAN; not Batch A authorized)
+- Prep checks: `git diff --check` exit 0; `npm run docs:check` exit 0
+  (`{"ok":true,"checked":14}`) — documentation path check only
+
+## Re-review scope
+
+Verify each MAJOR (and MINOR) finding is actually closed in the repaired
+artifacts, especially:
+
+1. Frozen TypeScript contracts in `contracts/*` (DEC-079–082)
+2. Reason algebra + worked examples (DEC-080)
+3. evaluatedAt-before-retry + hash/evidence schemas (DEC-081)
+4. Physical data model / seed / purge (DEC-082)
+5. Batch A T007 declarations-only + T006 must pass (DEC-083)
+6. Exact FR→task→test mapping
+7. Security Worker-ID prohibitions
+8. Companion graceful degradation recorded (Python unavailable)
+
+## Required response
+
+1. Verdict: PREPARATION_ACCEPTED | CHANGES_REQUIRED | BLOCKED
+2. Disposition of each P11-PREP-01–08 (CLOSED / STILL OPEN with evidence)
+3. If ACCEPTED: explicitly authorize Cursor Batch A T001–T007 under DEC-083;
+   state acceptance conditions; any deferred MINOR
+4. If CHANGES_REQUIRED: exact remaining Cursor repair list (docs only)
+5. Confirm do-not-implement beyond authorization / do-not-ask-human

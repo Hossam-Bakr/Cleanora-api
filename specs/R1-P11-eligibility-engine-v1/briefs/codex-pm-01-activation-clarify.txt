@@ -1,0 +1,98 @@
+# Codex PM Brief — R1-P11 activation confirmation, clarifications, preparation plan
+
+You are Codex acting as project manager, product decision-maker, architecture
+authority, and reviewer for Cleanora R1-P11 under delegated owner authority
+(DEC-062). Do NOT implement code, edit files, commit, push, or ask the human
+for in-scope decisions. Return decisions and actionable instructions for Cursor.
+
+## Owner authorization and role assignment
+
+The human owner explicitly authorized for R1-P11 only:
+
+- Local feature branch creation, phase activation through completion.
+- Codex chooses its reasoned recommended option for every in-scope product or
+  technical decision without asking the human.
+- Cursor implements; Codex manages, decides, reviews, and may approve completion.
+- Automatic gate progression when requirements actually pass.
+- Locked constraints remain binding: no stored-value wallets; no Docker/cloud
+  until Release 3; modular monolith with explicit public contracts; one active
+  phase; no P12 Browse marketplace implementation; no commit/push/merge/deploy.
+
+Attribute decisions to Codex under delegated owner authority. Do not invent
+separate human replies.
+
+## Current state
+
+- Phase: R1-P11 — Eligibility Engine V1 (sole active)
+- Branch: `codex/r1-p11-eligibility-engine-v1` at baseline `38f3efa`
+  (created from completed P10 branch; inherited dirty tree preserved)
+- Feature dir: `specs/R1-P11-eligibility-engine-v1/` (activation.md + checkpoint.md exist)
+- DEC-062 recorded in `docs/product/decision-log.md`
+- `docs/product/current.md` updated to active P11
+- Baseline snapshot:
+  `C:\Users\hossa\AppData\Local\Temp\cleanora-r1-p11-20260909-145603\`
+- P10 Complete under DEC-061 with availability/capacity/coverage public contracts
+- Roadmap section: `docs/product/roadmap.md` → `## R1-P11 — Eligibility Engine V1`
+
+## Inherited change boundary
+
+Do not treat inherited P08/P09/P10 dirty files as P11 work. P11 changes must be
+distinguishable. Do not discard inherited work. Do not switch to an older main
+that omits P10.
+
+## Your task (read-only diagnosis + decisions)
+
+1. Confirm activation readiness against repository evidence (P10 completion,
+   dependencies, canonical docs).
+2. Resolve ALL material clarification questions for P11 yourself by selecting
+   the recommended compliant option with rationale. Cover at least:
+   - Module ownership (new `eligibility` module vs providers-owned vs other)
+   - Rule evaluation order and short-circuit vs full-reason collection
+   - Time/zone semantics (reuse P10 DEC-053/054 contracts)
+   - Determinism boundaries and result metadata
+   - Rule/config versioning (`eligibility_rule_versions`)
+   - Missing/stale performance-gate data behavior
+   - Persistence/retention for evaluations and candidate results
+   - Privacy and authorization for evaluation APIs (internal vs public)
+   - Failure semantics (hard fail vs soft exclude)
+   - Smallest honest P11 “Browse uses this engine” integration contract
+     without implementing P12 Browse HTTP marketplace
+   - Reuse of P09/P10 public readers (price, live/verified, coverage,
+     schedule, capacity, crew/gender/escort) — no duplication
+3. Prescribe the exact preparation artifact set Cursor must write next
+   (spec.md, plan.md, research.md, data-model.md, contracts/, migration-plan,
+   test-strategy, checklists, tasks.md, etc.) aligned with
+   `docs/ai/workflows/prepare-phase.md` and Spec Kit conventions used in P10.
+4. Assign next numbered decision IDs starting at DEC-063 (do not reuse IDs).
+5. Return the first Cursor write batch for preparation artifacts only
+   (still no application code unless a tiny scaffold file is required for
+   ownership clarity — prefer docs first).
+
+## Constraints
+
+- Standalone modular monolith; access other modules only through approved
+  public contracts.
+- Tables expected: eligibility_rule_versions, eligibility_evaluations,
+  eligibility_candidate_results (plus reads of earlier tables).
+- Extension-ready for R3 geo rules without implementing geo now.
+- Discover gate commands from package.json; do not invent commands.
+- Known gates include: typecheck, lint, build, prisma:validate,
+  prisma:generate, test:unit, test:integration, test:coverage,
+  openapi:validate, postman:validate, docs:check, git diff --check,
+  plus phase-scoped test/coverage and clean/upgrade migration validators
+  (to be added for P11 following P10 conventions).
+
+## Required response format
+
+Return a structured report with:
+
+1. **Verdict** — activation READY / NOT READY (with evidence)
+2. **Decisions** — each as DEC-0NN with chosen option, rationale, rejected alternatives
+3. **Findings** — blockers/majors/minors if any
+4. **Preparation artifact checklist** — exact files Cursor must create/update
+5. **Next Cursor tasks** — dependency-ordered, with acceptance conditions
+6. **Acceptance conditions** for moving from preparation → implementation
+7. **Do not implement / do not ask human** confirmation
+
+Do not implement. Do not commit. Do not push. Do not ask the human for in-scope
+decisions — choose and document them.

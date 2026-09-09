@@ -1,0 +1,33 @@
+# Codex PM Brief — R1-P11 preparation RE-REVIEW #2 (after DEC-084)
+
+You are Codex under DEC-062. Read-only. Do NOT implement, edit, commit, push,
+or ask the human for in-scope decisions.
+
+## Continuity
+
+- Session: `01a0860b-6c46-7c61-bab3-478a2a8c5efc`
+- PM-03: CHANGES_REQUIRED; P11-PREP-05–08 CLOSED; PREP-01–04 STILL OPEN
+- DEC-084 recorded; Cursor applied Repairs A–D (docs only)
+- Reports: preparation-rereview-report.md; analysis-report.md now claims
+  PREP-01–04 RESOLVED under DEC-084; verdict PREPARATION_READY_FOR_REREVIEW
+
+## Verify
+
+Confirm each Repair A–D is actually closed in contracts/data-model/migration/
+ops/public contract/reason-codes/rule-version/test-strategy/tasks:
+
+A) Named Catalog/Config methods; AVAILABLE|UNAVAILABLE pricing; missing-config
+   variants; Team budget+OVERFLOW; escort not required
+B) evaluationOutcomes; EligibilityRuleId; TEAM_STRUCTURALLY_INVALID;
+   no hard-if-global for well-formed inactive service; EligibilityError interface
+C) EligibilityEvidenceSnapshot; exact three hashes; port MISSING-only;
+   concurrent may succeed without retry
+D) unique (id,countryId); composite FK; 720 hours; purge batch reject; no asOf
+
+## Required response
+
+1. Verdict: PREPARATION_ACCEPTED | CHANGES_REQUIRED | BLOCKED
+2. Disposition table for P11-PREP-01–08
+3. If ACCEPTED: authorize Batch A T001–T007 under DEC-083; acceptance conditions
+4. If CHANGES_REQUIRED: minimal remaining docs repairs only (no redesign)
+5. Do-not-implement beyond auth / do-not-ask-human confirmation

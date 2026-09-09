@@ -16,7 +16,8 @@ const MIGRATION_PROBE_TRANSACTION_OPTIONS = {
   maxWait: 120_000,
   timeout: 120_000,
 } as const;
-const migrationNames = [
+/** Migrations through R1-P10 inclusive — used by P10 upgrade proofs. */
+export const MIGRATION_NAMES_THROUGH_R1_P10 = [
   'r1_p01_foundation_country_configuration',
   'r1_p02_complete_authentication',
   'r1_p02_email_verification_for_individuals',
@@ -35,7 +36,11 @@ const migrationNames = [
   'r1_p09_provider_services_pricing_historical_snapshots',
   'r1_p10_availability_capacity_textual_coverage'
 ] as const;
-const expectedTables = [
+const migrationNames = [
+  ...MIGRATION_NAMES_THROUGH_R1_P10,
+  'r1_p11_eligibility_engine_v1',
+] as const;
+const expectedTablesThroughR1P10 = [
   "currencies",
   "countries",
   "app_configs",
@@ -128,6 +133,12 @@ const expectedTables = [
   "provider_availability_commands",
   "provider_availability_history",
   "configuration_locality_commands"
+] as const;
+const expectedTables = [
+  ...expectedTablesThroughR1P10,
+  "eligibility_rule_versions",
+  "eligibility_evaluations",
+  "eligibility_candidate_results",
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -242,9 +253,22 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "provider_availability_commands",
     "provider_availability_history",
     "configuration_locality_commands"
+  ],
+  r1_p11_eligibility_engine_v1: [
+    "eligibility_rule_versions",
+    "eligibility_evaluations",
+    "eligibility_candidate_results"
   ]
 };
+const expectedPostDeployTablesThroughR1P10 = [
+  "_prisma_migrations",
+  ...expectedTablesThroughR1P10,
+] as const;
 const expectedPostDeployTables = ["_prisma_migrations", ...expectedTables] as const;
+
+/** Post-deploy table inventory through R1-P10 (excludes Eligibility). */
+export const POST_DEPLOY_TABLES_THROUGH_R1_P10 =
+  expectedPostDeployTablesThroughR1P10;
 const destructivePattern =
   /\b(DROP\s+TABLE|TRUNCATE|DELETE\s+FROM)\b/i;
 const expectedForwardMigrationSql = 'ALTER TABLE users DROP CONSTRAINT users_phone_e164_check; ALTER TABLE users ADD CONSTRAINT users_phone_e164_check CHECK (phone_e164 IS NULL OR phone_e164 ~ \'^\\+[1-9][0-9]{1,14}$\');';
@@ -557,10 +581,11 @@ export function assertR1P05MigrationSql(sql: string): void {
 
 /** Require the exact phase-owned schema plus Prisma's migration metadata. */
 export function assertExactPostDeployTables(
-  tableNames: readonly string[]
+  tableNames: readonly string[],
+  expectedTableNames: readonly string[] = expectedPostDeployTables,
 ): void {
   const actual = new Set(tableNames);
-  const expected = new Set<string>(expectedPostDeployTables);
+  const expected = new Set<string>(expectedTableNames);
   const missing = [...expected].filter((table) => !actual.has(table));
   const unexpected = [...actual].filter((table) => !expected.has(table));
 
@@ -576,9 +601,10 @@ export function assertExactPostDeployTables(
 
 /** Require one successful, non-rolled-back history row for each phase. */
 export function assertAppliedMigration(
-  rows: readonly MigrationHistoryRow[]
+  rows: readonly MigrationHistoryRow[],
+  expectedMigrationNames: readonly string[] = migrationNames,
 ): void {
-  const expected = new Set<string>(migrationNames);
+  const expected = new Set<string>(expectedMigrationNames);
   const unexpected = rows
     .map((row) => row.migration_name)
     .filter((name) => !expected.has(name));
@@ -587,7 +613,7 @@ export function assertAppliedMigration(
       `Migration history contains unexpected rows: ${[...new Set(unexpected)].join(", ")}`,
     );
   }
-  for (const migrationName of migrationNames) {
+  for (const migrationName of expectedMigrationNames) {
     const matching = rows.filter((row) => row.migration_name === migrationName);
     const row = matching[0];
     if (
@@ -765,6 +791,54 @@ export function requireR1P10ProofDatabaseUrl(
   }
   assertR1P10DisposableDatabaseUrl(value);
   return value;
+}
+
+export const APPROVED_R1_P11_TARGET_PATTERN =
+  /^cleanora_r1_p11(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
+
+/** Require an explicitly named R1-P11 disposable target for eligibility proofs. */
+export function assertR1P11DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  let targetName: string;
+  try {
+    const url = new URL(connectionString);
+    targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  } catch {
+    throw new Error("R1-P11 database URL is not a valid URL");
+  }
+  if (!APPROVED_R1_P11_TARGET_PATTERN.test(targetName)) {
+    throw new Error(
+      `Refusing R1-P11 database work against unapproved target "${targetName}"`,
+    );
+  }
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+}
+
+/**
+ * Resolve the separate R1-P11 live/proof URL.
+ * Never falls back to DATABASE_URL or a prior-phase disposable target.
+ * Prefer Neon direct hosts so proof schemas can set `search_path` (poolers
+ * reject the startup `options` parameter).
+ */
+export function requireR1P11ProofDatabaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const value = env["CLEANORA_R1_P11_DATABASE_URL"];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      "CLEANORA_R1_P11_DATABASE_URL is required for R1-P11 disposable proofs",
+    );
+  }
+  assertR1P11DisposableDatabaseUrl(value);
+  try {
+    const url = new URL(value);
+    url.hostname = url.hostname.replace("-pooler", "");
+    return url.toString();
+  } catch {
+    return value;
+  }
 }
 
 /** Accept only the forward-only R1-P06 table/enums/index/constraint inventory. */
@@ -995,6 +1069,54 @@ export function assertR1P10MigrationSql(sql: string): void {
   }
 }
 
+export const R1_P11_MIGRATION = "r1_p11_eligibility_engine_v1";
+
+export const R1_P11_ELIGIBILITY_TABLES = [
+  "eligibility_rule_versions",
+  "eligibility_evaluations",
+  "eligibility_candidate_results",
+] as const;
+
+/** Accept only the additive, phase-owned R1-P11 Eligibility migration inventory. */
+export function assertR1P11MigrationSql(sql: string): void {
+  if (/\b(DROP\s+TABLE|TRUNCATE)\b/iu.test(sql)) {
+    throw new Error("R1-P11 eligibility migration contains destructive SQL");
+  }
+  // DELETE FROM is forbidden outside intentional empty patterns; none expected.
+  if (/\bDELETE\s+FROM\b/iu.test(sql)) {
+    throw new Error("R1-P11 eligibility migration must not delete existing rows");
+  }
+  const tables = migrationOwnedTables[R1_P11_MIGRATION] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P11 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 3) {
+    throw new Error("R1-P11 migration must create exactly three Eligibility tables");
+  }
+  for (const required of [
+    "EligibilityCandidateRowKind",
+    "eligibility_candidate_results_row_kind_team_xor",
+    "eligibility_candidate_results_provider_summary_unique",
+    "eligibility_candidate_results_team_result_unique",
+    "eligibility_evaluations_rule_version_country_fkey",
+    "eligibility_evaluations_expires_at_id_idx",
+    "720 hours",
+    'ON DELETE CASCADE',
+    "ON DELETE RESTRICT",
+  ]) {
+    if (!sql.includes(required)) {
+      throw new Error(`R1-P11 migration is missing ${required}`);
+    }
+  }
+  for (const forbidden of [/\bbrowse\b/iu, /\bbooking\b/iu]) {
+    if (forbidden.test(sql)) {
+      throw new Error("R1-P11 migration must not reference Browse or Booking surfaces");
+    }
+  }
+}
+
 export function assertExactMigrationDirectoryNames(
   directoryNames: readonly string[],
 ): void {
@@ -1091,6 +1213,10 @@ async function validateMigrationFolder(): Promise<void> {
       assertR1P10MigrationSql(sql);
       continue;
     }
+    if (migrationName === R1_P11_MIGRATION) {
+      assertR1P11MigrationSql(sql);
+      continue;
+    }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
       if (!sql.includes(`"${table}"`)) throw new Error(`Migration ${migrationName} is missing expected table ${table}`);
     }
@@ -1122,13 +1248,32 @@ async function assertTargetDatabaseEmpty(
   }
 }
 
+export type PostDeployExpectation = {
+  readonly migrationNames?: readonly string[];
+  readonly postDeployTables?: readonly string[];
+  /** When true (default for full current phase), assert Eligibility evaluation trees empty after seed. */
+  readonly assertEmptyEligibilityTrees?: boolean;
+};
+
 export async function assertPostDeployState(
-  connectionString: string
+  connectionString: string,
+  expectation: PostDeployExpectation = {},
 ): Promise<void> {
+  const expectedMigrationNames =
+    expectation.migrationNames ?? migrationNames;
+  const expectedTablesForAssert =
+    expectation.postDeployTables ?? expectedPostDeployTables;
+  const assertEmptyEligibilityTrees =
+    expectation.assertEmptyEligibilityTrees ??
+    expectedMigrationNames.includes(R1_P11_MIGRATION);
+
   const prisma = createMigrationProofPrismaClient(connectionString);
 
   try {
-    assertExactPostDeployTables(await readPublicBaseTables(prisma));
+    assertExactPostDeployTables(
+      await readPublicBaseTables(prisma),
+      expectedTablesForAssert,
+    );
     const history = await prisma.$queryRaw<MigrationHistoryRow[]>`
       SELECT
         migration_name::text AS migration_name,
@@ -1136,7 +1281,7 @@ export async function assertPostDeployState(
         rolled_back_at
       FROM "_prisma_migrations"
     `;
-    assertAppliedMigration(history);
+    assertAppliedMigration(history, expectedMigrationNames);
     await seed(prisma);
     const firstSeedCounts = await readSeedCounts(prisma);
     await seed(prisma);
@@ -1166,6 +1311,29 @@ export async function assertPostDeployState(
       if ((rows[0]?.total ?? 0n) !== 0n) {
         throw new Error(
           `R1-P10 seed must leave ${table} empty; found production availability/locality rows`,
+        );
+      }
+    }
+    if (assertEmptyEligibilityTrees) {
+      for (const table of [
+        "eligibility_evaluations",
+        "eligibility_candidate_results",
+      ] as const) {
+        const rows = await prisma.$queryRawUnsafe<Array<{ total: bigint }>>(
+          `SELECT count(*)::bigint AS total FROM "${table}"`,
+        );
+        if ((rows[0]?.total ?? 0n) !== 0n) {
+          throw new Error(
+            `R1-P11 seed must leave ${table} empty; found disposable evaluation rows`,
+          );
+        }
+      }
+      const ruleRows = await prisma.$queryRaw<Array<{ total: bigint }>>`
+        SELECT count(*)::bigint AS total FROM "eligibility_rule_versions"
+      `;
+      if ((ruleRows[0]?.total ?? 0n) < 1n) {
+        throw new Error(
+          "R1-P11 seed must create at least one eligibility_rule_versions row",
         );
       }
     }
@@ -2110,9 +2278,9 @@ async function run(): Promise<void> {
     "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
   );
 
-  const configuredConnectionString = requireR1P10ProofDatabaseUrl();
+  const configuredConnectionString = requireR1P11ProofDatabaseUrl();
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p10_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p11_proof_${process.pid}_${Date.now()}`;
   proofUrl.searchParams.set("schema", proofSchema);
   proofUrl.searchParams.set("options", `-c search_path=${proofSchema}`);
   const connectionString = proofUrl.toString();
@@ -2135,7 +2303,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
   );
 }
 

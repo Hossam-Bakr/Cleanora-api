@@ -1,0 +1,31 @@
+# Codex PM Brief — Batch A acceptance + Batch B assignment
+
+You are Codex under DEC-062. Read-only. Do NOT implement, commit, push, or ask
+the human.
+
+## State
+
+- Branch: `codex/r1-p11-eligibility-engine-v1` @ `38f3efa` (+ dirty P11 Batch A)
+- PREPARATION_ACCEPTED (PM-05); Batch A T001–T007 implemented
+- Evidence: `specs/R1-P11-eligibility-engine-v1/implementation-evidence.md`
+- Gates (Cursor-run): `test:r1-p11` 2 files/8 tests exit 0; typecheck exit 0;
+  eslint Batch A paths exit 0
+- New: vitest.r1-p11.config.ts, package scripts, selection+boundary tests,
+  fixtures, eligibility.public.ts declarations only
+
+## Review Batch A
+
+Against DEC-083 and PM-05 acceptance conditions. Verify no empty folders,
+no runtime stubs, T006 green, declarations match contract including
+CAPACITY_RULE_MISSING and MISSING_CONFIGURATION evidence fields.
+
+## Required response
+
+1. Verdict: BATCH_A_ACCEPTED | CHANGES_REQUIRED
+2. Findings if any
+3. If accepted: authorize Batch B T008–T013 exactly with acceptance conditions
+   (schema, migration r1_p11_eligibility_engine_v1, seed, repos/UoW, constraint
+   tests, seed tests) per tasks.md and DEC-082/084 data-model
+4. Do-not-implement / do-not-ask-human
+
+Session: `01a0860b-6c46-7c61-bab3-478a2a8c5efc`

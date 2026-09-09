@@ -11,10 +11,13 @@ import {
   assertPostDeployState,
   assertR1P10MigrationSql,
   createMigrationProofPrismaClient,
+  MIGRATION_NAMES_THROUGH_R1_P10,
+  POST_DEPLOY_TABLES_THROUGH_R1_P10,
   R1_P09_MIGRATION,
   R1_P09_PROVIDER_SERVICE_TABLES,
   R1_P10_AVAILABILITY_TABLES,
   R1_P10_MIGRATION,
+  R1_P11_MIGRATION,
   requireR1P10ProofDatabaseUrl,
   type MigrationHistoryRow,
 } from "./validate-clean-migration.js";
@@ -370,10 +373,13 @@ async function run(): Promise<void> {
     ...R1_P09_UPGRADE_BASELINE_MIGRATIONS,
     R1_P10_MIGRATION,
   ]);
+  const knownLater = new Set<string>([R1_P11_MIGRATION]);
   const missing = [...expected].filter(
     (name) => !directoryNames.includes(name),
   );
-  const unexpected = directoryNames.filter((name) => !expected.has(name));
+  const unexpected = directoryNames.filter(
+    (name) => !expected.has(name) && !knownLater.has(name),
+  );
   if (missing.length > 0 || unexpected.length > 0) {
     throw new Error(
       `Upgrade migration inventory differs; missing=[${missing.join(", ")}], unexpected=[${unexpected.join(", ")}]`,
@@ -434,8 +440,14 @@ async function run(): Promise<void> {
 
     const upgraded = createMigrationProofPrismaClient(connectionString);
     try {
-      assertAppliedMigration(await readMigrationHistory(upgraded));
-      assertExactPostDeployTables(await readBaseTables(upgraded));
+      assertAppliedMigration(
+        await readMigrationHistory(upgraded),
+        MIGRATION_NAMES_THROUGH_R1_P10,
+      );
+      assertExactPostDeployTables(
+        await readBaseTables(upgraded),
+        POST_DEPLOY_TABLES_THROUGH_R1_P10,
+      );
       const after = filterPreservedBaselineDigests(
         await readR1P09BaselineDigests(upgraded, before.keys()),
       );
@@ -444,7 +456,11 @@ async function run(): Promise<void> {
     } finally {
       await upgraded.$disconnect();
     }
-    await assertPostDeployState(connectionString);
+    await assertPostDeployState(connectionString, {
+      migrationNames: MIGRATION_NAMES_THROUGH_R1_P10,
+      postDeployTables: POST_DEPLOY_TABLES_THROUGH_R1_P10,
+      assertEmptyEligibilityTrees: false,
+    });
     console.info(
       `Upgraded populated R1-P09 fixture in isolated schema ${proofSchema}; preserved baseline digests (country_configs version-stripped; app_configs policy change asserted separately), empty R1-P10 availability tables before seed, Egypt Africa/Cairo timezone, country_configs.version, COUNTRY_REQUIRED policy, idempotent re-deploy, and live post-deploy constraints.`,
     );

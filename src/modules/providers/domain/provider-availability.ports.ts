@@ -301,6 +301,9 @@ export interface ProviderCapacityEvaluationFacts {
       "availableForFullInterval"
     > & {
       readonly workerVersion: number;
+      /** R1-P11 Eligibility Team aggregates (DEC-079); never forwarded as Worker IDs. */
+      readonly gender: "male" | "female" | "other_or_unspecified";
+      readonly workerType: "CLEANING_STAFF" | "ESCORT" | "OTHER";
       readonly weeklyPeriods: readonly WorkerWeeklyScheduleSnapshot[];
       readonly exceptions: readonly WorkerScheduleExceptionSnapshot[];
     })[];

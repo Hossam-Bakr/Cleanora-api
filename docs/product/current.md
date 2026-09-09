@@ -3,20 +3,42 @@
 | Field | Value |
 |---|---|
 | Current Release | Release 1 — Core Marketplace |
-| Current Phase | None — R1-P10 completed; no next phase activated |
-| Status | R1-P10 Complete under DEC-061; Git publication pending exact authorization |
-| Backend Owner | Codex — guarded Git handoff only |
-| Local Checkout | codex/r1-p10-availability-capacity-textual-coverage; existing Phase 9/local changes preserved |
-| Verified Main | origin/main at 19d4b00, PR #9 merged |
-| Started At | 2026-09-07 |
+| Current Phase | R1-P11 — Eligibility Engine V1 |
+| Status | **Complete** under DEC-062 / DEC-085 — no next phase activated |
+| Backend Owner | Codex (PM/decisions/review/completion) + Cursor (implementation) |
+| Local Checkout | `codex/r1-p11-eligibility-engine-v1` from P10 baseline `38f3efa`; inherited dirty tree preserved |
+| Verified Main | origin/main at 19d4b00, PR #9 merged (P10 feature commit also on local P10 branch) |
+| Started At | 2026-09-09 |
 | Completed At | 2026-09-09 |
-| Last Updated | 2026-09-09 — explicit owner completion approval recorded |
+| Last Updated | 2026-09-09 — R1-P11 Complete; P12 not activated |
 
-## Most recently completed phase — R1-P10
+## Most recently completed phase — R1-P11
+
+R1-P11 is **Complete** under DEC-062 delegated Codex completion authority,
+recorded as DEC-085, after live evaluate/Browse proofs, phase coverage, and
+disposable clean + upgrade migration validators passed.
+
+Delivered scope is an in-process Eligibility Engine V1: discovery and explicit
+`evaluateEligibility`, Browse-safe `getStandardBrowseCandidates` without HTTP,
+720-hour `purgeExpiredEvaluations`, immutable Egypt rule-version seed, and
+phase-owned migration `r1_p11_eligibility_engine_v1`. Catalog, Configuration,
+and Providers remain fact owners. Zero new HTTP operations. Browse marketplace
+HTTP remains P12 and is **not** activated from this phase.
+
+Final evidence: 24 files / 131 phase tests; coverage 91.84 / 86.98 / 93.57 /
+91.75; clean 18-migration / 96-table install; populated P10→P11 upgrade;
+review verdict PASS. DEC-078 inherited `test:unit` and whole-tree lint
+failures are reported, not relabeled. Closure:
+`specs/R1-P11-eligibility-engine-v1/completion-report.md`.
+
+Git publication of the feature branch does not authorize merge, deploy, or a
+production migration.
+
+## Previously completed phase — R1-P10
 
 R1-P10 is **Complete** under DEC-061. The owner explicitly approved
 `R1-P10 — Availability, Capacity & Textual Coverage as Complete` on 2026-09-09
-after the final PASS handoff. No next phase is active or implied.
+after the final PASS handoff.
 
 Delivered scope covers textual country/city/district coverage, Provider/Worker
 schedules and exceptions, complete-Team capacity, temporary Provider pause,

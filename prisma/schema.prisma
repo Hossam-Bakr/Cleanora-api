@@ -485,6 +485,7 @@ model Country {
   payoutDestinationVersions    ProviderPayoutDestinationVersion[]
   serviceCountryAvailability   ServiceCountryAvailability[]
   providerServicePricesAtProposal ProviderServicePrice[] @relation("ProviderServicePriceCountryAtProposal")
+  eligibilityRuleVersions      EligibilityRuleVersion[]
 
   @@index([isActive])
   @@index([defaultCurrencyId])
@@ -2562,4 +2563,88 @@ model ConfigurationLocalityCommand {
   @@unique([scopeKey, idempotencyKey])
   @@index([actorUserId, createdAt])
   @@map("configuration_locality_commands")
+}
+
+// ---------------------------------------------------------------------------
+// R1-P11 Eligibility Engine V1 (DEC-082 / DEC-084)
+// XOR CHECK + partial unique indexes on candidate results live in migration.sql
+// (Prisma cannot express partial uniques or the rowKind/teamId XOR CHECK).
+// ---------------------------------------------------------------------------
+
+enum EligibilityCandidateRowKind {
+  PROVIDER_SUMMARY
+  TEAM_RESULT
+}
+
+/// Immutable country-scoped eligibility rule bundle.
+model EligibilityRuleVersion {
+  id                   String   @id
+  countryId            String   @map("country_id")
+  versionLabel         String   @map("version_label")
+  schemaVersion        String   @map("schema_version")
+  engineCompatibility  String   @map("engine_compatibility")
+  ruleOrder            Json     @map("rule_order")
+  parameters           Json
+  effectiveFrom        DateTime @map("effective_from")
+  contentChecksum      String   @map("content_checksum")
+  createdAt            DateTime @default(now()) @map("created_at")
+  createdByProvenance  String   @map("created_by_provenance")
+  country              Country  @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  evaluations          EligibilityEvaluation[]
+
+  @@unique([id, countryId])
+  @@unique([countryId, versionLabel])
+  @@unique([countryId, effectiveFrom])
+  @@index([countryId, effectiveFrom])
+  @@map("eligibility_rule_versions")
+}
+
+/// One row per successful completed application evaluation.
+model EligibilityEvaluation {
+  id                String   @id
+  ruleVersionId     String   @map("rule_version_id")
+  countryId         String   @map("country_id")
+  evaluatedAt       DateTime @map("evaluated_at")
+  completedAt       DateTime @map("completed_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  /// Exactly completedAt + 720 elapsed hours; set by application (no DB default).
+  expiresAt         DateTime @map("expires_at")
+  requestNormalized Json     @map("request_normalized")
+  /// Canonical hash; intentionally not unique (fresh row per live invocation).
+  requestHash       String   @map("request_hash")
+  evidenceSafe      Json     @map("evidence_safe")
+  evidenceHash      String   @map("evidence_hash")
+  resultHash        String   @map("result_hash")
+  metadata          Json
+  outcomeSummary    Json     @map("outcome_summary")
+  traceId           String?  @map("trace_id")
+  engineVersion     String   @map("engine_version")
+  ruleVersion       EligibilityRuleVersion @relation(fields: [ruleVersionId, countryId], references: [id, countryId], onDelete: Restrict)
+  candidateResults  EligibilityCandidateResult[]
+
+  @@index([expiresAt, id])
+  @@index([ruleVersionId, countryId])
+  @@index([countryId, evaluatedAt])
+  @@map("eligibility_evaluations")
+}
+
+/// Provider-summary or Team-result row belonging to one evaluation.
+model EligibilityCandidateResult {
+  id              String                       @id
+  evaluationId    String                       @map("evaluation_id")
+  /// Historical logical reference — no live FK (DEC-082).
+  providerId      String                       @map("provider_id")
+  /// Null iff rowKind = PROVIDER_SUMMARY (XOR enforced in migration SQL).
+  teamId          String?                      @map("team_id")
+  rowKind         EligibilityCandidateRowKind  @map("row_kind")
+  eligible        Boolean
+  ruleOutcomes    Json                         @map("rule_outcomes")
+  reasons         Json
+  sortingFacts    Json?                        @map("sorting_facts")
+  diagnosticsSafe Json?                        @map("diagnostics_safe")
+  createdAt       DateTime                     @default(now()) @map("created_at")
+  evaluation      EligibilityEvaluation        @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@index([evaluationId, providerId])
+  @@map("eligibility_candidate_results")
 }
