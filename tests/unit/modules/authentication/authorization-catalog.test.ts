@@ -45,6 +45,8 @@ const expectedPermissionCodes = [
   "providers.services.prices.approve",
   "catalog.management.read",
   "catalog.management.write",
+  "configuration.localities.read",
+  "configuration.localities.write",
 ];
 
 const expectedRolePermissionMap: Record<string, string[]> = {
@@ -65,6 +67,8 @@ const expectedRolePermissionMap: Record<string, string[]> = {
     "providers.services.prices.approve",
     "catalog.management.read",
     "catalog.management.write",
+    "configuration.localities.read",
+    "configuration.localities.write",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],

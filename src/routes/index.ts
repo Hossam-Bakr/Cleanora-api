@@ -40,6 +40,10 @@ export interface RouteDependencies {
   readonly staffProviderServiceRouter?: Router;
   /** R1-P08 protected staff Catalog management routes. */
   readonly staffCatalogRouter?: Router;
+  /** R1-P10 protected staff Configuration locality/time-zone routes. */
+  readonly staffConfigurationLocalityRouter?: Router;
+  /** R1-P10 protected Provider availability coverage routes. */
+  readonly providerAvailabilityRouter?: Router;
 }
 
 /**
@@ -119,5 +123,16 @@ export function mountRoutes(
 
   if (dependencies.staffCatalogRouter !== undefined) {
     app.use(`${apiPrefix}/staff/catalog`, dependencies.staffCatalogRouter);
+  }
+
+  if (dependencies.staffConfigurationLocalityRouter !== undefined) {
+    app.use(
+      `${apiPrefix}/staff/configuration`,
+      dependencies.staffConfigurationLocalityRouter,
+    );
+  }
+
+  if (dependencies.providerAvailabilityRouter !== undefined) {
+    app.use(`${apiPrefix}/providers`, dependencies.providerAvailabilityRouter);
   }
 }

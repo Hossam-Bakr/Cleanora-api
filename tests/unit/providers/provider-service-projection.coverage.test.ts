@@ -202,6 +202,13 @@ function buildProjectionService() {
         blockerCodes: ["NO_USABLE_PROVIDER_SERVICE"],
       })),
     },
+    availabilityReadyFacts: {
+      read: vi.fn(async () => ({
+        coverageReady: { satisfied: true, blockerCodes: [] },
+        availabilityReady: { satisfied: true, blockerCodes: [] },
+        capacityReady: { satisfied: true, blockerCodes: [] },
+      })),
+    },
   });
 }
 
@@ -225,6 +232,15 @@ describe("provider-service projection coverage", () => {
     expect(
       readiness.gates.find((gate) => gate.key === "servicesReady")?.satisfied,
     ).toBe(false);
+    expect(
+      readiness.gates.find((gate) => gate.key === "coverageReady")?.satisfied,
+    ).toBe(true);
+    expect(
+      readiness.gates.find((gate) => gate.key === "availabilityReady")?.satisfied,
+    ).toBe(true);
+    expect(
+      readiness.gates.find((gate) => gate.key === "capacityReady")?.satisfied,
+    ).toBe(true);
 
     const history = await service.listHistory({
       principal: actor as never,

@@ -1,0 +1,1174 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P10 Availability, Capacity & Textual Coverage API
+  version: 1.0.0-r1-p10
+  summary: Protected Staff localities/time-zone and Provider availability management
+  description: |
+    Implemented protected management surface for R1-P10.
+
+    Staff Configuration manages cities, districts, and per-country IANA time zones
+    under `/api/v1/staff/configuration`. Provider Owner/Admin actors manage textual
+    coverage, Provider/Worker calendars, capacity, and temporary pause under
+    `/api/v1/providers/:providerId/availability`.
+
+    There is no customer, anonymous, Browse, Booking, Eligibility, or reservation
+    HTTP evaluation surface in this phase. Internal public readers remain
+    TypeScript module contracts only.
+
+    Mutations require a UUID `idempotencyKey` and `expectedVersion`. Staff locality
+    writes also require a meaningful approved privileged reason (`reasonCode`).
+    Examples use synthetic placeholders only — never real credentials, tokens, or
+    production identifiers.
+servers:
+  - url: /api/v1
+    description: Relative API prefix used by runtime Swagger
+security:
+  - bearerAuth: []
+tags:
+  - name: Staff Localities
+    description: Protected Staff city/district management under configuration.localities.read/write.
+  - name: Staff Country Time Zone
+    description: Protected Staff country IANA time-zone management under configuration.localities.read/write.
+  - name: Provider Availability
+    description: Protected Provider coverage, calendar, worker calendar, capacity, and pause management. No customer evaluation.
+paths:
+  /staff/configuration/countries/{countryId}/cities:
+    parameters:
+      - $ref: '#/components/parameters/R1P10CountryId'
+    get:
+      tags: [Staff Localities]
+      operationId: listStaffCities
+      summary: List cities for a country
+      description: |
+        Returns Staff-managed cities for the country. Requires
+        `configuration.localities.read`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: City list returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [items]
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/R1P10CityManagementDto'
+              examples:
+                cities:
+                  summary: Synthetic city list
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - id: city_cairo
+                          countryId: country_eg
+                          code: CAIRO
+                          nameAr: القاهرة
+                          nameEn: Cairo
+                          isActive: true
+                          version: 1
+                          createdAt: '2026-09-01T10:00:00.000Z'
+                          updatedAt: '2026-09-01T10:00:00.000Z'
+                    requestId: 7ebf45ad-7384-41ab-8e74-e864ae048d30
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+    post:
+      tags: [Staff Localities]
+      operationId: createStaffCity
+      summary: Create a city
+      description: |
+        Creates a city under the country. Requires `configuration.localities.write`,
+        UUID idempotency, and an approved privileged reason code.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10CreateCityCommand'
+            examples:
+              createCity:
+                summary: Synthetic create-city body
+                value:
+                  code: GIZA
+                  nameAr: الجيزة
+                  nameEn: Giza
+                  idempotencyKey: '00000000-0000-4000-8000-000000000101'
+                  reasonCode: configuration_locality_change
+      responses:
+        '201':
+          description: City created.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10CityManagementDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /staff/configuration/cities/{cityId}:
+    parameters:
+      - $ref: '#/components/parameters/R1P10CityId'
+    patch:
+      tags: [Staff Localities]
+      operationId: patchStaffCity
+      summary: Patch a city
+      description: |
+        Updates city names and/or active flag at an exact expected version.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10PatchCityCommand'
+            examples:
+              deactivateCity:
+                summary: Synthetic deactivate-city body
+                value:
+                  isActive: false
+                  expectedVersion: 1
+                  idempotencyKey: '00000000-0000-4000-8000-000000000102'
+                  reasonCode: configuration_locality_change
+      responses:
+        '200':
+          description: City updated.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10CityManagementDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /staff/configuration/cities/{cityId}/districts:
+    parameters:
+      - $ref: '#/components/parameters/R1P10CityId'
+    get:
+      tags: [Staff Localities]
+      operationId: listStaffDistricts
+      summary: List districts for a city
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: District list returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [items]
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/R1P10DistrictManagementDto'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+    post:
+      tags: [Staff Localities]
+      operationId: createStaffDistrict
+      summary: Create a district
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10CreateDistrictCommand'
+            examples:
+              createDistrict:
+                summary: Synthetic create-district body
+                value:
+                  code: DOKKI
+                  nameAr: الدقي
+                  nameEn: Dokki
+                  idempotencyKey: '00000000-0000-4000-8000-000000000103'
+                  reasonCode: configuration_locality_change
+      responses:
+        '201':
+          description: District created.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10DistrictManagementDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /staff/configuration/districts/{districtId}:
+    parameters:
+      - $ref: '#/components/parameters/R1P10DistrictId'
+    patch:
+      tags: [Staff Localities]
+      operationId: patchStaffDistrict
+      summary: Patch a district
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10PatchDistrictCommand'
+            examples:
+              renameDistrict:
+                summary: Synthetic rename-district body
+                value:
+                  nameEn: Dokki District
+                  expectedVersion: 1
+                  idempotencyKey: '00000000-0000-4000-8000-000000000104'
+                  reasonCode: configuration_locality_change
+      responses:
+        '200':
+          description: District updated.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10DistrictManagementDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /staff/configuration/countries/{countryId}/time-zone:
+    parameters:
+      - $ref: '#/components/parameters/R1P10CountryId'
+    get:
+      tags: [Staff Country Time Zone]
+      operationId: getStaffCountryTimeZone
+      summary: Get country time zone
+      description: |
+        Returns the configured IANA time zone for the country. Egypt must resolve
+        to `Africa/Cairo` after Phase 10 backfill (DEC-053).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Country time zone returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10CountryTimeZoneDto'
+              examples:
+                egypt:
+                  summary: Synthetic Egypt time zone
+                  value:
+                    success: true
+                    data:
+                      countryId: country_eg
+                      countryCode: EG
+                      timeZone: Africa/Cairo
+                      version: 1
+                    requestId: 7ebf45ad-7384-41ab-8e74-e864ae048d30
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+    put:
+      tags: [Staff Country Time Zone]
+      operationId: putStaffCountryTimeZone
+      summary: Put country time zone
+      description: |
+        Sets or replaces the country IANA time zone at an exact expected version
+        (`0` when unset). Requires privileged reason and UUID idempotency.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10PutCountryTimeZoneCommand'
+            examples:
+              setCairo:
+                summary: Synthetic put time-zone body
+                value:
+                  timeZone: Africa/Cairo
+                  expectedVersion: 1
+                  idempotencyKey: '00000000-0000-4000-8000-000000000105'
+                  reasonCode: configuration_locality_change
+      responses:
+        '200':
+          description: Country time zone saved.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10CountryTimeZoneDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /providers/{providerId}/availability/coverage:
+    parameters:
+      - $ref: '#/components/parameters/R1P10ProviderId'
+    get:
+      tags: [Provider Availability]
+      operationId: getProviderCoverage
+      summary: Get Provider textual coverage
+      description: |
+        Returns the Provider's current city/district coverage set and version.
+        Cross-Provider resources use the non-enumerating not-found form.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Coverage returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10ProviderCoverageDto'
+              examples:
+                coverage:
+                  summary: Synthetic coverage
+                  value:
+                    success: true
+                    data:
+                      providerId: provider_demo
+                      version: 2
+                      coverage:
+                        - type: CITY
+                          id: city_cairo
+                        - type: DISTRICT
+                          id: district_dokki
+                    requestId: 7ebf45ad-7384-41ab-8e74-e864ae048d30
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+    put:
+      tags: [Provider Availability]
+      operationId: replaceProviderCoverage
+      summary: Replace Provider textual coverage
+      description: |
+        Full-replaces the coverage set at an exact expected version. Requires
+        UUID idempotency. No contact data, maps, or radius fields are accepted.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10ReplaceCoverageCommand'
+            examples:
+              replaceCoverage:
+                summary: Synthetic replace-coverage body
+                value:
+                  selections:
+                    - type: CITY
+                      id: city_cairo
+                    - type: DISTRICT
+                      id: district_dokki
+                  expectedVersion: 2
+                  idempotencyKey: '00000000-0000-4000-8000-000000000201'
+      responses:
+        '200':
+          description: Coverage replaced.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10ProviderCoverageDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /providers/{providerId}/availability/calendar:
+    parameters:
+      - $ref: '#/components/parameters/R1P10ProviderId'
+    get:
+      tags: [Provider Availability]
+      operationId: getProviderCalendar
+      summary: Get Provider availability calendar
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Provider calendar returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10ProviderCalendarDto'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+    put:
+      tags: [Provider Availability]
+      operationId: replaceProviderCalendar
+      summary: Replace Provider availability calendar
+      description: |
+        Full-replaces weekly periods and dated exceptions. Weekdays are ISO 1–7
+        (Monday–Sunday). Minutes are half-open civil-day offsets 0–1439.
+        Overnight windows use `endsNextDay: true`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10ReplaceCalendarCommand'
+            examples:
+              replaceCalendar:
+                summary: Synthetic Provider calendar body
+                value:
+                  weeklyPeriods:
+                    - weekday: 1
+                      startMinute: 540
+                      endMinute: 1020
+                      endsNextDay: false
+                  exceptions:
+                    - localDate: '2026-09-15'
+                      closed: true
+                      startMinute: null
+                      endMinute: null
+                      endsNextDay: null
+                  expectedVersion: 3
+                  idempotencyKey: '00000000-0000-4000-8000-000000000202'
+      responses:
+        '200':
+          description: Provider calendar replaced.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10ProviderCalendarDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /providers/{providerId}/availability/workers/{workerId}/calendar:
+    parameters:
+      - $ref: '#/components/parameters/R1P10ProviderId'
+      - $ref: '#/components/parameters/R1P10WorkerId'
+    get:
+      tags: [Provider Availability]
+      operationId: getWorkerCalendar
+      summary: Get Worker availability calendar
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Worker calendar returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10WorkerCalendarDto'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+    put:
+      tags: [Provider Availability]
+      operationId: replaceWorkerCalendar
+      summary: Replace Worker availability calendar
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10ReplaceCalendarCommand'
+            examples:
+              replaceWorkerCalendar:
+                summary: Synthetic Worker calendar body
+                value:
+                  weeklyPeriods:
+                    - weekday: 2
+                      startMinute: 600
+                      endMinute: 1080
+                      endsNextDay: false
+                  exceptions: []
+                  expectedVersion: 1
+                  idempotencyKey: '00000000-0000-4000-8000-000000000203'
+      responses:
+        '200':
+          description: Worker calendar replaced.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10WorkerCalendarDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /providers/{providerId}/availability/capacity:
+    parameters:
+      - $ref: '#/components/parameters/R1P10ProviderId'
+    get:
+      tags: [Provider Availability]
+      operationId: getProviderCapacity
+      summary: Get Provider capacity rule
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Capacity rule returned (`maxSimultaneousTeams` may be null when unset).
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10ProviderCapacityRuleDto'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+    put:
+      tags: [Provider Availability]
+      operationId: replaceProviderCapacity
+      summary: Replace Provider capacity rule
+      description: |
+        Sets the complete-Team simultaneous capacity cap (1–50). Does not expose
+        reservation or Booking evaluation.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10ReplaceCapacityCommand'
+            examples:
+              replaceCapacity:
+                summary: Synthetic capacity body
+                value:
+                  maxSimultaneousTeams: 3
+                  expectedVersion: 0
+                  idempotencyKey: '00000000-0000-4000-8000-000000000204'
+      responses:
+        '200':
+          description: Capacity rule replaced.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10ProviderCapacityRuleDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /providers/{providerId}/availability/pause:
+    parameters:
+      - $ref: '#/components/parameters/R1P10ProviderId'
+    get:
+      tags: [Provider Availability]
+      operationId: getProviderPause
+      summary: Get current Provider temporary pause
+      description: |
+        Returns the unresolved pause DTO or `null` when no unresolved pause exists.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pause state returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - $ref: '#/components/schemas/R1P10ProviderTemporaryPauseDto'
+                          - type: 'null'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+    post:
+      tags: [Provider Availability]
+      operationId: startProviderPause
+      summary: Start a Provider temporary pause
+      description: |
+        Starts a temporary pause. Optional `endsAt` is an ISO-8601 instant with
+        offset. Concurrent unresolved pauses are rejected.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10StartPauseCommand'
+            examples:
+              startPause:
+                summary: Synthetic start-pause body
+                value:
+                  endsAt: '2026-09-20T21:00:00.000+03:00'
+                  expectedVersion: 0
+                  idempotencyKey: '00000000-0000-4000-8000-000000000205'
+      responses:
+        '200':
+          description: Pause started.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10ProviderTemporaryPauseDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+  /providers/{providerId}/availability/pause/resume:
+    parameters:
+      - $ref: '#/components/parameters/R1P10ProviderId'
+    post:
+      tags: [Provider Availability]
+      operationId: resumeProviderPause
+      summary: Resume a Provider temporary pause early
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/R1P10ResumePauseCommand'
+            examples:
+              resumePause:
+                summary: Synthetic resume-pause body
+                value:
+                  expectedVersion: 1
+                  idempotencyKey: '00000000-0000-4000-8000-000000000206'
+      responses:
+        '200':
+          description: Pause resumed.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/R1P10ProviderTemporaryPauseDto'
+        '400':
+          $ref: '#/components/responses/R1P10ValidationFailure'
+        '401':
+          $ref: '#/components/responses/R1P10Unauthorized'
+        '403':
+          $ref: '#/components/responses/R1P10Forbidden'
+        '404':
+          $ref: '#/components/responses/R1P10NotFound'
+        '409':
+          $ref: '#/components/responses/R1P10Conflict'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    R1P10CountryId:
+      name: countryId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: country_eg
+    R1P10CityId:
+      name: cityId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: city_cairo
+    R1P10DistrictId:
+      name: districtId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: district_dokki
+    R1P10ProviderId:
+      name: providerId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: provider_demo
+    R1P10WorkerId:
+      name: workerId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: worker_demo
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, data, requestId]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data: {}
+        requestId:
+          type: string
+          format: uuid
+    ErrorEnvelope:
+      type: object
+      required: [success, error, requestId]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+        requestId:
+          type: string
+          format: uuid
+    R1P10CityManagementDto:
+      type: object
+      additionalProperties: false
+      required: [id, countryId, code, nameAr, nameEn, isActive, version, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        countryId: { type: string }
+        code: { type: string }
+        nameAr: { type: string }
+        nameEn: { type: string }
+        isActive: { type: boolean }
+        version: { type: integer, minimum: 1 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    R1P10DistrictManagementDto:
+      type: object
+      additionalProperties: false
+      required: [id, cityId, code, nameAr, nameEn, isActive, version, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        cityId: { type: string }
+        code: { type: string }
+        nameAr: { type: string }
+        nameEn: { type: string }
+        isActive: { type: boolean }
+        version: { type: integer, minimum: 1 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    R1P10CountryTimeZoneDto:
+      type: object
+      additionalProperties: false
+      required: [countryId, countryCode, timeZone, version]
+      properties:
+        countryId: { type: string }
+        countryCode: { type: string }
+        timeZone: { type: string, example: Africa/Cairo }
+        version: { type: integer, minimum: 1 }
+    R1P10CreateCityCommand:
+      type: object
+      additionalProperties: false
+      required: [code, nameAr, nameEn, idempotencyKey, reasonCode]
+      properties:
+        code: { type: string }
+        nameAr: { type: string }
+        nameEn: { type: string }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+    R1P10PatchCityCommand:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, idempotencyKey, reasonCode]
+      properties:
+        nameAr: { type: string }
+        nameEn: { type: string }
+        isActive: { type: boolean }
+        expectedVersion: { type: integer, minimum: 1 }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+    R1P10CreateDistrictCommand:
+      type: object
+      additionalProperties: false
+      required: [code, nameAr, nameEn, idempotencyKey, reasonCode]
+      properties:
+        code: { type: string }
+        nameAr: { type: string }
+        nameEn: { type: string }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+    R1P10PatchDistrictCommand:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, idempotencyKey, reasonCode]
+      properties:
+        nameAr: { type: string }
+        nameEn: { type: string }
+        isActive: { type: boolean }
+        expectedVersion: { type: integer, minimum: 1 }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+    R1P10PutCountryTimeZoneCommand:
+      type: object
+      additionalProperties: false
+      required: [timeZone, expectedVersion, idempotencyKey, reasonCode]
+      properties:
+        timeZone: { type: string, example: Africa/Cairo }
+        expectedVersion: { type: integer, minimum: 0 }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+    R1P10CoverageSelection:
+      type: object
+      additionalProperties: false
+      required: [type, id]
+      properties:
+        type: { type: string, enum: [CITY, DISTRICT] }
+        id: { type: string, minLength: 1 }
+    R1P10ProviderCoverageDto:
+      type: object
+      additionalProperties: false
+      required: [providerId, version, coverage]
+      properties:
+        providerId: { type: string }
+        version: { type: integer, minimum: 0 }
+        coverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/R1P10CoverageSelection'
+    R1P10ReplaceCoverageCommand:
+      type: object
+      additionalProperties: false
+      required: [selections, expectedVersion, idempotencyKey]
+      properties:
+        selections:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/R1P10CoverageSelection'
+        expectedVersion: { type: integer, minimum: 0 }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+    R1P10WeeklyPeriod:
+      type: object
+      additionalProperties: false
+      required: [weekday, startMinute, endMinute, endsNextDay]
+      properties:
+        weekday: { type: integer, minimum: 1, maximum: 7 }
+        startMinute: { type: integer, minimum: 0, maximum: 1439 }
+        endMinute: { type: integer, minimum: 0, maximum: 1439 }
+        endsNextDay: { type: boolean }
+    R1P10ScheduleException:
+      type: object
+      additionalProperties: false
+      required: [localDate, closed]
+      properties:
+        localDate: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        closed: { type: boolean }
+        startMinute: { type: ['integer', 'null'], minimum: 0, maximum: 1439 }
+        endMinute: { type: ['integer', 'null'], minimum: 0, maximum: 1439 }
+        endsNextDay: { type: ['boolean', 'null'] }
+    R1P10ProviderCalendarDto:
+      type: object
+      additionalProperties: false
+      required: [providerId, version, weeklyPeriods, exceptions]
+      properties:
+        providerId: { type: string }
+        version: { type: integer, minimum: 0 }
+        weeklyPeriods:
+          type: array
+          items:
+            $ref: '#/components/schemas/R1P10WeeklyPeriod'
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/R1P10ScheduleException'
+    R1P10WorkerCalendarDto:
+      type: object
+      additionalProperties: false
+      required: [providerId, workerId, version, weeklyPeriods, exceptions]
+      properties:
+        providerId: { type: string }
+        workerId: { type: string }
+        version: { type: integer, minimum: 0 }
+        weeklyPeriods:
+          type: array
+          items:
+            $ref: '#/components/schemas/R1P10WeeklyPeriod'
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/R1P10ScheduleException'
+    R1P10ReplaceCalendarCommand:
+      type: object
+      additionalProperties: false
+      required: [weeklyPeriods, exceptions, expectedVersion, idempotencyKey]
+      properties:
+        weeklyPeriods:
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/R1P10WeeklyPeriod'
+        exceptions:
+          type: array
+          maxItems: 366
+          items:
+            $ref: '#/components/schemas/R1P10ScheduleException'
+        expectedVersion: { type: integer, minimum: 0 }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+    R1P10ProviderCapacityRuleDto:
+      type: object
+      additionalProperties: false
+      required: [providerId, version, maxSimultaneousTeams]
+      properties:
+        providerId: { type: string }
+        version: { type: integer, minimum: 0 }
+        maxSimultaneousTeams: { type: ['integer', 'null'], minimum: 1, maximum: 50 }
+    R1P10ReplaceCapacityCommand:
+      type: object
+      additionalProperties: false
+      required: [maxSimultaneousTeams, expectedVersion, idempotencyKey]
+      properties:
+        maxSimultaneousTeams: { type: integer, minimum: 1, maximum: 50 }
+        expectedVersion: { type: integer, minimum: 0 }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+    R1P10ProviderTemporaryPauseDto:
+      type: object
+      additionalProperties: false
+      required: [id, providerId, startedAt, endsAt, resumedAt, version, effective]
+      properties:
+        id: { type: string }
+        providerId: { type: string }
+        startedAt: { type: string, format: date-time }
+        endsAt: { type: ['string', 'null'], format: date-time }
+        resumedAt: { type: ['string', 'null'], format: date-time }
+        version: { type: integer, minimum: 1 }
+        effective: { type: boolean }
+    R1P10StartPauseCommand:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, idempotencyKey]
+      properties:
+        endsAt: { type: ['string', 'null'], format: date-time }
+        expectedVersion: { type: integer, minimum: 0 }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+    R1P10ResumePauseCommand:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, idempotencyKey]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+        idempotencyKey: { type: string, format: uuid }
+        reasonCode: { type: string, minLength: 1, maxLength: 100 }
+  responses:
+    R1P10Unauthorized:
+      description: Missing or invalid bearer credential.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    R1P10Forbidden:
+      description: Authenticated actor lacks the required permission or Provider scope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    R1P10NotFound:
+      description: Resource is unavailable (non-enumerating across Providers).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    R1P10ValidationFailure:
+      description: Request validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    R1P10Conflict:
+      description: Version, idempotency, overlap, or uniqueness conflict.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'

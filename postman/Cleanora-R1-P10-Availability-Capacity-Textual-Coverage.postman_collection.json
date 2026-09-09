@@ -1,0 +1,864 @@
+{
+  "info": {
+    "_postman_id": "a1b0c010-4000-8000-8000-000000000010",
+    "name": "Cleanora R1-P10 Availability Capacity Textual Coverage",
+    "description": "Protected Staff localities/time-zone under /staff/configuration and Provider availability under /providers/:providerId/availability. No customer, anonymous, Browse, Booking, or reservation evaluation routes. Operations: listStaffCities, createStaffCity, patchStaffCity, listStaffDistricts, createStaffDistrict, patchStaffDistrict, getStaffCountryTimeZone, putStaffCountryTimeZone, getProviderCoverage, replaceProviderCoverage, getProviderCalendar, replaceProviderCalendar, getWorkerCalendar, replaceWorkerCalendar, getProviderCapacity, replaceProviderCapacity, getProviderPause, startProviderPause, resumeProviderPause.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "hostUrl",
+      "value": "https://YOUR-HOSTED-DOMAIN.example"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "countryId",
+      "value": ""
+    },
+    {
+      "key": "cityId",
+      "value": ""
+    },
+    {
+      "key": "districtId",
+      "value": ""
+    },
+    {
+      "key": "providerId",
+      "value": ""
+    },
+    {
+      "key": "workerId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Hosted (Not hosted yet)",
+      "item": [
+        {
+          "name": "Staff localities and time zone",
+          "item": [
+            {
+              "name": "List staff cities",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/staff/configuration/countries/{{countryId}}/cities"
+              }
+            },
+            {
+              "name": "Create staff city",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"GIZA\",\n  \"nameAr\": \"الجيزة\",\n  \"nameEn\": \"Giza\",\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000101\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/staff/configuration/countries/{{countryId}}/cities"
+              }
+            },
+            {
+              "name": "Patch staff city",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"isActive\": false,\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000102\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/staff/configuration/cities/{{cityId}}"
+              }
+            },
+            {
+              "name": "List staff districts",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/staff/configuration/cities/{{cityId}}/districts"
+              }
+            },
+            {
+              "name": "Create staff district",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"DOKKI\",\n  \"nameAr\": \"الدقي\",\n  \"nameEn\": \"Dokki\",\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000103\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/staff/configuration/cities/{{cityId}}/districts"
+              }
+            },
+            {
+              "name": "Patch staff district",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nameEn\": \"Dokki District\",\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000104\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/staff/configuration/districts/{{districtId}}"
+              }
+            },
+            {
+              "name": "Get staff country time zone",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/staff/configuration/countries/{{countryId}}/time-zone"
+              }
+            },
+            {
+              "name": "Put staff country time zone",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"timeZone\": \"Africa/Cairo\",\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000105\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/staff/configuration/countries/{{countryId}}/time-zone"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Provider availability",
+          "item": [
+            {
+              "name": "Get provider coverage",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/coverage"
+              }
+            },
+            {
+              "name": "Replace provider coverage",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"selections\": [\n    {\n      \"type\": \"CITY\",\n      \"id\": \"{{cityId}}\"\n    },\n    {\n      \"type\": \"DISTRICT\",\n      \"id\": \"{{districtId}}\"\n    }\n  ],\n  \"expectedVersion\": 2,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000201\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/coverage"
+              }
+            },
+            {
+              "name": "Get provider calendar",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/calendar"
+              }
+            },
+            {
+              "name": "Replace provider calendar",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"weeklyPeriods\": [\n    {\n      \"weekday\": 1,\n      \"startMinute\": 540,\n      \"endMinute\": 1020,\n      \"endsNextDay\": false\n    }\n  ],\n  \"exceptions\": [\n    {\n      \"localDate\": \"2026-09-15\",\n      \"closed\": true,\n      \"startMinute\": null,\n      \"endMinute\": null,\n      \"endsNextDay\": null\n    }\n  ],\n  \"expectedVersion\": 3,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000202\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/calendar"
+              }
+            },
+            {
+              "name": "Get worker calendar",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/workers/{{workerId}}/calendar"
+              }
+            },
+            {
+              "name": "Replace worker calendar",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"weeklyPeriods\": [\n    {\n      \"weekday\": 2,\n      \"startMinute\": 600,\n      \"endMinute\": 1080,\n      \"endsNextDay\": false\n    }\n  ],\n  \"exceptions\": [],\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000203\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/workers/{{workerId}}/calendar"
+              }
+            },
+            {
+              "name": "Get provider capacity",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/capacity"
+              }
+            },
+            {
+              "name": "Replace provider capacity",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"maxSimultaneousTeams\": 3,\n  \"expectedVersion\": 0,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000204\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/capacity"
+              }
+            },
+            {
+              "name": "Get provider pause",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/pause"
+              }
+            },
+            {
+              "name": "Start provider pause",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"endsAt\": \"2026-09-20T21:00:00.000+03:00\",\n  \"expectedVersion\": 0,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000205\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/pause"
+              }
+            },
+            {
+              "name": "Resume provider pause",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000206\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/availability/pause/resume"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Local",
+      "item": [
+        {
+          "name": "Staff localities and time zone",
+          "item": [
+            {
+              "name": "List staff cities",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/staff/configuration/countries/{{countryId}}/cities"
+              }
+            },
+            {
+              "name": "Create staff city",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"GIZA\",\n  \"nameAr\": \"الجيزة\",\n  \"nameEn\": \"Giza\",\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000101\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/staff/configuration/countries/{{countryId}}/cities"
+              }
+            },
+            {
+              "name": "Patch staff city",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"isActive\": false,\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000102\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/staff/configuration/cities/{{cityId}}"
+              }
+            },
+            {
+              "name": "List staff districts",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/staff/configuration/cities/{{cityId}}/districts"
+              }
+            },
+            {
+              "name": "Create staff district",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"DOKKI\",\n  \"nameAr\": \"الدقي\",\n  \"nameEn\": \"Dokki\",\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000103\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/staff/configuration/cities/{{cityId}}/districts"
+              }
+            },
+            {
+              "name": "Patch staff district",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nameEn\": \"Dokki District\",\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000104\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/staff/configuration/districts/{{districtId}}"
+              }
+            },
+            {
+              "name": "Get staff country time zone",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/staff/configuration/countries/{{countryId}}/time-zone"
+              }
+            },
+            {
+              "name": "Put staff country time zone",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"timeZone\": \"Africa/Cairo\",\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000105\",\n  \"reasonCode\": \"configuration_locality_change\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/staff/configuration/countries/{{countryId}}/time-zone"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Provider availability",
+          "item": [
+            {
+              "name": "Get provider coverage",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/coverage"
+              }
+            },
+            {
+              "name": "Replace provider coverage",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"selections\": [\n    {\n      \"type\": \"CITY\",\n      \"id\": \"{{cityId}}\"\n    },\n    {\n      \"type\": \"DISTRICT\",\n      \"id\": \"{{districtId}}\"\n    }\n  ],\n  \"expectedVersion\": 2,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000201\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/coverage"
+              }
+            },
+            {
+              "name": "Get provider calendar",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/calendar"
+              }
+            },
+            {
+              "name": "Replace provider calendar",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"weeklyPeriods\": [\n    {\n      \"weekday\": 1,\n      \"startMinute\": 540,\n      \"endMinute\": 1020,\n      \"endsNextDay\": false\n    }\n  ],\n  \"exceptions\": [\n    {\n      \"localDate\": \"2026-09-15\",\n      \"closed\": true,\n      \"startMinute\": null,\n      \"endMinute\": null,\n      \"endsNextDay\": null\n    }\n  ],\n  \"expectedVersion\": 3,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000202\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/calendar"
+              }
+            },
+            {
+              "name": "Get worker calendar",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/workers/{{workerId}}/calendar"
+              }
+            },
+            {
+              "name": "Replace worker calendar",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"weeklyPeriods\": [\n    {\n      \"weekday\": 2,\n      \"startMinute\": 600,\n      \"endMinute\": 1080,\n      \"endsNextDay\": false\n    }\n  ],\n  \"exceptions\": [],\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000203\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/workers/{{workerId}}/calendar"
+              }
+            },
+            {
+              "name": "Get provider capacity",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/capacity"
+              }
+            },
+            {
+              "name": "Replace provider capacity",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"maxSimultaneousTeams\": 3,\n  \"expectedVersion\": 0,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000204\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/capacity"
+              }
+            },
+            {
+              "name": "Get provider pause",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/pause"
+              }
+            },
+            {
+              "name": "Start provider pause",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"endsAt\": \"2026-09-20T21:00:00.000+03:00\",\n  \"expectedVersion\": 0,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000205\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/pause"
+              }
+            },
+            {
+              "name": "Resume provider pause",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expectedVersion\": 1,\n  \"idempotencyKey\": \"00000000-0000-4000-8000-000000000206\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/availability/pause/resume"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

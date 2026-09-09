@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -72,11 +74,30 @@ async function seedAuthorizationDefinitions(
   // transactional: clear any other row holding a catalog operation, then upsert
   // by code. Bounded retry covers pooler races (P2002) and serialization
   // failures (P2034) without creating duplicates or touching unrelated rows.
+  // Skip catalog operations whose Postgres enum label is not yet applied
+  // (populated R1-P09→P10 upgrade seeds against the pre-P10 enum).
+  const availableOperations = await prisma.$queryRaw<
+    Array<{ enumlabel: string }>
+  >`
+    SELECT e.enumlabel::text AS enumlabel
+    FROM pg_type t
+    JOIN pg_enum e ON e.enumtypid = t.oid
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'PrivilegedActionOperation'
+      AND n.nspname = current_schema()
+  `;
+  const availableOperationSet = new Set(
+    availableOperations.map((row) => row.enumlabel),
+  );
+  const applicableReasons = reasons.filter((reason) =>
+    availableOperationSet.has(reason.operation),
+  );
+
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       await prisma.$transaction(async (transaction) => {
-        for (const reason of reasons) {
+        for (const reason of applicableReasons) {
           await transaction.privilegedActionReason.deleteMany({
             where: {
               operation: reason.operation,
@@ -621,6 +642,74 @@ export async function seedR1P08Catalog(
   }, { timeout: 60_000 });
 }
 
+async function countryConfigsHaveVersionColumn(
+  prisma: PrismaClient,
+): Promise<boolean> {
+  const rows = await prisma.$queryRaw<Array<{ exists: boolean }>>`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = current_schema()
+        AND table_name = 'country_configs'
+        AND column_name = 'version'
+    ) AS "exists"
+  `;
+  return rows[0]?.exists === true;
+}
+
+/**
+ * Upsert a CountryConfig row on both R1-P09 (no `version`) and R1-P10+ schemas.
+ * Omitting `version` from SQL lets the R1-P10 DEFAULT apply when present.
+ */
+async function upsertCountryConfigCompatible(
+  prisma: PrismaClient,
+  row: Readonly<{
+    countryId: string;
+    key: string;
+    value: Prisma.InputJsonValue;
+    valueKind: "STRING" | "ARRAY" | "OBJECT";
+  }>,
+): Promise<void> {
+  if (await countryConfigsHaveVersionColumn(prisma)) {
+    await prisma.countryConfig.upsert({
+      where: {
+        countryId_key: { countryId: row.countryId, key: row.key },
+      },
+      create: {
+        countryId: row.countryId,
+        key: row.key,
+        value: row.value,
+        valueKind: row.valueKind,
+      },
+      update: {
+        value: row.value,
+        valueKind: row.valueKind,
+      },
+    });
+    return;
+  }
+
+  const id = `seed_cc_${randomBytes(12).toString("hex")}`;
+  await prisma.$executeRawUnsafe(
+    `
+    INSERT INTO "country_configs" (
+      "id", "country_id", "key", "value", "value_kind", "created_at", "updated_at"
+    ) VALUES (
+      $1, $2, $3, $4::jsonb, $5::"ConfigValueKind", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    )
+    ON CONFLICT ("country_id", "key") DO UPDATE SET
+      "value" = EXCLUDED."value",
+      "value_kind" = EXCLUDED."value_kind",
+      "updated_at" = CURRENT_TIMESTAMP
+    `,
+    id,
+    row.countryId,
+    row.key,
+    JSON.stringify(row.value),
+    row.valueKind,
+  );
+}
+
 /**
  * Seed R1-P01 reference data and R1-P03 authorization definitions. Every write
  * uses its approved natural key so repeated runs stay idempotent.
@@ -694,19 +783,22 @@ export async function seed(
 
     await seedR1P06StableTypes(prisma);
 
+    // R1-P10 (DEC-053): platform.default_timezone evolves from GLOBAL_ONLY to
+    // COUNTRY_REQUIRED. The historical global value is preserved for record
+    // but resolution now requires country context via CountryConfig below.
     await prisma.appConfig.upsert({
       where: { key: "platform.default_timezone" },
       create: {
         key: "platform.default_timezone",
         value: "Africa/Cairo",
         valueKind: "STRING",
-        resolutionPolicy: "GLOBAL_ONLY",
-        description: "Default platform timezone"
+        resolutionPolicy: "COUNTRY_REQUIRED",
+        description: "Country-required IANA operating timezone"
       },
       update: {
-        value: "Africa/Cairo",
         valueKind: "STRING",
-        resolutionPolicy: "GLOBAL_ONLY"
+        resolutionPolicy: "COUNTRY_REQUIRED",
+        description: "Country-required IANA operating timezone"
       }
     });
     await prisma.appConfig.upsert({
@@ -783,44 +875,34 @@ export async function seed(
       });
     }
 
-    await prisma.countryConfig.upsert({
-      where: {
-        countryId_key: { countryId: country.id, key: "country.display_name" }
-      },
-      create: {
-        countryId: country.id,
-        key: "country.display_name",
-        value: { en: "Egypt", ar: "مصر" },
-        valueKind: "OBJECT"
-      },
-      update: {
-        value: { en: "Egypt", ar: "مصر" },
-        valueKind: "OBJECT"
-      }
+    // CountryConfig upserts must stay compatible with a populated R1-P09→P10
+    // upgrade fixture: the R1-P09 baseline schema lacks `country_configs.version`
+    // (added only by the R1-P10 migration). Prefer the typed Prisma path when
+    // the column exists; otherwise use column-agnostic SQL that omits version.
+    await upsertCountryConfigCompatible(prisma, {
+      countryId: country.id,
+      key: "country.display_name",
+      value: { en: "Egypt", ar: "مصر" },
+      valueKind: "OBJECT",
     });
-    await prisma.countryConfig.upsert({
-      where: {
-        countryId_key: { countryId: country.id, key: "country.supported_locales" }
-      },
-      create: {
-        countryId: country.id,
-        key: "country.supported_locales",
-        value: ["ar-EG", "en-EG"],
-        valueKind: "ARRAY"
-      },
-      update: { value: ["ar-EG", "en-EG"], valueKind: "ARRAY" }
+    await upsertCountryConfigCompatible(prisma, {
+      countryId: country.id,
+      key: "country.supported_locales",
+      value: ["ar-EG", "en-EG"],
+      valueKind: "ARRAY",
     });
-    await prisma.countryConfig.upsert({
-      where: {
-        countryId_key: { countryId: country.id, key: "country.currency_code" }
-      },
-      create: {
-        countryId: country.id,
-        key: "country.currency_code",
-        value: "EGP",
-        valueKind: "STRING"
-      },
-      update: { value: "EGP", valueKind: "STRING" }
+    await upsertCountryConfigCompatible(prisma, {
+      countryId: country.id,
+      key: "country.currency_code",
+      value: "EGP",
+      valueKind: "STRING",
+    });
+    // R1-P10 (DEC-053): Egypt's country-required IANA operating timezone.
+    await upsertCountryConfigCompatible(prisma, {
+      countryId: country.id,
+      key: "platform.default_timezone",
+      value: "Africa/Cairo",
+      valueKind: "STRING",
     });
 
     await seedAuthorizationDefinitions(prisma, {

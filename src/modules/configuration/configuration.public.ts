@@ -1,5 +1,7 @@
 import { createPrismaActiveCountryReader } from "./infrastructure/prisma-active-country.reader.js";
 import { createPrismaProviderServicePricingPolicyReader, createPrismaProviderServiceCountryIdentityReader } from "./infrastructure/prisma-provider-service-pricing-policy.reader.js";
+import { createPrismaLocalityRepository } from "./infrastructure/prisma-locality.repository.js";
+import { isRecognizedIanaTimeZone } from "./time-zone.js";
 
 export interface ProviderServiceCountryIdentityReader {
   getCountryCodeById(countryId: string): Promise<string | null>;
@@ -126,4 +128,139 @@ export function createTransactionalProviderServicePricingPolicyReader(
   transactionContext: unknown,
 ): ProviderServicePricingPolicyReader {
   return createPrismaProviderServicePricingPolicyReader(transactionContext);
+}
+
+/**
+ * Narrow, read-only country IANA time-zone lookup (DEC-053). Providers and
+ * other consumers receive only this interface; City/District management,
+ * Staff writes and CountryConfig internals stay inside Configuration.
+ */
+export interface CountryTimeZoneReader {
+  /** Resolve the active operating IANA time zone for a country, or `null` when unset. */
+  getTimeZoneForCountry(countryId: string): Promise<string | null>;
+}
+
+/** @desc Create the non-transactional country time-zone reader. */
+export function createCountryTimeZoneReader(): CountryTimeZoneReader {
+  const repository = createPrismaLocalityRepository();
+  return {
+    async getTimeZoneForCountry(countryId: string): Promise<string | null> {
+      const record = await repository.findCountryTimeZone(countryId);
+      return record === null || !isRecognizedIanaTimeZone(record.timeZone)
+        ? null
+        : record.timeZone;
+    },
+  };
+}
+
+/** @desc Bind the country time-zone reader to an opaque shared transaction. */
+export function createTransactionalCountryTimeZoneReader(
+  transactionContext: unknown,
+): CountryTimeZoneReader {
+  const repository = createPrismaLocalityRepository(transactionContext);
+  return {
+    async getTimeZoneForCountry(countryId: string): Promise<string | null> {
+      const record = await repository.findCountryTimeZone(countryId);
+      return record === null || !isRecognizedIanaTimeZone(record.timeZone)
+        ? null
+        : record.timeZone;
+    },
+  };
+}
+
+/**
+ * Narrow read-only city/district lookup for validating Provider textual
+ * coverage selections (DEC-056). Providers never sees Configuration's
+ * management snapshot shapes or repository — only these facts.
+ */
+export interface LocalityCityFact {
+  readonly id: string;
+  readonly countryId: string;
+  readonly isActive: boolean;
+  readonly countryActive: boolean;
+}
+
+export interface LocalityDistrictFact {
+  readonly id: string;
+  readonly cityId: string;
+  readonly countryId: string;
+  readonly isActive: boolean;
+  readonly cityActive: boolean;
+  readonly countryActive: boolean;
+}
+
+export interface LocalityReader {
+  findCityById(cityId: string): Promise<LocalityCityFact | null>;
+  findDistrictById(districtId: string): Promise<LocalityDistrictFact | null>;
+  /** Active district ids belonging to one city, for whole-city coverage expansion (DEC-056). */
+  listActiveDistrictIdsForCity(cityId: string): Promise<readonly string[]>;
+}
+
+function buildLocalityReader(transactionContext?: unknown): LocalityReader {
+  const repository =
+    transactionContext === undefined
+      ? createPrismaLocalityRepository()
+      : createPrismaLocalityRepository(transactionContext);
+  return {
+    async findCityById(cityId: string): Promise<LocalityCityFact | null> {
+      const city = await repository.findCityById(cityId);
+      if (city === null) {
+        return null;
+      }
+      const country = await repository.findCountryById(city.countryId);
+      return {
+        id: city.id,
+        countryId: city.countryId,
+        isActive: city.isActive,
+        countryActive: country?.isActive === true,
+      };
+    },
+    async findDistrictById(
+      districtId: string,
+    ): Promise<LocalityDistrictFact | null> {
+      const district = await repository.findDistrictById(districtId);
+      if (district === null) {
+        return null;
+      }
+      const city = await repository.findCityById(district.cityId);
+      if (city === null) {
+        return null;
+      }
+      const country = await repository.findCountryById(city.countryId);
+      return {
+        id: district.id,
+        cityId: district.cityId,
+        countryId: city.countryId,
+        isActive: district.isActive,
+        cityActive: city.isActive,
+        countryActive: country?.isActive === true,
+      };
+    },
+    async listActiveDistrictIdsForCity(
+      cityId: string,
+    ): Promise<readonly string[]> {
+      const city = await repository.findCityById(cityId);
+      if (city === null || !city.isActive) {
+        return [];
+      }
+      const country = await repository.findCountryById(city.countryId);
+      if (country?.isActive !== true) {
+        return [];
+      }
+      const districts = await repository.listDistrictsByCity(cityId);
+      return districts.filter((d) => d.isActive).map((d) => d.id);
+    },
+  };
+}
+
+/** @desc Create the non-transactional locality reader. */
+export function createLocalityReader(): LocalityReader {
+  return buildLocalityReader();
+}
+
+/** @desc Bind the locality reader to an opaque shared transaction. */
+export function createTransactionalLocalityReader(
+  transactionContext: unknown,
+): LocalityReader {
+  return buildLocalityReader(transactionContext);
 }

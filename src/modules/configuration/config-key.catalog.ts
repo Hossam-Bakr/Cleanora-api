@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isRecognizedIanaTimeZone } from "./time-zone.js";
+
 export type ConfigResolutionPolicy =
   | "GLOBAL_ONLY"
   | "COUNTRY_OVERRIDE_WITH_GLOBAL_FALLBACK"
@@ -61,10 +63,23 @@ export const CONFIG_KEY_CATALOG = {
     valueKind: "OBJECT",
     resolutionPolicy: "GLOBAL_ONLY",
   },
+  /**
+   * R1-P10 (DEC-053): evolved from GLOBAL_ONLY to COUNTRY_REQUIRED. Staff
+   * administer one IANA time zone per country; Egypt is `Africa/Cairo`. This
+   * remains the single time-zone source — no second Configuration key exists.
+   */
   "platform.default_timezone": {
-    valueSchema: z.string().min(1),
+    valueSchema: z
+      .string()
+      .min(1)
+      .max(64)
+      .regex(
+        /^[A-Za-z][A-Za-z_]*(?:\/[A-Za-z][A-Za-z0-9_+-]*){1,2}$/u,
+        "must be a valid IANA time zone identifier (e.g. Africa/Cairo)",
+      )
+      .refine(isRecognizedIanaTimeZone, "must be a recognized IANA time zone"),
     valueKind: "STRING",
-    resolutionPolicy: "GLOBAL_ONLY",
+    resolutionPolicy: "COUNTRY_REQUIRED",
   },
   "country.display_name": {
     valueSchema: displayNameSchema,

@@ -13,6 +13,7 @@ API documentation is organized by roadmap phase.
 | R1-P06 Provider verification and external payout destinations | [OpenAPI Provider verification and payout destinations](openapi/r1-p06-provider-verification-external-payout-destinations.yaml) | Implemented; phase Complete |
 | R1-P08 Catalog, localization, and service requirements | [Protected Staff Catalog Swagger reference](../swagger/README.md#r1-p08--staff-catalog-management) | Implemented protected-management routes; active-phase validation and owner completion approval remain pending |
 | R1-P09 Provider services, pricing, and historical snapshots | [Provider services API](../api/provider-services.md) | Implemented protected Provider/Staff routes (11 operations); live migration gates require disposable `CLEANORA_R1_P09_DATABASE_URL` |
+| R1-P10 Availability, capacity, and textual coverage | [OpenAPI availability contract](openapi/r1-p10-availability-capacity-textual-coverage.yaml) | Implemented protected Staff localities/time-zone and Provider availability routes (19 operations); phase Complete under DEC-061 |
 | Runtime API reference | [Interactive Swagger documentation](../swagger/README.md) | Implemented at `/api/v1/docs` |
 
 Every document must state whether an endpoint is `Implemented`, `Prepared`, or
@@ -30,3 +31,7 @@ source.
 The R1-P09 protected Provider-services collection is
 `postman/Cleanora-R1-P09-Provider-Services.postman_collection.json` (exactly 11
 operations; no Browse/Booking); regenerate with `npm run postman:generate:r1-p09`.
+The R1-P10 protected availability collection is
+`postman/Cleanora-R1-P10-Availability-Capacity-Textual-Coverage.postman_collection.json`
+(exactly 19 operations; no customer/Browse/Booking evaluation); regenerate with
+`npm run postman:generate:r1-p10`.

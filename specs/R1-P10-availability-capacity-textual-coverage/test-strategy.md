@@ -1,0 +1,7 @@
+# R1-P10 Test Strategy
+
+`vitest.r1-p10.config.ts` must explicitly select only Phase 10 tests and directly affected public-contract/readiness tests. Before expensive execution, run Vitest list mode and save the resolved file list. Coverage includes all new Configuration locality and Providers availability production files, plus changed authentication/configuration/providers public seams, readiness policy, composition/routes and R1-P10 Swagger fragments. No difficult production file may be excluded.
+
+Required behavior: locality ancestry/deactivation/whole-city matching; country zone validation; DST gap/repeated-time and overnight civil-date exception behavior; half-open adjacency and overlap rejection; Provider/Worker intersection; missing and incomplete Teams; Escort/non-cleaner rules; complete-Team cap; pause overlap/resume/expiry; suspension; setup readiness; protected authorization and cross-Provider isolation; invalid input; idempotent replay/mismatch; optimistic/serializable conflicts; repository constraints; OpenAPI/Postman parity; clean/upgrade migration.
+
+Order: list selection → affected unit/HTTP/repository tests → phase suite → phase coverage → Prisma/typecheck/lint/build → OpenAPI/Postman/docs → clean/upgrade proofs → final diff/architecture review. Full repository unit, integration, E2E and coverage suites are explicitly skipped under the owner's Phase 10-only instruction and must not be reported as passing.

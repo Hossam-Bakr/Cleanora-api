@@ -14,9 +14,11 @@ const requiredPaths = [
   "docs/apis/foundation-system.md",
   "docs/apis/openapi/r1-p01-foundation.yaml",
   "docs/apis/openapi/r1-p05-provider-onboarding-profile-lifecycle.yaml",
+  "docs/apis/openapi/r1-p10-availability-capacity-textual-coverage.yaml",
   "docs/apis/README.md",
   "postman/Cleanora-R1-P01-Foundation-Country-Configuration.postman_collection.json",
   "postman/Cleanora-R1-P05-Provider-Onboarding.postman_collection.json",
+  "postman/Cleanora-R1-P10-Availability-Capacity-Textual-Coverage.postman_collection.json",
   "specs/R1-P01-project-foundation-country-configuration/spec.md",
   "specs/R1-P01-project-foundation-country-configuration/plan.md"
 ];

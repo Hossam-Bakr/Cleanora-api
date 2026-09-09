@@ -15,6 +15,7 @@ const defaults = [
   'docs/apis/openapi/r1-p05-provider-onboarding-profile-lifecycle.yaml',
   'docs/apis/openapi/r1-p06-provider-verification-external-payout-destinations.yaml',
   'specs/R1-P07-worker-team-crew-management/contracts/provider-workforce-api.openapi.yaml',
+  'docs/apis/openapi/r1-p10-availability-capacity-textual-coverage.yaml',
 ];
 
 async function main(): Promise<void> {

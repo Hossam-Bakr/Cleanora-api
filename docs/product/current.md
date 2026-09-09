@@ -2,48 +2,61 @@
 
 | Field | Value |
 |---|---|
-| Current Release | `Release 1 — Core Marketplace` |
-| Current Phase | `R1-P09 — Provider Services, Pricing & Historical Snapshots` |
-| Status | `Technically ready for commit-and-push workflow; human phase completion pending` |
-| Backend Branch | `codex/r1-p09-provider-services-pricing-historical-snapshots` from reviewed base `e3383fb` |
-| Backend Owner | `Codex — review, verified fixes, and quality gates` |
-| Frontend Scope | No frontend application is part of this phase |
-| Started At | `2026-09-04` |
-| Completed At | Not complete; human phase approval has not been given |
-| Last Updated | `2026-09-07` |
+| Current Release | Release 1 — Core Marketplace |
+| Current Phase | None — R1-P10 completed; no next phase activated |
+| Status | R1-P10 Complete under DEC-061; Git publication pending exact authorization |
+| Backend Owner | Codex — guarded Git handoff only |
+| Local Checkout | codex/r1-p10-availability-capacity-textual-coverage; existing Phase 9/local changes preserved |
+| Verified Main | origin/main at 19d4b00, PR #9 merged |
+| Started At | 2026-09-07 |
+| Completed At | 2026-09-09 |
+| Last Updated | 2026-09-09 — explicit owner completion approval recorded |
 
-## Active phase — R1-P09
+## Most recently completed phase — R1-P10
 
-R1-P09 remains the sole active phase. DEC-047–DEC-051 govern its four
-user stories, FR-001–FR-046, and SC-001–SC-012. The owner subsequently
-instructed Codex to review Phase 9, fix errors, and make the intended changes
-ready for the separately triggered `commit and push` workflow. This supersedes
-the preparation-only execution boundary recorded on 2026-09-05.
+R1-P10 is **Complete** under DEC-061. The owner explicitly approved
+`R1-P10 — Availability, Capacity & Textual Coverage as Complete` on 2026-09-09
+after the final PASS handoff. No next phase is active or implied.
 
-The worktree contains Provider-owned offering, pricing, histories, optional
-Staff approval, dynamic services readiness, and internal snapshot behavior,
-plus a four-table additive migration, protected HTTP/OpenAPI/Postman contracts,
-and phase tests. No Browse or Booking behavior is introduced.
+Delivered scope covers textual country/city/district coverage, Provider/Worker
+schedules and exceptions, complete-Team capacity, temporary Provider pause,
+configuration readiness and internal operational evaluation. Coordinates,
+radius, customer/anonymous evaluation HTTP, Browse, Booking/reservations,
+wallet behavior, Docker and cloud remain excluded. DEC-053 through DEC-060 are
+the locked product decisions.
 
-The current review found empty integration tests behind earlier passing totals,
-missing current pricing-policy checks, and pre-transaction identity facts used
-for authorization. All findings are resolved with real database regression evidence. Phase 9 tests
-(168 passed), full regression (1894 passed), five supplemental Phase 7 tests,
-phase/full coverage, clean/upgrade migration proofs, build and artifact gates
-passed. All 84 tasks are checked, and Companion records implement/implemented.
-See the active phase review and implementation evidence for exact results.
+Final Codex adversarial review repaired recognized-IANA validation, one-way
+city/district matching and Provider-country scoping, DST offset-transition
+projection, expired-pause restart, aggregate workforce versioning, and stable
+locality constraint errors. Fresh Phase 10 evidence passes 43 test files / 301
+tests, all four coverage thresholds, clean and populated-upgrade migration
+proofs, module boundaries, phase-scoped lint, typecheck, build, Prisma, OpenAPI,
+Postman, documentation and whitespace checks. All 77 tasks are checked and
+Companion records `implement/completed` through its canonical writer.
 
-Verification uses a new disposable PostgreSQL 18 cluster on `127.0.0.1:55439`,
-with explicit local Phase 9, regression, and Catalog proof databases. Repository
-`.env` and remote databases are not modified by this review.
+Closure: `specs/R1-P10-availability-capacity-textual-coverage/completion-report.md`.
+Local-only files and inherited Phase 8/9 edits remain preserved. Completion did
+not stage, commit, push, merge, deploy or run a production migration. Git
+publication still requires a new human message exactly equal to
+`commit and push`.
 
-The owner subsequently authorized `commit and push` on 2026-09-07. Publication
-uses the feature branch above. Phase completion, merge, deployment, production
-migration and R1-P10 remain separately unapproved.
-The preparation artifacts remain historical design evidence; their original
-preparation-only status does not describe the current implementation work.
+## Previously completed phase — R1-P09
 
-## Most recently completed phase — R1-P08
+R1-P09 is Complete under DEC-052: the owner's instruction to advance to Phase 10
+follows the verified PASS review and merged publication. Commit 47fdf53 is
+contained in origin/main at 19d4b00; merge and feature trees are identical.
+The remote codex feature branch has been deleted.
+
+All 84 tasks are checked; all eight findings resolved; Phase 9 tests (168), full
+regression tests (1894), five supplemental tests, both coverage gates,
+clean/upgrade migration proofs, build and artifact checks passed. Companion is
+implement/completed. No separate Claude review is claimed.
+
+Closure: specs/R1-P09-provider-services-pricing-historical-snapshots/completion-report.md.
+Earlier implementation/review records retain their historical approval state;
+the completion report and DEC-052 record the subsequent owner transition.
+
+## Previously completed phase — R1-P08
 
 R1-P08 (`Catalog, Localization & Service Requirements`) is **Complete** as of
 `2026-09-03`, by explicit human-owner instruction:

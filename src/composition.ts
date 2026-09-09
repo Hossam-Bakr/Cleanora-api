@@ -80,6 +80,18 @@ import {
   createActiveCountryReader,
   createTransactionalActiveCountryReader,
 } from "#modules/configuration/configuration.public";
+import { createPrismaLocalityRepository, withLocalityTransaction } from "#modules/configuration/infrastructure/prisma-locality.repository";
+import { LocalityService } from "#modules/configuration/locality.service";
+import { createLocalityRouter } from "#modules/configuration/locality.routes";
+import {
+  withProviderAvailabilityReadTransaction,
+  withProviderAvailabilityWriteTransaction,
+} from "#modules/providers/infrastructure/prisma-provider-availability.repository";
+import { ProviderAvailabilityService } from "#modules/providers/provider-availability.service";
+import { ProviderCapacityService } from "#modules/providers/provider-capacity.service";
+import { ProviderOperationalAvailabilityService } from "#modules/providers/provider-operational-availability.service";
+import { ProviderWorkerAvailabilityService } from "#modules/providers/provider-worker-availability.service";
+import { createProviderAvailabilityRouter } from "#modules/providers/provider-availability.routes";
 import {
   createPrismaProviderIdentityAuthorityWriterFactory,
   createPrismaProviderIdentityReader,
@@ -199,6 +211,8 @@ import { createProviderServiceRouter, createStaffProviderServiceRouter } from "#
 import {
   createProviderServiceSnapshotReader,
   createProviderServicesReadyFactsReader,
+  createProviderOperationalAvailabilityReader,
+  type ProviderOperationalAvailabilityReader,
   type ProviderServiceSnapshotReader,
   type ProviderServicesReadyFactsReader,
 } from "#modules/providers/providers.public";
@@ -322,6 +336,9 @@ export interface RuntimeDependencies {
     | undefined;
   readonly providerServiceSnapshotReader:
     | ProviderServiceSnapshotReader
+    | undefined;
+  readonly providerOperationalAvailabilityReader:
+    | ProviderOperationalAvailabilityReader
     | undefined;
 }
 
@@ -645,6 +662,11 @@ export function createRuntimeDependencies(
           const activeCountries = adaptProviderActiveCountryReader(
             createTransactionalActiveCountryReader(database.client),
           );
+          const operationalAvailability =
+            new ProviderOperationalAvailabilityService({
+              runInReadTransaction: (work) =>
+                withProviderAvailabilityReadTransaction(work),
+            });
           const projections = new ProviderProjectionService({
             providers: providerRepository,
             identityReader,
@@ -691,6 +713,13 @@ export function createRuntimeDependencies(
                   satisfied: facts.servicesReady,
                   blockerCodes: facts.blockerCodes,
                 };
+              },
+            },
+            availabilityReadyFacts: {
+              async read(providerId) {
+                return operationalAvailability.getProviderAvailabilityReadiness(
+                  providerId,
+                );
               },
             },
           });
@@ -1049,6 +1078,10 @@ export function createRuntimeDependencies(
                 });
               },
             },
+            providerOperationalAvailabilityReader:
+              createProviderOperationalAvailabilityReader(
+                operationalAvailability,
+              ),
             startProviderBackgroundTasks: (): (() => void) => {
               const stopEmail = startProviderEmailDispatcher(providerEmailDispatcher, logger);
               const stopWorkforceEmail = startProviderWorkforceNotificationDispatcher(
@@ -1159,6 +1192,8 @@ export function createRuntimeDependencies(
   const providerWorkforceRouter = providersComposition?.providerWorkforceRouter;
   const providerWorkerSelfRouter = providersComposition?.providerWorkerSelfRouter;
   const providerWorkforceInvitationRouter = providersComposition?.providerWorkforceInvitationRouter;
+  const providerOperationalAvailabilityReader =
+    providersComposition?.providerOperationalAvailabilityReader;
 
   // Shared Catalog service for public definition reads and Providers UoW binding.
   const catalogRepository = new PrismaCatalogRepository(
@@ -1296,6 +1331,52 @@ export function createRuntimeDependencies(
           }),
         });
 
+  // R1-P10 Batch A: Staff Configuration locality/time-zone management.
+  const staffConfigurationLocalityRouter =
+    authentication === undefined
+      ? undefined
+      : createLocalityRouter({
+          authenticateAccess: authentication.authenticateAccess,
+          localityService: new LocalityService({
+            authorization,
+            repository: createPrismaLocalityRepository(),
+            runInTransaction: (work) =>
+              withLocalityTransaction((tx, repository) =>
+                work(repository, createPrismaGeneralTransactionalAuditWriter(tx)),
+              ),
+          }),
+        });
+
+  // R1-P10 Provider availability management.
+  const providerAvailabilityRouter =
+    authentication === undefined
+      ? undefined
+      : createProviderAvailabilityRouter({
+          authenticateAccess: authentication.authenticateAccess,
+          service: new ProviderAvailabilityService({
+            // Repair item 2: no outer, full-client authority/locality
+            // reader — every read/write unit of work supplies its own
+            // transaction-bound repository and `LocalityReader` (see
+            // `withProviderAvailabilityWriteTransaction`/`...ReadTransaction`).
+            runInWriteTransaction: (work) =>
+              withProviderAvailabilityWriteTransaction(work),
+            runInReadTransaction: (work) =>
+              withProviderAvailabilityReadTransaction(work),
+          }),
+          workerAvailabilityService: new ProviderWorkerAvailabilityService({
+            runInWriteTransaction: (work) =>
+              withProviderAvailabilityWriteTransaction(work),
+            runInReadTransaction: (work) =>
+              withProviderAvailabilityReadTransaction(work),
+          }),
+          capacityService: new ProviderCapacityService({
+            runInWriteTransaction: (work) =>
+              withProviderAvailabilityWriteTransaction(work),
+            runInReadTransaction: (work) =>
+              withProviderAvailabilityReadTransaction(work),
+          }),
+        });
+
   return {
     database,
     logger,
@@ -1308,6 +1389,7 @@ export function createRuntimeDependencies(
     catalogDefinitionReader,
     providerServicesReadyFactsReader,
     providerServiceSnapshotReader,
+    providerOperationalAvailabilityReader,
     routes: {
       environment,
       logger,
@@ -1345,6 +1427,12 @@ export function createRuntimeDependencies(
       ...(staffCatalogRouter === undefined
         ? {}
         : { staffCatalogRouter }),
+      ...(staffConfigurationLocalityRouter === undefined
+        ? {}
+        : { staffConfigurationLocalityRouter }),
+      ...(providerAvailabilityRouter === undefined
+        ? {}
+        : { providerAvailabilityRouter }),
     },
   };
 }

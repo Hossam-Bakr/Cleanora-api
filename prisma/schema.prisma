@@ -115,6 +115,7 @@ enum PrivilegedActionOperation {
   STAFF_SAMPLE_PRIVILEGED_WRITE
   PRIVACY_REQUEST_REASSIGN
   CATALOG_MANAGEMENT_WRITE
+  CONFIGURATION_LOCALITY_WRITE
 }
 
 enum PrivacyRequestPurpose {
@@ -474,6 +475,7 @@ model Country {
   updatedAt         DateTime        @updatedAt @map("updated_at")
   defaultCurrency   Currency          @relation("CountryDefaultCurrency", fields: [defaultCurrencyId], references: [id], onDelete: Restrict)
   countryConfigs    CountryConfig[]
+  cities                          City[]
   userAddresses     UserAddress[]
   providerProfiles  ProviderProfile[]
   verificationDocumentPolicies VerificationDocumentPolicyVersion[]
@@ -508,6 +510,9 @@ model CountryConfig {
   key       String
   value     Json
   valueKind ConfigValueKind @map("value_kind")
+  /// Added R1-P10 (DEC-053): optimistic-concurrency version for Staff-managed
+  /// country configuration values such as `platform.default_timezone`.
+  version   Int             @default(1)
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
   country   Country         @relation(fields: [countryId], references: [id], onDelete: Restrict)
@@ -582,6 +587,10 @@ model User {
   providerServicePricesProposed   ProviderServicePrice[]                 @relation("ProviderServicePriceProposer")
   providerServicePriceHistoryActions ProviderServicePriceHistory[]       @relation("ProviderServicePriceHistoryActor")
   providerServiceStatusHistoryActions ProviderServiceStatusHistory[]     @relation("ProviderServiceStatusHistoryActor")
+  availabilityCommandActions          ProviderAvailabilityCommand[]         @relation("ProviderAvailabilityCommandActor")
+  availabilityHistoryActions          ProviderAvailabilityHistory[]         @relation("ProviderAvailabilityHistoryActor")
+  temporaryPauseActions               ProviderTemporaryPause[]              @relation("ProviderTemporaryPauseActor")
+  configurationLocalityCommandActions ConfigurationLocalityCommand[]        @relation("ConfigurationLocalityCommandActor")
 
   @@index([status])
   @@map("users")
@@ -1019,6 +1028,14 @@ model Provider {
   servicePrices           ProviderServicePrice[]
   servicePriceHistory     ProviderServicePriceHistory[]
   serviceStatusHistory    ProviderServiceStatusHistory[]
+  availabilityConfiguration ProviderAvailabilityConfiguration?
+  coverageAreas             ProviderCoverageArea[]
+  schedules                 ProviderSchedule[]
+  scheduleExceptions        ProviderScheduleException[]
+  capacityRule              ProviderCapacityRule?
+  temporaryPauses           ProviderTemporaryPause[]
+  availabilityCommands      ProviderAvailabilityCommand[]
+  availabilityHistory       ProviderAvailabilityHistory[]
 
   @@index([applicationStatus, kind, lastSubmittedAt, id])
   @@index([operationalStatus, id])
@@ -1124,6 +1141,8 @@ model ProviderWorker {
   skills                     ProviderWorkerSkill[]
   teamMemberships            ProviderTeamMembership[]
   supervisedTeams            ProviderTeam[]           @relation("ProviderTeamPrimarySupervisor")
+  schedules                WorkerSchedule[]
+  scheduleExceptions       WorkerScheduleException[]
 
   @@index([providerId, status, id])
   @@index([providerId, updatedAt, id])
@@ -2278,4 +2297,269 @@ model ProviderServiceStatusHistory {
   @@index([actorUserId, createdAt])
   @@index([requestId, event])
   @@map("provider_service_status_history")
+}
+
+// ---------------------------------------------------------------------------
+// R1-P10 — Availability, Capacity & Textual Coverage
+// ---------------------------------------------------------------------------
+// Configuration owns City/District localized textual hierarchy. Providers owns
+// availability configuration (coverage, schedules, exceptions, capacity,
+// pause) and its command receipt/history ledger. Batch A implements the
+// coverage vertical; schedule/capacity/pause tables exist for later batches.
+
+enum ProviderAvailabilityCommandStatus {
+  IN_PROGRESS
+  ACCEPTED
+}
+
+enum ProviderAvailabilityHistoryTargetType {
+  COVERAGE
+  SCHEDULE
+  SCHEDULE_EXCEPTION
+  WORKER_SCHEDULE
+  WORKER_SCHEDULE_EXCEPTION
+  CAPACITY
+  PAUSE
+}
+
+enum ConfigurationLocalityCommandStatus {
+  IN_PROGRESS
+  ACCEPTED
+}
+
+model City {
+  id            String                 @id @default(cuid())
+  countryId     String                 @map("country_id")
+  code          String                 @db.VarChar(40)
+  nameEn        String                 @map("name_en") @db.VarChar(200)
+  nameAr        String                 @map("name_ar") @db.VarChar(200)
+  isActive      Boolean                @default(true) @map("is_active")
+  version       Int                    @default(1)
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+  country       Country                @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  districts     District[]
+  coverageAreas ProviderCoverageArea[] @relation("ProviderCoverageAreaCity")
+
+  @@unique([countryId, code])
+  @@unique([countryId, nameEn])
+  @@unique([countryId, nameAr])
+  @@index([countryId, isActive, id])
+  @@map("cities")
+}
+
+model District {
+  id            String                 @id @default(cuid())
+  cityId        String                 @map("city_id")
+  code          String                 @db.VarChar(40)
+  nameEn        String                 @map("name_en") @db.VarChar(200)
+  nameAr        String                 @map("name_ar") @db.VarChar(200)
+  isActive      Boolean                @default(true) @map("is_active")
+  version       Int                    @default(1)
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+  city          City                   @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  coverageAreas ProviderCoverageArea[] @relation("ProviderCoverageAreaDistrict")
+
+  @@unique([cityId, code])
+  @@unique([cityId, nameEn])
+  @@unique([cityId, nameAr])
+  @@index([cityId, isActive, id])
+  @@map("districts")
+}
+
+model ProviderAvailabilityConfiguration {
+  id         String   @id @default(cuid())
+  providerId String   @unique @map("provider_id")
+  version    Int      @default(1)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+
+  @@map("provider_availability_configurations")
+}
+
+model ProviderCoverageArea {
+  id         String    @id @default(cuid())
+  providerId String    @map("provider_id")
+  cityId     String?   @map("city_id")
+  districtId String?   @map("district_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  provider   Provider  @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  city       City?     @relation("ProviderCoverageAreaCity", fields: [cityId], references: [id], onDelete: Restrict)
+  district   District? @relation("ProviderCoverageAreaDistrict", fields: [districtId], references: [id], onDelete: Restrict)
+
+  @@index([providerId])
+  @@index([cityId])
+  @@index([districtId])
+  @@map("provider_coverage_areas")
+}
+
+model ProviderSchedule {
+  id          String   @id @default(cuid())
+  providerId  String   @map("provider_id")
+  weekday     Int
+  startMinute Int      @map("start_minute")
+  endMinute   Int      @map("end_minute")
+  endsNextDay Boolean  @default(false) @map("ends_next_day")
+  createdAt   DateTime @default(now()) @map("created_at")
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+
+  // R1-P10 repair: reject exact duplicate weekly periods now; overlap
+  // validation beyond exact duplicates stays application-level for Batch B.
+  @@unique([providerId, weekday, startMinute, endMinute, endsNextDay])
+  @@index([providerId, weekday])
+  @@map("provider_schedules")
+}
+
+/// R1-P10 repair (DEC-054): one civil date may carry either exactly one
+/// `closed` (holiday) row or one-or-more distinct open period rows that
+/// together fully replace that date's weekly hours. At-most-one-holiday and
+/// no-duplicate-period are enforced by migration-only partial unique indexes
+/// (`provider_schedule_exceptions_one_holiday_per_date`,
+/// `provider_schedule_exceptions_no_duplicate_period`); Prisma's schema layer
+/// cannot express a WHERE-qualified unique index.
+model ProviderScheduleException {
+  id          String   @id @default(cuid())
+  providerId  String   @map("provider_id")
+  localDate   DateTime @map("local_date") @db.Date
+  closed      Boolean  @default(false)
+  startMinute Int?     @map("start_minute")
+  endMinute   Int?     @map("end_minute")
+  endsNextDay Boolean  @default(false) @map("ends_next_day")
+  createdAt   DateTime @default(now()) @map("created_at")
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+
+  @@index([providerId, localDate])
+  @@map("provider_schedule_exceptions")
+}
+
+model WorkerSchedule {
+  id          String         @id @default(cuid())
+  workerId    String         @map("worker_id")
+  weekday     Int
+  startMinute Int            @map("start_minute")
+  endMinute   Int            @map("end_minute")
+  endsNextDay Boolean        @default(false) @map("ends_next_day")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  worker      ProviderWorker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+
+  // R1-P10 repair: reject exact duplicate weekly periods now; overlap
+  // validation beyond exact duplicates stays application-level for Batch B.
+  @@unique([workerId, weekday, startMinute, endMinute, endsNextDay])
+  @@index([workerId, weekday])
+  @@map("worker_schedules")
+}
+
+/// R1-P10 repair (DEC-054): same one-holiday-or-many-open-periods shape and
+/// migration-only partial unique indexes as `ProviderScheduleException`
+/// (`worker_schedule_exceptions_one_holiday_per_date`,
+/// `worker_schedule_exceptions_no_duplicate_period`).
+model WorkerScheduleException {
+  id          String         @id @default(cuid())
+  workerId    String         @map("worker_id")
+  localDate   DateTime       @map("local_date") @db.Date
+  closed      Boolean        @default(false)
+  startMinute Int?           @map("start_minute")
+  endMinute   Int?           @map("end_minute")
+  endsNextDay Boolean        @default(false) @map("ends_next_day")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  worker      ProviderWorker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+
+  @@index([workerId, localDate])
+  @@map("worker_schedule_exceptions")
+}
+
+model ProviderCapacityRule {
+  id                   String   @id @default(cuid())
+  providerId           String   @unique @map("provider_id")
+  maxSimultaneousTeams Int      @map("max_simultaneous_teams")
+  version              Int      @default(1)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  provider             Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+
+  @@map("provider_capacity_rules")
+}
+
+model ProviderTemporaryPause {
+  id          String    @id @default(cuid())
+  providerId  String    @map("provider_id")
+  startedAt   DateTime  @map("started_at")
+  endsAt      DateTime? @map("ends_at")
+  resumedAt   DateTime? @map("resumed_at")
+  actorUserId String    @map("actor_user_id")
+  version     Int       @default(1)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  provider    Provider  @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  actor       User      @relation("ProviderTemporaryPauseActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([providerId])
+  @@map("provider_temporary_pauses")
+}
+
+model ProviderAvailabilityCommand {
+  id                 String                            @id @default(cuid())
+  providerId         String                            @map("provider_id")
+  scopeKey           String                            @map("scope_key") @db.VarChar(240)
+  idempotencyKey     String                            @map("idempotency_key") @db.VarChar(200)
+  requestFingerprint String                            @map("request_fingerprint") @db.Char(64)
+  status             ProviderAvailabilityCommandStatus @default(IN_PROGRESS)
+  safeResultCode     String?                           @map("safe_result_code") @db.VarChar(100)
+  safeResultJson     Json?                             @map("safe_result_json")
+  actorUserId        String?                           @map("actor_user_id")
+  createdAt          DateTime                          @default(now()) @map("created_at")
+  completedAt        DateTime?                         @map("completed_at")
+  provider           Provider                          @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  actorUser          User?                             @relation("ProviderAvailabilityCommandActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([scopeKey, idempotencyKey])
+  @@index([providerId, createdAt])
+  @@map("provider_availability_commands")
+}
+
+model ProviderAvailabilityHistory {
+  id            String                                @id @default(cuid())
+  providerId    String                                @map("provider_id")
+  targetType    ProviderAvailabilityHistoryTargetType @map("target_type")
+  targetId      String                                @map("target_id")
+  targetVersion Int                                   @map("target_version")
+  eventCode     String                                @map("event_code") @db.VarChar(100)
+  actorUserId   String                                @map("actor_user_id")
+  reasonCode    String?                               @map("reason_code") @db.VarChar(100)
+  note          String?                               @db.VarChar(1000)
+  safeBefore    Json?                                 @map("safe_before")
+  safeAfter     Json?                                 @map("safe_after")
+  requestId     String                                @map("request_id") @db.VarChar(200)
+  createdAt     DateTime                              @default(now()) @map("created_at")
+  provider      Provider                              @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  actorUser     User                                  @relation("ProviderAvailabilityHistoryActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([providerId, targetType, targetId, createdAt, id])
+  @@index([actorUserId, createdAt])
+  @@map("provider_availability_history")
+}
+
+/// R1-P10 repair (item 5): Configuration-owned durable UUID-idempotency
+/// receipt for Staff locality/time-zone mutations (city/district create and
+/// update, country time-zone PUT). Mirrors `ProviderAvailabilityCommand`'s
+/// scope+key uniqueness and fingerprint-bound replay shape. Never shared with
+/// Catalog's or Providers' own command-receipt tables.
+model ConfigurationLocalityCommand {
+  id                 String                              @id @default(cuid())
+  actorUserId        String                              @map("actor_user_id")
+  scopeKey           String                              @map("scope_key") @db.VarChar(240)
+  idempotencyKey     String                              @map("idempotency_key") @db.VarChar(200)
+  requestFingerprint String                              @map("request_fingerprint") @db.Char(64)
+  status             ConfigurationLocalityCommandStatus  @default(IN_PROGRESS)
+  safeResultCode     String?                             @map("safe_result_code") @db.VarChar(100)
+  safeResultJson     Json?                               @map("safe_result_json")
+  createdAt          DateTime                            @default(now()) @map("created_at")
+  completedAt        DateTime?                           @map("completed_at")
+  actorUser          User                                @relation("ConfigurationLocalityCommandActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([scopeKey, idempotencyKey])
+  @@index([actorUserId, createdAt])
+  @@map("configuration_locality_commands")
 }
