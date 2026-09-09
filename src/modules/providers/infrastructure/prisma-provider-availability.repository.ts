@@ -45,6 +45,7 @@ import type {
   ProviderAvailabilityMembershipFacts,
   ProviderAvailabilityPauseCommandScope,
   ProviderAvailabilityRepository,
+  ProviderCapacityEvaluationFacts,
   ProviderCapacityRepository,
   ProviderOperationalAvailabilityRepository,
   ProviderWorkerAvailabilityRepository,

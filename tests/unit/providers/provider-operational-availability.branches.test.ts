@@ -82,6 +82,8 @@ function baseFacts(
             workerVersion: 9,
             cleans: true,
             workerStatus: "ACTIVE",
+            gender: "female",
+            workerType: "CLEANING_STAFF",
             weeklyPeriods: [
               {
                 id: "worker-period-1",
