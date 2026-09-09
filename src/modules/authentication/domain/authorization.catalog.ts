@@ -89,6 +89,14 @@ export const AUTHORIZATION_PERMISSIONS: readonly PermissionDefinitionSeed[] = [
     code: "catalog.management.write",
     name: "Write Catalog management definitions",
   },
+  {
+    code: "configuration.localities.read",
+    name: "Read Configuration locality (city/district/time-zone) definitions",
+  },
+  {
+    code: "configuration.localities.write",
+    name: "Write Configuration locality (city/district/time-zone) definitions",
+  },
 ];
 
 /**
@@ -115,6 +123,8 @@ export const ROLE_PERMISSION_MAP: Readonly<
     "providers.services.prices.approve",
     "catalog.management.read",
     "catalog.management.write",
+    "configuration.localities.read",
+    "configuration.localities.write",
   ],
   staff_operations: ["authz.reasons.use", "authz.staff.operations.sample"],
   staff_support: ["authz.reasons.use", "authz.staff.support.sample"],
@@ -170,6 +180,12 @@ export const PRIVILEGED_ACTION_REASONS: readonly PrivilegedActionReasonSeed[] = 
     code: "catalog_management_change",
     name: "Change Catalog management definitions",
     operation: "CATALOG_MANAGEMENT_WRITE",
+    isActive: true,
+  },
+  {
+    code: "configuration_locality_change",
+    name: "Change Configuration locality (city/district/time-zone) definitions",
+    operation: "CONFIGURATION_LOCALITY_WRITE",
     isActive: true,
   },
 ];
@@ -369,6 +385,32 @@ const CATALOG_MANAGEMENT_OPERATIONS: readonly ProtectedOperationDeclaration[] =
     },
   ];
 
+/**
+ * Configuration locality management protected operations (R1-P10 / DEC-056).
+ * Both map only to active staff_admin. Write is privileged and requires
+ * reason `configuration_locality_change` for `CONFIGURATION_LOCALITY_WRITE`.
+ */
+const CONFIGURATION_LOCALITY_OPERATIONS: readonly ProtectedOperationDeclaration[] =
+  [
+    {
+      operationId: "configuration.localities.read",
+      permissionCode: "configuration.localities.read",
+      ownership: "NONE",
+      scope: "GLOBAL",
+      privileged: false,
+      publicHttp: false,
+    },
+    {
+      operationId: "configuration.localities.write",
+      permissionCode: "configuration.localities.write",
+      ownership: "NONE",
+      scope: "GLOBAL",
+      privileged: true,
+      reasonOperation: "CONFIGURATION_LOCALITY_WRITE",
+      publicHttp: false,
+    },
+  ];
+
 /** Every declared protected operation. All are internal. */
 export const PROTECTED_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
   ...ROLE_MANAGEMENT_OPERATIONS,
@@ -376,6 +418,7 @@ export const PROTECTED_OPERATIONS: readonly ProtectedOperationDeclaration[] = [
   ...PRIVACY_REASSIGNMENT_OPERATIONS,
   ...PROVIDER_STAFF_OPERATIONS,
   ...CATALOG_MANAGEMENT_OPERATIONS,
+  ...CONFIGURATION_LOCALITY_OPERATIONS,
 ];
 
 /** Find one declared protected operation, or `undefined` when undeclared. */

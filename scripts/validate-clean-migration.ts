@@ -32,7 +32,8 @@ const migrationNames = [
   'r1_p06_provider_verification_external_payout_destinations',
   'r1_p07_worker_team_crew_management',
   'r1_p08_catalog_localization_service_requirements',
-  'r1_p09_provider_services_pricing_historical_snapshots'
+  'r1_p09_provider_services_pricing_historical_snapshots',
+  'r1_p10_availability_capacity_textual_coverage'
 ] as const;
 const expectedTables = [
   "currencies",
@@ -113,7 +114,20 @@ const expectedTables = [
   "provider_services",
   "provider_service_prices",
   "provider_service_price_history",
-  "provider_service_status_history"
+  "provider_service_status_history",
+  "cities",
+  "districts",
+  "provider_availability_configurations",
+  "provider_coverage_areas",
+  "provider_schedules",
+  "provider_schedule_exceptions",
+  "worker_schedules",
+  "worker_schedule_exceptions",
+  "provider_capacity_rules",
+  "provider_temporary_pauses",
+  "provider_availability_commands",
+  "provider_availability_history",
+  "configuration_locality_commands"
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -213,6 +227,21 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "provider_service_prices",
     "provider_service_price_history",
     "provider_service_status_history"
+  ],
+  r1_p10_availability_capacity_textual_coverage: [
+    "cities",
+    "districts",
+    "provider_availability_configurations",
+    "provider_coverage_areas",
+    "provider_schedules",
+    "provider_schedule_exceptions",
+    "worker_schedules",
+    "worker_schedule_exceptions",
+    "provider_capacity_rules",
+    "provider_temporary_pauses",
+    "provider_availability_commands",
+    "provider_availability_history",
+    "configuration_locality_commands"
   ]
 };
 const expectedPostDeployTables = ["_prisma_migrations", ...expectedTables] as const;
@@ -698,6 +727,46 @@ export function requireR1P09ProofDatabaseUrl(
   return value;
 }
 
+export const APPROVED_R1_P10_TARGET_PATTERN =
+  /^cleanora_r1_p10(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
+
+/** Require an explicitly named R1-P10 disposable target for availability proofs. */
+export function assertR1P10DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  let targetName: string;
+  try {
+    const url = new URL(connectionString);
+    targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  } catch {
+    throw new Error("R1-P10 database URL is not a valid URL");
+  }
+  if (!APPROVED_R1_P10_TARGET_PATTERN.test(targetName)) {
+    throw new Error(
+      `Refusing R1-P10 database work against unapproved target "${targetName}"`,
+    );
+  }
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+}
+
+/**
+ * Resolve the separate R1-P10 live/proof URL.
+ * Never falls back to DATABASE_URL or a prior-phase disposable target.
+ */
+export function requireR1P10ProofDatabaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const value = env["CLEANORA_R1_P10_DATABASE_URL"];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      "CLEANORA_R1_P10_DATABASE_URL is required for R1-P10 disposable proofs",
+    );
+  }
+  assertR1P10DisposableDatabaseUrl(value);
+  return value;
+}
+
 /** Accept only the forward-only R1-P06 table/enums/index/constraint inventory. */
 export function assertR1P06MigrationSql(sql: string): void {
   if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/iu.test(sql)) {
@@ -871,6 +940,61 @@ export function assertR1P09MigrationSql(sql: string): void {
   }
 }
 
+export const R1_P10_MIGRATION =
+  "r1_p10_availability_capacity_textual_coverage";
+
+export const R1_P10_AVAILABILITY_TABLES = [
+  "cities",
+  "districts",
+  "provider_availability_configurations",
+  "provider_coverage_areas",
+  "provider_schedules",
+  "provider_schedule_exceptions",
+  "worker_schedules",
+  "worker_schedule_exceptions",
+  "provider_capacity_rules",
+  "provider_temporary_pauses",
+  "provider_availability_commands",
+  "provider_availability_history",
+  "configuration_locality_commands",
+] as const;
+
+/** Accept only the additive, phase-owned R1-P10 availability migration inventory. */
+export function assertR1P10MigrationSql(sql: string): void {
+  if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/iu.test(sql)) {
+    throw new Error("R1-P10 availability migration contains destructive SQL");
+  }
+  const tables = migrationOwnedTables[R1_P10_MIGRATION] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P10 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 13) {
+    throw new Error("R1-P10 migration must create exactly thirteen availability/locality tables");
+  }
+  for (const required of [
+    "CONFIGURATION_LOCALITY_WRITE",
+    'ALTER TABLE "country_configs" ADD COLUMN "version"',
+    "platform.default_timezone",
+    "COUNTRY_REQUIRED",
+    "Africa/Cairo",
+    "ON DELETE RESTRICT",
+  ]) {
+    if (!sql.includes(required)) {
+      throw new Error(`R1-P10 migration is missing ${required}`);
+    }
+  }
+  if (/\bON DELETE CASCADE\b/iu.test(sql)) {
+    throw new Error("R1-P10 availability foreign keys must not cascade-delete parent rows");
+  }
+  for (const forbidden of [/\bbrowse\b/iu, /\bbooking\b/iu, /\beligibility\b/iu]) {
+    if (forbidden.test(sql)) {
+      throw new Error("R1-P10 migration must not reference Browse, Booking, or Eligibility surfaces");
+    }
+  }
+}
+
 export function assertExactMigrationDirectoryNames(
   directoryNames: readonly string[],
 ): void {
@@ -963,6 +1087,10 @@ async function validateMigrationFolder(): Promise<void> {
       assertR1P09MigrationSql(sql);
       continue;
     }
+    if (migrationName === R1_P10_MIGRATION) {
+      assertR1P10MigrationSql(sql);
+      continue;
+    }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
       if (!sql.includes(`"${table}"`)) throw new Error(`Migration ${migrationName} is missing expected table ${table}`);
     }
@@ -1028,6 +1156,16 @@ export async function assertPostDeployState(
       if ((rows[0]?.total ?? 0n) !== 0n) {
         throw new Error(
           `R1-P09 seed must leave ${table} empty; found production Provider-price rows`,
+        );
+      }
+    }
+    for (const table of R1_P10_AVAILABILITY_TABLES) {
+      const rows = await prisma.$queryRawUnsafe<Array<{ total: bigint }>>(
+        `SELECT count(*)::bigint AS total FROM "${table}"`,
+      );
+      if ((rows[0]?.total ?? 0n) !== 0n) {
+        throw new Error(
+          `R1-P10 seed must leave ${table} empty; found production availability/locality rows`,
         );
       }
     }
@@ -1972,9 +2110,9 @@ async function run(): Promise<void> {
     "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
   );
 
-  const configuredConnectionString = requireR1P09ProofDatabaseUrl();
+  const configuredConnectionString = requireR1P10ProofDatabaseUrl();
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p09_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p10_proof_${process.pid}_${Date.now()}`;
   proofUrl.searchParams.set("schema", proofSchema);
   proofUrl.searchParams.set("options", `-c search_path=${proofSchema}`);
   const connectionString = proofUrl.toString();
@@ -1997,7 +2135,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09 Provider-service tables, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
   );
 }
 

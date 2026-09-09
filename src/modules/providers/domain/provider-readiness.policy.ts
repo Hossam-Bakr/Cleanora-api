@@ -28,6 +28,18 @@ export interface ProviderReadinessFacts {
     readonly satisfied: boolean;
     readonly blockerCodes: readonly string[];
   };
+  readonly coverageReady?: {
+    readonly satisfied: boolean;
+    readonly blockerCodes: readonly string[];
+  };
+  readonly availabilityReady?: {
+    readonly satisfied: boolean;
+    readonly blockerCodes: readonly string[];
+  };
+  readonly capacityReady?: {
+    readonly satisfied: boolean;
+    readonly blockerCodes: readonly string[];
+  };
 }
 
 function gate(input: {
@@ -87,6 +99,29 @@ function laterPhaseGate(
     satisfied: false,
     blockerCodes: [blockerCode],
     owningPhase,
+  });
+}
+
+function configurationReadinessGate(
+  key: "coverageReady" | "availabilityReady" | "capacityReady",
+  current:
+    | {
+        readonly satisfied: boolean;
+        readonly blockerCodes: readonly string[];
+      }
+    | undefined,
+  defaultBlockerCode: string,
+): MarketplaceReadinessGate {
+  return gate({
+    key,
+    applicable: true,
+    status: current?.satisfied === true ? "SATISFIED" : "BLOCKED",
+    satisfied: current?.satisfied === true,
+    blockerCodes:
+      current?.satisfied === true
+        ? []
+        : (current?.blockerCodes ?? [defaultBlockerCode]),
+    owningPhase: "R1-P10",
   });
 }
 
@@ -150,20 +185,20 @@ export function calculateMarketplaceReadiness(
               : facts.servicesReady.blockerCodes,
             owningPhase: "R1-P09",
           }),
-    coverageReady: laterPhaseGate(
+    coverageReady: configurationReadinessGate(
       "coverageReady",
-      "R1-P10",
-      "COVERAGE_DEFERRED_R1_P10",
+      facts.coverageReady,
+      "NO_EFFECTIVE_ACTIVE_COVERAGE_SELECTION",
     ),
-    availabilityReady: laterPhaseGate(
+    availabilityReady: configurationReadinessGate(
       "availabilityReady",
-      "R1-P10",
-      "AVAILABILITY_DEFERRED_R1_P10",
+      facts.availabilityReady,
+      "NO_VALID_PROVIDER_WEEKLY_PERIOD",
     ),
-    capacityReady: laterPhaseGate(
+    capacityReady: configurationReadinessGate(
       "capacityReady",
-      "R1-P10",
-      "CAPACITY_DEFERRED_R1_P10",
+      facts.capacityReady,
+      "POSITIVE_SIMULTANEOUS_TEAM_LIMIT_REQUIRED",
     ),
     operationalLive: gate({
       key: "operationalLive",

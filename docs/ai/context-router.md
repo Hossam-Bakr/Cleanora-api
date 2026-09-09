@@ -36,6 +36,7 @@ Summarize loaded context in no more than five bullets. Never paste full document
 | Notifications | Event trigger, template/channel rules, retry policy | Active spec and adapter contract |
 | Commit and push | Current phase DoD, full diff, review resolution, scripts | `commit-and-push` |
 | Prepare next phase | Completed handoff and next roadmap section | `next-phase-prompt` |
+| Start next Backend Notion row | Current phase pointer and next roadmap section only | `notion-start-new-phase` |
 
 ## Expansion triggers
 

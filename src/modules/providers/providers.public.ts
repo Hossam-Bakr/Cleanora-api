@@ -128,6 +128,89 @@ export function createProviderServiceSnapshotReader(
   };
 }
 
+export type ProviderOperationalAvailabilityBlockerCode =
+  | "TEXTUAL_AREA_INACTIVE_OR_MISMATCH"
+  | "PROVIDER_COVERAGE_MISMATCH"
+  | "PROVIDER_NOT_LIVE"
+  | "PROVIDER_SCHEDULE_CLOSED"
+  | "SUSPENDED"
+  | "PAUSE"
+  | "CAPACITY_RULE_MISSING"
+  | "PROVIDER_COUNTRY_MISSING"
+  | "COUNTRY_TIME_ZONE_MISSING"
+  | "WORKER_TEAM_UNAVAILABLE"
+  | "INSUFFICIENT_TEAM_UNITS";
+
+export interface ProviderOperationalAvailabilityLocationInput {
+  readonly countryId: string;
+  readonly cityId: string;
+  readonly districtId?: string;
+}
+
+export interface ProviderOperationalAvailabilityEvaluation {
+  readonly providerId: string;
+  readonly timeZone: string | null;
+  readonly coverageMatch: {
+    readonly matched: boolean;
+    readonly countryId: string | null;
+    readonly cityId: string | null;
+    readonly districtId: string | null;
+    readonly matchedBy: "CITY" | "DISTRICT" | null;
+  };
+  readonly availability: {
+    readonly available: boolean;
+    readonly runtimeAvailable: boolean;
+    readonly providerScheduleAvailable: boolean;
+  };
+  readonly capacity: {
+    readonly availableUnits: number;
+    readonly requiredCompleteTeamUnits: number;
+    readonly sufficient: boolean;
+  };
+  readonly blockerCodes: readonly ProviderOperationalAvailabilityBlockerCode[];
+  readonly versions: {
+    readonly availability: number;
+    readonly workforce: number;
+    readonly capacity: number;
+  };
+}
+
+export interface ProviderOperationalAvailabilityReader {
+  findCandidateProviderIdsForActiveTextualArea(input: {
+    readonly countryId: string;
+    readonly cityId: string;
+    readonly districtId?: string;
+  }): Promise<readonly string[]>;
+
+  evaluateOneProviderOperationalAvailability(input: {
+    readonly providerId: string;
+    readonly districtId?: string;
+    readonly location?: ProviderOperationalAvailabilityLocationInput;
+    readonly utcInterval: {
+      readonly startsAt: string;
+      readonly endsAt: string;
+    };
+    readonly requiredCompleteTeamUnits: number;
+  }): Promise<ProviderOperationalAvailabilityEvaluation | null>;
+}
+
+/**
+ * @desc Narrow public factory for internal candidate/evaluation readers.
+ * @explanation Exposes only Provider ids and operational facts; no Worker
+ * contacts, Provider settings, persistence rows, HTTP adapters, or Booking
+ * reservation behavior cross the module boundary.
+ */
+export function createProviderOperationalAvailabilityReader(
+  source: ProviderOperationalAvailabilityReader,
+): ProviderOperationalAvailabilityReader {
+  return {
+    findCandidateProviderIdsForActiveTextualArea: (input) =>
+      source.findCandidateProviderIdsForActiveTextualArea(input),
+    evaluateOneProviderOperationalAvailability: (input) =>
+      source.evaluateOneProviderOperationalAvailability(input),
+  };
+}
+
 export interface BookingSafeTeamMemberFact {
   readonly workerId: string;
   readonly gender: "male" | "female";

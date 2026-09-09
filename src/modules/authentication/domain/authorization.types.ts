@@ -11,7 +11,8 @@ export type PrivilegedOperation =
   | "ROLE_DISABLE"
   | "STAFF_SAMPLE_PRIVILEGED_WRITE"
   | "PRIVACY_REQUEST_REASSIGN"
-  | "CATALOG_MANAGEMENT_WRITE";
+  | "CATALOG_MANAGEMENT_WRITE"
+  | "CONFIGURATION_LOCALITY_WRITE";
 
 /** Ownership rule a protected operation requires. */
 export type OwnershipRule = "NONE" | "SELF";

@@ -138,16 +138,22 @@ describe("US9 provider readiness policy (T098)", () => {
         owningPhase: "R1-P09",
       });
       expect(gateByKey(gates, "coverageReady")).toMatchObject({
-        status: "NOT_STARTED",
+        status: "BLOCKED",
+        satisfied: false,
         owningPhase: "R1-P10",
+        blockerCodes: ["NO_EFFECTIVE_ACTIVE_COVERAGE_SELECTION"],
       });
       expect(gateByKey(gates, "availabilityReady")).toMatchObject({
-        status: "NOT_STARTED",
+        status: "BLOCKED",
+        satisfied: false,
         owningPhase: "R1-P10",
+        blockerCodes: ["NO_VALID_PROVIDER_WEEKLY_PERIOD"],
       });
       expect(gateByKey(gates, "capacityReady")).toMatchObject({
-        status: "NOT_STARTED",
+        status: "BLOCKED",
+        satisfied: false,
         owningPhase: "R1-P10",
+        blockerCodes: ["POSITIVE_SIMULTANEOUS_TEAM_LIMIT_REQUIRED"],
       });
       expect(gateByKey(gates, "operationalLive")).toMatchObject({
         status: "BLOCKED",

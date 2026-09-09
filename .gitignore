@@ -21,6 +21,8 @@ Thumbs.db
 # Local review, validation, and media scratch evidence. Canonical summaries
 # belong under docs/ or specs/; raw command output stays on the developer host.
 .tmp-media-review/
+.tmp-test-run/
+.tmp-rerun-fails.txt
 .validation-*/
 .runtime-smoke/
 .npm-cache-local/

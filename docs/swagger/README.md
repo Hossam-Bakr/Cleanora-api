@@ -1,9 +1,9 @@
 # Cleanora Swagger Documentation
 
 Status: The runtime Swagger contract began in R1-P02. R1-P02A preserved it
-while simplifying the source structure; the active R1-P08 phase adds the
-implemented protected Staff Catalog management surface described below. This
-documentation does not signal phase completion or owner approval.
+while simplifying the source structure; completed R1-P10 adds the implemented
+protected Staff localities/time-zone and Provider availability surface
+described below. Phase completion is recorded under DEC-061.
 
 ## Runtime endpoints
 
@@ -15,6 +15,33 @@ documentation does not signal phase completion or owner approval.
 The runtime contract is defined in `src/swagger/openapi.document.ts`. It
 documents the currently implemented system-health, authentication, and
 protected-management API surfaces.
+
+## R1-P10 — Availability, capacity, and textual coverage
+
+Swagger presents the R1-P10 operations under **Staff Localities**, **Staff
+Country Time Zone**, and **Provider Availability**. Every operation is protected
+by bearer authentication and the phase authorization boundary, and is mounted
+only under:
+
+```text
+/api/v1/staff/configuration
+/api/v1/providers/:providerId/availability
+```
+
+The documented Staff surface covers city/district management and per-country
+IANA time-zone reads/writes. The Provider surface covers textual coverage,
+Provider and Worker calendars, capacity, and temporary pause start/resume.
+Write commands show the required command controls: a UUID idempotency key and
+an expected version (Staff locality creates also require an approved privileged
+reason code).
+
+There is deliberately no customer, anonymous, Browse, Booking, Eligibility, or
+reservation evaluation HTTP operation in this phase. Internal availability
+readers remain TypeScript module-public contracts and are absent from Swagger.
+
+The generated importable companion is
+`postman/Cleanora-R1-P10-Availability-Capacity-Textual-Coverage.postman_collection.json`.
+It contains synthetic values and the same protected-only boundary.
 
 ## R1-P08 — Staff Catalog management
 
@@ -63,6 +90,8 @@ synthetic values and the same protected-only boundary.
 - The interactive page does not persist Swagger authorization between reloads.
 - R1-P08 Catalog examples use Arabic and English together for any item intended
   to be activated; incomplete examples are explicitly inactive drafts.
+- R1-P10 examples use synthetic locality and schedule values only; they never
+  expose customer contact data or reservation behavior.
 
 ## Local use
 
@@ -82,4 +111,3 @@ Swagger UI assets are loaded from the pinned
 `swagger-ui-dist@5.17.14` browser distribution because local npm package
 installation is not available in the current environment. The OpenAPI document
 and documentation endpoints themselves are served locally by Cleanora.
-

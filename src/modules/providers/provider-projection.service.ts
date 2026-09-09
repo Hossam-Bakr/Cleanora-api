@@ -68,6 +68,22 @@ export interface ProviderProjectionServiceDependencies {
       readonly blockerCodes: readonly string[];
     } | null>;
   };
+  readonly availabilityReadyFacts?: {
+    read(providerId: string): Promise<{
+      readonly coverageReady: {
+        readonly satisfied: boolean;
+        readonly blockerCodes: readonly string[];
+      };
+      readonly availabilityReady: {
+        readonly satisfied: boolean;
+        readonly blockerCodes: readonly string[];
+      };
+      readonly capacityReady: {
+        readonly satisfied: boolean;
+        readonly blockerCodes: readonly string[];
+      };
+    } | null>;
+  };
 }
 
 export interface ProviderProjectionReaders {
@@ -444,6 +460,8 @@ export class ProviderProjectionService {
     const servicesReady = await this.dependencies.servicesReadyFacts?.read(
       provider.id,
     );
+    const availabilityReady =
+      await this.dependencies.availabilityReadyFacts?.read(provider.id);
     const readiness = calculateMarketplaceReadiness({
       kind: provider.kind,
       applicationStatus: provider.applicationStatus,
@@ -453,6 +471,9 @@ export class ProviderProjectionService {
       ...(servicesReady === null || servicesReady === undefined
         ? {}
         : { servicesReady }),
+      ...(availabilityReady === null || availabilityReady === undefined
+        ? {}
+        : availabilityReady),
     });
 
     return {

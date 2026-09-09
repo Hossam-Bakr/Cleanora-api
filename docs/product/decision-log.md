@@ -2293,3 +2293,154 @@ localized-note, and internal snapshot-ready policy.
 This decision completes R1-P09 product clarification. It does not authorize
 implementation, schema or migration changes, database operations, Git actions,
 deployment, production work, phase completion, or R1-P10.
+
+## DEC-052 — R1-P09 completion and R1-P10 activation
+
+**Date:** 2026-09-07
+**Status:** Approved phase transition — activation only
+
+After the PASS review and publication, the owner reported merging the pull
+request and deleting the branch, then instructed: "are we ready now for activate
+phase 10 ? if yes activate it". This conditional authorization to advance is
+applied after verifying the predecessor's readiness, not inferred from merge alone.
+
+- R1-P09 is Complete. Its reviewed commit 47fdf53 is contained in origin/main
+  at 19d4b00 (PR #9); the merge tree has no differences from the reviewed tree.
+- Its 84 tasks, review resolution, tests/coverage, migration proofs and artifact
+  gates passed. Companion completion is recorded through the canonical writer.
+- R1-P10 — Availability, Capacity & Textual Coverage becomes the sole active
+  phase, for activation and subsequent specification preparation only.
+- Phase 10 follows its existing roadmap scope. This decision chooses no new
+  scheduling, capacity, pause, area-management or authorization semantics.
+
+No Phase 10 implementation, schema/migration, database work, new Git publication,
+deployment, production migration or later-phase activation is authorized.
+See both phases' completion/activation records and docs/product/current.md.
+
+## DEC-053 — R1-P10 authoritative scheduling time zone
+
+Date: 2026-09-07. Status: Approved by owner (specify Q1: “recommended”).
+
+Configuration Staff manage one IANA operating time zone per country. Egypt uses
+`Africa/Cairo`; all Providers and their Workers inherit the country's zone.
+Release 1 assumes one operating time zone per country. Calendar calculations
+must honor that zone's daylight-saving rules rather than a fixed UTC offset.
+This decision does not approve other interval, exception, capacity or pause
+semantics; those remain to be resolved before implementation.
+
+## DEC-054 — R1-P10 calendar boundaries, overnight shifts and exceptions
+
+Date: 2026-09-07. Status: Approved by owner (specify Q2: “recommended”).
+
+Periods include their start and exclude their end. Adjacent periods do not
+conflict; overlapping periods for the same schedule are rejected. Positive
+shifts no longer than 24 hours may cross midnight using an explicit
+`endsNextDay` flag. Evaluation splits them at local midnight and applies dated
+exceptions per civil date. A dated exception replaces that entire date's weekly
+hours, including carryover; an empty exception is a holiday. Thus a Monday
+22:00–Tuesday 02:00 shift loses its Tuesday portion when Tuesday is a holiday.
+Worker availability is always intersected with Provider availability.
+Capacity, pause, exact access and other unresolved semantics are not approved
+by this calendar decision.
+
+## DEC-055 — R1-P10 complete-Team capacity units
+
+Date: 2026-09-07. Status: Approved by owner (specify Q3: option 1).
+
+One complete Team represents one simultaneous-job capacity unit. It counts only
+when active, with at least one valid cleaner, and every current member active
+and available throughout the requested interval. Escorts add no units but must
+be available. Capacity equals the smaller of the Provider's configured
+simultaneous-Team limit and available Team count. Unteamed Workers add no units.
+Three available Teams with a limit of two yield capacity two.
+Phase 10 reports potential supply only; it creates no Booking, reservations or
+busy-time ledger and makes no claim that this supply is unbooked.
+
+## DEC-056 — R1-P10 textual area administration and coverage granularity
+
+Date: 2026-09-07. Status: Approved by owner (clarify question 1 / overall Q4: option 1).
+
+Staff administer localized countries, cities and districts. Providers select
+whole cities or individual districts in their own country and cannot create
+place names. Whole-city coverage includes all currently active districts of
+that city, including subsequently added districts. Areas retain stable identity
+and are deactivated rather than deleted. Inactive ancestry stops matching.
+Coordinates and radius searches remain excluded.
+
+## DEC-057 — R1-P10 temporary Provider pause
+
+Date: 2026-09-07. Status: Approved by owner (clarify question 2 / overall Q5: option 1).
+
+An Owner/Admin may start one immediate Provider pause with an optional future
+end instant. Without an end it lasts until explicit resume. Any requested
+interval overlapping an effective pause is unavailable and has zero capacity.
+An Owner/Admin may resume early; optional expiry occurs automatically by time
+evaluation. Neither event alters approval, suspension or go-live truth.
+No future pause calendar, Booking cancellation or Booking modification is added.
+
+## DEC-058 — R1-P10 Provider-setting authorization during suspension
+
+Date: 2026-09-07. Status: Approved by owner (clarify question 3 / overall Q6: recommended option 1).
+
+An active Owner or enabled Provider Admin may read and manage coverage,
+Provider/Worker schedules and exceptions, capacity and pause for their exact
+approved Provider in any operational state: `INACTIVE`, `LIVE` or `SUSPENDED`.
+Suspension makes availability evaluation unavailable but does not make the
+configuration read-only; operators may repair it before Staff reinstatement.
+Workers and Team Supervisors gain no Phase 10 management authority. Staff
+locality/time-zone administration uses separate Configuration permissions and
+does not grant authority over Provider-owned settings.
+
+## DEC-059 — R1-P10 internal coverage and availability read contracts
+
+Date: 2026-09-07. Status: Approved by owner (clarify question 4 / overall Q7: recommended option 1).
+
+Providers exposes narrow internal public contracts to find candidate Provider
+identifiers for an active textual area and to evaluate one Provider for a
+textual location, requested UTC interval and required complete-Team units. The
+evaluation returns the applied country IANA zone, coverage, availability and
+capacity facts, available units, stable blocker codes and relevant
+configuration versions. Cross-module consumers use this contract rather than
+Providers persistence. Phase 10 HTTP is limited to protected Staff locality and
+Provider operational-management surfaces. Customer and anonymous availability
+lookup remains with later Eligibility and Browse phases.
+
+## DEC-060 — R1-P10 configuration readiness versus runtime availability
+
+Date: 2026-09-07. Status: Approved by owner (clarify question 5 / overall Q8: recommended option 1).
+
+The three Phase 10 readiness gates describe completed valid configuration.
+`coverageReady` requires at least one effective active coverage selection.
+`availabilityReady` requires at least one valid Provider weekly period.
+`capacityReady` requires a positive simultaneous-Team limit and at least one
+active structurally valid complete Team whose current members share nonzero
+recurring availability with the Provider. One incomplete Team does not block a
+different valid Team. Temporary pause, suspension, requested-time closure and
+requested capacity affect runtime evaluation without erasing configuration
+readiness. `eligibleForPublicBrowse` remains blocked until its later phase.
+
+## DEC-061 — R1-P10 completion
+
+**Date:** 2026-09-09
+**Status:** Approved — explicit human-owner phase completion
+
+After receiving the final technical-readiness handoff, the owner stated:
+`I approve R1-P10 — Availability, Capacity & Textual Coverage as Complete.`
+
+- R1-P10 is Complete. FR-001–FR-016 and SC-001–SC-008 are reconciled, and
+  tasks T001–T077 are checked.
+- The final Codex adversarial review has no unresolved BLOCKER or MAJOR; seven
+  verified correctness/integrity defects were repaired and regression-tested.
+- The Phase 10 live suite passed 43 files / 301 tests. Coverage passed at
+  86.85% statements, 76.47% branches, 93.38% functions and 87.60% lines.
+- Clean chronological installation and populated R1-P09→R1-P10 upgrade proofs
+  both passed on the approved disposable `cleanora_r1_p10_proof` target.
+- Typecheck, Prisma, build, source/test/script lint for the intended tree,
+  OpenAPI, Postman, documentation, module-boundary and whitespace gates passed.
+- Companion records the feature at `implement/completed` through its canonical
+  lifecycle writer.
+
+No next phase is activated by this decision. Completion does not authorize
+staging, commit, push, merge, deployment, production migration, history
+rewriting or destructive cleanup. Git publication still requires a separate
+human message whose entire content is exactly `commit and push`.
