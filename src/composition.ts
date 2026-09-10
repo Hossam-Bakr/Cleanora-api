@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { APPLICATION_NAME } from "#config/constants";
 import {
   assertR1P06RuntimeEnvironment,
@@ -28,6 +29,7 @@ import {
   createAuthenticationModule,
   createAuthenticationPolicy,
 } from "#modules/authentication/auth.module";
+import { createOptionalAuthenticateAccess } from "#modules/authentication/auth.middleware";
 import { AuthorizationService } from "#modules/authentication/authorization.service";
 import { AuthorizationRepository } from "#modules/authentication/infrastructure/authorization.repository";
 import {
@@ -78,6 +80,7 @@ import {
 import { getActiveCountryIdByCode } from "#modules/configuration/configuration.service";
 import {
   createActiveCountryReader,
+  createLocalityReader,
   createTransactionalActiveCountryReader,
   createTransactionalCountryTimeZoneReader,
   createTransactionalLocalityReader,
@@ -115,6 +118,7 @@ import { ProviderApprovalService } from "#modules/providers/provider-approval.se
 import { ProviderInvitationAcceptanceService } from "#modules/providers/provider-invitation-acceptance.service";
 import { ProviderInvitationOnboardingService } from "#modules/providers/provider-invitation-onboarding.service";
 import { ProviderMediaService } from "#modules/providers/provider-media.service";
+import { ProviderBrowseProjectionService } from "#modules/providers/provider-browse-projection.service";
 import { ProviderMembershipService } from "#modules/providers/provider-membership.service";
 import { ProviderProfileService } from "#modules/providers/provider-profile.service";
 import { ProviderProjectionService } from "#modules/providers/provider-projection.service";
@@ -214,6 +218,7 @@ import {
   createProviderServiceSnapshotReader,
   createProviderServicesReadyFactsReader,
   createProviderOperationalAvailabilityReader,
+  createProviderBrowseReader,
   createBoundEligibilityAvailabilityReader,
   createBoundEligibilityPricingReader,
   createBoundEligibilityProviderLifecycleReader,
@@ -224,6 +229,8 @@ import {
   type ProviderServiceSnapshotReader,
   type ProviderServicesReadyFactsReader,
 } from "#modules/providers/providers.public";
+import { createBookingsBrowseRouter } from "#modules/bookings/bookings.routes";
+import { BookingsBrowseService } from "#modules/bookings/bookings.service";
 import {
   createEligibilityApplicationService,
   type EligibilityApplicationService,
@@ -759,16 +766,17 @@ export function createRuntimeDependencies(
             projections,
           });
           const mediaSelection = createMediaStoragePort(environment);
+          const providerMediaUsage = new PrismaProviderMediaRepository(
+            mediaReader,
+            database.client,
+          );
           const media = new ProviderMediaService({
             unitOfWork,
             providers: providerRepository,
             media: createProviderMediaPort(mediaSelection.storage, database.client),
             denialAudit,
             identityReader,
-            mediaUsage: new PrismaProviderMediaRepository(
-              mediaReader,
-              database.client,
-            ),
+            mediaUsage: providerMediaUsage,
             mediaReader,
             projections,
             signedUrlTtlSeconds: mediaSelection.signedUrlTtlSeconds,
@@ -875,6 +883,14 @@ export function createRuntimeDependencies(
           const teamSupervisors = new ProviderTeamSupervisorService({ unitOfWork: workforceUnitOfWork });
           const teamQueries = new ProviderTeamQueryService(workforceUnitOfWork);
           const workforceReadiness = new ProviderWorkforceReadinessService(workforceUnitOfWork);
+          const providerBrowseProjection = new ProviderBrowseProjectionService({
+            providers: providerRepository,
+            activeCountries,
+            mediaUsage: providerMediaUsage,
+            mediaReader,
+            media: createProviderMediaPort(mediaSelection.storage, database.client),
+            signedUrlTtlSeconds: mediaSelection.signedUrlTtlSeconds,
+          });
           const workerSelf = new ProviderWorkerSelfService({ unitOfWork: workforceUnitOfWork, avatar: workerAvatar });
           const workforceNotificationRepository = new PrismaProviderWorkforceNotificationRepository(
             database.client,
@@ -1100,6 +1116,8 @@ export function createRuntimeDependencies(
               createProviderOperationalAvailabilityReader(
                 operationalAvailability,
               ),
+            providerBrowseProjection,
+            workforceReadiness,
             startProviderBackgroundTasks: (): (() => void) => {
               const stopEmail = startProviderEmailDispatcher(providerEmailDispatcher, logger);
               const stopWorkforceEmail = startProviderWorkforceNotificationDispatcher(
@@ -1212,6 +1230,16 @@ export function createRuntimeDependencies(
   const providerWorkforceInvitationRouter = providersComposition?.providerWorkforceInvitationRouter;
   const providerOperationalAvailabilityReader =
     providersComposition?.providerOperationalAvailabilityReader;
+  const providerBrowseReader =
+    providersComposition === undefined
+      ? createProviderBrowseReader(
+          { getContactFreePreview: async () => null },
+          { getBookingSafeTeamFacts: async () => null },
+        )
+      : createProviderBrowseReader(
+          providersComposition.providerBrowseProjection,
+          providersComposition.workforceReadiness,
+        );
 
   // Shared Catalog service for public definition reads and Providers UoW binding.
   const catalogRepository = new PrismaCatalogRepository(
@@ -1357,7 +1385,7 @@ export function createRuntimeDependencies(
           authenticateAccess: authentication.authenticateAccess,
           localityService: new LocalityService({
             authorization,
-            repository: createPrismaLocalityRepository(),
+            repository: createPrismaLocalityRepository(database.client),
             runInTransaction: (work) =>
               withLocalityTransaction((tx, repository) =>
                 work(repository, createPrismaGeneralTransactionalAuditWriter(tx)),
@@ -1409,8 +1437,11 @@ export function createRuntimeDependencies(
       ),
     );
   const createEligibilityLifecycleReader =
-    createTransactionalEligibilityProviderLifecycleReaderFactory((transaction) =>
-      createBoundEligibilityProviderLifecycleReader(transaction),
+    createTransactionalEligibilityProviderLifecycleReaderFactory(
+      (transaction, context) =>
+        createBoundEligibilityProviderLifecycleReader(transaction, {
+          evaluatedAt: context?.evaluatedAt ?? new Date(),
+        }),
     );
   const createEligibilityAvailabilityReader =
     createTransactionalEligibilityAvailabilityReaderFactory((transaction) =>
@@ -1426,6 +1457,28 @@ export function createRuntimeDependencies(
     createPricingReader: createEligibilityPricingReader,
     createLifecycleReader: createEligibilityLifecycleReader,
     createAvailabilityReader: createEligibilityAvailabilityReader,
+  });
+
+  const browseCursorSecret =
+    environment.JWT_ACCESS_SECRET ?? randomBytes(32).toString("base64url");
+  const bookingsBrowseService = new BookingsBrowseService({
+    eligibility: eligibilityApplicationService,
+    catalog: catalogDefinitionReader,
+    locality: createLocalityReader(database.client),
+    providers: providerBrowseReader,
+    ...(providerServiceSnapshotReader === undefined
+      ? {}
+      : { serviceSnapshots: providerServiceSnapshotReader }),
+    activeCountries: createActiveCountryReader(database.client),
+    cursorSecret: browseCursorSecret,
+  });
+  const bookingsBrowseRouter = createBookingsBrowseRouter({
+    optionalAuthenticateAccess:
+      authentication?.optionalAuthenticateAccess ??
+      createOptionalAuthenticateAccess(),
+    rateLimiter,
+    privacyHashSecret: browseCursorSecret,
+    service: bookingsBrowseService,
   });
 
   return {
@@ -1485,6 +1538,7 @@ export function createRuntimeDependencies(
       ...(providerAvailabilityRouter === undefined
         ? {}
         : { providerAvailabilityRouter }),
+      bookingsBrowseRouter,
     },
   };
 }

@@ -3,14 +3,33 @@
 | Field | Value |
 |---|---|
 | Current Release | Release 1 — Core Marketplace |
-| Current Phase | R1-P11 — Eligibility Engine V1 |
-| Status | **Complete** under DEC-062 / DEC-085 — no next phase activated |
-| Backend Owner | Codex (PM/decisions/review/completion) + Cursor (implementation) |
-| Local Checkout | `codex/r1-p11-eligibility-engine-v1` from P10 baseline `38f3efa`; inherited dirty tree preserved |
-| Verified Main | origin/main at 19d4b00, PR #9 merged (P10 feature commit also on local P10 branch) |
-| Started At | 2026-09-09 |
-| Completed At | 2026-09-09 |
-| Last Updated | 2026-09-09 — R1-P11 Complete; P12 not activated |
+| Current Phase | R1-P12 — Browse Marketplace & Provider Details |
+| Status | **Active** — **READY_FOR_OWNER_REVIEW**; combined P11 follow-up + P12 review **PASS**; not Complete |
+| Backend Owner | Cursor (initial implementation) + Codex (adversarial review, repairs, and validation) |
+| Local Checkout | `codex/r1-p12-browse-marketplace-provider-details` from `main` (P11 merged); inherited dirty tree preserved |
+| Verified Main | local HEAD and `origin/main` both `3b0ed3b` at review time |
+| Started At | 2026-09-10 |
+| Completed At | — |
+| Last Updated | 2026-09-10 — combined P11 follow-up + P12 review PASS; ready for `commit and push` |
+
+## Active phase — R1-P12
+
+R1-P12 is the sole active phase and is at **READY_FOR_OWNER_REVIEW**. Guest and
+customer REST discovery of eligible providers via the P11 Browse facade is
+implemented under DEC-086. A combined re-review of unpublished P11 follow-up
+repairs plus Phase 12 found no unresolved BLOCKER or MAJOR. DEC-087 remains the
+historical record of the earlier owner substitution after unavailable Codex
+consultations. No booking mutation, maps, premium boost, wallets, Docker, or
+cloud.
+
+Canonical artifacts:
+`specs/R1-P12-browse-marketplace-provider-details/` (see
+`work-on-next-phase-progress.md`, `review-report.md`) and
+`specs/R1-P11-eligibility-engine-v1/follow-up-review-resolution.md`. This status
+does not authorize phase Complete, merge, deploy, or production migration. The
+review staged, unstaged, committed, and pushed nothing. The owner-chosen
+combined P11-follow-up + P12 package is technically ready; Git publication still
+requires a new human message exactly equal to `commit and push`.
 
 ## Most recently completed phase — R1-P11
 

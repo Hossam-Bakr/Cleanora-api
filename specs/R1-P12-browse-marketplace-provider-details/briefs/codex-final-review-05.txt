@@ -1,0 +1,63 @@
+Role: read-only Cleanora adversarial reviewer via Codex CLI. Do NOT edit files. Do NOT implement. Do NOT commit.
+
+Phase: R1-P12 — Browse Marketplace & Provider Details
+Branch: codex/r1-p12-browse-marketplace-provider-details
+Authority: DEC-086 ACCEPT_IMPLEMENTATION; stop at READY_FOR_OWNER_REVIEW (no mark-complete / Git publish).
+
+## Exact question
+Produce a final review verdict for the phase diff/artifacts.
+
+verdict must be exactly one of: PASS | CHANGES_REQUIRED
+
+If CHANGES_REQUIRED, list every BLOCKER and MAJOR with:
+- severity
+- file path and line if possible
+- violated acceptance criterion or rule
+- impact
+- focused remediation
+
+MINORs/QUESTIONS allowed but do not block PASS alone.
+No unresolved BLOCKER/MAJOR is allowed for PASS.
+
+## Acceptance criteria to verify
+1. Guest-capable `/api/v1/browse/*` HTTP exists and is mounted.
+2. Eligible list/detail use composition-wired `getStandardBrowseCandidates` only.
+3. Contact-free projection; EX-01 omits failed media slots without failing whole response.
+4. Server sort/filter/cursor pagination; detail re-evaluates eligibility.
+5. EX-02: browse creates no booking and initiates no payment (`sideEffects` false).
+6. No fabricated ratings; reject lat/lng/radius/map/socket.
+7. OpenAPI + Postman for new ops; phase coverage thresholds 80/75/80/80.
+8. Module boundaries: bookings uses public contracts only; no foreign Prisma/repos.
+
+## Gate evidence already collected by Cursor (re-check claims against tree; do not invent)
+- `npm run typecheck` PASS
+- `npm run test:coverage:r1-p12` PASS: 91.80 statements / 77.64 branches / 89.09 functions / 92.18 lines; 22 tests
+- `npm run openapi:validate` PASS (includes docs/apis/openapi/r1-p12-browse-marketplace.yaml)
+- `npm run docs:check` PASS
+- `npm run postman:validate` PASS; collection postman/Cleanora-R1-P12-Browse-Marketplace.postman_collection.json
+- migration NOT_APPLICABLE (no new tables; DEC-086)
+
+## Files to read (stay narrow)
+- specs/R1-P12-browse-marketplace-provider-details/spec.md
+- specs/R1-P12-browse-marketplace-provider-details/plan.md
+- specs/R1-P12-browse-marketplace-provider-details/contracts/http-api.md
+- specs/R1-P12-browse-marketplace-provider-details/implementation-evidence.md
+- specs/R1-P12-browse-marketplace-provider-details/preparation-acceptance-pm02.md
+- src/modules/bookings/*
+- src/modules/providers/provider-browse-projection.service.ts
+- src/modules/providers/provider.dto.ts (preview/crew summary)
+- src/modules/authentication/auth.middleware.ts (createOptionalAuthenticateAccess)
+- src/composition.ts (bookings wiring section only)
+- src/routes/index.ts (browse mount)
+- docs/apis/openapi/r1-p12-browse-marketplace.yaml
+- postman/Cleanora-R1-P12-Browse-Marketplace.postman_collection.json
+- tests/unit/modules/bookings/*
+- tests/unit/modules/providers/provider-browse-projection.test.ts
+- tests/unit/modules/authentication/authentication-middleware.test.ts
+
+## Answer shape
+verdict:
+findings:
+EX-01 honored:
+EX-02 honored:
+notes: (<=12 lines)

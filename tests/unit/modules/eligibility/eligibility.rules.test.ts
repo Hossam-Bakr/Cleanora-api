@@ -284,25 +284,22 @@ describe("eligibility.rules (Batch D / SC-001)", () => {
     expect(evaluateProviderSchedulePause(overflow).status).toBe(
       "NOT_EVALUATED",
     );
-    const candidate = evaluateProviderCandidate({
-      providerId: R1_P11_IDS.providerId,
-      preference: "any",
-      requiredTeamUnits: 1,
-      startsAt: R1_P11_TIMES.startsAt,
-      endsAt: R1_P11_TIMES.endsAt,
-      lifecycle: liveLifecycle,
-      pricing: availablePricing,
-      availability: overflow,
-      performanceGate: disabledGate,
-      policyVersionId: R1_P11_IDS.ruleVersionId,
-      evaluatedAt: R1_P11_TIMES.evaluatedAt,
-      performancePortResult: null,
-    });
-    expect(
-      candidate.provider.ruleOutcomes.find(
-        (o) => o.ruleId === "CAPACITY_AFTER_CREW_FILTER",
-      )?.status,
-    ).toBe("NOT_EVALUATED");
+    expect(() =>
+      evaluateProviderCandidate({
+        providerId: R1_P11_IDS.providerId,
+        preference: "any",
+        requiredTeamUnits: 1,
+        startsAt: R1_P11_TIMES.startsAt,
+        endsAt: R1_P11_TIMES.endsAt,
+        lifecycle: liveLifecycle,
+        pricing: availablePricing,
+        availability: overflow,
+        performanceGate: disabledGate,
+        policyVersionId: R1_P11_IDS.ruleVersionId,
+        evaluatedAt: R1_P11_TIMES.evaluatedAt,
+        performancePortResult: null,
+      }),
+    ).toThrow(/OVERFLOW must be handled before candidate evaluation/u);
   });
 
   it("fails schedule for pause/suspension and teams for unavailable members", () => {
@@ -427,5 +424,63 @@ describe("eligibility.rules (Batch D / SC-001)", () => {
     );
     expect(result.provider.reasons).not.toContain("NO_VALID_COMPLETE_TEAM");
     expect(result.teams).toHaveLength(1);
+    expect(result.teams[0]?.eligible).toBe(false);
+    expect(result.teams[0]?.reasons).toEqual(
+      expect.arrayContaining([
+        "CAPACITY_RULE_MISSING",
+        "COVERAGE_MISMATCH",
+        "PROVIDER_PAUSED",
+        "PROVIDER_CLOSED_OR_OUTSIDE_HOURS",
+      ]),
+    );
+    expect(result.teams[0]?.reasons.length).toBeGreaterThan(0);
+  });
+
+  it("inherits coverage-only Provider exclusions onto individually valid Teams", () => {
+    const result = evaluateProviderCandidate({
+      providerId: R1_P11_IDS.providerId,
+      preference: "any",
+      requiredTeamUnits: 1,
+      startsAt: R1_P11_TIMES.startsAt,
+      endsAt: R1_P11_TIMES.endsAt,
+      lifecycle: liveLifecycle,
+      pricing: availablePricing,
+      availability: availableFacts([availableTeam({ teamId: "t1" })], {
+        coverageMatch: false,
+      }),
+      performanceGate: disabledGate,
+      policyVersionId: R1_P11_IDS.ruleVersionId,
+      evaluatedAt: R1_P11_TIMES.evaluatedAt,
+      performancePortResult: null,
+    });
+    expect(result.provider.eligible).toBe(false);
+    expect(result.provider.reasons).toContain("COVERAGE_MISMATCH");
+    expect(result.teams[0]?.eligible).toBe(false);
+    expect(result.teams[0]?.reasons).toContain("COVERAGE_MISMATCH");
+    expect(result.teams[0]?.reasons.length).toBeGreaterThan(0);
+  });
+
+  it("inherits offering/price exclusions onto Teams", () => {
+    const result = evaluateProviderCandidate({
+      providerId: R1_P11_IDS.providerId,
+      preference: "any",
+      requiredTeamUnits: 1,
+      startsAt: R1_P11_TIMES.startsAt,
+      endsAt: R1_P11_TIMES.endsAt,
+      lifecycle: liveLifecycle,
+      pricing: {
+        status: "UNAVAILABLE",
+        providerId: R1_P11_IDS.providerId,
+        serviceId: R1_P11_IDS.serviceId,
+        reason: "OFFERING_OR_PRICE_UNAVAILABLE",
+        sourceVersion: null,
+      },
+      availability: availableFacts([availableTeam({ teamId: "t1" })]),
+      performanceGate: disabledGate,
+      policyVersionId: R1_P11_IDS.ruleVersionId,
+      evaluatedAt: R1_P11_TIMES.evaluatedAt,
+      performancePortResult: null,
+    });
+    expect(result.teams[0]?.reasons).toContain("OFFERING_OR_PRICE_UNAVAILABLE");
   });
 });

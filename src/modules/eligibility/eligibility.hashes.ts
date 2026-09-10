@@ -8,9 +8,13 @@
 import { createHash } from "node:crypto";
 
 import type {
-  DiagnosticResult,
+  DiscoveryMetadata,
   EligibilityEvidenceSnapshot,
+  EvaluationMetadata,
+  EvaluationOutcomes,
   EvaluateEligibilityRequest,
+  ProviderSummary,
+  TeamResult,
 } from "./eligibility.public.js";
 
 /**
@@ -97,12 +101,67 @@ export function computeEvidenceHash(
 }
 
 /**
+ * Frozen resultHash projection — excludes requestHash, evidenceHash,
+ * resultHash, evaluationId, trace, and persistence timestamps (DEC-081).
+ */
+export type EligibilityResultHashInput = {
+  readonly evaluationOutcomes: EvaluationOutcomes;
+  readonly eligibleProviders: readonly ProviderSummary[];
+  readonly eligibleTeams: readonly TeamResult[];
+  readonly excludedProviders: readonly ProviderSummary[];
+  readonly excludedTeams: readonly TeamResult[];
+  readonly metadata: {
+    readonly contractVersion: string;
+    readonly engineVersion: string;
+    readonly ruleVersionId: string;
+    readonly ruleChecksum: string;
+    readonly evaluatedAt: string;
+    readonly countryTimeZone: string;
+    readonly calendarRuntimeVersion: string;
+    readonly sourceVersions: Readonly<Record<string, string>>;
+    readonly discovery: DiscoveryMetadata;
+    readonly limits: EvaluationMetadata["limits"];
+  };
+};
+
+/**
+ * @desc Sort source-version keys for deterministic hashing / metadata.
+ * @access Domain
+ */
+export function sortSourceVersions(
+  versions: Readonly<Record<string, string>>,
+): Readonly<Record<string, string>> {
+  return Object.fromEntries(
+    Object.entries(versions).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ),
+  );
+}
+
+/**
  * @desc Exact resultHash input — semantic diagnostic fields only.
  * @access Domain
- * @explanation Excludes evaluationId and persistence timestamps (DEC-081).
+ * @explanation Builds/hashes the frozen EligibilityResultHashInput projection.
  */
-export function computeResultHash(
-  result: Omit<DiagnosticResult, "evaluationId">,
-): string {
-  return eligibilitySha256(result);
+export function computeResultHash(input: EligibilityResultHashInput): string {
+  const projection: EligibilityResultHashInput = {
+    evaluationOutcomes: input.evaluationOutcomes,
+    eligibleProviders: input.eligibleProviders,
+    eligibleTeams: input.eligibleTeams,
+    excludedProviders: input.excludedProviders,
+    excludedTeams: input.excludedTeams,
+    metadata: {
+      contractVersion: input.metadata.contractVersion,
+      engineVersion: input.metadata.engineVersion,
+      ruleVersionId: input.metadata.ruleVersionId,
+      ruleChecksum: input.metadata.ruleChecksum,
+      evaluatedAt: input.metadata.evaluatedAt,
+      countryTimeZone: input.metadata.countryTimeZone,
+      calendarRuntimeVersion: input.metadata.calendarRuntimeVersion,
+      sourceVersions: sortSourceVersions(input.metadata.sourceVersions),
+      discovery: input.metadata.discovery,
+      limits: input.metadata.limits,
+    },
+  };
+  return eligibilitySha256(projection);
 }

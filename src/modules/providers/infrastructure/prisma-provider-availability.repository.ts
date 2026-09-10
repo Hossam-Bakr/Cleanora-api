@@ -1042,7 +1042,10 @@ export class PrismaProviderAvailabilityRepository
     });
   }
 
-  public async findCapacityEvaluationFacts(providerId: string) {
+  public async findCapacityEvaluationFacts(
+    providerId: string,
+    options?: { readonly remainingTeamBudget?: number },
+  ): Promise<ProviderCapacityEvaluationFacts | null> {
     const provider = await this.database.provider.findUnique({
       where: { id: providerId },
       select: {
@@ -1056,6 +1059,88 @@ export class PrismaProviderAvailabilityRepository
     if (provider === null) {
       return null;
     }
+
+    const teamInclude = {
+      memberships: {
+        where: { endedAt: null },
+        orderBy: [{ startedAt: "asc" as const }, { id: "asc" as const }],
+        include: {
+          worker: {
+            select: {
+              id: true,
+              version: true,
+              status: true,
+              endedAt: true,
+              profile: {
+                select: {
+                  gender: true,
+                  workerType: true,
+                },
+              },
+              schedules: {
+                orderBy: [
+                  { weekday: "asc" as const },
+                  { startMinute: "asc" as const },
+                  { endMinute: "asc" as const },
+                  { endsNextDay: "asc" as const },
+                  { id: "asc" as const },
+                ],
+              },
+              scheduleExceptions: {
+                orderBy: [
+                  { localDate: "asc" as const },
+                  { closed: "asc" as const },
+                  { startMinute: "asc" as const },
+                  { endMinute: "asc" as const },
+                  { endsNextDay: "asc" as const },
+                  { id: "asc" as const },
+                ],
+              },
+            },
+          },
+        },
+      },
+    };
+
+    let teamBudgetExceeded = false;
+    let teamIdsToHydrate: string[] | null = null;
+    if (options?.remainingTeamBudget !== undefined) {
+      const budget = options.remainingTeamBudget;
+      const idRows = await this.database.providerTeam.findMany({
+        where: { providerId },
+        orderBy: [{ id: "asc" }],
+        take: budget + 1,
+        select: { id: true },
+      });
+      if (idRows.length > budget) {
+        // Sentinel present → OVERFLOW before deep hydrate (DEC-075 / DEC-084).
+        teamBudgetExceeded = true;
+        teamIdsToHydrate = idRows.slice(0, budget).map((row) => row.id);
+      } else {
+        teamIdsToHydrate = idRows.map((row) => row.id);
+      }
+    }
+
+    type HydratedTeam = {
+      readonly id: string;
+      readonly version: number;
+      readonly status: string;
+      readonly memberships: ReadonlyArray<{
+        readonly workerId: string;
+        readonly cleans: boolean;
+        readonly worker: {
+          readonly version: number;
+          readonly status: string;
+          readonly endedAt: Date | null;
+          readonly profile: {
+            readonly gender: string | null;
+            readonly workerType: string | null;
+          } | null;
+          readonly schedules: readonly unknown[];
+          readonly scheduleExceptions: readonly unknown[];
+        };
+      }>;
+    };
 
     const [capacityRule, providerWeeklyPeriods, providerExceptions, teams] =
       await Promise.all([
@@ -1081,51 +1166,31 @@ export class PrismaProviderAvailabilityRepository
             { id: "asc" },
           ],
         }),
-        this.database.providerTeam.findMany({
-          where: { providerId },
-          orderBy: [{ id: "asc" }],
-          include: {
-            memberships: {
-              where: { endedAt: null },
-              orderBy: [{ startedAt: "asc" }, { id: "asc" }],
-              include: {
-                worker: {
-                  select: {
-                    id: true,
-                    version: true,
-                    status: true,
-                    endedAt: true,
-                    profile: {
-                      select: {
-                        gender: true,
-                        workerType: true,
-                      },
-                    },
-                    schedules: {
-                      orderBy: [
-                        { weekday: "asc" },
-                        { startMinute: "asc" },
-                        { endMinute: "asc" },
-                        { endsNextDay: "asc" },
-                        { id: "asc" },
-                      ],
-                    },
-                    scheduleExceptions: {
-                      orderBy: [
-                        { localDate: "asc" },
-                        { closed: "asc" },
-                        { startMinute: "asc" },
-                        { endMinute: "asc" },
-                        { endsNextDay: "asc" },
-                        { id: "asc" },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-          },
-        }),
+        (async (): Promise<HydratedTeam[]> => {
+          if (teamBudgetExceeded) {
+            return (teamIdsToHydrate ?? []).map((id) => ({
+              id,
+              version: 0,
+              status: "ACTIVE",
+              memberships: [],
+            }));
+          }
+          if (teamIdsToHydrate !== null) {
+            if (teamIdsToHydrate.length === 0) {
+              return [];
+            }
+            return (await this.database.providerTeam.findMany({
+              where: { providerId, id: { in: teamIdsToHydrate } },
+              orderBy: [{ id: "asc" }],
+              include: teamInclude,
+            })) as unknown as HydratedTeam[];
+          }
+          return (await this.database.providerTeam.findMany({
+            where: { providerId },
+            orderBy: [{ id: "asc" }],
+            include: teamInclude,
+          })) as unknown as HydratedTeam[];
+        })(),
       ]);
 
     return {
@@ -1143,15 +1208,14 @@ export class PrismaProviderAvailabilityRepository
       teams: teams.map((team) => ({
         teamId: team.id,
         teamVersion: team.version,
-        status: team.status,
+        status: team.status as ProviderCapacityEvaluationFacts["teams"][number]["status"],
         members: team.memberships.map((membership) => ({
           workerId: membership.workerId,
           workerVersion: membership.worker.version,
           cleans: membership.cleans,
-          workerStatus:
-            membership.worker.endedAt === null
-              ? membership.worker.status
-              : "INACTIVE",
+          workerStatus: (membership.worker.endedAt === null
+            ? membership.worker.status
+            : "INACTIVE") as ProviderCapacityEvaluationFacts["teams"][number]["members"][number]["workerStatus"],
           gender:
             membership.worker.profile?.gender === "MALE"
               ? ("male" as const)
@@ -1164,14 +1228,15 @@ export class PrismaProviderAvailabilityRepository
               : membership.worker.profile?.workerType === "OTHER"
                 ? ("OTHER" as const)
                 : ("CLEANING_STAFF" as const),
-          weeklyPeriods: membership.worker.schedules.map(
-            toWorkerWeeklyScheduleSnapshot,
+          weeklyPeriods: membership.worker.schedules.map((row) =>
+            toWorkerWeeklyScheduleSnapshot(row as never),
           ),
-          exceptions: membership.worker.scheduleExceptions.map(
-            toWorkerScheduleExceptionSnapshot,
+          exceptions: membership.worker.scheduleExceptions.map((row) =>
+            toWorkerScheduleExceptionSnapshot(row as never),
           ),
         })),
       })),
+      ...(teamBudgetExceeded ? { teamBudgetExceeded: true as const } : {}),
     };
   }
 

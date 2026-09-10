@@ -11,6 +11,7 @@ import { getPrismaClient } from "#database/prisma";
 import { Prisma, type PrismaClient } from "#generated/prisma/client";
 
 import { EligibilityError } from "../eligibility.errors.js";
+import { isRetryableConflictError } from "../eligibility.technical-errors.js";
 import { PrismaEligibilityRepository } from "./prisma-eligibility.repository.js";
 
 const DEFAULT_MAX_WAIT_MS = 15_000;
@@ -25,15 +26,6 @@ export type EligibilityUnitOfWorkOptions = {
   readonly maxWaitMs?: number;
   readonly timeoutMs?: number;
 };
-
-function isPrismaTransactionTimeout(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: unknown }).code === "P2028"
-  );
-}
 
 /**
  * @desc Eligibility RepeatableRead interactive transaction helper.
@@ -54,8 +46,8 @@ export class EligibilityUnitOfWork {
   /**
    * @desc Run Eligibility work under RepeatableRead isolation.
    * @access Infrastructure
-   * @explanation Maps Prisma interactive-transaction timeouts to CONFLICT so
-   * callers can decide retry policy without inspecting Prisma codes.
+   * @explanation Maps Prisma interactive-transaction timeouts and serialization
+   * failures (P2028, P2034, 40001, 40P01) to CONFLICT so callers can retry.
    */
   public async runRepeatableRead<T>(
     work: (context: EligibilityUnitOfWorkContext) => Promise<T>,
@@ -74,7 +66,7 @@ export class EligibilityUnitOfWork {
         },
       );
     } catch (error: unknown) {
-      if (isPrismaTransactionTimeout(error)) {
+      if (isRetryableConflictError(error)) {
         throw new EligibilityError("CONFLICT", {
           details: { reason: "TRANSACTION_CONTENTION" },
           cause: error,

@@ -17,7 +17,10 @@ import {
   R1_P11_TIMES,
 } from "../../../helpers/r1-p11-eligibility-fixtures.js";
 import { buildExplicitRequest } from "../../../helpers/r1-p11-eligibility-fixtures.js";
-import { R1_P11_ELIGIBILITY_RULE_SEED } from "../../../../prisma/seed.js";
+import {
+  computeR1P11EligibilityRuleContentChecksum,
+  R1_P11_ELIGIBILITY_RULE_SEED,
+} from "../../../../prisma/seed.js";
 
 type DepFactoryOverrides = Partial<
   Pick<
@@ -31,6 +34,13 @@ type DepFactoryOverrides = Partial<
     | "createAvailabilityReader"
   >
 >;
+
+const R1_P11_RULE_CHECKSUM = computeR1P11EligibilityRuleContentChecksum({
+  schemaVersion: R1_P11_ELIGIBILITY_RULE_SEED.schemaVersion,
+  engineCompatibility: R1_P11_ELIGIBILITY_RULE_SEED.engineCompatibility,
+  ruleOrder: R1_P11_ELIGIBILITY_RULE_SEED.ruleOrder,
+  parameters: R1_P11_ELIGIBILITY_RULE_SEED.parameters,
+});
 
 function buildDeps(overrides: {
   readonly repository: Partial<PrismaEligibilityRepository>;
@@ -47,7 +57,7 @@ function buildDeps(overrides: {
       ruleOrder: R1_P11_ELIGIBILITY_RULE_SEED.ruleOrder,
       parameters: R1_P11_ELIGIBILITY_RULE_SEED.parameters,
       effectiveFrom: R1_P11_ELIGIBILITY_RULE_SEED.effectiveFrom,
-      contentChecksum: "checksum",
+      contentChecksum: R1_P11_RULE_CHECKSUM,
       createdAt: new Date(),
     }),
     insertEvaluationWithCandidates: vi.fn().mockResolvedValue({

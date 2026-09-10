@@ -66,6 +66,9 @@ export interface LocalityRepository {
   findCountryById(
     countryId: string,
   ): Promise<{ readonly id: string; readonly code: string; readonly isActive: boolean } | null>;
+  findCountryByCode(
+    countryCode: string,
+  ): Promise<{ readonly id: string; readonly code: string; readonly isActive: boolean } | null>;
 
   findCityById(cityId: string): Promise<CitySnapshot | null>;
   findCityByCode(countryId: string, code: string): Promise<CitySnapshot | null>;
@@ -282,6 +285,15 @@ class PrismaLocalityRepository implements LocalityRepository {
   ): Promise<{ readonly id: string; readonly code: string; readonly isActive: boolean } | null> {
     return this.database.country.findUnique({
       where: { id: countryId },
+      select: { id: true, code: true, isActive: true },
+    });
+  }
+
+  public async findCountryByCode(
+    countryCode: string,
+  ): Promise<{ readonly id: string; readonly code: string; readonly isActive: boolean } | null> {
+    return this.database.country.findUnique({
+      where: { code: countryCode },
       select: { id: true, code: true, isActive: true },
     });
   }

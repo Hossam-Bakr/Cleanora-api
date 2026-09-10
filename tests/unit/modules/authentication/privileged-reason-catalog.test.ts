@@ -20,6 +20,10 @@ const expectedBindings = [
     code: "catalog_management_change",
     operation: "CATALOG_MANAGEMENT_WRITE",
   },
+  {
+    code: "configuration_locality_change",
+    operation: "CONFIGURATION_LOCALITY_WRITE",
+  },
 ];
 
 describe("FR-026 privileged-action reason catalog", () => {

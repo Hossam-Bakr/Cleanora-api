@@ -39,19 +39,23 @@ function createRepositories(
 
 describe("resolveEffectiveConfig", () => {
   it("resolves GLOBAL_ONLY values from global configuration", async () => {
+    const endpointLimits = {
+      signupPer15Minutes: 5,
+      loginPer15Minutes: 10,
+    };
     const result = await resolveEffectiveConfig(
       createRepositories({
-        key: "platform.default_timezone",
-        value: "UTC",
-        valueKind: "STRING",
+        key: "auth.endpoint_limits",
+        value: endpointLimits,
+        valueKind: "OBJECT",
         resolutionPolicy: "GLOBAL_ONLY"
       }),
-      "platform.default_timezone"
+      "auth.endpoint_limits"
     );
 
     expect(result).toEqual({
-      key: "platform.default_timezone",
-      value: "UTC",
+      key: "auth.endpoint_limits",
+      value: endpointLimits,
       source: "global",
       resolutionPolicy: "GLOBAL_ONLY"
     });
@@ -61,12 +65,12 @@ describe("resolveEffectiveConfig", () => {
     await expect(
       resolveEffectiveConfig(
         createRepositories({
-          key: "platform.default_timezone",
+          key: "auth.endpoint_limits",
           value: null,
-          valueKind: "STRING",
+          valueKind: "OBJECT",
           resolutionPolicy: "GLOBAL_ONLY"
         }),
-        "platform.default_timezone"
+        "auth.endpoint_limits"
       )
     ).rejects.toMatchObject({ code: "CONFIG_VALUE_MISSING" });
   });

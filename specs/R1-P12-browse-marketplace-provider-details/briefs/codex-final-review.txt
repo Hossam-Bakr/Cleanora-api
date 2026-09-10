@@ -1,0 +1,45 @@
+Role: read-only Cleanora reviewer. Do NOT edit files. Do NOT implement.
+
+Phase: R1-P12 Browse Marketplace & Provider Details
+Authority: DEC-086 ACCEPT_IMPLEMENTATION; stop at READY_FOR_OWNER_REVIEW (no mark-complete / Git).
+
+Question: Adversarial final review. Return PASS or CHANGES_REQUIRED with findings using docs/ai/templates/review-report.md shape (severity, file:line if possible, violated AC/rule, impact, remediation). No unresolved BLOCKER/MAJOR allowed for PASS.
+
+Acceptance criteria summary:
+- Guest /api/v1/browse/* 
+- Eligibility only via getStandardBrowseCandidates
+- Contact-free + EX-01 media omit
+- Sort/filter/cursor; detail re-evaluates
+- No booking/payment (EX-02)
+- No ratings invention; reject geo/map/socket
+- OpenAPI+Postman; coverage 80/75/80/80
+
+Gate evidence:
+- typecheck PASS
+- test:coverage:r1-p12 PASS 91.80/77.64/89.09/92.18 (22 tests)
+- openapi:validate PASS (includes r1-p12 yaml)
+- docs:check PASS
+- postman:validate PASS (P12 collection added)
+- migration NOT_APPLICABLE
+
+Read only these:
+- specs/R1-P12-browse-marketplace-provider-details/spec.md
+- specs/R1-P12-browse-marketplace-provider-details/plan.md
+- specs/R1-P12-browse-marketplace-provider-details/contracts/http-api.md
+- specs/R1-P12-browse-marketplace-provider-details/implementation-evidence.md
+- src/modules/bookings/
+- src/modules/providers/provider-browse-projection.service.ts
+- src/modules/authentication/auth.middleware.ts (optional auth)
+- src/composition.ts (bookings wiring only)
+- src/routes/index.ts (browse mount)
+- docs/apis/openapi/r1-p12-browse-marketplace.yaml
+- postman/Cleanora-R1-P12-Browse-Marketplace.postman_collection.json
+- tests/unit/modules/bookings/
+- tests/unit/modules/providers/provider-browse-projection.test.ts
+- tests/unit/modules/authentication/authentication-middleware.test.ts
+
+Answer shape:
+verdict: PASS | CHANGES_REQUIRED
+findings: list with severity BLOCKER|MAJOR|MINOR|QUESTION
+named_exceptions_honored: EX-01 EX-02 yes/no
+notes: <=12 lines

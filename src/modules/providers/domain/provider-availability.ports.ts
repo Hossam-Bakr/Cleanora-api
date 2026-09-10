@@ -308,6 +308,11 @@ export interface ProviderCapacityEvaluationFacts {
       readonly exceptions: readonly WorkerScheduleExceptionSnapshot[];
     })[];
   })[];
+  /**
+   * Set when a remainingTeamBudget sentinel was exceeded — Teams are ID stubs
+   * only (no deep membership hydrate).
+   */
+  readonly teamBudgetExceeded?: boolean;
 }
 
 export interface ProviderCapacityRepository {
@@ -347,6 +352,7 @@ export interface ProviderCapacityRepository {
 
   findCapacityEvaluationFacts(
     providerId: string,
+    options?: { readonly remainingTeamBudget?: number },
   ): Promise<ProviderCapacityEvaluationFacts | null>;
 }
 

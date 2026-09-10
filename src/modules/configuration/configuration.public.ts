@@ -57,8 +57,12 @@ export interface ActiveCountryReader {
  * Configuration-owned factory. Reuses active-country lookups already owned by
  * the configuration service; does not expose repository or Prisma types.
  */
-export function createActiveCountryReader(): ActiveCountryReader {
-  return createPrismaActiveCountryReader();
+export function createActiveCountryReader(
+  databaseContext?: unknown,
+): ActiveCountryReader {
+  return databaseContext === undefined
+    ? createPrismaActiveCountryReader()
+    : createPrismaActiveCountryReader(databaseContext);
 }
 
 /**
@@ -189,20 +193,45 @@ export interface LocalityDistrictFact {
   readonly countryActive: boolean;
 }
 
+export interface ActiveCityProjection {
+  readonly cityId: string;
+  readonly code: string;
+  readonly nameAr: string;
+  readonly nameEn: string;
+}
+
+export interface ActiveDistrictProjection {
+  readonly districtId: string;
+  readonly cityId: string;
+  readonly code: string;
+  readonly nameAr: string;
+  readonly nameEn: string;
+}
+
 export interface LocalityReader {
   findCityById(cityId: string): Promise<LocalityCityFact | null>;
   findDistrictById(districtId: string): Promise<LocalityDistrictFact | null>;
   /** Active district ids belonging to one city, for whole-city coverage expansion (DEC-056). */
   listActiveDistrictIdsForCity(cityId: string): Promise<readonly string[]>;
+  /** Browse-safe active cities for an active ISO country; unavailable countries return an empty list. */
+  listActiveCitiesForCountry(
+    countryCode: string,
+  ): Promise<readonly ActiveCityProjection[]>;
+  /** Browse-safe active districts only when country and parent city are active and match. */
+  listActiveDistrictsForCity(input: {
+    readonly countryCode: string;
+    readonly cityId: string;
+  }): Promise<readonly ActiveDistrictProjection[]>;
 }
 
 function buildLocalityReader(transactionContext?: unknown): LocalityReader {
-  const repository =
+  const createRepository = () =>
     transactionContext === undefined
       ? createPrismaLocalityRepository()
       : createPrismaLocalityRepository(transactionContext);
   return {
     async findCityById(cityId: string): Promise<LocalityCityFact | null> {
+      const repository = createRepository();
       const city = await repository.findCityById(cityId);
       if (city === null) {
         return null;
@@ -218,6 +247,7 @@ function buildLocalityReader(transactionContext?: unknown): LocalityReader {
     async findDistrictById(
       districtId: string,
     ): Promise<LocalityDistrictFact | null> {
+      const repository = createRepository();
       const district = await repository.findDistrictById(districtId);
       if (district === null) {
         return null;
@@ -239,6 +269,7 @@ function buildLocalityReader(transactionContext?: unknown): LocalityReader {
     async listActiveDistrictIdsForCity(
       cityId: string,
     ): Promise<readonly string[]> {
+      const repository = createRepository();
       const city = await repository.findCityById(cityId);
       if (city === null || !city.isActive) {
         return [];
@@ -250,12 +281,62 @@ function buildLocalityReader(transactionContext?: unknown): LocalityReader {
       const districts = await repository.listDistrictsByCity(cityId);
       return districts.filter((d) => d.isActive).map((d) => d.id);
     },
+    async listActiveCitiesForCountry(
+      countryCode: string,
+    ): Promise<readonly ActiveCityProjection[]> {
+      const repository = createRepository();
+      const country = await repository.findCountryByCode(
+        countryCode.trim().toUpperCase(),
+      );
+      if (country?.isActive !== true) {
+        return [];
+      }
+      const cities = await repository.listCitiesByCountry(country.id);
+      return cities
+        .filter((city) => city.isActive)
+        .map((city) => ({
+          cityId: city.id,
+          code: city.code,
+          nameAr: city.nameAr,
+          nameEn: city.nameEn,
+        }));
+    },
+    async listActiveDistrictsForCity(
+      input: {
+        readonly countryCode: string;
+        readonly cityId: string;
+      },
+    ): Promise<readonly ActiveDistrictProjection[]> {
+      const repository = createRepository();
+      const country = await repository.findCountryByCode(
+        input.countryCode.trim().toUpperCase(),
+      );
+      const city = await repository.findCityById(input.cityId);
+      if (
+        country?.isActive !== true ||
+        city === null ||
+        !city.isActive ||
+        city.countryId !== country.id
+      ) {
+        return [];
+      }
+      const districts = await repository.listDistrictsByCity(city.id);
+      return districts
+        .filter((district) => district.isActive)
+        .map((district) => ({
+          districtId: district.id,
+          cityId: city.id,
+          code: district.code,
+          nameAr: district.nameAr,
+          nameEn: district.nameEn,
+        }));
+    },
   };
 }
 
 /** @desc Create the non-transactional locality reader. */
-export function createLocalityReader(): LocalityReader {
-  return buildLocalityReader();
+export function createLocalityReader(databaseContext?: unknown): LocalityReader {
+  return buildLocalityReader(databaseContext);
 }
 
 /** @desc Bind the locality reader to an opaque shared transaction. */

@@ -1,0 +1,17 @@
+Role: read-only reviewer. Do NOT edit files.
+
+R1-P12 final review. Gates already PASS: typecheck; coverage 91.8/77.6/89.1/92.2; openapi; docs; postman; migration N/A.
+
+Return exactly:
+verdict: PASS|CHANGES_REQUIRED
+findings: (severity BLOCKER/MAJOR/MINOR + file + one-line issue + remediation)
+EX-01/EX-02 honored: yes/no
+notes: <=8 lines
+
+Focus files only:
+src/modules/bookings/bookings.service.ts
+src/modules/bookings/bookings.controller.ts
+src/modules/bookings/bookings.routes.ts
+src/modules/providers/provider-browse-projection.service.ts
+src/modules/authentication/auth.middleware.ts
+specs/R1-P12-browse-marketplace-provider-details/spec.md

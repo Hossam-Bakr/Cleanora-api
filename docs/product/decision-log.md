@@ -2786,3 +2786,94 @@ publication of the local feature branch remains a separate owner-requested
 action and still excludes those operations.
 
 Canonical closure: `specs/R1-P11-eligibility-engine-v1/completion-report.md`.
+
+## DEC-086 — R1-P12 preparation acceptance (MVB Browse HTTP)
+
+**Date:** 2026-09-10
+**Status:** Approved by Codex PM consultation (`gpt-5.6-sol` / `xhigh`) under
+`/work-on-next-phase` preparation acceptance (thread
+`01a0883e-4163-7483-8c53-2543cf0daee8`)
+
+R1-P12 is activated as the sole active phase. Implementation of tasks T001–T036
+is authorized for continuous Cursor delivery without mandatory batch gates.
+
+Locked MVB holdings include: new `bookings` module owning `/api/v1/browse/*`;
+Eligibility via `getStandardBrowseCandidates` only; optional Bearer with guest
+access; contact-free projections (gallery yes, raw contacts no); deferred
+optional analytics tables; no ratings invention; standard price/id sort; cursor
+pagination with detail re-evaluation; Configuration public locality lists;
+Providers signed contact-free preview; no booking mutation; reject
+coordinates/radius/map/socket; phase coverage 80/75/80/80; migration N/A unless
+schema is added.
+
+Named exceptions:
+
+- **EX-01**: Media signing failure omits the failed logo/cover/gallery item
+  without failing the whole Browse response.
+- **EX-02**: Tests must explicitly prove Browse creates no booking and initiates
+  no payment.
+
+This decision does **not** authorize phase Complete, commit, push, merge,
+deployment, production migration, force-push, or history rewriting. DEC-062
+completion authority does not carry forward. Final review remains a separate
+Codex consultation before READY_FOR_OWNER_REVIEW.
+
+Canonical record:
+`specs/R1-P12-browse-marketplace-provider-details/preparation-acceptance-pm02.md`.
+
+## DEC-087 — R1-P12 owner substitution for Codex final review
+
+**Date:** 2026-09-10
+**Status:** Approved by human owner (option 2) after Codex final-review
+consultations timed out with websocket 503 and no verdict
+
+The required R1-P12 Codex final adversarial review remains **unavailable**. The
+owner explicitly substitutes owner review for that consultation so the phase may
+reach **READY_FOR_OWNER_REVIEW**.
+
+This substitution does **not** invent a Codex PASS. Gate evidence and Cursor
+boundary checks remain the technical basis for readiness. This decision does
+**not** authorize phase Complete, commit, push, merge, deployment, production
+migration, force-push, or history rewriting.
+
+Canonical record:
+`specs/R1-P12-browse-marketplace-provider-details/review-report.md`,
+`specs/R1-P12-browse-marketplace-provider-details/work-on-next-phase-progress.md`.
+
+## DEC-088 — Complete Git staging and `commit and push plus`
+
+**Date:** 2026-09-10
+**Status:** Approved by human owner (explicit skill update request)
+
+`commit and push` must stage the complete remaining working tree, including
+skills, docs, specs, Cursor/Codex/agent files, and leftover inherited files.
+Agents must not omit those paths as “unintended” or “unrelated”. Secrets,
+credentials, `.env` files other than `.env.example`, and gitignored junk stay
+excluded.
+
+The exact message `commit and push plus` is a second Git trigger for leftover
+or tiny follow-up files. It commits them and pushes directly to `main` without
+a pull request. It does not merge a feature branch, deploy, run a production
+migration, force-push, or rewrite history.
+
+Canonical record: `docs/ai/workflows/commit-and-push.md`,
+`docs/ai/workflows/commit-and-push-plus.md`.
+
+## DEC-089 — Combined P11 follow-up + P12 review PASS
+
+**Date:** 2026-09-10
+**Status:** Recorded after owner instruction to repair unpublished P11 follow-ups
+and review both phases together before publication
+
+The unpublished P11 Eligibility follow-up repairs and R1-P12 Browse HTTP are
+reviewed together as one publication package. Technical verdict is **PASS** with
+no unresolved BLOCKER or MAJOR. DEC-085 remains the historical P11 completion
+record; this decision does not mark R1-P12 Complete.
+
+This decision does **not** authorize commit, push, merge, deployment, production
+migration, force-push, or history rewriting. Publication still requires a new
+human message exactly equal to `commit and push`.
+
+Canonical record:
+`specs/R1-P12-browse-marketplace-provider-details/review-report.md`,
+`specs/R1-P11-eligibility-engine-v1/follow-up-review-resolution.md`.

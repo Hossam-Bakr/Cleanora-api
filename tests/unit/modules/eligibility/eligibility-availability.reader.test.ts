@@ -551,6 +551,97 @@ describe("EligibilityAvailabilityReaderService", () => {
       status: "AVAILABLE_FACTS",
       coverageMatch: true,
       suspended: true,
+      paused: false,
     });
+  });
+
+  it("emits pause without fabricating PROVIDER_SUSPENDED facts", async () => {
+    const facts = baseFacts({
+      operationalStatus: "LIVE",
+      pause: {
+        id: "pause-1",
+        providerId: "p1",
+        startedAt: new Date("2026-09-15T07:00:00.000Z"),
+        endsAt: new Date("2026-09-15T12:00:00.000Z"),
+        resumedAt: null,
+        actorUserId: "actor-1",
+        version: 1,
+        createdAt: new Date("2026-09-15T07:00:00.000Z"),
+        updatedAt: new Date("2026-09-15T07:00:00.000Z"),
+      },
+      providerWeeklyPeriods: [
+        { weekday: 2, startMinute: 0, endMinute: 1440 },
+      ],
+    } as never);
+    const reader = new EligibilityAvailabilityReaderService({
+      runInReadTransaction: async (work) =>
+        work({
+          repository: {
+            findCapacityEvaluationFacts: vi.fn().mockResolvedValue(facts),
+            findConfigurationByProviderId: vi.fn().mockResolvedValue({
+              coverage: [{ type: "CITY", cityId: "city", districtId: null }],
+              weeklyPeriods: [
+                { weekday: 2, startMinute: 0, endMinute: 1440 },
+              ],
+            }),
+          } as never,
+          localityReader: {
+            findCityById: vi.fn().mockResolvedValue({
+              id: "city",
+              countryId: "c1",
+              isActive: true,
+              countryActive: true,
+            }),
+            listActiveDistrictIdsForCity: vi.fn().mockResolvedValue([]),
+          } as never,
+          countryTimeZoneReader: {
+            getTimeZoneForCountry: vi.fn().mockResolvedValue("Africa/Cairo"),
+          } as never,
+        }),
+    });
+    const result = await reader.getAvailabilityFacts({
+      providerId: "p1",
+      startsAt: R1_P11_TIMES.startsAt,
+      endsAt: R1_P11_TIMES.endsAt,
+      countryId: "c1",
+      cityId: "city",
+      remainingTeamBudget: 5,
+    });
+    expect(result).toMatchObject({
+      status: "AVAILABLE_FACTS",
+      paused: true,
+      suspended: false,
+    });
+  });
+
+  it("passes remainingTeamBudget into the repository before hydration", async () => {
+    const findCapacityEvaluationFacts = vi.fn().mockResolvedValue({
+      ...baseFacts(),
+      teamBudgetExceeded: true,
+      teams: [{ teamId: "t-a", status: "ACTIVE", members: [] }],
+    });
+    const reader = new EligibilityAvailabilityReaderService({
+      runInReadTransaction: async (work) =>
+        work({
+          repository: {
+            findCapacityEvaluationFacts,
+            findConfigurationByProviderId: vi.fn(),
+          } as never,
+          localityReader: {} as never,
+          countryTimeZoneReader: {} as never,
+        }),
+    });
+    const result = await reader.getAvailabilityFacts({
+      providerId: "p1",
+      startsAt: R1_P11_TIMES.startsAt,
+      endsAt: R1_P11_TIMES.endsAt,
+      countryId: "c1",
+      cityId: "city",
+      remainingTeamBudget: 0,
+    });
+    expect(findCapacityEvaluationFacts).toHaveBeenCalledWith("p1", {
+      remainingTeamBudget: 0,
+    });
+    expect(result.status).toBe("OVERFLOW");
   });
 });

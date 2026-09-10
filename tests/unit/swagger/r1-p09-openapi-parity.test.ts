@@ -72,14 +72,12 @@ describe("R1-P09 design/runtime OpenAPI parity", () => {
     }
   });
 
-  it("never documents anonymous Browse or Booking service paths", () => {
+  it("keeps all R1-P09 Provider service paths protected", () => {
     const runtimePaths = Object.keys(
       cleanoraOpenApiDocument.paths as unknown as Readonly<
         Record<string, unknown>
       >,
     );
-    expect(runtimePaths.some((path) => /\/browse\b/iu.test(path))).toBe(false);
-    expect(runtimePaths.some((path) => /\/booking/iu.test(path))).toBe(false);
     expect(
       runtimePaths.some(
         (path) =>
@@ -97,9 +95,9 @@ describe("R1-P09 design/runtime OpenAPI parity", () => {
   });
 
   it("describes R1-P09 Provider services in OpenAPI info metadata", () => {
-    expect(cleanoraOpenApiDocument.info.version).toBe("1.0.0-r1-p09");
-    expect(cleanoraOpenApiDocument.info.summary).toMatch(/R1-P09/u);
-    expect(cleanoraOpenApiDocument.info.summary).toMatch(/Provider services/iu);
+    expect(cleanoraOpenApiDocument.info.version).toMatch(
+      /^1\.0\.0-r1-p\d{2}$/u,
+    );
     expect(cleanoraOpenApiDocument.info.description).toMatch(/R1-P09/u);
     expect(cleanoraOpenApiDocument.info.description).toMatch(
       /\/api\/v1\/providers\/:providerId\/services/u,

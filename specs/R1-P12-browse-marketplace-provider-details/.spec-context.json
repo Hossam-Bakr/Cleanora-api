@@ -1,0 +1,31 @@
+{
+  "workflow": "speckit",
+  "specName": "R1-P12 — Browse Marketplace & Provider Details",
+  "branch": "codex/r1-p12-browse-marketplace-provider-details",
+  "currentStep": "tasks",
+  "status": "ready-to-implement",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-09-09T22:10:01.344Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-09-09T22:10:02.754Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-09-09T22:10:04.184Z"
+    }
+  ],
+  "telemetryInstanceId": "a9e373af-59f6-4b36-b8b0-caf3f20b2685"
+}

@@ -194,9 +194,68 @@ export interface ProviderPreviewDto {
   readonly descriptionAr: string | null;
   readonly descriptionEn: string | null;
   readonly countryCode: string | null;
-  readonly logo: null;
-  readonly cover: null;
-  readonly gallery: readonly [];
+  readonly logo: ProviderBrowseMediaDto | null;
+  readonly cover: ProviderBrowseMediaDto | null;
+  readonly gallery: readonly ProviderBrowseMediaDto[];
+}
+
+/** Contact-free signed media delivery; no Media id or storage locator crosses Browse. */
+export interface ProviderBrowseMediaDto {
+  readonly kind: "IMAGE" | "VIDEO";
+  readonly contentType: string | null;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly deliveryUrl: string;
+  readonly urlExpiresAt: string;
+  readonly thumbnailUrl: string | null;
+}
+
+/** Booking-safe aggregate intentionally excludes Worker identifiers and names. */
+export interface ProviderCrewSummaryDto {
+  readonly teamId: string;
+  readonly teamVersion: number;
+  readonly active: boolean;
+  readonly memberCount: number;
+  readonly cleaningStaffCount: number;
+  readonly escortCount: number;
+  readonly otherCount: number;
+  readonly cleanerCount: number;
+  readonly genderCounts: {
+    readonly male: number;
+    readonly female: number;
+  };
+}
+
+export function mapBookingSafeTeamFactsToCrewSummary(input: {
+  readonly teamId: string;
+  readonly teamVersion: number;
+  readonly active: boolean;
+  readonly members: readonly {
+    readonly gender: "male" | "female";
+    readonly workerType: "CLEANING_STAFF" | "ESCORT" | "OTHER";
+    readonly cleans: boolean;
+  }[];
+}): ProviderCrewSummaryDto {
+  return {
+    teamId: input.teamId,
+    teamVersion: input.teamVersion,
+    active: input.active,
+    memberCount: input.members.length,
+    cleaningStaffCount: input.members.filter(
+      (member) => member.workerType === "CLEANING_STAFF",
+    ).length,
+    escortCount: input.members.filter(
+      (member) => member.workerType === "ESCORT",
+    ).length,
+    otherCount: input.members.filter(
+      (member) => member.workerType === "OTHER",
+    ).length,
+    cleanerCount: input.members.filter((member) => member.cleans).length,
+    genderCounts: {
+      male: input.members.filter((member) => member.gender === "male").length,
+      female: input.members.filter((member) => member.gender === "female").length,
+    },
+  };
 }
 
 /** Safe eligibility denial payload — codes and recovery hints only (FR-012, FR-086). */
@@ -295,6 +354,9 @@ export function mapProviderPreview(input: {
     readonly descriptionEn: string | null;
   } | null;
   readonly countryCode: string | null;
+  readonly logo?: ProviderBrowseMediaDto | null;
+  readonly cover?: ProviderBrowseMediaDto | null;
+  readonly gallery?: readonly ProviderBrowseMediaDto[];
 }): ProviderPreviewDto {
   return {
     providerId: input.provider.id,
@@ -304,9 +366,9 @@ export function mapProviderPreview(input: {
     descriptionAr: input.profile?.descriptionAr ?? null,
     descriptionEn: input.profile?.descriptionEn ?? null,
     countryCode: input.countryCode,
-    logo: null,
-    cover: null,
-    gallery: [],
+    logo: input.logo ?? null,
+    cover: input.cover ?? null,
+    gallery: input.gallery ?? [],
   };
 }
 

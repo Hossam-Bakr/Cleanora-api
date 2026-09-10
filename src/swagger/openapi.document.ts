@@ -4,6 +4,7 @@ import { buildImplementedR1P07SwaggerFragments } from "./r1-p07-openapi.paths.js
 import { buildImplementedR1P08SwaggerFragments } from "./r1-p08-openapi.paths.js";
 import { buildImplementedR1P09SwaggerFragments } from "./r1-p09-openapi.paths.js";
 import { buildImplementedR1P10SwaggerFragments } from "./r1-p10-openapi.paths.js";
+import { buildImplementedR1P12SwaggerFragments } from "./r1-p12-openapi.paths.js";
 
 const r1P05Fragments = buildImplementedR1P05SwaggerFragments();
 const r1P06Fragments = buildImplementedR1P06SwaggerFragments();
@@ -11,6 +12,7 @@ const r1P07Fragments = buildImplementedR1P07SwaggerFragments();
 const r1P08Fragments = buildImplementedR1P08SwaggerFragments();
 const r1P09Fragments = buildImplementedR1P09SwaggerFragments();
 const r1P10Fragments = buildImplementedR1P10SwaggerFragments();
+const r1P12Fragments = buildImplementedR1P12SwaggerFragments();
 
 const apiErrorResponse = { $ref: "#/components/responses/ApiError" } as const;
 const rateLimitResponse = {
@@ -93,9 +95,9 @@ export const cleanoraOpenApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Cleanora API",
-    version: "1.0.0-r1-p10",
+    version: "1.0.0-r1-p12",
     summary:
-      "Cleanora Release 1 through R1-P10 protected Staff localities and Provider availability APIs",
+      "Cleanora Release 1 through R1-P12 guest Browse marketplace and Provider details APIs",
     description: [
       "Professional living documentation for the implemented Cleanora modular-monolith API.",
       "",
@@ -108,6 +110,7 @@ export const cleanoraOpenApiDocument = {
       "R1-P08 Staff Catalog documents protected management only under /api/v1/staff/catalog. Bilingual AR/EN activation requires exact locale content with no locale fallback. There is no anonymous or customer Catalog Browse HTTP surface.",
       "R1-P09 documents protected Provider service and pricing management under /api/v1/providers/:providerId/services plus Staff pending price approval under /api/v1/staff/providers. There is no anonymous Browse or Booking HTTP surface, no client-calculated totals, and snapshot reads remain an internal module contract.",
       "R1-P10 documents protected Staff localities and country time zones under /api/v1/staff/configuration plus Provider coverage, calendars, capacity, and temporary pause under /api/v1/providers/:providerId/availability. There is no customer or anonymous availability evaluation HTTP surface.",
+      "R1-P12 adds guest-capable, optional-auth Browse contracts under /api/v1/browse. Provider projections are contact-free and booking mutation remains unavailable.",
     ].join("\n"),
     contact: {
       name: "Cleanora Engineering",
@@ -187,6 +190,7 @@ export const cleanoraOpenApiDocument = {
     ...r1P08Fragments.tags,
     ...r1P09Fragments.tags,
     ...r1P10Fragments.tags,
+    ...r1P12Fragments.tags,
   ],
   paths: {
     ...r1P05Fragments.paths,
@@ -195,6 +199,7 @@ export const cleanoraOpenApiDocument = {
     ...r1P08Fragments.paths,
     ...r1P09Fragments.paths,
     ...r1P10Fragments.paths,
+    ...r1P12Fragments.paths,
     "/system/health/live": {
       get: {
         tags: ["System Health"],
@@ -1134,6 +1139,7 @@ export const cleanoraOpenApiDocument = {
       ...r1P08Fragments.parameters,
       ...r1P09Fragments.parameters,
       ...r1P10Fragments.parameters,
+      ...r1P12Fragments.parameters,
     },
     requestBodies: {
       ...r1P05Fragments.requestBodies,
@@ -1145,6 +1151,7 @@ export const cleanoraOpenApiDocument = {
       ...r1P06Fragments.responses,
       ...r1P07Fragments.responses,
       ...r1P10Fragments.responses,
+      ...r1P12Fragments.responses,
       ApiError: {
         description: "Safe stable API failure.",
         headers: {
@@ -1176,6 +1183,7 @@ export const cleanoraOpenApiDocument = {
       ...r1P08Fragments.schemas,
       ...r1P09Fragments.schemas,
       ...r1P10Fragments.schemas,
+      ...r1P12Fragments.schemas,
       AccountCategory: {
         type: "string",
         enum: [

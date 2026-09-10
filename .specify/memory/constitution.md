@@ -1,6 +1,15 @@
 <!--
 Sync Impact Report
-- Version change: pre-ratification draft labeled 1.0.0 -> 1.0.0 ratified baseline
+- Version change: 1.0.0 -> 1.0.1 PATCH (2026-09-10)
+- Modified principles:
+  - VIII. Human-Controlled Decisions and Operations: complete working-tree
+    staging; second exact Git trigger `commit and push plus` for leftover
+    files directly to main
+- Templates requiring updates: none (Git trigger text lives in AGENTS.md,
+  docs/ai workflows, and commit-and-push skills)
+- Follow-up TODOs: none
+
+- Prior version change: pre-ratification draft labeled 1.0.0 -> 1.0.0 ratified baseline
 - Modified principles:
   - Standalone Greenfield Boundary -> I. Standalone Greenfield Product
   - One Active Phase and Minimal Context -> II. One Active Phase and Complete Traceability
@@ -160,10 +169,14 @@ production migrations, destructive actions, credentials, and production
 configuration. Approval for one action MUST NOT be inferred as approval for a
 different action.
 
-The exact human message `commit and push` is the only authorization for the
-guarded Git workflow. It authorizes validation, staging intended files, one
-conventional commit, and a safe feature-branch push only. It does not authorize
-merge, deployment, production migration, force-push, or history rewriting.
+Exact human messages are the only authorization for the guarded Git
+workflows. `commit and push` authorizes validation, complete staging of the
+remaining working tree (including skills, docs, specs, and Cursor/Codex
+artifacts), one conventional commit, and a safe feature-branch push.
+`commit and push plus` authorizes the same complete staging for leftover or
+tiny follow-up files and a direct non-force push to `main` without a pull
+request. Neither message authorizes merge of a feature branch, deployment,
+production migration, force-push, or history rewriting.
 
 **Rationale**: Material product and operational consequences remain under
 explicit human control.
@@ -284,4 +297,4 @@ and every completed phase MUST present evidence against its Definition of Done
 before human approval. Reviewers MUST treat violations of a constitutional
 MUST as blocking until corrected or the constitution is formally amended.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-24
+**Version**: 1.0.1 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-10

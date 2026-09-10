@@ -27,6 +27,37 @@ export function createAuthenticateAccess(service: AuthenticationService): Reques
   };
 }
 
+/**
+ * @desc Authenticate a Browse request only when it supplies a Bearer token.
+ * @access Guest or authenticated principal
+ * @explanation Missing credentials preserve guest access. Any supplied
+ * credential must be a well-formed, valid Bearer token and is never ignored.
+ */
+export function createOptionalAuthenticateAccess(
+  service?: Pick<AuthenticationService, "authenticateAccess">,
+): RequestHandler {
+  return async (request, response, next) => {
+    try {
+      const header = request.get("authorization");
+      if (header === undefined) {
+        next();
+        return;
+      }
+      if (!header.startsWith("Bearer ") || header.length === "Bearer ".length) {
+        throw authenticationError("AUTHENTICATION_REQUIRED");
+      }
+      if (service === undefined) {
+        throw authenticationError("AUTHENTICATION_REQUIRED");
+      }
+      response.locals["authenticationPrincipal"] =
+        await service.authenticateAccess(header.slice("Bearer ".length));
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
 
 /** Allow sensitive account mutations only after the mandatory verification gate. */
 export const requireFullAuthentication: RequestHandler = (_request, response, next) => {

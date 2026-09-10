@@ -37,4 +37,9 @@ Locked constraints:
 - Do not preload the complete documentation set or future phase specifications.
 - Route repeatable work through `.codex/skills/` and canonical workflows under `docs/ai/workflows/`.
 
-The Git workflow activates only when the human message is exactly `commit and push`. That phrase authorizes validation, staging intended files, one conventional commit, and a safe feature-branch push. It does not authorize merge, deployment, production migration, force-push, or history rewriting.
+Git publication uses exact human messages only:
+
+- `commit and push` authorizes validation, complete staging of the remaining working tree (including skills, docs, specs, and Cursor/Codex artifacts), one conventional commit, and a safe feature-branch push.
+- `commit and push plus` authorizes the same complete staging for leftover or tiny follow-up files, then a direct non-force push to `main` without a pull request.
+
+Neither phrase authorizes merge of a feature branch, deployment, production migration, force-push, or history rewriting. Do not leave skills, docs, or other non-secret project files unstaged.

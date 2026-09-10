@@ -77,6 +77,8 @@ function fakeRepository(): ProviderOperationalAvailabilityRepository {
             workerVersion: 9,
             cleans: true,
             workerStatus: "ACTIVE" as const,
+            gender: "male" as const,
+            workerType: "CLEANING_STAFF" as const,
             weeklyPeriods: [
               {
                 id: "worker-period-1",

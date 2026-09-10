@@ -74,15 +74,13 @@ describe("R1-P10 design/runtime OpenAPI parity", () => {
     }
   });
 
-  it("never documents customer evaluation, Browse, or Booking paths", () => {
+  it("never exposes Eligibility or unprotected Provider availability paths", () => {
     const runtimePaths = Object.keys(
       cleanoraOpenApiDocument.paths as unknown as Readonly<
         Record<string, unknown>
       >,
     );
     expect(R1_P10_RUNTIME_HAS_NO_CUSTOMER_EVALUATION).toBe(true);
-    expect(runtimePaths.some((path) => /\/browse\b/iu.test(path))).toBe(false);
-    expect(runtimePaths.some((path) => /\/booking/iu.test(path))).toBe(false);
     expect(
       runtimePaths.some((path) => /\/eligibility/iu.test(path)),
     ).toBe(false);
@@ -103,8 +101,9 @@ describe("R1-P10 design/runtime OpenAPI parity", () => {
   });
 
   it("describes R1-P10 availability surfaces in OpenAPI info metadata", () => {
-    expect(cleanoraOpenApiDocument.info.version).toBe("1.0.0-r1-p10");
-    expect(cleanoraOpenApiDocument.info.summary).toMatch(/R1-P10/u);
+    expect(cleanoraOpenApiDocument.info.version).toMatch(
+      /^1\.0\.0-r1-p\d{2}$/u,
+    );
     expect(cleanoraOpenApiDocument.info.description).toMatch(/R1-P10/u);
     expect(cleanoraOpenApiDocument.info.description).toMatch(
       /\/api\/v1\/staff\/configuration/u,
