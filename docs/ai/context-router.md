@@ -34,9 +34,11 @@ Summarize loaded context in no more than five bullets. Never paste full document
 | BullMQ | Active job contract, retries, idempotency, observability | Relevant spec only; verify producer/consumer ownership |
 | Paymob | Payment contract, webhook rules, ledger invariants | Security, payment tests, provider docs when configured |
 | Notifications | Event trigger, template/channel rules, retry policy | Active spec and adapter contract |
-| Commit and push | Current phase DoD, full diff, review resolution, scripts | `commit-and-push` |
+| Commit and push | Current phase DoD, full diff, review resolution, scripts | `commit-and-push`; stage the complete remaining working tree including skills and docs |
+| Commit leftover files to main | Remaining working-tree diff after a prior publication | `commit-and-push-plus` (exact message `commit and push plus`) |
 | Prepare next phase | Completed handoff and next roadmap section | `next-phase-prompt` |
-| Start next Backend Notion row | Current phase pointer and next roadmap section only | `notion-start-new-phase` |
+| Work on next phase through owner review | Active or next dependency-ready phase artifacts, Spec Kit skills, bounded Codex PM/review | `.cursor/skills/work-on-next-phase`; `/work-on-next-phase` |
+| Start next Backend Notion row | Current phase pointer and next roadmap section only | `notion-next-phase` (`/notion-next-phase`) |
 
 ## Expansion triggers
 

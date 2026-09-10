@@ -1,12 +1,26 @@
 ---
 name: commit-and-push
-description: Execute Cleanora's guarded validation, staging, conventional commit, and safe feature-branch push workflow. Use only when the human's message is exactly "commit and push"; do not trigger for paraphrases, preparation, review, or ordinary implementation.
+description: Execute Cleanora's guarded validation, complete working-tree staging, conventional commit, and safe feature-branch push. Use only when the human's message is exactly "commit and push". Do not trigger for "commit and push plus", paraphrases, preparation, review, or ordinary implementation.
 ---
 
 # Commit and Push
 
 Read and follow `docs/ai/workflows/commit-and-push.md` exactly.
 
-Before writing Git state, verify the current phase, complete diff, secrets/junk check, review resolution or waiver, repository quality gates, and Prisma safety when applicable. Stage only intended files, re-read the staged diff, create one clear conventional commit, and push the feature branch safely.
+## Trigger
 
-The trigger authorizes no merge, deployment, production migration, force-push, hook bypass, amend, or shared-history rewrite. Stop for unresolved blockers, failed required checks, unsafe migration risk, missing authorization, or ambiguous intended files. Report branch, commit, checks, migration/review status, and push result.
+The human message must be exactly `commit and push`. This skill does not run for `commit and push plus`.
+
+This trigger authorizes no merge, deployment, production migration, force-push, amend, hook bypass, or direct push to `main`. Direct `main` publication is the separate `commit-and-push-plus` skill.
+
+## Complete working tree
+
+Stage **every** remaining change except secrets, credentials, `.env` files other than `.env.example`, and `.gitignore` junk.
+
+Always include leftover skills, commands, rules, docs, specs, `.cursor/`, `.codex/`, `.agents/`, `.specify/`, inherited follow-up files, and untracked project files. Do not ask whether they are in scope. Do not leave them unstaged.
+
+After staging, `git status --short` must show no remaining project files outside the exclusion list. If any remain, stage them before committing.
+
+## Publish target
+
+Push the feature branch only. If the checkout is `main`, move the commit onto the phase feature branch first. Never push this workflow to a protected default branch.

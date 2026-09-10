@@ -4,6 +4,7 @@ import type { AuthenticationServiceDependencies } from "./auth.service.js";
 import { AuthenticationService } from "./auth.service.js";
 import {
   createAuthenticateAccess,
+  createOptionalAuthenticateAccess,
   requireTrustedOrigin,
 } from "./auth.middleware.js";
 import { createAuthenticationRouter } from "./auth.routes.js";
@@ -37,6 +38,7 @@ export interface AuthenticationModuleDependencies extends AuthenticationServiceD
 export interface AuthenticationModule {
   readonly router: Router;
   readonly authenticateAccess: RequestHandler;
+  readonly optionalAuthenticateAccess: RequestHandler;
   readonly identityContactReader: {
     readContactFacts(userId: string): ReturnType<AuthenticationService["readContactFacts"]>;
   };
@@ -51,6 +53,7 @@ export function createAuthenticationModule(dependencies: AuthenticationModuleDep
     : new GoogleAuthenticationService(dependencies.googleIdentity, dependencies.googleTransactions, service);
   return {
     authenticateAccess,
+    optionalAuthenticateAccess: createOptionalAuthenticateAccess(service),
     identityContactReader: {
       readContactFacts: (userId) => service.readContactFacts(userId),
     },

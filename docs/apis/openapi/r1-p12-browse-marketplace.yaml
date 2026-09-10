@@ -1,0 +1,414 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P12 Browse Marketplace API
+  version: 1.0.0-r1-p12
+  summary: Guest-capable marketplace browse and provider details
+servers:
+  - url: /api/v1
+security:
+  - {}
+  - bearerAuth: []
+tags:
+  - name: Marketplace Browse
+    description: Contact-free guest discovery. A supplied Bearer token must be valid.
+paths:
+  /browse/services:
+    get:
+      tags: [Marketplace Browse]
+      operationId: listBrowseServices
+      parameters:
+        - { name: countryCode, in: query, required: true, schema: { type: string, pattern: '^[A-Z]{2}$' } }
+        - { name: locale, in: query, required: true, schema: { $ref: '#/components/schemas/BrowseLocale' } }
+        - { name: cursor, in: query, required: false, description: Server-issued opaque Catalog cursor., schema: { type: string, minLength: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200': { $ref: '#/components/responses/BrowseServiceListSuccess' }
+        '400': { $ref: '#/components/responses/BrowseError' }
+        '401': { $ref: '#/components/responses/BrowseError' }
+  /browse/services/{serviceId}:
+    get:
+      tags: [Marketplace Browse]
+      operationId: getBrowseService
+      parameters:
+        - { $ref: '#/components/parameters/ServiceId' }
+        - { name: countryCode, in: query, required: true, schema: { type: string, pattern: '^[A-Z]{2}$' } }
+        - { name: locale, in: query, required: true, schema: { $ref: '#/components/schemas/BrowseLocale' } }
+      responses:
+        '200': { $ref: '#/components/responses/BrowseServiceDetailSuccess' }
+        '400': { $ref: '#/components/responses/BrowseError' }
+        '401': { $ref: '#/components/responses/BrowseError' }
+        '404': { $ref: '#/components/responses/BrowseError' }
+  /browse/countries/{countryCode}/cities:
+    get:
+      tags: [Marketplace Browse]
+      operationId: listBrowseCities
+      parameters:
+        - { $ref: '#/components/parameters/CountryCode' }
+      responses:
+        '200': { $ref: '#/components/responses/BrowseCityListSuccess' }
+        '400': { $ref: '#/components/responses/BrowseError' }
+        '401': { $ref: '#/components/responses/BrowseError' }
+        '404': { $ref: '#/components/responses/BrowseError' }
+  /browse/countries/{countryCode}/cities/{cityId}/districts:
+    get:
+      tags: [Marketplace Browse]
+      operationId: listBrowseDistricts
+      parameters:
+        - { $ref: '#/components/parameters/CountryCode' }
+        - { $ref: '#/components/parameters/CityId' }
+      responses:
+        '200': { $ref: '#/components/responses/BrowseDistrictListSuccess' }
+        '400': { $ref: '#/components/responses/BrowseError' }
+        '401': { $ref: '#/components/responses/BrowseError' }
+        '404': { $ref: '#/components/responses/BrowseError' }
+  /browse/providers:
+    get:
+      tags: [Marketplace Browse]
+      operationId: listEligibleBrowseProviders
+      description: Returns only candidates supplied by the Eligibility Browse facade.
+      parameters:
+        - { $ref: '#/components/parameters/ServiceIdQuery' }
+        - { $ref: '#/components/parameters/CountryId' }
+        - { $ref: '#/components/parameters/CityIdQuery' }
+        - { $ref: '#/components/parameters/DistrictId' }
+        - { $ref: '#/components/parameters/StartsAt' }
+        - { $ref: '#/components/parameters/EndsAt' }
+        - { $ref: '#/components/parameters/CrewPreference' }
+        - { $ref: '#/components/parameters/RequiredTeamUnits' }
+        - { $ref: '#/components/parameters/Locale' }
+        - { name: maxPriceAmount, in: query, required: false, schema: { type: string, pattern: '^[0-9]+(?:\.[0-9]+)?$' } }
+        - { name: q, in: query, required: false, schema: { type: string, minLength: 1, maxLength: 160 } }
+        - { name: cursor, in: query, required: false, description: Server-issued opaque Browse cursor bound to the evaluated result and query; expires after five minutes and may be invalidated by process restart., schema: { type: string, minLength: 1, maxLength: 2048 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200': { $ref: '#/components/responses/BrowseProviderListSuccess' }
+        '400': { $ref: '#/components/responses/BrowseError' }
+        '401': { $ref: '#/components/responses/BrowseError' }
+        '429': { $ref: '#/components/responses/BrowseError' }
+        '503': { $ref: '#/components/responses/BrowseError' }
+  /browse/providers/{providerId}/teams/{teamId}:
+    get:
+      tags: [Marketplace Browse]
+      operationId: getEligibleBrowseProviderDetail
+      description: Re-evaluates eligibility and returns a contact-free detail projection.
+      parameters:
+        - { name: providerId, in: path, required: true, schema: { type: string, minLength: 1, maxLength: 64 } }
+        - { name: teamId, in: path, required: true, schema: { type: string, minLength: 1, maxLength: 64 } }
+        - { $ref: '#/components/parameters/ServiceIdQuery' }
+        - { $ref: '#/components/parameters/CountryId' }
+        - { $ref: '#/components/parameters/CityIdQuery' }
+        - { $ref: '#/components/parameters/DistrictId' }
+        - { $ref: '#/components/parameters/StartsAt' }
+        - { $ref: '#/components/parameters/EndsAt' }
+        - { $ref: '#/components/parameters/CrewPreference' }
+        - { $ref: '#/components/parameters/RequiredTeamUnits' }
+        - { $ref: '#/components/parameters/Locale' }
+      responses:
+        '200': { $ref: '#/components/responses/BrowseProviderDetailSuccess' }
+        '400': { $ref: '#/components/responses/BrowseError' }
+        '401': { $ref: '#/components/responses/BrowseError' }
+        '404': { $ref: '#/components/responses/BrowseError' }
+        '429': { $ref: '#/components/responses/BrowseError' }
+        '503': { $ref: '#/components/responses/BrowseError' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    ServiceId: { name: serviceId, in: path, required: true, schema: { type: string, minLength: 1, maxLength: 64 } }
+    ServiceIdQuery: { name: serviceId, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 64 } }
+    CountryCode: { name: countryCode, in: path, required: true, schema: { type: string, pattern: '^[A-Z]{2}$' } }
+    CountryId: { name: countryId, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 64 } }
+    CityId: { name: cityId, in: path, required: true, schema: { type: string, minLength: 1, maxLength: 64 } }
+    CityIdQuery: { name: cityId, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 64 } }
+    DistrictId: { name: districtId, in: query, required: false, schema: { type: string, minLength: 1, maxLength: 64 } }
+    StartsAt: { name: startsAt, in: query, required: true, schema: { type: string, format: date-time } }
+    EndsAt: { name: endsAt, in: query, required: true, schema: { type: string, format: date-time } }
+    CrewPreference: { name: crewPreference, in: query, required: true, schema: { type: string, enum: [all_male, all_female, any] } }
+    RequiredTeamUnits: { name: requiredTeamUnits, in: query, required: true, schema: { type: integer, minimum: 1, maximum: 50 } }
+    Locale: { name: locale, in: query, required: true, schema: { $ref: '#/components/schemas/BrowseLocale' } }
+  schemas:
+    BrowseLocale: { type: string, enum: [AR, EN] }
+    BrowseSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data, requestId]
+      properties:
+        success: { type: boolean, const: true }
+        data: { type: object }
+        requestId: { type: string, format: uuid }
+        meta: { type: object, additionalProperties: true }
+    BrowseErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, error, requestId]
+      properties:
+        success: { type: boolean, const: false }
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, statusCode, message]
+          properties:
+            code:
+              type: string
+              enum: [VALIDATION_FAILED, AUTHENTICATION_REQUIRED, BROWSE_EVALUATION_FAILED, BROWSE_PROVIDER_NOT_FOUND, BROWSE_SERVICE_NOT_FOUND, COUNTRY_UNAVAILABLE, RATE_LIMIT_EXCEEDED, RATE_LIMITER_UNAVAILABLE]
+            statusCode: { type: integer, minimum: 400, maximum: 599 }
+            message: { type: string }
+            details: { type: object, additionalProperties: true }
+        requestId: { type: string, format: uuid }
+    BrowseMedia:
+      type: object
+      additionalProperties: false
+      required: [kind, contentType, width, height, deliveryUrl, urlExpiresAt, thumbnailUrl]
+      properties:
+        kind: { type: string, enum: [IMAGE, VIDEO] }
+        contentType: { type: [string, 'null'] }
+        width: { type: [integer, 'null'], minimum: 1 }
+        height: { type: [integer, 'null'], minimum: 1 }
+        deliveryUrl: { type: string, format: uri }
+        urlExpiresAt: { type: string, format: date-time }
+        thumbnailUrl: { type: [string, 'null'], format: uri }
+    BrowseSortingFacts:
+      type: object
+      additionalProperties: false
+      required: [priceAmount, minimumChargeAmount, currencyCode, priceUnitId, estimatedDurationMinutes, matchingCapacityUnits]
+      properties:
+        priceAmount: { type: string, pattern: '^[0-9]+(?:\.[0-9]+)?$' }
+        minimumChargeAmount: { type: string, pattern: '^[0-9]+(?:\.[0-9]+)?$' }
+        currencyCode: { type: string }
+        priceUnitId: { type: string }
+        estimatedDurationMinutes: { type: integer, minimum: 1 }
+        matchingCapacityUnits: { type: integer, minimum: 1 }
+        performanceMetricKey: { type: string }
+        performanceValue: { type: string }
+    BrowseProviderCard:
+      type: object
+      additionalProperties: false
+      required: [providerId, teamId, displayName, thumb, sortingFacts]
+      properties:
+        providerId: { type: string }
+        teamId: { type: string }
+        displayName: { type: [string, 'null'] }
+        thumb:
+          oneOf:
+            - { $ref: '#/components/schemas/BrowseMedia' }
+            - { type: 'null' }
+        sortingFacts: { $ref: '#/components/schemas/BrowseSortingFacts' }
+    BrowseProviderListData:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor, metadata, sideEffects]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/BrowseProviderCard' } }
+        nextCursor: { type: [string, 'null'] }
+        metadata:
+          type: object
+          additionalProperties: false
+          required: [resultHash, ruleVersionId, evaluatedAt]
+          properties:
+            resultHash: { type: string }
+            ruleVersionId: { type: string }
+            evaluatedAt: { type: string, format: date-time }
+        sideEffects: { $ref: '#/components/schemas/BrowseNoSideEffects' }
+    BrowseNoSideEffects:
+      type: object
+      additionalProperties: false
+      required: [bookingCreated, paymentInitiated]
+      properties:
+        bookingCreated: { type: boolean, const: false }
+        paymentInitiated: { type: boolean, const: false }
+    BrowseCrewSummary:
+      type: object
+      additionalProperties: false
+      required: [teamId, teamVersion, active, memberCount, cleaningStaffCount, escortCount, otherCount, cleanerCount, genderCounts]
+      properties:
+        teamId: { type: string }
+        teamVersion: { type: integer, minimum: 1 }
+        active: { type: boolean }
+        memberCount: { type: integer, minimum: 0 }
+        cleaningStaffCount: { type: integer, minimum: 0 }
+        escortCount: { type: integer, minimum: 0 }
+        otherCount: { type: integer, minimum: 0 }
+        cleanerCount: { type: integer, minimum: 0 }
+        genderCounts:
+          type: object
+          additionalProperties: false
+          required: [male, female]
+          properties:
+            male: { type: integer, minimum: 0 }
+            female: { type: integer, minimum: 0 }
+    BrowseProviderProfile:
+      type: object
+      additionalProperties: false
+      required: [providerId, providerKind, displayNameAr, displayNameEn, descriptionAr, descriptionEn, countryCode, logo, cover, gallery]
+      properties:
+        providerId: { type: string }
+        providerKind: { type: string }
+        displayNameAr: { type: [string, 'null'] }
+        displayNameEn: { type: [string, 'null'] }
+        descriptionAr: { type: [string, 'null'] }
+        descriptionEn: { type: [string, 'null'] }
+        countryCode: { type: [string, 'null'] }
+        logo:
+          oneOf:
+            - { $ref: '#/components/schemas/BrowseMedia' }
+            - { type: 'null' }
+        cover:
+          oneOf:
+            - { $ref: '#/components/schemas/BrowseMedia' }
+            - { type: 'null' }
+        gallery: { type: array, items: { $ref: '#/components/schemas/BrowseMedia' } }
+    BrowseProviderDetailData:
+      type: object
+      additionalProperties: false
+      required: [providerId, teamId, profile, crewSummary, servicePrice, ratingSummary, bookingPrerequisites, sideEffects]
+      properties:
+        providerId: { type: string }
+        teamId: { type: string }
+        profile: { $ref: '#/components/schemas/BrowseProviderProfile' }
+        crewSummary: { $ref: '#/components/schemas/BrowseCrewSummary' }
+        servicePrice:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [status, priceAmount, minimumChargeAmount, currencyCode, priceUnitId, estimatedDurationMinutes]
+              properties:
+                status: { type: string, const: AVAILABLE }
+                priceAmount: { type: string }
+                minimumChargeAmount: { type: string }
+                currencyCode: { type: string }
+                priceUnitId: { type: string }
+                estimatedDurationMinutes: { type: integer }
+            - type: object
+              additionalProperties: false
+              required: [status]
+              properties:
+                status: { type: string, const: UNAVAILABLE }
+        ratingSummary: { type: 'null' }
+        bookingPrerequisites:
+          type: object
+          additionalProperties: false
+          required: [bookingAvailable, requiresVerifiedCustomer, phase]
+          properties:
+            bookingAvailable: { type: boolean, const: false }
+            requiresVerifiedCustomer: { type: boolean, const: true }
+            phase: { type: string, const: 'R1-P13+' }
+        sideEffects: { $ref: '#/components/schemas/BrowseNoSideEffects' }
+    BrowseCityListData:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [cityId, code, nameAr, nameEn]
+            properties:
+              cityId: { type: string }
+              code: { type: string }
+              nameAr: { type: string }
+              nameEn: { type: string }
+    BrowseDistrictListData:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [districtId, cityId, code, nameAr, nameEn]
+            properties:
+              districtId: { type: string }
+              cityId: { type: string }
+              code: { type: string }
+              nameAr: { type: string }
+              nameEn: { type: string }
+    BrowseServiceListData:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items: { type: array, items: { type: object, additionalProperties: true } }
+        nextCursor: { type: [string, 'null'] }
+    BrowseServiceDetailData: { type: object, additionalProperties: true }
+    BrowseServiceListEnvelope:
+      allOf:
+        - { $ref: '#/components/schemas/BrowseSuccessEnvelope' }
+        - { type: object, properties: { data: { $ref: '#/components/schemas/BrowseServiceListData' } } }
+    BrowseServiceDetailEnvelope:
+      allOf:
+        - { $ref: '#/components/schemas/BrowseSuccessEnvelope' }
+        - { type: object, properties: { data: { $ref: '#/components/schemas/BrowseServiceDetailData' } } }
+    BrowseCityListEnvelope:
+      allOf:
+        - { $ref: '#/components/schemas/BrowseSuccessEnvelope' }
+        - { type: object, properties: { data: { $ref: '#/components/schemas/BrowseCityListData' } } }
+    BrowseDistrictListEnvelope:
+      allOf:
+        - { $ref: '#/components/schemas/BrowseSuccessEnvelope' }
+        - { type: object, properties: { data: { $ref: '#/components/schemas/BrowseDistrictListData' } } }
+    BrowseProviderListEnvelope:
+      allOf:
+        - { $ref: '#/components/schemas/BrowseSuccessEnvelope' }
+        - { type: object, properties: { data: { $ref: '#/components/schemas/BrowseProviderListData' } } }
+    BrowseProviderDetailEnvelope:
+      allOf:
+        - { $ref: '#/components/schemas/BrowseSuccessEnvelope' }
+        - { type: object, properties: { data: { $ref: '#/components/schemas/BrowseProviderDetailData' } } }
+  responses:
+    BrowseServiceListSuccess:
+      description: Selectable Browse services returned.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BrowseServiceListEnvelope' }
+          example: { success: true, data: { items: [], nextCursor: null }, requestId: '00000000-0000-4000-8000-000000000012' }
+    BrowseServiceDetailSuccess:
+      description: Selectable Browse service definition returned.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BrowseServiceDetailEnvelope' }
+          example: { success: true, data: { serviceId: service-example, serviceCode: HOME_CLEANING }, requestId: '00000000-0000-4000-8000-000000000012' }
+    BrowseCityListSuccess:
+      description: Active cities returned.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BrowseCityListEnvelope' }
+          example: { success: true, data: { items: [{ cityId: city-cairo, code: CAI, nameAr: القاهرة, nameEn: Cairo }] }, requestId: '00000000-0000-4000-8000-000000000012' }
+    BrowseDistrictListSuccess:
+      description: Active districts returned.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BrowseDistrictListEnvelope' }
+          example: { success: true, data: { items: [{ districtId: district-maadi, cityId: city-cairo, code: MAADI, nameAr: المعادي, nameEn: Maadi }] }, requestId: '00000000-0000-4000-8000-000000000012' }
+    BrowseProviderListSuccess:
+      description: Eligibility-approved Provider and Team cards returned.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BrowseProviderListEnvelope' }
+          example: { success: true, data: { items: [], nextCursor: null, metadata: { resultHash: hash, ruleVersionId: r1-v1, evaluatedAt: '2026-09-10T00:00:00.000Z' }, sideEffects: { bookingCreated: false, paymentInitiated: false } }, requestId: '00000000-0000-4000-8000-000000000012' }
+    BrowseProviderDetailSuccess:
+      description: Contact-free eligible Provider and Team detail returned.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BrowseProviderDetailEnvelope' }
+          example:
+            success: true
+            data:
+              providerId: provider-example
+              teamId: team-example
+              profile: { providerId: provider-example, providerKind: INDIVIDUAL_TEAM, displayNameAr: فريق, displayNameEn: Team, descriptionAr: null, descriptionEn: null, countryCode: EG, logo: null, cover: null, gallery: [] }
+              crewSummary: { teamId: team-example, teamVersion: 1, active: true, memberCount: 1, cleaningStaffCount: 1, escortCount: 0, otherCount: 0, cleanerCount: 1, genderCounts: { male: 0, female: 1 } }
+              servicePrice: { status: AVAILABLE, priceAmount: '100.00', minimumChargeAmount: '50.00', currencyCode: EGP, priceUnitId: unit-hour, estimatedDurationMinutes: 60 }
+              ratingSummary: null
+              bookingPrerequisites: { bookingAvailable: false, requiresVerifiedCustomer: true, phase: 'R1-P13+' }
+              sideEffects: { bookingCreated: false, paymentInitiated: false }
+            requestId: '00000000-0000-4000-8000-000000000012'
+    BrowseError:
+      description: Stable Browse error.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BrowseErrorEnvelope' }
+          example: { success: false, error: { code: VALIDATION_FAILED, statusCode: 400, message: Browse request validation failed }, requestId: '00000000-0000-4000-8000-000000000012' }

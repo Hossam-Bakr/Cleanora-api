@@ -5,10 +5,12 @@
 import type { SnapshotReadyCatalogServiceDefinition } from "#modules/catalog/catalog.public";
 
 import {
+  mapBookingSafeTeamFactsToCrewSummary,
   mapContactFreeProviderPreview,
   PROVIDER_PREVIEW_FIELD_ALLOWLIST,
   PROVIDER_PREVIEW_FORBIDDEN_MARKERS,
   type ProviderPreviewDto,
+  type ProviderCrewSummaryDto,
 } from "./provider.dto.js";
 
 export const PROVIDERS_PUBLIC_CONTRACT = "providers.public";
@@ -269,10 +271,40 @@ export interface MarketplaceReadiness {
 export type ProviderContactFreePreview = ProviderPreviewDto;
 
 export {
+  mapBookingSafeTeamFactsToCrewSummary,
   mapContactFreeProviderPreview,
   PROVIDER_PREVIEW_FIELD_ALLOWLIST,
   PROVIDER_PREVIEW_FORBIDDEN_MARKERS,
 };
+export type { ProviderCrewSummaryDto };
+
+export interface ProviderBrowseReader {
+  getContactFreePreview(
+    providerId: string,
+    options?: { readonly includeMedia?: boolean },
+  ): Promise<ProviderContactFreePreview | null>;
+  getBookingSafeTeamFacts(input: {
+    readonly providerId: string;
+    readonly teamId: string;
+  }): Promise<BookingSafeTeamFacts | null>;
+}
+
+/**
+ * @desc Expose the narrow Providers read surface needed by Bookings Browse.
+ * @access Composition-injected public contract
+ */
+export function createProviderBrowseReader(
+  preview: Pick<ProviderPublicReader, "getContactFreePreview">,
+  workforce: Pick<ProviderWorkforcePublicReader, "getBookingSafeTeamFacts">,
+): ProviderBrowseReader {
+  return {
+    async getContactFreePreview(providerId, options) {
+      return (await preview.getContactFreePreview?.(providerId, options)) ?? null;
+    },
+    getBookingSafeTeamFacts: (input) =>
+      workforce.getBookingSafeTeamFacts(input),
+  };
+}
 
 export function projectContactFreeProviderPreview(input: {
   readonly provider: {
@@ -318,6 +350,7 @@ export interface ProviderPublicReader {
    */
   getContactFreePreview?(
     providerId: string,
+    options?: { readonly includeMedia?: boolean },
   ): Promise<ProviderContactFreePreview | null>;
 }
 
@@ -422,6 +455,7 @@ export interface EligibilityProviderLifecycleReader {
 
 export type TransactionalEligibilityProviderLifecycleReaderFactory = (
   tx: ProvidersEligibilityTransactionContext,
+  context?: { readonly evaluatedAt: Date },
 ) => EligibilityProviderLifecycleReader;
 
 /**
@@ -443,7 +477,8 @@ export function createEligibilityProviderLifecycleReader(
 export function createTransactionalEligibilityProviderLifecycleReaderFactory(
   createBoundReader: TransactionalEligibilityProviderLifecycleReaderFactory,
 ): TransactionalEligibilityProviderLifecycleReaderFactory {
-  return (tx) => createEligibilityProviderLifecycleReader(createBoundReader(tx));
+  return (tx, context) =>
+    createEligibilityProviderLifecycleReader(createBoundReader(tx, context));
 }
 
 export interface EligibilityTeamAvailabilityFacts {

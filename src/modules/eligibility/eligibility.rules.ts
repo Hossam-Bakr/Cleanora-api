@@ -416,6 +416,11 @@ export interface EvaluateProviderCandidateResult {
 export function evaluateProviderCandidate(
   input: EvaluateProviderCandidateInput,
 ): EvaluateProviderCandidateResult {
+  if (input.availability.status === "OVERFLOW") {
+    throw new Error(
+      "Eligibility invariant: availability OVERFLOW must be handled before candidate evaluation",
+    );
+  }
   const lifecycleOutcome = evaluateProviderApprovalVerificationLive(
     input.lifecycle,
   );
@@ -430,10 +435,7 @@ export function evaluateProviderCandidate(
     availability: input.availability,
   });
 
-  const teams: CrewCapacityTeamFacts[] =
-    input.availability.status === "OVERFLOW"
-      ? [...input.availability.acceptedTeams]
-      : [...input.availability.teams];
+  const teams: CrewCapacityTeamFacts[] = [...input.availability.teams];
 
   const teamResults: TeamResult[] = [];
   const crewOutcomes: RuleOutcome[] = [];
@@ -467,17 +469,11 @@ export function evaluateProviderCandidate(
     });
   }
 
-  const limit =
-    input.availability.status === "AVAILABLE_FACTS"
-      ? input.availability.simultaneousTeamLimit
-      : input.availability.status === "MISSING_CONFIGURATION"
-        ? input.availability.simultaneousTeamLimit
-        : null;
+  const limit = input.availability.simultaneousTeamLimit;
 
   const crewPreferenceEvaluated =
-    input.availability.status !== "OVERFLOW" &&
-    (teams.length === 0 ||
-      crewOutcomes.some((outcome) => outcome.status !== "NOT_EVALUATED"));
+    teams.length === 0 ||
+    crewOutcomes.some((outcome) => outcome.status !== "NOT_EVALUATED");
 
   const capacity =
     limit === null || limit < 1
@@ -610,22 +606,20 @@ export function evaluateProviderCandidate(
     .map((team) => {
       const individuallyOk = qualifyingTeamIds.has(team.teamId);
       const eligible = refinedEligible && individuallyOk;
-      const inherited: EligibilityReasonCode[] = [];
-      if (!eligible) {
-        if (capacity.status === "FAIL") {
-          inherited.push("INSUFFICIENT_CAPACITY_AFTER_CREW_FILTER");
-        }
-        if (performanceBlocks) {
-          inherited.push("PERFORMANCE_GATE_FAILED");
-        }
-        if (!refinedEligible && lifecycleOutcome.status === "FAIL") {
-          inherited.push(...lifecycleOutcome.reasons);
-        }
+      // When the Provider fails any gate, inherit all Provider exclusion reasons
+      // into each ineligible Team (reason-codes.md / DEC-080).
+      const inherited: EligibilityReasonCode[] =
+        !eligible && !refinedEligible ? [...providerReasons] : [];
+      const reasons = exclusionReasonsOnly([...team.reasons, ...inherited]);
+      if (!eligible && reasons.length === 0) {
+        throw new Error(
+          `Eligibility invariant: ineligible Team ${team.teamId} has no real exclusion reason`,
+        );
       }
       return {
         ...team,
         eligible,
-        reasons: exclusionReasonsOnly([...team.reasons, ...inherited]),
+        reasons,
         sortingFacts: eligible ? sortingFacts : null,
         ruleOutcomes: [
           ...team.ruleOutcomes,
@@ -642,12 +636,19 @@ export function evaluateProviderCandidate(
     })
     .sort((left, right) => left.teamId.localeCompare(right.teamId));
 
+  const providerFinalReasons = refinedEligible ? [] : providerReasons;
+  if (!refinedEligible && providerFinalReasons.length === 0) {
+    throw new Error(
+      `Eligibility invariant: ineligible Provider ${input.providerId} has no real exclusion reason`,
+    );
+  }
+
   return {
     provider: {
       providerId: input.providerId,
       eligible: refinedEligible,
       ruleOutcomes: providerRuleOutcomes,
-      reasons: refinedEligible ? [] : providerReasons,
+      reasons: providerFinalReasons,
       sortingFacts,
       qualifyingTeamCount: refinedEligible ? qualifyingTeamIds.size : 0,
     },

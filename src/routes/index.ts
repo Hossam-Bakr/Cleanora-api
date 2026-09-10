@@ -44,6 +44,8 @@ export interface RouteDependencies {
   readonly staffConfigurationLocalityRouter?: Router;
   /** R1-P10 protected Provider availability coverage routes. */
   readonly providerAvailabilityRouter?: Router;
+  /** R1-P12 guest-capable marketplace Browse routes. */
+  readonly bookingsBrowseRouter?: Router;
 }
 
 /**
@@ -134,5 +136,9 @@ export function mountRoutes(
 
   if (dependencies.providerAvailabilityRouter !== undefined) {
     app.use(`${apiPrefix}/providers`, dependencies.providerAvailabilityRouter);
+  }
+
+  if (dependencies.bookingsBrowseRouter !== undefined) {
+    app.use(`${apiPrefix}/browse`, dependencies.bookingsBrowseRouter);
   }
 }

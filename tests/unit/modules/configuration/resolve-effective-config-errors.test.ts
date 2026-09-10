@@ -54,15 +54,15 @@ describe("resolveEffectiveConfig failures", () => {
       resolveEffectiveConfig(
         createRepositories(
           {
-            key: "platform.default_timezone",
-            value: "UTC",
-            valueKind: "STRING",
+            key: "auth.endpoint_limits",
+            value: { signupPer15Minutes: 5, loginPer15Minutes: 10 },
+            valueKind: "OBJECT",
             resolutionPolicy: "GLOBAL_ONLY"
           },
           undefined,
           { anyCountryOverride: true }
         ),
-        "platform.default_timezone"
+        "auth.endpoint_limits"
       )
     ).rejects.toMatchObject({ code: "CONFIG_COUNTRY_OVERRIDE_REJECTED" });
   });
@@ -72,15 +72,15 @@ describe("resolveEffectiveConfig failures", () => {
       resolveEffectiveConfig(
         createRepositories(
           {
-            key: "platform.default_timezone",
-            value: "UTC",
-            valueKind: "STRING",
+            key: "auth.endpoint_limits",
+            value: { signupPer15Minutes: 5, loginPer15Minutes: 10 },
+            valueKind: "OBJECT",
             resolutionPolicy: "GLOBAL_ONLY"
           },
           undefined,
           { anyCountryOverride: true }
         ),
-        "platform.default_timezone",
+        "auth.endpoint_limits",
         "XX"
       )
     ).rejects.toMatchObject({ code: "CONFIG_COUNTRY_OVERRIDE_REJECTED" });
@@ -112,7 +112,7 @@ describe("resolveEffectiveConfig failures", () => {
           key: "platform.default_timezone",
           value: "UTC",
           valueKind: "STRING",
-          resolutionPolicy: "COUNTRY_REQUIRED"
+          resolutionPolicy: "GLOBAL_ONLY"
         }),
         "platform.default_timezone"
       )

@@ -111,8 +111,8 @@ describe("R1-P09 Providers module boundaries (T009)", () => {
     expect(modelNames).toEqual([...R1_P09_MODELS]);
   });
 
-  it("does not create Browse or Booking modules", () => {
-    for (const name of ["browse", "bookings", "booking"]) {
+  it("does not create standalone Browse or singular Booking modules", () => {
+    for (const name of ["browse", "booking"]) {
       expect(() => statSync(join(modulesRoot, name))).toThrow();
     }
   });

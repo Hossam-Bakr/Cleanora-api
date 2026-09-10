@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit and Push Plus"
+  short_description: "Commit leftovers and push directly to main"
+  default_prompt: "Use $commit-and-push-plus after I say exactly commit and push plus."

@@ -26,6 +26,8 @@ import {
   computeRequestHash,
   computeResultHash,
   normalizeEligibilityRequest,
+  sortSourceVersions,
+  type EligibilityResultHashInput,
 } from "./eligibility.hashes.js";
 import {
   evaluateCatalogApplicability,
@@ -36,10 +38,19 @@ import {
   type PricingFacts,
 } from "./eligibility.rules.js";
 import {
-  parsePerformanceGateParameters,
   fetchPerformanceEvidenceIfEnabled,
   type PerformanceGateParameters,
 } from "./eligibility.performance.js";
+import {
+  validateSelectedRuleBundle,
+  ELIGIBILITY_MAX_PROVIDERS as RULE_MAX_PROVIDERS,
+  ELIGIBILITY_MAX_TEAMS as RULE_MAX_TEAMS,
+} from "./eligibility.rule-bundle.js";
+import {
+  isRetryableConflictError,
+  normalizeEligibilityPersistenceError,
+  normalizeEligibilityTechnicalError,
+} from "./eligibility.technical-errors.js";
 import type {
   BrowseCandidatesRequest,
   BrowseSafeCandidate,
@@ -71,8 +82,8 @@ export const ELIGIBILITY_ENGINE_VERSION = "eligibility-engine.r1.v1" as const;
 export const ELIGIBILITY_CALENDAR_RUNTIME_VERSION =
   "providers-availability-calendar.r1.v1" as const;
 export const ELIGIBILITY_MAX_ATTEMPTS = 3 as const;
-export const ELIGIBILITY_MAX_PROVIDERS = 500 as const;
-export const ELIGIBILITY_MAX_TEAMS = 5000 as const;
+export const ELIGIBILITY_MAX_PROVIDERS = RULE_MAX_PROVIDERS;
+export const ELIGIBILITY_MAX_TEAMS = RULE_MAX_TEAMS;
 
 type Tx = unknown;
 
@@ -86,16 +97,16 @@ export interface EligibilityApplicationServiceDependencies {
   readonly createLocalityReader: (tx: Tx) => LocalityReader;
   readonly createCountryTimeZoneReader: (tx: Tx) => CountryTimeZoneReader;
   readonly createPricingReader: (tx: Tx) => EligibilityPricingReader;
-  readonly createLifecycleReader: (tx: Tx) => EligibilityProviderLifecycleReader;
+  readonly createLifecycleReader: (
+    tx: Tx,
+    context: { readonly evaluatedAt: Date },
+  ) => EligibilityProviderLifecycleReader;
   readonly createAvailabilityReader: (tx: Tx) => EligibilityAvailabilityReader;
   readonly performanceEvidencePort?: PerformanceEvidencePort;
 }
 
 function isRetryableConflict(error: unknown): boolean {
-  return (
-    error instanceof EligibilityError &&
-    (error.code === "CONFLICT" || error.code === "TRANSACTION_CONFLICT_EXHAUSTED")
-  );
+  return isRetryableConflictError(error);
 }
 
 function parseUtcInstant(value: string, field: string): Date {
@@ -199,37 +210,6 @@ export function validateEvaluateEligibilityRequest(
   }
 }
 
-function parseRuleParameters(raw: unknown): {
-  readonly performanceGate: PerformanceGateParameters;
-  readonly maxProvidersPerEvaluation: number;
-  readonly maxTeamResultsPerEvaluation: number;
-} {
-  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
-    throw new EligibilityError("RULE_VERSION_INVALID", {
-      details: { field: "parameters" },
-    });
-  }
-  const record = raw as Record<string, unknown>;
-  const performanceGate = parsePerformanceGateParameters(
-    record["performanceGate"],
-  );
-  const maxProvidersPerEvaluation = record["maxProvidersPerEvaluation"];
-  const maxTeamResultsPerEvaluation = record["maxTeamResultsPerEvaluation"];
-  if (
-    maxProvidersPerEvaluation !== ELIGIBILITY_MAX_PROVIDERS ||
-    maxTeamResultsPerEvaluation !== ELIGIBILITY_MAX_TEAMS
-  ) {
-    throw new EligibilityError("RULE_VERSION_INVALID", {
-      details: { field: "parameters.limits" },
-    });
-  }
-  return {
-    performanceGate,
-    maxProvidersPerEvaluation,
-    maxTeamResultsPerEvaluation,
-  };
-}
-
 /**
  * @desc Eligibility application service (evaluate + stubs for later batches).
  * @access Application
@@ -262,17 +242,22 @@ export class EligibilityApplicationServiceImpl
           }),
         );
       } catch (error: unknown) {
-        lastError = error;
-        if (!isRetryableConflict(error) || attempt === ELIGIBILITY_MAX_ATTEMPTS) {
+        const normalized = isRetryableConflict(error)
+          ? error instanceof EligibilityError
+            ? error
+            : normalizeEligibilityTechnicalError(error)
+          : normalizeEligibilityTechnicalError(error);
+        lastError = normalized;
+        if (!isRetryableConflict(normalized) || attempt === ELIGIBILITY_MAX_ATTEMPTS) {
           if (
-            isRetryableConflict(error) &&
+            isRetryableConflict(normalized) &&
             attempt === ELIGIBILITY_MAX_ATTEMPTS
           ) {
             throw new EligibilityError("TRANSACTION_CONFLICT_EXHAUSTED", {
-              cause: error,
+              cause: normalized,
             });
           }
-          throw error;
+          throw normalized;
         }
       }
     }
@@ -328,7 +313,9 @@ export class EligibilityApplicationServiceImpl
     const timeZones = this.deps.createCountryTimeZoneReader(args.tx);
     const catalog = this.deps.createCatalogReader(args.tx);
     const pricing = this.deps.createPricingReader(args.tx);
-    const lifecycle = this.deps.createLifecycleReader(args.tx);
+    const lifecycle = this.deps.createLifecycleReader(args.tx, {
+      evaluatedAt: args.evaluatedAt,
+    });
     const availability = this.deps.createAvailabilityReader(args.tx);
 
     const country = await countries.getActiveCountryById(args.input.countryId);
@@ -386,7 +373,13 @@ export class EligibilityApplicationServiceImpl
       throw new EligibilityError("RULE_VERSION_UNAVAILABLE");
     }
 
-    const parameters = parseRuleParameters(ruleVersion.parameters);
+    const parameters = validateSelectedRuleBundle({
+      schemaVersion: ruleVersion.schemaVersion,
+      engineCompatibility: ruleVersion.engineCompatibility,
+      ruleOrder: ruleVersion.ruleOrder,
+      parameters: ruleVersion.parameters,
+      contentChecksum: ruleVersion.contentChecksum,
+    });
 
     const catalogReference = await catalog.getProviderOfferingReference({
       serviceId: args.input.serviceId,
@@ -553,6 +546,33 @@ export class EligibilityApplicationServiceImpl
     );
     const requestHash = computeRequestHash(normalizedRequest);
 
+    const sourceVersions = sortSourceVersions(
+      Object.fromEntries(
+        evidenceProviders.flatMap((provider) => {
+          const entries: Array<[string, string]> = [];
+          const lifecycleVersion =
+            provider.lifecycle.status === "PRESENT"
+              ? provider.lifecycle.aggregateVersion
+              : null;
+          if (lifecycleVersion !== null && lifecycleVersion.length > 0) {
+            entries.push([
+              `lifecycle:${provider.providerId}`,
+              lifecycleVersion,
+            ]);
+          }
+          const pricingVersion =
+            provider.pricing.status === "AVAILABLE" ||
+            provider.pricing.status === "UNAVAILABLE"
+              ? provider.pricing.sourceVersion
+              : null;
+          if (typeof pricingVersion === "string" && pricingVersion.length > 0) {
+            entries.push([`pricing:${provider.providerId}`, pricingVersion]);
+          }
+          return entries;
+        }),
+      ),
+    );
+
     const evidence: EligibilityEvidenceSnapshot = {
       normalizedRequest,
       evaluatedAt: args.evaluatedAtIso,
@@ -579,7 +599,7 @@ export class EligibilityApplicationServiceImpl
         calendarRuntimeVersion: ELIGIBILITY_CALENDAR_RUNTIME_VERSION,
         contractVersion: ELIGIBILITY_CONTRACT_VERSION,
       },
-      sourceVersions: {},
+      sourceVersions,
     };
     const evidenceHash = computeEvidenceHash(evidence);
 
@@ -594,17 +614,15 @@ export class EligibilityApplicationServiceImpl
       complete: true,
     } as const;
 
-    const metadataBase: Omit<EvaluationMetadata, "resultHash"> = {
+    const hashMetadata: EligibilityResultHashInput["metadata"] = {
       contractVersion: ELIGIBILITY_CONTRACT_VERSION,
       engineVersion: ELIGIBILITY_ENGINE_VERSION,
       ruleVersionId: ruleVersion.id,
       ruleChecksum: ruleVersion.contentChecksum,
-      requestHash,
-      evidenceHash,
       evaluatedAt: args.evaluatedAtIso,
       countryTimeZone,
       calendarRuntimeVersion: ELIGIBILITY_CALENDAR_RUNTIME_VERSION,
-      sourceVersions: {},
+      sourceVersions,
       discovery,
       limits: {
         maxProviders: ELIGIBILITY_MAX_PROVIDERS,
@@ -628,16 +646,18 @@ export class EligibilityApplicationServiceImpl
         const byProvider = a.providerId.localeCompare(b.providerId);
         return byProvider !== 0 ? byProvider : a.teamId.localeCompare(b.teamId);
       }),
-      metadata: {
-        ...metadataBase,
-        resultHash: "", // filled after hash of semantic body without this field
-      },
     };
 
     const resultHash = computeResultHash({
       ...semanticResult,
-      metadata: metadataBase as EvaluationMetadata,
+      metadata: hashMetadata,
     });
+
+    const metadataBase: Omit<EvaluationMetadata, "resultHash"> = {
+      ...hashMetadata,
+      requestHash,
+      evidenceHash,
+    };
 
     const evaluationId = randomUUID();
     const completedAt = args.evaluatedAt;
@@ -711,7 +731,7 @@ export class EligibilityApplicationServiceImpl
     try {
       await args.repository.insertEvaluationWithCandidates(insert);
     } catch (error: unknown) {
-      throw new EligibilityError("PERSISTENCE_FAILED", { cause: error });
+      throw normalizeEligibilityPersistenceError(error);
     }
 
     return {

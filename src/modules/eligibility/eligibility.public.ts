@@ -397,3 +397,6 @@ export {
   type EligibilityClock,
 } from "./eligibility.service.js";
 
+/** Runtime guard exposed for approved cross-module error mapping. */
+export { isEligibilityError } from "./eligibility.errors.js";
+

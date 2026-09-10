@@ -52,6 +52,32 @@ describe("EligibilityUnitOfWork", () => {
     ).rejects.toBeInstanceOf(EligibilityError);
   });
 
+  it("maps Prisma P2034 and SQLSTATE serialization failures to CONFLICT", async () => {
+    const clientP2034 = {
+      $transaction: vi.fn(async () => {
+        throw Object.assign(new Error("serialize"), { code: "P2034" });
+      }),
+    };
+    await expect(
+      new EligibilityUnitOfWork(clientP2034 as never).runRepeatableRead(
+        async () => "nope",
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    const clientSql = {
+      $transaction: vi.fn(async () => {
+        throw Object.assign(new Error("deadlock"), {
+          cause: { originalCode: "40P01" },
+        });
+      }),
+    };
+    await expect(
+      new EligibilityUnitOfWork(clientSql as never).runRepeatableRead(
+        async () => "nope",
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
   it("rethrows non-timeout errors unchanged", async () => {
     const boom = new Error("other");
     const client = {

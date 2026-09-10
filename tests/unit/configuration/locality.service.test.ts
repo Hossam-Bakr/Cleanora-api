@@ -125,6 +125,11 @@ function fakeRepository(overrides: Partial<LocalityRepository> = {}): LocalityRe
     async findCountryById() {
       return { id: "country-1", code: "EG", isActive: true };
     },
+    async findCountryByCode(code: string) {
+      return code.toUpperCase() === "EG"
+        ? { id: "country-1", code: "EG", isActive: true }
+        : null;
+    },
     async findCityById() {
       return null;
     },

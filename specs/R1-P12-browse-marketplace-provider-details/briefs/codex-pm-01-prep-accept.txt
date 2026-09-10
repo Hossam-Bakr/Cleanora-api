@@ -1,0 +1,64 @@
+Role: read-only Cleanora PM. Do NOT edit files. Do NOT implement. Do NOT scaffold.
+
+Phase: R1-P12 — Browse Marketplace & Provider Details
+Authority: Owner `/work-on-next-phase` after R1-P11 Complete (DEC-085). DEC-062 completion authority does NOT carry forward. You may accept/reject MVB scope and name exceptions. Material product/UX/security you cannot settle → say OWNER_REQUIRED with options.
+
+MVB constraint: simplest sufficient guest Browse HTTP mounting P11 `getStandardBrowseCandidates`. Prefer existing public contracts. Refuse over-engineering.
+
+## Exact question
+
+Provide PREPARATION ACCEPTANCE for complete in-scope implementation authorization:
+
+1. ACCEPT or REJECT the drafted package (spec/plan/tasks/research/http contract/analysis).
+2. ACCEPT or REJECT each proposed MVB holding below; name exceptions explicitly.
+3. State whether mandatory batch-acceptance gates are required (default: not required).
+4. If REJECT, list BLOCKER/MAJOR reasons and the minimum delta Cursor must repair before re-ask.
+
+Answer shape:
+- verdict: ACCEPT_IMPLEMENTATION | CHANGES_REQUIRED | OWNER_REQUIRED
+- holdings: list each with accept/reject + one-line note
+- named_exceptions: explicit
+- batch_acceptance_required: yes/no + which batches if yes
+- freeform: ≤15 lines
+
+## Proposed MVB holdings (from spec clarifications)
+
+1. New `bookings` module owns Browse HTTP (architecture owner of optional browse event tables).
+2. Defer optional `provider_view_events` / `search_events` (no analytics migration in MVB).
+3. Eligibility only via composition-wired `getStandardBrowseCandidates`; ignore Providers `eligibleForPublicBrowse` placeholder as filter.
+4. Guest `/api/v1/browse/*` with optional Bearer middleware.
+5. Contact-free projections only (gallery yes; raw phone/email/channels no) despite roadmap word “contacts”.
+6. Omit ratings summary (no ratings module); no synthetic scores.
+7. Sort: priceAmount asc, then providerId, teamId; no premium boost.
+8. Filters: eligibility inputs + optional maxPriceAmount + optional display-name `q` after eligibility.
+9. Pagination: limit/cursor over sorted eligible set; detail re-evaluates facade.
+10. Extend Configuration public locality lists; Providers implement signed contact-free preview.
+11. No booking mutation; `bookingPrerequisites` hint only; verified-account-before-booking is P13+.
+12. Reject coordinates/radius/map/socket.
+13. Tasks T001–T036 as implementation authorization once accepted.
+14. Coverage thresholds 80/75/80/80 on phase-owned files; migration N/A unless schema added.
+
+## In / out scope
+
+IN: guest catalog browse, locality helpers, eligible list, provider/team detail, sort/filter/pagination/search, OpenAPI/Postman, tests/gates.
+OUT: booking draft, payments, wallets, ratings module, premium/Recommended, maps, Docker/cloud, Git publish, mark-complete.
+
+## Already accepted
+
+- DEC-072: P11 proves facade; P12 mounts marketplace HTTP consumer.
+- DEC-085: P11 Complete.
+- Activation: `/work-on-next-phase` on 2026-09-10.
+
+## Named files to trust (do not scan whole repo)
+
+- specs/R1-P12-browse-marketplace-provider-details/activation.md
+- specs/R1-P12-browse-marketplace-provider-details/spec.md
+- specs/R1-P12-browse-marketplace-provider-details/plan.md
+- specs/R1-P12-browse-marketplace-provider-details/research.md
+- specs/R1-P12-browse-marketplace-provider-details/tasks.md
+- specs/R1-P12-browse-marketplace-provider-details/analysis-report.md
+- specs/R1-P12-browse-marketplace-provider-details/contracts/http-api.md
+- docs/product/roadmap.md (section R1-P12 only)
+- docs/architecture/entity-ownership.md (bookings / provider_view_events / search_events rows)
+
+Read those files. Refuse scope expansion. Name exceptions explicitly.

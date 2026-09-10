@@ -23,6 +23,6 @@ Only one phase is active.
 3. Review: the complete diff is checked with file/line evidence.
 4. Resolution: each blocker/major finding is verified, fixed or explicitly rejected with evidence, and retested.
 5. Completion: repository checks and phase DoD pass; the human approves.
-6. Git: only the exact phrase `commit and push` triggers staging, commit, and safe feature-branch push.
+6. Git: the exact phrase `commit and push` stages the complete remaining working tree, including skills and docs, then safely pushes the feature branch. The exact phrase `commit and push plus` publishes leftover or tiny follow-up files directly to `main` without a pull request.
 
 Never merge, deploy, run production migrations, or begin the next implementation phase as an implied step.

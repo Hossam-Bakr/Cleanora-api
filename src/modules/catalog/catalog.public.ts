@@ -12,6 +12,9 @@
 /** Approved cross-module entry point marker for the Catalog module. */
 export const CATALOG_PUBLIC_CONTRACT = "catalog.public" as const;
 
+/** Runtime guard exposed for approved cross-module error mapping. */
+export { isCatalogError } from "./catalog.errors.js";
+
 export type CatalogLocale = "AR" | "EN";
 
 export type CatalogServiceFieldKind =

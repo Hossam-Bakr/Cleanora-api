@@ -53,6 +53,8 @@ function readSqlState(error: Readonly<Record<string, unknown>>): string | null {
 /**
  * @desc True when an error is a retryable serialization / snapshot conflict.
  * @access Application
+ * @explanation Accepts EligibilityError CONFLICT, structural `{code:"CONFLICT"}`
+ * (Providers pricing), Prisma P2028/P2034, and SQLSTATE 40001/40P01.
  */
 export function isRetryableConflictError(error: unknown): boolean {
   if (error instanceof EligibilityError) {
@@ -90,6 +92,21 @@ export function normalizeEligibilityTechnicalError(
   const code = record === null ? null : readCode(record);
   if (code === "INVALID_DEPENDENCY_DTO") {
     return new EligibilityError("INVALID_DEPENDENCY_DTO", { cause: error });
+  }
+  if (
+    code === "DEPENDENCY_FAILURE" ||
+    (typeof error === "object" &&
+      error !== null &&
+      "name" in error &&
+      (error as { name: unknown }).name === "PrismaClientKnownRequestError")
+  ) {
+    return new EligibilityError("DEPENDENCY_FAILURE", { cause: error });
+  }
+  if (
+    error instanceof Error &&
+    /dependency|reader|timeout|ECONNREFUSED|unavailable/i.test(error.message)
+  ) {
+    return new EligibilityError("DEPENDENCY_FAILURE", { cause: error });
   }
   return new EligibilityError("DEPENDENCY_FAILURE", { cause: error });
 }

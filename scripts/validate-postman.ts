@@ -41,6 +41,11 @@ interface PostmanRequest {
   readonly body?: PostmanBody;
 }
 
+interface PostmanEvent {
+  readonly listen?: string;
+  readonly script?: { readonly exec?: readonly string[] };
+}
+
 interface PostmanItem {
   readonly name: string;
   readonly request?: PostmanRequest;
@@ -51,12 +56,14 @@ interface PostmanItem {
     readonly originalRequest?: PostmanRequest;
   }[];
   readonly item?: readonly PostmanItem[];
+  readonly event?: readonly PostmanEvent[];
 }
 
 interface PostmanCollection {
   readonly info: { readonly schema: string };
   readonly item: readonly PostmanItem[];
   readonly variable?: readonly EnvironmentValue[];
+  readonly event?: readonly PostmanEvent[];
 }
 
 interface EnvironmentValue {
@@ -106,6 +113,84 @@ function runtimeAuthenticationOperations(): string[] {
         .map(([method]) => `${method.toUpperCase()} ${path}`),
     )
     .sort();
+}
+
+function runtimeBrowseOperations(): string[] {
+  return Object.entries(cleanoraOpenApiDocument.paths)
+    .filter(([path]) => path.startsWith("/browse/"))
+    .flatMap(([path, pathItem]) =>
+      Object.entries(pathItem)
+        .filter(([method]) => ["get", "post", "put", "patch", "delete"].includes(method))
+        .map(([method]) => `${method.toUpperCase()} ${path}`),
+    )
+    .sort();
+}
+
+function eventScript(events: readonly PostmanEvent[] | undefined): string {
+  return (events ?? []).flatMap((event) => event.script?.exec ?? []).join("\n");
+}
+
+function assertR1P12Collection(collection: PostmanCollection): number {
+  const expectedFolders = ["Hosted (Not hosted yet)", "Local"];
+  assert(
+    collection.item.map((item) => item.name).sort().join("|") ===
+      expectedFolders.sort().join("|"),
+    "R1-P12 must contain mirrored Local and Hosted folders",
+  );
+  const expectedOperations = runtimeBrowseOperations();
+  let total = 0;
+  for (const folder of collection.item) {
+    const requests = collectRequestItems(folder.item ?? []);
+    total += requests.length;
+    const prefix = folder.name === "Local" ? "{{baseUrl}}" : "{{hostUrl}}";
+    for (const item of requests) {
+      assert(
+        item.request !== undefined && rawUrl(item.request).startsWith(prefix),
+        `R1-P12 ${folder.name}/${item.name} must start with ${prefix}`,
+      );
+    }
+    const primaryOperations = requests
+      .filter(
+        (item) =>
+          !item.name.startsWith("Validation error") &&
+          !item.name.startsWith("Not found"),
+      )
+      .map((item) => {
+        const request = item.request!;
+        const route = normalizeCollectionRoute(rawUrl(request))
+          .split("?")[0]!
+          .replace(/^\/api\/v1/u, "");
+        return `${request.method.toUpperCase()} ${route}`;
+      })
+      .sort();
+    assert(
+      JSON.stringify(primaryOperations) === JSON.stringify(expectedOperations),
+      `R1-P12 ${folder.name} operations differ from runtime OpenAPI.\nPostman: ${JSON.stringify(primaryOperations)}\nExpected: ${JSON.stringify(expectedOperations)}`,
+    );
+    const validationScript = eventScript(
+      requests.find((item) => item.name.startsWith("Validation error"))?.event,
+    );
+    assert(
+      validationScript.includes("400") && validationScript.includes("VALIDATION_FAILED"),
+      `R1-P12 ${folder.name} must assert the validation failure contract`,
+    );
+    const notFoundScript = eventScript(
+      requests.find((item) => item.name.startsWith("Not found"))?.event,
+    );
+    assert(
+      notFoundScript.includes("404") &&
+        notFoundScript.includes("BROWSE_PROVIDER_NOT_FOUND"),
+      `R1-P12 ${folder.name} must assert the non-enumerating not-found contract`,
+    );
+  }
+  const collectionScript = eventScript(collection.event);
+  assert(
+    collectionScript.includes("body.requestId") &&
+      collectionScript.includes("body.error.statusCode") &&
+      collectionScript.includes("body.success"),
+    "R1-P12 collection tests must assert success/error envelopes and requestId",
+  );
+  return total;
 }
 
 function assertMirroredEnvironments(input: {
@@ -539,6 +624,38 @@ async function main(): Promise<void> {
     assert(!r1P07Serialized.includes(forbidden), `R1-P07 collection contains forbidden secret material: ${forbidden}`);
   }
 
+  const r1P12CollectionPath = resolve(
+    postmanDirectory,
+    "Cleanora-R1-P12-Browse-Marketplace.postman_collection.json",
+  );
+  const r1P12Collection = await parseJson<PostmanCollection>(r1P12CollectionPath);
+  assert(
+    r1P12Collection.info.schema.endsWith("/collection/v2.1.0/collection.json"),
+    "R1-P12 collection must use Postman collection schema v2.1.0",
+  );
+  const r1P12RequestCount = assertR1P12Collection(r1P12Collection);
+  const r1P12Variables = new Map(
+    (r1P12Collection.variable ?? []).map((entry) => [entry.key, entry.value]),
+  );
+  assert(
+    r1P12Variables.get("accessToken") === "",
+    "R1-P12 collection must export accessToken empty",
+  );
+  const r1P12Serialized = await readFile(r1P12CollectionPath, "utf8");
+  for (const forbidden of [
+    "CLOUDINARY_API_SECRET",
+    "JWT_ACCESS_SECRET",
+    "JWT_REFRESH_SECRET",
+    "DATABASE_URL",
+    "Bearer eyJ",
+    "storageKey",
+  ]) {
+    assert(
+      !r1P12Serialized.includes(forbidden),
+      `R1-P12 collection contains forbidden secret/private material: ${forbidden}`,
+    );
+  }
+
   process.stdout.write(
     `${JSON.stringify({
       ok: true,
@@ -555,6 +672,7 @@ async function main(): Promise<void> {
         r1P05: r1P05RuntimeOperations.length,
         r1P06: r1P06RuntimeOperations.length,
         r1P07: r1P07RuntimeOperations.length,
+        r1P12: runtimeBrowseOperations().length,
       },
       r1P05Requests: r1P05RequestCount,
       r1P05RequestsPerEnvironment: r1P05RuntimeOperations.length,
@@ -563,6 +681,8 @@ async function main(): Promise<void> {
       r1P07Requests: r1P07RequestCount,
       r1P07RequestsPerEnvironment: r1P07RuntimeOperations.length,
       r1P07ValidatedRequestBodies,
+      r1P12Requests: r1P12RequestCount,
+      r1P12RequestsPerEnvironment: r1P12RequestCount / 2,
       runtimeParity: true,
       environments: 2,
     })}\n`,

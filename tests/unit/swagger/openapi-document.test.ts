@@ -21,7 +21,7 @@ describe('Cleanora Swagger OpenAPI document', () => {
           .filter((value): value is string => typeof value === 'string'),
     );
 
-    expect(operationIds).toHaveLength(176);
+    expect(operationIds).toHaveLength(201);
     expect(new Set(operationIds).size).toBe(operationIds.length);
     expect(cleanoraOpenApiDocument.paths).toHaveProperty(
       "/staff/providers/{providerId}/suspend",
@@ -36,6 +36,10 @@ describe('Cleanora Swagger OpenAPI document', () => {
       "/providers/{providerId}/teams/{teamId}/membership-commands",
     );
     expect(cleanoraOpenApiDocument.paths).toHaveProperty("/workers/me/leave");
+    expect(cleanoraOpenApiDocument.paths).toHaveProperty("/browse/services");
+    expect(cleanoraOpenApiDocument.paths).toHaveProperty(
+      "/browse/providers/{providerId}/teams/{teamId}",
+    );
     expect(cleanoraOpenApiDocument.paths).not.toHaveProperty(
       "/auth/google/result",
     );

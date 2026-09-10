@@ -251,6 +251,7 @@ export class EligibilityAvailabilityReaderService
       async ({ repository, localityReader, countryTimeZoneReader }) => {
         const facts = await repository.findCapacityEvaluationFacts(
           input.providerId,
+          { remainingTeamBudget: input.remainingTeamBudget },
         );
         if (facts === null) {
           return {
@@ -263,6 +264,28 @@ export class EligibilityAvailabilityReaderService
             suspended: false,
             simultaneousTeamLimit: null,
             teams: [],
+          };
+        }
+
+        if (facts.teamBudgetExceeded === true) {
+          return {
+            status: "OVERFLOW",
+            providerId: input.providerId,
+            acceptedTeams: facts.teams.map((team) => ({
+              teamId: team.teamId,
+              structurallyValid: false,
+              membersAvailableForWholeInterval: false,
+              cleanerGenderCounts: {
+                male: 0,
+                female: 0,
+                otherOrUnspecified: 0,
+              },
+              escortFacts: {
+                escortRequired: false,
+                escortPresentAndValid: true,
+                escortsAvailableForWholeInterval: true,
+              },
+            })),
           };
         }
 
@@ -291,6 +314,8 @@ export class EligibilityAvailabilityReaderService
           facts.providerCountryId,
         );
 
+        // Combined runtime block (suspend OR overlapping pause) is reserved for
+        // capacity-style short-circuits; paused DTO stays pause-only.
         const runtimeBlocked = isProviderRuntimeUnavailable({
           operationalStatus: facts.operationalStatus,
           pause: facts.pause,
@@ -337,6 +362,10 @@ export class EligibilityAvailabilityReaderService
           };
         }
 
+        // Capacity evaluation may consult runtimeBlocked; paused/suspended DTO
+        // fields remain independent facts (never OR suspended into paused).
+        void runtimeBlocked;
+
         const teams = mapTeamAvailabilityFacts({
           facts,
           timeZone,
@@ -376,7 +405,7 @@ export class EligibilityAvailabilityReaderService
             missingConfiguration,
             coverageMatch: coverageMatch.matched,
             providerScheduleAvailable,
-            paused: paused || runtimeBlocked,
+            paused,
             suspended,
             simultaneousTeamLimit,
             teams,
@@ -388,7 +417,7 @@ export class EligibilityAvailabilityReaderService
           providerId: input.providerId,
           coverageMatch: coverageMatch.matched,
           providerScheduleAvailable,
-          paused: paused || runtimeBlocked,
+          paused,
           suspended,
           simultaneousTeamLimit: simultaneousTeamLimit as number,
           teams,

@@ -134,8 +134,8 @@ describe("R1-P10 module boundaries (Batch A)", () => {
     }
   });
 
-  it("does not create Browse, Booking, or Docker/cloud modules in this batch", () => {
-    for (const name of ["browse", "bookings", "booking"]) {
+  it("does not create standalone Browse, singular Booking, or Docker/cloud modules", () => {
+    for (const name of ["browse", "booking"]) {
       expect(() => statSync(join(modulesRoot, name))).toThrow();
     }
   });

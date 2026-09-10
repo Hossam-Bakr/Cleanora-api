@@ -43,6 +43,11 @@ export class CatalogError extends Error {
   }
 }
 
+/** Runtime guard for approved public-contract consumers. */
+export function isCatalogError(error: unknown): error is CatalogError {
+  return error instanceof CatalogError;
+}
+
 function defaultHttpStatus(code: CatalogErrorCode): number {
   switch (code) {
     case "CATALOG_NOT_FOUND":

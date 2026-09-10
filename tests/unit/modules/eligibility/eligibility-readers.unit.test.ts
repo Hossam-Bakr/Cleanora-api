@@ -109,6 +109,7 @@ function availablePricingDeps(overrides: {
 describe("EligibilityProviderLifecycleReaderService", () => {
   it("returns MISSING when Provider row is absent", async () => {
     const reader = new EligibilityProviderLifecycleReaderService({
+      evaluatedAt: new Date("2026-09-15T08:00:00.000Z"),
       database: {
         provider: {
           findUnique: vi.fn().mockResolvedValue(null),
@@ -121,16 +122,25 @@ describe("EligibilityProviderLifecycleReaderService", () => {
     });
   });
 
-  it("returns PRESENT facts for an approved live Provider", async () => {
+  it("returns PRESENT facts for an approved live Individual Team", async () => {
     const reader = new EligibilityProviderLifecycleReaderService({
+      evaluatedAt: new Date("2026-09-15T08:00:00.000Z"),
       database: {
         provider: {
           findUnique: vi.fn().mockResolvedValue({
             id: "p1",
+            kind: "INDIVIDUAL_TEAM",
             applicationStatus: "APPROVED",
             operationalStatus: "LIVE",
             version: 3,
+            profile: { countryId: "c1" },
           }),
+        },
+        verificationDocumentPolicyVersion: {
+          findFirst: vi.fn(),
+        },
+        providerDocumentChain: {
+          findMany: vi.fn(),
         },
       } as never,
     });
@@ -145,6 +155,106 @@ describe("EligibilityProviderLifecycleReaderService", () => {
     });
   });
 
+  it("marks Registered Company without approvals as verification unsatisfied", async () => {
+    const reader = new EligibilityProviderLifecycleReaderService({
+      evaluatedAt: new Date("2026-09-15T08:00:00.000Z"),
+      database: {
+        provider: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: "p-co",
+            kind: "REGISTERED_COMPANY",
+            applicationStatus: "APPROVED",
+            operationalStatus: "LIVE",
+            version: 2,
+            profile: { countryId: "c1" },
+          }),
+        },
+        verificationDocumentPolicyVersion: {
+          findFirst: vi.fn().mockResolvedValue({
+            items: [
+              {
+                isRequired: true,
+                documentType: { code: "COMMERCIAL_REGISTER" },
+              },
+            ],
+          }),
+        },
+        providerDocumentChain: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+      } as never,
+    });
+    const facts = await reader.getLifecycleFacts("p-co");
+    expect(facts).toMatchObject({
+      status: "PRESENT",
+      verificationSatisfiedOrNotRequired: false,
+    });
+  });
+
+  it("satisfies Registered Company when required documents are approved", async () => {
+    const reader = new EligibilityProviderLifecycleReaderService({
+      evaluatedAt: new Date("2026-09-15T08:00:00.000Z"),
+      database: {
+        provider: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: "p-co",
+            kind: "REGISTERED_COMPANY",
+            applicationStatus: "APPROVED",
+            operationalStatus: "LIVE",
+            version: 2,
+            profile: { countryId: "c1" },
+          }),
+        },
+        verificationDocumentPolicyVersion: {
+          findFirst: vi.fn().mockResolvedValue({
+            items: [
+              {
+                isRequired: true,
+                documentType: { code: "COMMERCIAL_REGISTER" },
+              },
+            ],
+          }),
+        },
+        providerDocumentChain: {
+          findMany: vi.fn().mockResolvedValue([
+            { documentType: { code: "COMMERCIAL_REGISTER" } },
+          ]),
+        },
+      } as never,
+    });
+    const facts = await reader.getLifecycleFacts("p-co");
+    expect(facts).toMatchObject({
+      verificationSatisfiedOrNotRequired: true,
+    });
+  });
+
+  it("aborts when verification dependency fails", async () => {
+    const reader = new EligibilityProviderLifecycleReaderService({
+      evaluatedAt: new Date("2026-09-15T08:00:00.000Z"),
+      database: {
+        provider: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: "p-co",
+            kind: "REGISTERED_COMPANY",
+            applicationStatus: "APPROVED",
+            operationalStatus: "LIVE",
+            version: 1,
+            profile: { countryId: "c1" },
+          }),
+        },
+        verificationDocumentPolicyVersion: {
+          findFirst: vi.fn().mockRejectedValue(new Error("db down")),
+        },
+        providerDocumentChain: {
+          findMany: vi.fn(),
+        },
+      } as never,
+    });
+    await expect(reader.getLifecycleFacts("p-co")).rejects.toMatchObject({
+      code: "DEPENDENCY_FAILURE",
+    });
+  });
+
   it("honors verification override and bound factory", async () => {
     const verify = vi.fn().mockResolvedValue(false);
     const bound = createBoundEligibilityProviderLifecycleReader(
@@ -152,9 +262,11 @@ describe("EligibilityProviderLifecycleReaderService", () => {
         provider: {
           findUnique: vi.fn().mockResolvedValue({
             id: "p2",
+            kind: "INDIVIDUAL_TEAM",
             applicationStatus: "APPROVED",
             operationalStatus: "SUSPENDED",
             version: 1,
+            profile: { countryId: "c1" },
           }),
         },
       },

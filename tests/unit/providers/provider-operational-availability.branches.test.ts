@@ -82,7 +82,7 @@ function baseFacts(
             workerVersion: 9,
             cleans: true,
             workerStatus: "ACTIVE",
-            gender: "female",
+            gender: "male",
             workerType: "CLEANING_STAFF",
             weeklyPeriods: [
               {

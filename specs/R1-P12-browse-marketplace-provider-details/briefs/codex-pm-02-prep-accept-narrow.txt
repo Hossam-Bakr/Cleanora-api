@@ -1,0 +1,34 @@
+Role: read-only Cleanora PM. Do NOT edit files. Do NOT implement.
+
+Phase R1-P12 Browse Marketplace. Owner authorized via /work-on-next-phase. DEC-062 does not carry forward.
+
+Question: ACCEPT_IMPLEMENTATION or CHANGES_REQUIRED or OWNER_REQUIRED for this MVB package?
+
+Holdings to accept/reject (one line each):
+1. New bookings module owns /api/v1/browse HTTP
+2. Defer optional provider_view_events/search_events
+3. Eligible list only via getStandardBrowseCandidates
+4. Optional Bearer; guests allowed
+5. Contact-free only (no raw contacts); gallery yes
+6. No ratings module / no synthetic scores
+7. Sort price asc, providerId, teamId; no premium
+8. Filters: eligibility inputs + maxPrice + q on eligible set
+9. Cursor pagination; detail re-evaluates facade
+10. Extend Configuration locality public lists; Providers signed contact-free preview
+11. No booking mutation; bookingPrerequisites hint only
+12. Reject lat/lng/radius/map/socket
+13. Authorize tasks T001–T036 after accept
+14. Coverage 80/75/80/80; migration N/A unless schema added
+
+Read only:
+- specs/R1-P12-browse-marketplace-provider-details/spec.md
+- specs/R1-P12-browse-marketplace-provider-details/plan.md
+- specs/R1-P12-browse-marketplace-provider-details/tasks.md
+- specs/R1-P12-browse-marketplace-provider-details/contracts/http-api.md
+
+Return exactly:
+verdict:
+holdings: (14 lines accept/reject)
+named_exceptions:
+batch_acceptance_required: no|yes
+notes: <=8 lines

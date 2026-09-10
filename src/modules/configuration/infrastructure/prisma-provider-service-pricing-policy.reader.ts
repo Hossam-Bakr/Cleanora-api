@@ -45,9 +45,16 @@ export function createPrismaProviderServicePricingPolicyReader(
 export function createPrismaProviderServicePricingPolicyReader(
   transactionContext?: unknown,
 ): ProviderServicePricingPolicyReader {
-  const database =
-    transactionContext === undefined
-      ? getPrismaClient()
-      : (transactionContext as ConfigurationDatabase);
-  return new PrismaProviderServicePricingPolicyReader(database);
+  if (transactionContext !== undefined) {
+    return new PrismaProviderServicePricingPolicyReader(
+      transactionContext as ConfigurationDatabase,
+    );
+  }
+  return {
+    readForCountry(input) {
+      return new PrismaProviderServicePricingPolicyReader(
+        getPrismaClient(),
+      ).readForCountry(input);
+    },
+  };
 }
