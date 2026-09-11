@@ -1,0 +1,25 @@
+<xml>
+<task>
+Resume the same read-only R1-P13 review. Do not read more files unless a finding needs one exact line citation.
+
+You already inspected spec/plan, command service/repository/routes/schema, migration SQL, composition wiring, and started checking tests.
+
+STOP exploring. Write the review report now.
+</task>
+
+<action_safety>
+Read-only. Do not edit files. Do not commit. Do not implement.
+</action_safety>
+
+<structured_output_contract>
+Follow docs/ai/templates/review-report.md. Keep findings short.
+
+For each finding: severity, file:line, criterion, impact, remediation.
+
+You mentioned: transactional idempotency, optimistic locking, persisted matrix vs code matrix, answer-value validation, snapshot immutability. Defend or concede each as BLOCKER, MAJOR, MINOR, or not-a-finding.
+
+Live migration CLEANORA_R1_P13_DATABASE_URL is BLOCKED and documented under T035 — do not make that a code BLOCKER by itself.
+
+End with Verdict: BLOCKED | CHANGES REQUIRED | PASS
+</structured_output_contract>
+</xml>

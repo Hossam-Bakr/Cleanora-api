@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import {
   assertAppliedMigration,
   assertExactMigrationDirectoryNames,
+  assertR1P13MigrationSql,
   expectR1P07ConstraintRejection,
   readDatabaseSqlState,
 } from "../../../scripts/validate-clean-migration.js";
@@ -27,6 +28,7 @@ const EXPECTED = [
   "r1_p09_provider_services_pricing_historical_snapshots",
   "r1_p10_availability_capacity_textual_coverage",
   "r1_p11_eligibility_engine_v1",
+  "r1_p13_booking_draft_pricing_snapshot_status_machine",
 ] as const;
 
 const r1P07MigrationSql = readFileSync(
@@ -49,6 +51,23 @@ describe("clean migration exact chronology", () => {
     expect(() =>
       assertExactMigrationDirectoryNames([...EXPECTED, "future_migration"]),
     ).toThrow(/unexpected=/u);
+  });
+
+  it("accepts the phase-owned R1-P13 booking migration SQL shape", () => {
+    const sql = readFileSync(
+      resolve(
+        process.cwd(),
+        "prisma",
+        "migrations",
+        "r1_p13_booking_draft_pricing_snapshot_status_machine",
+        "migration.sql",
+      ),
+      "utf8",
+    );
+    expect(() => assertR1P13MigrationSql(sql)).not.toThrow();
+    expect(() =>
+      assertR1P13MigrationSql(`${sql}\nDROP TABLE "bookings";`),
+    ).toThrow(/destructive/u);
   });
 
   it("rejects missing, duplicate, failed, or unexpected history rows", () => {

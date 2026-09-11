@@ -47,13 +47,12 @@ Precedence:
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
 
-**Live pointer:** `R1-P11 — Eligibility Engine V1` is **Complete** under
-DEC-062 / DEC-085. Feature artifacts live in
-`specs/R1-P11-eligibility-engine-v1/`. `docs/product/current.md` is the
-authority for live state. No next phase is activated; Browse HTTP remains
-R1-P12. R1-P10 is Complete under DEC-061; R1-P09 is Complete and merged
-through PR #9. P11 introduces no new public HTTP. Disposable proofs used
-`CLEANORA_R1_P11_DATABASE_URL` only.
+**Live pointer:** `R1-P13 — Booking Draft, Pricing Snapshot & Status Machine`
+is **Active** under DEC-090. Feature artifacts live in
+`specs/R1-P13-booking-draft-pricing-snapshot-status-machine/`.
+`docs/product/current.md` is the authority for live state. R1-P12 is Complete
+under DEC-090; R1-P11 is Complete under DEC-062 / DEC-085. Git publication
+still requires exact `commit and push`.
 
 ## Current backend navigation
 

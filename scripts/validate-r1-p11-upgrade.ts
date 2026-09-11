@@ -20,9 +20,12 @@ import {
   assertR1P11MigrationSql,
   createMigrationProofPrismaClient,
   MIGRATION_NAMES_THROUGH_R1_P10,
+  MIGRATION_NAMES_THROUGH_R1_P11,
+  POST_DEPLOY_TABLES_THROUGH_R1_P11,
   R1_P10_AVAILABILITY_TABLES,
   R1_P11_ELIGIBILITY_TABLES,
   R1_P11_MIGRATION,
+  R1_P13_MIGRATION,
   requireR1P11ProofDatabaseUrl,
   type MigrationHistoryRow,
 } from "./validate-clean-migration.js";
@@ -313,10 +316,13 @@ async function run(): Promise<void> {
     ...R1_P10_UPGRADE_BASELINE_MIGRATIONS,
     R1_P11_MIGRATION,
   ]);
+  const knownLater = new Set<string>([R1_P13_MIGRATION]);
   const missing = [...expected].filter(
     (name) => !directoryNames.includes(name),
   );
-  const unexpected = directoryNames.filter((name) => !expected.has(name));
+  const unexpected = directoryNames.filter(
+    (name) => !expected.has(name) && !knownLater.has(name),
+  );
   if (missing.length > 0 || unexpected.length > 0) {
     throw new Error(
       `Upgrade migration inventory differs; missing=[${missing.join(", ")}], unexpected=[${unexpected.join(", ")}]`,
@@ -375,15 +381,24 @@ async function run(): Promise<void> {
 
     const upgraded = createMigrationProofPrismaClient(connectionString);
     try {
-      assertAppliedMigration(await readMigrationHistory(upgraded));
-      assertExactPostDeployTables(await readBaseTables(upgraded));
+      assertAppliedMigration(
+        await readMigrationHistory(upgraded),
+        MIGRATION_NAMES_THROUGH_R1_P11,
+      );
+      assertExactPostDeployTables(
+        await readBaseTables(upgraded),
+        POST_DEPLOY_TABLES_THROUGH_R1_P11,
+      );
       const after = await readR1P10BaselineDigests(upgraded, before.keys());
       assertBaselineDigestsPreserved(before, after);
       await assertR1P11UpgradeDefaults(upgraded);
     } finally {
       await upgraded.$disconnect();
     }
-    await assertPostDeployState(connectionString);
+    await assertPostDeployState(connectionString, {
+      migrationNames: MIGRATION_NAMES_THROUGH_R1_P11,
+      postDeployTables: POST_DEPLOY_TABLES_THROUGH_R1_P11,
+    });
     console.info(
       `Upgraded populated R1-P10 fixture in isolated schema ${proofSchema}; preserved baseline digests, empty R1-P11 eligibility tables before seed, seeded rule versions with empty evaluation trees, idempotent re-deploy, and live post-deploy constraints.`,
     );

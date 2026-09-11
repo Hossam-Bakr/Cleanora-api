@@ -3,6 +3,10 @@
  * Business modules must import from this file only — not from
  * `domain/` or `infrastructure/`.
  */
+import { createPrismaCustomerAddressSnapshotReader } from "./infrastructure/prisma-customer-address-snapshot.reader.js";
+import { createPrismaProviderApplicantProfileReader } from "./infrastructure/prisma-provider-applicant-profile.reader.js";
+import { createPrismaProviderPayoutHolderAuthorityReader } from "./infrastructure/prisma-provider-payout-holder.reader.js";
+
 export const CUSTOMERS_PUBLIC_CONTRACT = "customers.public" as const;
 
 export interface ProviderPayoutHolderAuthorityReader {
@@ -51,9 +55,6 @@ export interface ProviderApplicantProfileReader {
   ): Promise<ProviderApplicantProfileResult>;
 }
 
-import { createPrismaProviderApplicantProfileReader } from "./infrastructure/prisma-provider-applicant-profile.reader.js";
-import { createPrismaProviderPayoutHolderAuthorityReader } from "./infrastructure/prisma-provider-payout-holder.reader.js";
-
 /** Customers-owned payout-holder authority reader with an optional transaction context. */
 export function createProviderPayoutHolderAuthorityReader(
   transaction?: unknown,
@@ -69,4 +70,32 @@ export function createProviderApplicantProfileReader(
   transaction?: unknown,
 ): ProviderApplicantProfileReader {
   return createPrismaProviderApplicantProfileReader(transaction);
+}
+
+export interface CustomerAddressSnapshot {
+  readonly id: string;
+  readonly countryCode: string;
+  readonly city: string;
+  readonly district: string;
+  readonly addressText: string;
+  readonly building: string | null;
+  readonly floor: string | null;
+  readonly notes: string | null;
+}
+
+export interface CustomerAddressSnapshotReader {
+  readOwnedAddress(input: {
+    readonly userId: string;
+    readonly addressId: string;
+  }): Promise<CustomerAddressSnapshot | null>;
+}
+
+/**
+ * @desc Customers-owned address snapshot for Bookings. Missing or foreign
+ * addresses return null so Bookings cannot distinguish enumeration.
+ */
+export function createCustomerAddressSnapshotReader(
+  transaction?: unknown,
+): CustomerAddressSnapshotReader {
+  return createPrismaCustomerAddressSnapshotReader(transaction);
 }

@@ -3,35 +3,47 @@
 | Field | Value |
 |---|---|
 | Current Release | Release 1 — Core Marketplace |
-| Current Phase | R1-P12 — Browse Marketplace & Provider Details |
-| Status | **Active** — **READY_FOR_OWNER_REVIEW**; combined P11 follow-up + P12 review **PASS**; not Complete |
-| Backend Owner | Cursor (initial implementation) + Codex (adversarial review, repairs, and validation) |
-| Local Checkout | `codex/r1-p12-browse-marketplace-provider-details` from `main` (P11 merged); inherited dirty tree preserved |
-| Verified Main | local HEAD and `origin/main` both `3b0ed3b` at review time |
+| Current Phase | R1-P13 — Booking Draft, Pricing Snapshot & Status Machine |
+| Status | **Active** — **READY_FOR_OWNER_REVIEW** (fresh Codex re-review PASS; DEC-092 retained as history); feature-branch publication via owner `commit and push`; not Complete |
+| Backend Owner | Cursor (implementation); Codex PM ACCEPT_IMPLEMENTATION (DEC-091); fresh owner-requested Codex re-review PASS |
+| Local Checkout | `codex/r1-p13-booking-draft-pricing-snapshot-status-machine` |
+| Verified Main | `origin/main` remains the P12-merged baseline (`1d57714`); this workflow does not merge |
 | Started At | 2026-09-10 |
 | Completed At | — |
-| Last Updated | 2026-09-10 — combined P11 follow-up + P12 review PASS; ready for `commit and push` |
+| Last Updated | 2026-09-11 — owner `commit and push` of the R1-P13 working tree to the feature branch; not Complete; no merge or production migration |
 
-## Active phase — R1-P12
+## Active phase — R1-P13
 
-R1-P12 is the sole active phase and is at **READY_FOR_OWNER_REVIEW**. Guest and
-customer REST discovery of eligible providers via the P11 Browse facade is
-implemented under DEC-086. A combined re-review of unpublished P11 follow-up
-repairs plus Phase 12 found no unresolved BLOCKER or MAJOR. DEC-087 remains the
-historical record of the earlier owner substitution after unavailable Codex
-consultations. No booking mutation, maps, premium boost, wallets, Docker, or
-cloud.
+R1-P13 is the sole active phase and is at **READY_FOR_OWNER_REVIEW**. Cursor
+implemented accepted tasks T001–T038. Codex PM accepted implementation
+(DEC-091). The historical delegated Codex FAILs were repaired in tree; DEC-092
+records the temporary owner substitution after the earlier usage-time limit.
+The owner's new review request enabled a fresh Codex re-review on 2026-09-11,
+which passed with no unresolved finding. Final-byte SC-010 proofs also passed
+against disposable `cleanora_r1_p13_proof`. Owner `commit and push` publishes
+the feature branch only. This workflow does not mark R1-P13 Complete, merge,
+deploy, or run a production migration.
+
+Canonical artifacts: `specs/R1-P13-booking-draft-pricing-snapshot-status-machine/`.
+
+No payments capture, ledger, wallets, assignment execution, order fulfillment
+HTTP, Recommended path, maps, Docker, or cloud.
+
+## Most recently completed phase — R1-P12
+
+R1-P12 is **Complete** under DEC-090: the owner instructed activation of R1-P13
+after the combined P11-follow-up + P12 review **PASS** (DEC-089). Guest and
+customer REST discovery of eligible providers via the P11 Browse facade remains
+the shipped Browse HTTP under DEC-086. DEC-087 remains the historical Codex
+substitution record. P12 is already on `origin/main` via PR #13. This
+`commit and push` publishes the remaining P12 leftovers together with the
+R1-P13 working tree to the phase feature branch only.
 
 Canonical artifacts:
 `specs/R1-P12-browse-marketplace-provider-details/` (see
-`work-on-next-phase-progress.md`, `review-report.md`) and
-`specs/R1-P11-eligibility-engine-v1/follow-up-review-resolution.md`. This status
-does not authorize phase Complete, merge, deploy, or production migration. The
-review staged, unstaged, committed, and pushed nothing. The owner-chosen
-combined P11-follow-up + P12 package is technically ready; Git publication still
-requires a new human message exactly equal to `commit and push`.
+`completion-report.md`, `review-report.md`).
 
-## Most recently completed phase — R1-P11
+## Previously completed phase — R1-P11
 
 R1-P11 is **Complete** under DEC-062 delegated Codex completion authority,
 recorded as DEC-085, after live evaluate/Browse proofs, phase coverage, and

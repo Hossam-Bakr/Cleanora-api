@@ -126,6 +126,17 @@ function runtimeBrowseOperations(): string[] {
     .sort();
 }
 
+function runtimeBookingOperations(): string[] {
+  return Object.entries(cleanoraOpenApiDocument.paths)
+    .filter(([path]) => path === "/bookings" || path.startsWith("/bookings/"))
+    .flatMap(([path, pathItem]) =>
+      Object.entries(pathItem)
+        .filter(([method]) => ["get", "post", "put", "patch", "delete"].includes(method))
+        .map(([method]) => `${method.toUpperCase()} ${path}`),
+    )
+    .sort();
+}
+
 function eventScript(events: readonly PostmanEvent[] | undefined): string {
   return (events ?? []).flatMap((event) => event.script?.exec ?? []).join("\n");
 }
@@ -189,6 +200,68 @@ function assertR1P12Collection(collection: PostmanCollection): number {
       collectionScript.includes("body.error.statusCode") &&
       collectionScript.includes("body.success"),
     "R1-P12 collection tests must assert success/error envelopes and requestId",
+  );
+  return total;
+}
+
+function assertR1P13Collection(collection: PostmanCollection): number {
+  const expectedFolders = ["Hosted (Not hosted yet)", "Local"];
+  assert(
+    collection.item.map((item) => item.name).sort().join("|") ===
+      expectedFolders.sort().join("|"),
+    "R1-P13 must contain mirrored Local and Hosted folders",
+  );
+  const expectedOperations = runtimeBookingOperations();
+  let total = 0;
+  for (const folder of collection.item) {
+    const requests = collectRequestItems(folder.item ?? []);
+    total += requests.length;
+    const prefix = folder.name === "Local" ? "{{baseUrl}}" : "{{hostUrl}}";
+    for (const item of requests) {
+      assert(
+        item.request !== undefined && rawUrl(item.request).startsWith(prefix),
+        `R1-P13 ${folder.name}/${item.name} must start with ${prefix}`,
+      );
+    }
+    const primaryOperations = requests
+      .filter(
+        (item) =>
+          !item.name.startsWith("Validation error") &&
+          !item.name.startsWith("Not found"),
+      )
+      .map((item) => {
+        const request = item.request!;
+        const route = normalizeCollectionRoute(rawUrl(request))
+          .split("?")[0]!
+          .replace(/^\/api\/v1/u, "");
+        return `${request.method.toUpperCase()} ${route}`;
+      })
+      .sort();
+    assert(
+      JSON.stringify(primaryOperations) === JSON.stringify(expectedOperations),
+      `R1-P13 ${folder.name} operations differ from runtime OpenAPI.\nPostman: ${JSON.stringify(primaryOperations)}\nExpected: ${JSON.stringify(expectedOperations)}`,
+    );
+    const validationScript = eventScript(
+      requests.find((item) => item.name.startsWith("Validation error"))?.event,
+    );
+    assert(
+      validationScript.includes("400") && validationScript.includes("VALIDATION_FAILED"),
+      `R1-P13 ${folder.name} must assert the validation failure contract`,
+    );
+    const notFoundScript = eventScript(
+      requests.find((item) => item.name.startsWith("Not found"))?.event,
+    );
+    assert(
+      notFoundScript.includes("404") && notFoundScript.includes("NOT_FOUND"),
+      `R1-P13 ${folder.name} must assert the non-enumerating not-found contract`,
+    );
+  }
+  const collectionScript = eventScript(collection.event);
+  assert(
+    collectionScript.includes("body.requestId") &&
+      collectionScript.includes("body.error.statusCode") &&
+      collectionScript.includes("body.success"),
+    "R1-P13 collection tests must assert success/error envelopes and requestId",
   );
   return total;
 }
@@ -656,6 +729,38 @@ async function main(): Promise<void> {
     );
   }
 
+  const r1P13CollectionPath = resolve(
+    postmanDirectory,
+    "Cleanora-R1-P13-Booking-Draft.postman_collection.json",
+  );
+  const r1P13Collection = await parseJson<PostmanCollection>(r1P13CollectionPath);
+  assert(
+    r1P13Collection.info.schema.endsWith("/collection/v2.1.0/collection.json"),
+    "R1-P13 collection must use Postman collection schema v2.1.0",
+  );
+  const r1P13RequestCount = assertR1P13Collection(r1P13Collection);
+  const r1P13Variables = new Map(
+    (r1P13Collection.variable ?? []).map((entry) => [entry.key, entry.value]),
+  );
+  assert(
+    r1P13Variables.get("accessToken") === "",
+    "R1-P13 collection must export accessToken empty",
+  );
+  const r1P13Serialized = await readFile(r1P13CollectionPath, "utf8");
+  for (const forbidden of [
+    "CLOUDINARY_API_SECRET",
+    "JWT_ACCESS_SECRET",
+    "JWT_REFRESH_SECRET",
+    "DATABASE_URL",
+    "Bearer eyJ",
+    "storageKey",
+  ]) {
+    assert(
+      !r1P13Serialized.includes(forbidden),
+      `R1-P13 collection contains forbidden secret/private material: ${forbidden}`,
+    );
+  }
+
   process.stdout.write(
     `${JSON.stringify({
       ok: true,
@@ -673,6 +778,7 @@ async function main(): Promise<void> {
         r1P06: r1P06RuntimeOperations.length,
         r1P07: r1P07RuntimeOperations.length,
         r1P12: runtimeBrowseOperations().length,
+        r1P13: runtimeBookingOperations().length,
       },
       r1P05Requests: r1P05RequestCount,
       r1P05RequestsPerEnvironment: r1P05RuntimeOperations.length,
@@ -683,6 +789,8 @@ async function main(): Promise<void> {
       r1P07ValidatedRequestBodies,
       r1P12Requests: r1P12RequestCount,
       r1P12RequestsPerEnvironment: r1P12RequestCount / 2,
+      r1P13Requests: r1P13RequestCount,
+      r1P13RequestsPerEnvironment: r1P13RequestCount / 2,
       runtimeParity: true,
       environments: 2,
     })}\n`,

@@ -1,0 +1,336 @@
+{
+  "info": {
+    "_postman_id": "a1b0c013-4000-8000-8000-000000000013",
+    "name": "Cleanora R1-P13 Booking Draft",
+    "description": "Verified-customer booking drafts under /api/v1/bookings. No payment capture, ledger, wallets, or CONFIRMED transition.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "hostUrl", "value": "https://YOUR-HOSTED-DOMAIN.example" },
+    { "key": "accessToken", "value": "" },
+    { "key": "idempotencyKey", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "serviceId", "value": "" },
+    { "key": "providerId", "value": "" },
+    { "key": "teamId", "value": "" },
+    { "key": "countryId", "value": "" },
+    { "key": "cityId", "value": "" },
+    { "key": "districtId", "value": "" },
+    { "key": "userAddressId", "value": "" },
+    { "key": "mediaId", "value": "" },
+    { "key": "startsAt", "value": "2026-09-10T08:00:00.000Z" },
+    { "key": "endsAt", "value": "2026-09-10T12:00:00.000Z" }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const body = pm.response.json();",
+          "pm.test('Uses the Cleanora response envelope', function () {",
+          "  pm.expect(body.requestId).to.be.a('string');",
+          "  pm.expect(body.success).to.be.a('boolean');",
+          "  if (pm.response.code < 400) { pm.expect(body.success).to.eql(true); pm.expect(body).to.have.property('data'); }",
+          "  else { pm.expect(body.success).to.eql(false); pm.expect(body.error.statusCode).to.eql(pm.response.code); pm.expect(body.error.code).to.be.a('string'); }",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Local",
+      "item": [
+        {
+          "name": "Create booking draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"providerId\": \"{{providerId}}\",\n  \"teamId\": \"{{teamId}}\",\n  \"countryId\": \"{{countryId}}\",\n  \"cityId\": \"{{cityId}}\",\n  \"districtId\": \"{{districtId}}\",\n  \"startsAt\": \"{{startsAt}}\",\n  \"endsAt\": \"{{endsAt}}\",\n  \"crewPreference\": \"any\",\n  \"requiredTeamUnits\": 1,\n  \"locale\": \"AR\",\n  \"userAddressId\": \"{{userAddressId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/bookings"
+          }
+        },
+        {
+          "name": "List bookings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/bookings"
+          }
+        },
+        {
+          "name": "Get booking",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Patch booking draft",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"notes\": \"Please call on arrival\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Submit booking for deposit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 1\n}" },
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/submit-for-deposit"
+          }
+        },
+        {
+          "name": "Cancel booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"reason\": \"CUSTOMER_CHANGED_MIND\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel"
+          }
+        },
+        {
+          "name": "Attach booking media",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"mediaId\": \"{{mediaId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/media"
+          }
+        },
+        {
+          "name": "Validation error — create booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": "{{baseUrl}}/api/v1/bookings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns validation failure', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "  pm.expect(pm.response.json().error.code).to.eql('VALIDATION_FAILED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Not found — get booking",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/bookings/does-not-exist"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Hides foreign bookings as not found', function () {",
+                  "  pm.expect(pm.response.code).to.eql(404);",
+                  "  pm.expect(pm.response.json().error.code).to.eql('NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hosted (Not hosted yet)",
+      "item": [
+        {
+          "name": "Create booking draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"providerId\": \"{{providerId}}\",\n  \"teamId\": \"{{teamId}}\",\n  \"countryId\": \"{{countryId}}\",\n  \"cityId\": \"{{cityId}}\",\n  \"districtId\": \"{{districtId}}\",\n  \"startsAt\": \"{{startsAt}}\",\n  \"endsAt\": \"{{endsAt}}\",\n  \"crewPreference\": \"any\",\n  \"requiredTeamUnits\": 1,\n  \"locale\": \"AR\",\n  \"userAddressId\": \"{{userAddressId}}\"\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/bookings"
+          }
+        },
+        {
+          "name": "List bookings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/bookings"
+          }
+        },
+        {
+          "name": "Get booking",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Patch booking draft",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"notes\": \"Please call on arrival\"\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Submit booking for deposit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 1\n}" },
+            "url": "{{hostUrl}}/api/v1/bookings/{{bookingId}}/submit-for-deposit"
+          }
+        },
+        {
+          "name": "Cancel booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"reason\": \"CUSTOMER_CHANGED_MIND\"\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/bookings/{{bookingId}}/cancel"
+          }
+        },
+        {
+          "name": "Attach booking media",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1,\n  \"mediaId\": \"{{mediaId}}\"\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/bookings/{{bookingId}}/media"
+          }
+        },
+        {
+          "name": "Validation error — create booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": "{{hostUrl}}/api/v1/bookings"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns validation failure', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "  pm.expect(pm.response.json().error.code).to.eql('VALIDATION_FAILED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Not found — get booking",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/bookings/does-not-exist"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Hides foreign bookings as not found', function () {",
+                  "  pm.expect(pm.response.code).to.eql(404);",
+                  "  pm.expect(pm.response.json().error.code).to.eql('NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

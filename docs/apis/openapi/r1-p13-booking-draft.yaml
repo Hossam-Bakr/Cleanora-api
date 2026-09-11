@@ -1,0 +1,701 @@
+openapi: 3.1.0
+info:
+  title: Cleanora R1-P13 Booking Draft API
+  version: 1.0.0-r1-p13
+  summary: Verified-customer browse-path booking drafts, quote freeze, and cancel-without-fees
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Bookings
+    description: Customer-owned booking drafts. Payments, ledger, and CONFIRMED capture are out of scope.
+paths:
+  /bookings:
+    post:
+      tags: [Bookings]
+      operationId: createBookingDraft
+      summary: Create a DRAFT booking
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateBookingRequest" }
+            examples:
+              valid:
+                value:
+                  serviceId: svc_home_cleaning
+                  providerId: prv_1
+                  teamId: team_1
+                  countryId: ctry_eg
+                  cityId: city_cairo
+                  districtId: dist_nasr
+                  startsAt: "2026-09-10T08:00:00.000Z"
+                  endsAt: "2026-09-10T12:00:00.000Z"
+                  crewPreference: any
+                  requiredTeamUnits: 1
+                  locale: AR
+                  userAddressId: addr_1
+      responses:
+        "201": { $ref: "#/components/responses/BookingSuccess" }
+        "400": { $ref: "#/components/responses/BookingError" }
+        "401": { $ref: "#/components/responses/BookingError" }
+        "403": { $ref: "#/components/responses/BookingError" }
+        "409": { $ref: "#/components/responses/BookingError" }
+        "503": { $ref: "#/components/responses/BookingError" }
+    get:
+      tags: [Bookings]
+      operationId: listBookings
+      summary: List the caller's bookings
+      parameters:
+        - {
+            name: cursor,
+            in: query,
+            required: false,
+            schema: { type: string, minLength: 1, maxLength: 512 },
+          }
+        - {
+            name: limit,
+            in: query,
+            required: false,
+            schema: { type: integer, minimum: 1, maximum: 50, default: 20 },
+          }
+        - {
+            name: status,
+            in: query,
+            required: false,
+            schema: { $ref: "#/components/schemas/BookingStatus" },
+          }
+      responses:
+        "200": { $ref: "#/components/responses/BookingListSuccess" }
+        "400": { $ref: "#/components/responses/BookingError" }
+        "401": { $ref: "#/components/responses/BookingError" }
+        "403": { $ref: "#/components/responses/BookingError" }
+  /bookings/{bookingId}:
+    get:
+      tags: [Bookings]
+      operationId: getBooking
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200": { $ref: "#/components/responses/BookingSuccess" }
+        "401": { $ref: "#/components/responses/BookingError" }
+        "403": { $ref: "#/components/responses/BookingError" }
+        "404": { $ref: "#/components/responses/BookingError" }
+    patch:
+      tags: [Bookings]
+      operationId: patchBookingDraft
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PatchBookingRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/BookingSuccess" }
+        "400": { $ref: "#/components/responses/BookingError" }
+        "401": { $ref: "#/components/responses/BookingError" }
+        "403": { $ref: "#/components/responses/BookingError" }
+        "404": { $ref: "#/components/responses/BookingError" }
+        "409": { $ref: "#/components/responses/BookingError" }
+  /bookings/{bookingId}/submit-for-deposit:
+    post:
+      tags: [Bookings]
+      operationId: submitBookingForDeposit
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BookingVersionRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/BookingSuccess" }
+        "400": { $ref: "#/components/responses/BookingError" }
+        "401": { $ref: "#/components/responses/BookingError" }
+        "403": { $ref: "#/components/responses/BookingError" }
+        "404": { $ref: "#/components/responses/BookingError" }
+        "409": { $ref: "#/components/responses/BookingError" }
+        "503": { $ref: "#/components/responses/BookingError" }
+  /bookings/{bookingId}/cancel:
+    post:
+      tags: [Bookings]
+      operationId: cancelBooking
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CancelBookingRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/BookingSuccess" }
+        "400": { $ref: "#/components/responses/BookingError" }
+        "401": { $ref: "#/components/responses/BookingError" }
+        "403": { $ref: "#/components/responses/BookingError" }
+        "404": { $ref: "#/components/responses/BookingError" }
+        "409": { $ref: "#/components/responses/BookingError" }
+  /bookings/{bookingId}/media:
+    post:
+      tags: [Bookings]
+      operationId: attachBookingMedia
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AttachBookingMediaRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/BookingSuccess" }
+        "400": { $ref: "#/components/responses/BookingError" }
+        "401": { $ref: "#/components/responses/BookingError" }
+        "403": { $ref: "#/components/responses/BookingError" }
+        "404": { $ref: "#/components/responses/BookingError" }
+        "409": { $ref: "#/components/responses/BookingError" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    BookingId:
+      name: bookingId
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 64 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+  schemas:
+    BookingStatus:
+      type: string
+      enum: [DRAFT, AWAITING_DEPOSIT, CONFIRMED, CANCELLED]
+    BookingQuote:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          gross,
+          deposit,
+          remainder,
+          currencyCode,
+          depositPercent,
+          formulaVersion,
+        ]
+      properties:
+        gross: { type: string }
+        deposit: { type: string }
+        remainder: { type: string }
+        currencyCode: { type: string, minLength: 3, maxLength: 3 }
+        depositPercent: { type: string }
+        formulaVersion: { type: string, const: r1-p13-v1 }
+    BookingCatalogPriceUnitSnapshot:
+      type: object
+      additionalProperties: false
+      required: [id, code, label, displayOrder]
+      properties:
+        id: { type: string }
+        code: { type: string }
+        label: { type: string }
+        displayOrder: { type: integer }
+    BookingCatalogFieldOptionSnapshot:
+      type: object
+      additionalProperties: false
+      required: [id, value, label, displayOrder]
+      properties:
+        id: { type: string }
+        value: { type: string }
+        label: { type: string }
+        displayOrder: { type: integer }
+    BookingCatalogFieldSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          code,
+          kind,
+          label,
+          helpText,
+          required,
+          textBounds,
+          numberRules,
+          selectionBounds,
+          options,
+          displayOrder,
+        ]
+      properties:
+        id: { type: string }
+        code: { type: string }
+        kind:
+          {
+            type: string,
+            enum:
+              [INFORMATION, TEXT, NUMBER, BOOLEAN, SINGLE_SELECT, MULTI_SELECT],
+          }
+        label: { type: string }
+        helpText: { type: [string, "null"] }
+        required: { type: boolean }
+        textBounds:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [min, max]
+              properties:
+                min: { type: [integer, "null"], minimum: 0 }
+                max: { type: [integer, "null"], minimum: 0 }
+            - { type: "null" }
+        numberRules:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [mode, min, max]
+              properties:
+                mode: { type: string, enum: [INTEGER, DECIMAL] }
+                min: { type: [string, "null"] }
+                max: { type: [string, "null"] }
+            - { type: "null" }
+        selectionBounds:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [min, max]
+              properties:
+                min: { type: [integer, "null"], minimum: 0 }
+                max: { type: [integer, "null"], minimum: 0 }
+            - { type: "null" }
+        options:
+          type: array
+          items:
+            { $ref: "#/components/schemas/BookingCatalogFieldOptionSnapshot" }
+        displayOrder: { type: integer }
+    BookingCatalogMediaSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        [associationId, mediaId, contentType, width, height, displayOrder]
+      properties:
+        associationId: { type: string }
+        mediaId: { type: string }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+        width: { type: integer, minimum: 1 }
+        height: { type: integer, minimum: 1 }
+        displayOrder: { type: integer }
+    BookingCatalogSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          serviceId,
+          serviceCode,
+          serviceVersion,
+          category,
+          locale,
+          countryCode,
+          name,
+          description,
+          priceUnits,
+          fields,
+          media,
+        ]
+      properties:
+        serviceId: { type: string }
+        serviceCode: { type: string }
+        serviceVersion: { type: integer, minimum: 1 }
+        category:
+          type: object
+          additionalProperties: false
+          required: [id, code, name, description]
+          properties:
+            id: { type: string }
+            code: { type: string }
+            name: { type: string }
+            description: { type: string }
+        locale: { type: string, enum: [AR, EN] }
+        countryCode: { type: string, minLength: 2, maxLength: 2 }
+        name: { type: string }
+        description: { type: string }
+        priceUnits:
+          type: array
+          items:
+            { $ref: "#/components/schemas/BookingCatalogPriceUnitSnapshot" }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/BookingCatalogFieldSnapshot" }
+        media:
+          type: array
+          items: { $ref: "#/components/schemas/BookingCatalogMediaSnapshot" }
+    BookingProviderSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          providerId,
+          providerServiceId,
+          providerServiceVersion,
+          catalogServiceId,
+          catalogServiceCode,
+          catalogServiceVersion,
+          estimatedDurationMinutes,
+          serviceNote,
+          providerServicePriceId,
+          price,
+          minimumCharge,
+          currencyCode,
+          effectiveAt,
+          priceUnit,
+          catalogDefinition,
+        ]
+      properties:
+        providerId: { type: string }
+        providerServiceId: { type: string }
+        providerServiceVersion: { type: integer, minimum: 1 }
+        catalogServiceId: { type: string }
+        catalogServiceCode: { type: string }
+        catalogServiceVersion: { type: integer, minimum: 1 }
+        estimatedDurationMinutes: { type: integer, minimum: 1 }
+        serviceNote: { type: [string, "null"] }
+        providerServicePriceId: { type: string }
+        price: { type: string }
+        minimumCharge: { type: string }
+        currencyCode: { type: string, minLength: 3, maxLength: 3 }
+        effectiveAt: { type: string, format: date-time }
+        priceUnit:
+          type: object
+          additionalProperties: false
+          required: [id, code, label]
+          properties:
+            id: { type: string }
+            code: { type: string }
+            label: { type: string }
+        catalogDefinition:
+          { $ref: "#/components/schemas/BookingCatalogSnapshot" }
+    BookingSnapshot:
+      type: object
+      additionalProperties: false
+      required: [catalog, provider, frozenAt]
+      properties:
+        catalog: { $ref: "#/components/schemas/BookingCatalogSnapshot" }
+        provider: { $ref: "#/components/schemas/BookingProviderSnapshot" }
+        frozenAt: { type: string, format: date-time }
+    BookingPriceBreakdown:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          gross,
+          deposit,
+          remainder,
+          currencyCode,
+          decimalPlaces,
+          depositPercent,
+          formulaVersion,
+          createdAt,
+        ]
+      properties:
+        gross: { type: string }
+        deposit: { type: string }
+        remainder: { type: string }
+        currencyCode: { type: string, minLength: 3, maxLength: 3 }
+        decimalPlaces: { type: integer, minimum: 0, maximum: 8 }
+        depositPercent: { type: string }
+        formulaVersion: { type: string, const: r1-p13-v1 }
+        createdAt: { type: string, format: date-time }
+    CreateBookingRequest:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          serviceId,
+          providerId,
+          teamId,
+          countryId,
+          cityId,
+          startsAt,
+          endsAt,
+          crewPreference,
+          requiredTeamUnits,
+          locale,
+          userAddressId,
+        ]
+      properties:
+        serviceId: { type: string }
+        providerId: { type: string }
+        teamId: { type: string }
+        countryId: { type: string }
+        cityId: { type: string }
+        districtId: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        crewPreference: { type: string, enum: [all_male, all_female, any] }
+        requiredTeamUnits: { type: integer, minimum: 1, maximum: 50 }
+        locale: { type: string, enum: [AR, EN] }
+        userAddressId: { type: string }
+        notes: { type: string, maxLength: 2000 }
+        answers:
+          type: array
+          maxItems: 50
+          items:
+            type: object
+            additionalProperties: false
+            required: [fieldId, value]
+            properties:
+              fieldId: { type: string }
+              value:
+                oneOf:
+                  - { type: string }
+                  - { type: number }
+                  - { type: boolean }
+                  - { type: array, items: { type: string } }
+    PatchBookingRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version: { type: integer, minimum: 1 }
+        notes: { type: [string, "null"], maxLength: 2000 }
+        userAddressId: { type: string }
+        answers:
+          type: array
+          maxItems: 50
+          items:
+            type: object
+            additionalProperties: false
+            required: [fieldId, value]
+            properties:
+              fieldId: { type: string }
+              value:
+                oneOf:
+                  - { type: string }
+                  - { type: number }
+                  - { type: boolean }
+                  - { type: array, items: { type: string } }
+    BookingVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version: { type: integer, minimum: 1 }
+    CancelBookingRequest:
+      type: object
+      additionalProperties: false
+      required: [version, reason]
+      properties:
+        version: { type: integer, minimum: 1 }
+        reason:
+          {
+            type: string,
+            enum: [CUSTOMER_CHANGED_MIND, CUSTOMER_WRONG_DETAILS, OTHER],
+          }
+    AttachBookingMediaRequest:
+      type: object
+      additionalProperties: false
+      required: [version, mediaId]
+      properties:
+        version: { type: integer, minimum: 1 }
+        mediaId: { type: string }
+    BookingData:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          status,
+          path,
+          version,
+          serviceId,
+          providerId,
+          teamId,
+          countryId,
+          cityId,
+          startsAt,
+          endsAt,
+          crewPreference,
+          requiredTeamUnits,
+          locale,
+          emergencySignaled,
+          quote,
+          snapshot,
+          priceBreakdown,
+          snapshotFrozen,
+          createdAt,
+        ]
+      properties:
+        id: { type: string }
+        status: { $ref: "#/components/schemas/BookingStatus" }
+        path: { type: string, const: BROWSE }
+        version: { type: integer }
+        serviceId: { type: string }
+        providerId: { type: string }
+        teamId: { type: string }
+        countryId: { type: string }
+        cityId: { type: string }
+        districtId: { type: [string, "null"] }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        crewPreference: { type: string, enum: [all_male, all_female, any] }
+        requiredTeamUnits: { type: integer }
+        locale: { type: string, enum: [AR, EN] }
+        notes: { type: [string, "null"] }
+        emergencySignaled: { type: boolean, const: false }
+        quote:
+          {
+            oneOf:
+              [{ $ref: "#/components/schemas/BookingQuote" }, { type: "null" }],
+          }
+        item: { type: [object, "null"] }
+        address: { type: [object, "null"] }
+        answers: { type: array, items: { type: object } }
+        media:
+          type: array
+          items:
+            type: object
+            required: [mediaId, displayOrder]
+            properties:
+              mediaId: { type: string }
+              displayOrder: { type: integer, minimum: 0 }
+              deliveryUrl: { type: string, format: uri }
+              urlExpiresAt: { type: string, format: date-time }
+        snapshot:
+          oneOf:
+            - { $ref: "#/components/schemas/BookingSnapshot" }
+            - { type: "null" }
+        priceBreakdown:
+          oneOf:
+            - { $ref: "#/components/schemas/BookingPriceBreakdown" }
+            - { type: "null" }
+        snapshotFrozen: { type: boolean }
+        eligibilityEvaluationId: { type: [string, "null"] }
+        statusHistory: { type: array, items: { type: object } }
+        createdAt: { type: string, format: date-time }
+        submittedAt: { type: [string, "null"], format: date-time }
+        cancelledAt: { type: [string, "null"], format: date-time }
+    BookingListData:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/BookingData" }
+        nextCursor: { type: [string, "null"] }
+    SuccessEnvelope:
+      type: object
+      required: [success, data, requestId]
+      properties:
+        success: { type: boolean, const: true }
+        data: { type: object }
+        requestId: { type: string, format: uuid }
+    ErrorEnvelope:
+      type: object
+      required: [success, error, requestId]
+      properties:
+        success: { type: boolean, const: false }
+        error:
+          type: object
+          required: [code, statusCode, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - VALIDATION_FAILED
+                - AUTHENTICATION_REQUIRED
+                - FORBIDDEN
+                - NOT_FOUND
+                - NOT_ELIGIBLE
+                - CONFLICT
+                - TRANSITION_NOT_AVAILABLE
+                - DEPENDENCY_FAILURE
+                - DEPOSIT_PERCENT_UNAVAILABLE
+            statusCode: { type: integer, minimum: 400, maximum: 599 }
+            message: { type: string }
+        requestId: { type: string, format: uuid }
+  responses:
+    BookingSuccess:
+      description: Booking command succeeded
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: "#/components/schemas/SuccessEnvelope" }
+              - type: object
+                properties:
+                  data: { $ref: "#/components/schemas/BookingData" }
+          examples:
+            draft:
+              value:
+                success: true
+                requestId: 7ebf45ad-7384-41ab-8e74-e864ae048d30
+                data:
+                  id: booking_1
+                  status: DRAFT
+                  path: BROWSE
+                  version: 1
+                  serviceId: svc_home_cleaning
+                  providerId: prv_1
+                  teamId: team_1
+                  countryId: ctry_eg
+                  cityId: city_cairo
+                  districtId: dist_nasr
+                  startsAt: "2026-09-10T08:00:00.000Z"
+                  endsAt: "2026-09-10T12:00:00.000Z"
+                  crewPreference: any
+                  requiredTeamUnits: 1
+                  locale: AR
+                  notes: null
+                  emergencySignaled: false
+                  quote:
+                    gross: "100.00"
+                    deposit: "25.00"
+                    remainder: "75.00"
+                    currencyCode: EGP
+                    depositPercent: "25.00"
+                    formulaVersion: r1-p13-v1
+                  snapshot: null
+                  priceBreakdown: null
+                  snapshotFrozen: false
+                  createdAt: "2026-09-10T07:00:00.000Z"
+                  submittedAt: null
+                  cancelledAt: null
+    BookingListSuccess:
+      description: Booking list succeeded
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: "#/components/schemas/SuccessEnvelope" }
+              - type: object
+                properties:
+                  data: { $ref: "#/components/schemas/BookingListData" }
+    BookingError:
+      description: Safe booking failure
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+          examples:
+            notFound:
+              value:
+                success: false
+                requestId: 7ebf45ad-7384-41ab-8e74-e864ae048d30
+                error:
+                  code: NOT_FOUND
+                  statusCode: 404
+                  message: Booking was not found
+            validation:
+              value:
+                success: false
+                requestId: 7ebf45ad-7384-41ab-8e74-e864ae048d30
+                error:
+                  code: VALIDATION_FAILED
+                  statusCode: 400
+                  message: Booking request validation failed

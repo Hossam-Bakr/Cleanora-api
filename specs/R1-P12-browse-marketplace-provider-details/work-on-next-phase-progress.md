@@ -50,9 +50,10 @@ Reach READY_FOR_OWNER_REVIEW without mark-complete or Git publication.
 
 ## Status
 
-**READY_FOR_OWNER_REVIEW**. Combined unpublished P11 follow-up + P12 is
-technically ready. Phase remains Active and Companion remains nonterminal.
-Nothing was staged, committed, or pushed. Publication requires exactly
+**Complete** under DEC-090 (owner instructed activate/complete R1-P13 after
+DEC-089 PASS). Historical READY_FOR_OWNER_REVIEW evidence is unchanged.
+Companion was not force-completed by this advance; P13 is now the sole active
+phase. Nothing was staged, committed, or pushed. Publication requires exactly
 `commit and push`.
 
 ## Handoff links

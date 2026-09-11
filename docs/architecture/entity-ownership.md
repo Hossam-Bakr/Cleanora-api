@@ -157,6 +157,7 @@ Unassigned exclusions (must remain excluded until roadmap assignment): **OQ-003,
 | `booking_price_breakdowns` | `bookings` | R1 | R1-P13 | `bookings` | — | authoritative | `orders` (activation/fulfillment); `payments` (deposit/totals) | OQ-010->R1-P13 |
 | `booking_status_history` | `bookings` | R1 | R1-P13 | `bookings` | — | historical / auditable | `orders` (transition coordination); `admin` (override/audit) | OQ-010->R1-P13 |
 | `status_transition_rules` | `bookings` | R1 | R1-P13 | `bookings` | — | configurable / authoritative | `orders` (transition coordination); `admin` (override/audit) | OQ-010->R1-P13 |
+| `booking_commands` | `bookings` | R1 | R1-P13 | `bookings` | — | historical / auditable | `admin` (idempotent replay investigation); not a payment ledger | FR-011 |
 | `ledger_accounts` | `payments` | R1 | R1-P14 | `payments` | — | immutable financial / external ref as applicable | `admin` (finance control); `marketers` (commission from platform share context, not wallet) |  |
 | `ledger_entries` | `payments` | R1 | R1-P14 | `payments` | — | immutable financial / external ref as applicable | `admin` (finance control); `marketers` (commission from platform share context, not wallet) |  |
 | `ledger_entry_links` | `payments` | R1 | R1-P14 | `payments` | — | immutable financial / external ref as applicable | `admin` (finance control); `marketers` (commission from platform share context, not wallet) |  |

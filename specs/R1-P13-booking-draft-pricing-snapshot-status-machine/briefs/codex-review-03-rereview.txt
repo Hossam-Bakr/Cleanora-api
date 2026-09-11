@@ -1,0 +1,65 @@
+<xml>
+<task>
+You are a read-only Cleanora reviewer. Do not edit files. Do not implement. Do not run tests or git write commands.
+
+This is a RE-REVIEW after Codex call 4 FAIL (0 BLOCKER, 6 MAJOR). Cursor repaired all six MAJORs in the working tree. Thread 01a08b9e-89cd-76c1-95fb-f76120de6425.
+
+Question: After inspecting the repairs, are there unresolved BLOCKER or MAJOR findings, or is the repaired tree ready for owner review?
+
+Verdict must be PASS, PASS_WITH_FOLLOWUPS, or FAIL. Do not relabel the historical call-4 FAIL as PASS without inspecting the current files. Do not mark the phase Complete. Do not commit.
+</task>
+
+<context>
+DEC-090: P12 Complete; P13 sole active; no Git publication.
+DEC-091: OQ-010 freeze; EX-01/02/03 KEEP; T001–T038 authorized.
+T038 (READY_FOR_OWNER_REVIEW) is still open until this re-review.
+
+Call-4 MAJORs and Cursor remediations to re-check:
+1. Atomic version: claimOwnedBooking uses updateMany on id+owner+expectedVersion+expected status; side effects only after count===1. File: src/modules/bookings/infrastructure/prisma-bookings.repository.ts
+2. Runtime matrix: isExecutableTransition reads status_transition_rules.executable=true; command service does not import bookings.matrix. Files: prisma-bookings.repository.ts, bookings.command.service.ts, bookings.matrix.ts
+3. Catalog answers: bookings.answers.ts canonicalize TEXT/NUMBER/BOOLEAN/SELECT. Command service maps through it.
+4. Snapshot immutability: SQL triggers r1_p13_reject_booking_snapshot_mutation and r1_p13_reject_booking_price_breakdown_mutation raise 55000. Live rewrite proof remains BLOCKED (CLEANORA_R1_P13_DATABASE_URL unset). T035 allows BLOCKED.
+5. Egypt-only deposit seed: WHERE c."code" = 'EG'. Validator rejects unfiltered FROM countries seed.
+6. Signed media URLs: Media signOwnedReadyImage; present() attaches deliveryUrl/urlExpiresAt or omits on sign failure.
+
+MINOR already repaired: PATCH ignores Idempotency-Key.
+</context>
+
+<review_files>
+Read only:
+- specs/R1-P13-booking-draft-pricing-snapshot-status-machine/spec.md (FR/SC/DoD)
+- specs/R1-P13-booking-draft-pricing-snapshot-status-machine/review-resolution.md
+- prisma/migrations/r1_p13_booking_draft_pricing_snapshot_status_machine/migration.sql (Egypt filter + triggers)
+- src/modules/bookings/infrastructure/prisma-bookings.repository.ts (updateMany claims + isExecutableTransition)
+- src/modules/bookings/bookings.command.service.ts (no matrix import; evaluateEligibility explicit; present() signing)
+- src/modules/bookings/bookings.answers.ts
+- src/modules/bookings/bookings.matrix.ts
+- src/modules/media/infrastructure/prisma-booking-attachment.reader.ts
+- tests/unit/modules/bookings/module-boundaries.test.ts
+- tests/unit/modules/bookings/status-transition-seed.test.ts
+</review_files>
+
+<gate_evidence>
+Cursor (do not re-run):
+- npm run test:coverage:r1-p13 → PASS 14 files / 95 tests; 89.98 / 80.3 / 96.05 / 89.95
+- npx tsc --noEmit PASS; npm run build PASS
+- npx prisma validate PASS; npm run openapi:validate PASS; npm run postman:validate PASS (r1P13 9/env); npm run docs:check PASS
+- git diff --check on P13 paths PASS
+- Live clean/upgrade: BLOCKED — CLEANORA_R1_P13_DATABASE_URL unset. Do not relabel PASS.
+</gate_evidence>
+
+<grounding_rules>
+Ground every finding in file:line. Check only whether the six remediations hold and whether any new BLOCKER/MAJOR remains. Refuse over-engineering. Live migration BLOCKED is not a FAIL by itself (SC-010 / T035).
+</grounding_rules>
+
+<action_safety>
+Read-only. Do not create, edit, or delete repository files.
+</action_safety>
+
+<structured_output_contract>
+Output ONLY the review-report.md body using docs/ai/templates/review-report.md.
+Verdict: PASS | PASS_WITH_FOLLOWUPS | FAIL
+List each of the six prior MAJORs as resolved or still open with evidence.
+Stop after the report.
+</structured_output_contract>
+</xml>

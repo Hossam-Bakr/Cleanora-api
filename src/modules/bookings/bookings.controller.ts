@@ -166,6 +166,7 @@ export function createBookingsBrowseController(
           providerId: params.providerId,
           teamId: params.teamId,
           query,
+          principal: getOptionalBrowsePrincipal(response),
         });
         sendSuccess(request, response, 200, data);
       } catch (error) {
