@@ -1,3 +1,4 @@
+import type { AuthenticationPrincipal } from "#modules/authentication/authentication.public";
 import type {
   CatalogDefinitionReader,
   CatalogLocale,
@@ -26,7 +27,7 @@ export const BOOKINGS_PUBLIC_CONTRACT = "bookings.public" as const;
 export const BOOKING_PREREQUISITES = {
   bookingAvailable: false,
   requiresVerifiedCustomer: true,
-  phase: "R1-P13+",
+  phase: "R1-P13",
 } as const;
 
 export interface BrowseProviderListItem {
@@ -68,7 +69,11 @@ export interface BrowseProviderDetailResult {
       }
     | { readonly status: "UNAVAILABLE" };
   readonly ratingSummary: null;
-  readonly bookingPrerequisites: typeof BOOKING_PREREQUISITES;
+  readonly bookingPrerequisites: {
+    readonly bookingAvailable: boolean;
+    readonly requiresVerifiedCustomer: true;
+    readonly phase: "R1-P13";
+  };
   readonly sideEffects: {
     readonly bookingCreated: false;
     readonly paymentInitiated: false;
@@ -105,6 +110,7 @@ export interface BookingsBrowseReader {
       BrowseProvidersQuery,
       "maxPriceAmount" | "q" | "limit" | "cursor"
     >;
+    readonly principal?: AuthenticationPrincipal | null;
   }): Promise<BrowseProviderDetailResult>;
   getProviderPreview(
     providerId: string,

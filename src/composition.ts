@@ -80,6 +80,7 @@ import {
 import { getActiveCountryIdByCode } from "#modules/configuration/configuration.service";
 import {
   createActiveCountryReader,
+  createDepositPercentReader,
   createLocalityReader,
   createTransactionalActiveCountryReader,
   createTransactionalCountryTimeZoneReader,
@@ -107,7 +108,7 @@ import {
   createWorkerInvitationIdentityOnboarding,
   WorkerSensitiveActionProofVerifier,
 } from "#modules/authentication/authentication.factories";
-import { createProviderApplicantProfileReader, createProviderPayoutHolderAuthorityReader } from "#modules/customers/customers.public";
+import { createProviderApplicantProfileReader, createProviderPayoutHolderAuthorityReader, createCustomerAddressSnapshotReader } from "#modules/customers/customers.public";
 import {
   createProviderAdminInvitationRouter,
   createProvidersRouter,
@@ -229,7 +230,11 @@ import {
   type ProviderServiceSnapshotReader,
   type ProviderServicesReadyFactsReader,
 } from "#modules/providers/providers.public";
+import { createBookingAttachmentReader } from "#modules/media/media.public";
 import { createBookingsBrowseRouter } from "#modules/bookings/bookings.routes";
+import { createBookingsCommandRouter } from "#modules/bookings/bookings.command.routes";
+import { BookingsCommandService } from "#modules/bookings/bookings.command.service";
+import { createPrismaBookingsCommandRepository } from "#modules/bookings/infrastructure/prisma-bookings.repository";
 import { BookingsBrowseService } from "#modules/bookings/bookings.service";
 import {
   createEligibilityApplicationService,
@@ -1480,6 +1485,40 @@ export function createRuntimeDependencies(
     privacyHashSecret: browseCursorSecret,
     service: bookingsBrowseService,
   });
+  const bookingsCommandService = new BookingsCommandService({
+    repository: createPrismaBookingsCommandRepository(database.client),
+    eligibility: eligibilityApplicationService,
+    catalog: catalogDefinitionReader,
+    locality: createLocalityReader(database.client),
+    depositPercent: createDepositPercentReader(database.client),
+    addresses: createCustomerAddressSnapshotReader(database.client),
+    attachments: (() => {
+      try {
+        const mediaSelection = createMediaStoragePort(environment);
+        return createBookingAttachmentReader(database.client, {
+          storage: mediaSelection.storage,
+          signedUrlTtlSeconds: mediaSelection.signedUrlTtlSeconds,
+        });
+      } catch {
+        return createBookingAttachmentReader(database.client);
+      }
+    })(),
+    serviceSnapshots:
+      providerServiceSnapshotReader ??
+      ({
+        getSnapshotReadyFacts: async () => ({ status: "UNAVAILABLE" as const }),
+      } satisfies ProviderServiceSnapshotReader),
+    activeCountries: createActiveCountryReader(database.client),
+  });
+  const bookingsCommandRouter =
+    authentication === undefined
+      ? undefined
+      : createBookingsCommandRouter({
+          authenticateAccess: authentication.authenticateAccess,
+          rateLimiter,
+          privacyHashSecret: browseCursorSecret,
+          service: bookingsCommandService,
+        });
 
   return {
     database,
@@ -1539,6 +1578,7 @@ export function createRuntimeDependencies(
         ? {}
         : { providerAvailabilityRouter }),
       bookingsBrowseRouter,
+      ...(bookingsCommandRouter === undefined ? {} : { bookingsCommandRouter }),
     },
   };
 }

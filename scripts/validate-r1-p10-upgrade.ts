@@ -18,6 +18,7 @@ import {
   R1_P10_AVAILABILITY_TABLES,
   R1_P10_MIGRATION,
   R1_P11_MIGRATION,
+  R1_P13_MIGRATION,
   requireR1P10ProofDatabaseUrl,
   type MigrationHistoryRow,
 } from "./validate-clean-migration.js";
@@ -373,7 +374,7 @@ async function run(): Promise<void> {
     ...R1_P09_UPGRADE_BASELINE_MIGRATIONS,
     R1_P10_MIGRATION,
   ]);
-  const knownLater = new Set<string>([R1_P11_MIGRATION]);
+  const knownLater = new Set<string>([R1_P11_MIGRATION, R1_P13_MIGRATION]);
   const missing = [...expected].filter(
     (name) => !directoryNames.includes(name),
   );

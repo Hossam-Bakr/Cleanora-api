@@ -345,3 +345,9 @@ export function createTransactionalLocalityReader(
 ): LocalityReader {
   return buildLocalityReader(transactionContext);
 }
+
+export type {
+  DepositPercentFacts,
+  DepositPercentReader,
+} from "./infrastructure/prisma-deposit-percent.reader.js";
+export { createDepositPercentReader } from "./infrastructure/prisma-deposit-percent.reader.js";

@@ -39,6 +39,7 @@ export const MIGRATION_NAMES_THROUGH_R1_P10 = [
 const migrationNames = [
   ...MIGRATION_NAMES_THROUGH_R1_P10,
   'r1_p11_eligibility_engine_v1',
+  'r1_p13_booking_draft_pricing_snapshot_status_machine',
 ] as const;
 const expectedTablesThroughR1P10 = [
   "currencies",
@@ -139,6 +140,16 @@ const expectedTables = [
   "eligibility_rule_versions",
   "eligibility_evaluations",
   "eligibility_candidate_results",
+  "bookings",
+  "booking_items",
+  "booking_answers",
+  "booking_addresses",
+  "booking_media",
+  "booking_snapshots",
+  "booking_price_breakdowns",
+  "booking_status_history",
+  "status_transition_rules",
+  "booking_commands",
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -258,6 +269,18 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "eligibility_rule_versions",
     "eligibility_evaluations",
     "eligibility_candidate_results"
+  ],
+  r1_p13_booking_draft_pricing_snapshot_status_machine: [
+    "bookings",
+    "booking_items",
+    "booking_answers",
+    "booking_addresses",
+    "booking_media",
+    "booking_snapshots",
+    "booking_price_breakdowns",
+    "booking_status_history",
+    "status_transition_rules",
+    "booking_commands"
   ]
 };
 const expectedPostDeployTablesThroughR1P10 = [
@@ -841,6 +864,52 @@ export function requireR1P11ProofDatabaseUrl(
   }
 }
 
+export const APPROVED_R1_P13_TARGET_PATTERN =
+  /^cleanora_r1_p13(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
+
+/** Require an explicitly named R1-P13 disposable target for booking proofs. */
+export function assertR1P13DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  let targetName: string;
+  try {
+    const url = new URL(connectionString);
+    targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  } catch {
+    throw new Error("R1-P13 database URL is not a valid URL");
+  }
+  if (!APPROVED_R1_P13_TARGET_PATTERN.test(targetName)) {
+    throw new Error(
+      `Refusing R1-P13 database work against unapproved target "${targetName}"`,
+    );
+  }
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+}
+
+/**
+ * Resolve the separate R1-P13 live/proof URL.
+ * Never falls back to DATABASE_URL or a prior-phase disposable target.
+ */
+export function requireR1P13ProofDatabaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const value = env["CLEANORA_R1_P13_DATABASE_URL"];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      "CLEANORA_R1_P13_DATABASE_URL is required for R1-P13 disposable proofs",
+    );
+  }
+  assertR1P13DisposableDatabaseUrl(value);
+  try {
+    const url = new URL(value);
+    url.hostname = url.hostname.replace("-pooler", "");
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
 /** Accept only the forward-only R1-P06 table/enums/index/constraint inventory. */
 export function assertR1P06MigrationSql(sql: string): void {
   if (destructivePattern.test(sql) || /\bDROP\s+(COLUMN|CONSTRAINT|TYPE)\b/iu.test(sql)) {
@@ -1077,6 +1146,16 @@ export const R1_P11_ELIGIBILITY_TABLES = [
   "eligibility_candidate_results",
 ] as const;
 
+export const MIGRATION_NAMES_THROUGH_R1_P11 = [
+  ...MIGRATION_NAMES_THROUGH_R1_P10,
+  R1_P11_MIGRATION,
+] as const;
+
+export const POST_DEPLOY_TABLES_THROUGH_R1_P11 = [
+  ...POST_DEPLOY_TABLES_THROUGH_R1_P10,
+  ...R1_P11_ELIGIBILITY_TABLES,
+] as const;
+
 /** Accept only the additive, phase-owned R1-P11 Eligibility migration inventory. */
 export function assertR1P11MigrationSql(sql: string): void {
   if (/\b(DROP\s+TABLE|TRUNCATE)\b/iu.test(sql)) {
@@ -1114,6 +1193,99 @@ export function assertR1P11MigrationSql(sql: string): void {
     if (forbidden.test(sql)) {
       throw new Error("R1-P11 migration must not reference Browse or Booking surfaces");
     }
+  }
+}
+
+export const R1_P13_MIGRATION =
+  "r1_p13_booking_draft_pricing_snapshot_status_machine";
+
+export const R1_P13_BOOKING_TABLES = [
+  "bookings",
+  "booking_items",
+  "booking_answers",
+  "booking_addresses",
+  "booking_media",
+  "booking_snapshots",
+  "booking_price_breakdowns",
+  "booking_status_history",
+  "status_transition_rules",
+  "booking_commands",
+] as const;
+
+export const MIGRATION_NAMES_THROUGH_R1_P13 = [
+  ...MIGRATION_NAMES_THROUGH_R1_P11,
+  R1_P13_MIGRATION,
+] as const;
+
+export const POST_DEPLOY_TABLES_THROUGH_R1_P13 = [
+  ...POST_DEPLOY_TABLES_THROUGH_R1_P11,
+  ...R1_P13_BOOKING_TABLES,
+] as const;
+
+/** Accept only the additive, phase-owned R1-P13 booking migration inventory. */
+export function assertR1P13MigrationSql(sql: string): void {
+  if (/\b(DROP\s+TABLE|TRUNCATE)\b/iu.test(sql)) {
+    throw new Error("R1-P13 booking migration contains destructive SQL");
+  }
+  if (/\bDELETE\s+FROM\b/iu.test(sql)) {
+    throw new Error("R1-P13 booking migration must not delete existing rows");
+  }
+  const tables = migrationOwnedTables[R1_P13_MIGRATION] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P13 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 10) {
+    throw new Error("R1-P13 migration must create exactly ten booking tables");
+  }
+  for (const required of [
+    "BOOKING_ATTACHMENT",
+    "commercial.deposit_percent",
+    "DECIMAL(65,0)",
+    "emergency_signaled",
+    "booking_commands_customer_user_id_command_type_idempotency_key_key",
+  ]) {
+    if (!sql.includes(required)) {
+      throw new Error(`R1-P13 migration is missing ${required}`);
+    }
+  }
+  const snapshotSql = sql.slice(
+    sql.indexOf('CREATE TABLE "booking_snapshots"'),
+    sql.indexOf('CREATE TABLE "booking_price_breakdowns"'),
+  );
+  if (snapshotSql.includes('"updated_at"')) {
+    throw new Error("R1-P13 snapshots must not have updated_at");
+  }
+  const breakdownSql = sql.slice(
+    sql.indexOf('CREATE TABLE "booking_price_breakdowns"'),
+    sql.indexOf('CREATE TABLE "booking_status_history"'),
+  );
+  if (breakdownSql.includes('"updated_at"')) {
+    throw new Error("R1-P13 price breakdowns must not have updated_at");
+  }
+  if (!sql.includes('c."code" = \'EG\'')) {
+    throw new Error("R1-P13 must seed commercial.deposit_percent for Egypt only");
+  }
+  if (/FROM "countries" c\s+WHERE NOT EXISTS/u.test(sql)) {
+    throw new Error("R1-P13 must not seed deposit percent for every country");
+  }
+  for (const required of [
+    "r1_p13_reject_booking_snapshot_mutation",
+    "r1_p13_reject_booking_price_breakdown_mutation",
+    'BEFORE UPDATE OR DELETE ON "booking_snapshots"',
+    'BEFORE UPDATE OR DELETE ON "booking_price_breakdowns"',
+  ]) {
+    if (!sql.includes(required)) {
+      throw new Error(`R1-P13 migration is missing ${required}`);
+    }
+  }
+  if (
+    sql.includes('CREATE TABLE "orders"') ||
+    sql.includes('CREATE TABLE "wallets"') ||
+    sql.includes('CREATE TABLE "ledger')
+  ) {
+    throw new Error("R1-P13 migration must not introduce orders, wallets, or ledger");
   }
 }
 
@@ -1215,6 +1387,10 @@ async function validateMigrationFolder(): Promise<void> {
     }
     if (migrationName === R1_P11_MIGRATION) {
       assertR1P11MigrationSql(sql);
+      continue;
+    }
+    if (migrationName === R1_P13_MIGRATION) {
+      assertR1P13MigrationSql(sql);
       continue;
     }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
@@ -1337,6 +1513,37 @@ export async function assertPostDeployState(
         );
       }
     }
+    if (expectedMigrationNames.includes(R1_P13_MIGRATION)) {
+      for (const table of [
+        "bookings",
+        "booking_items",
+        "booking_answers",
+        "booking_addresses",
+        "booking_media",
+        "booking_snapshots",
+        "booking_price_breakdowns",
+        "booking_status_history",
+        "booking_commands",
+      ] as const) {
+        const rows = await prisma.$queryRawUnsafe<Array<{ total: bigint }>>(
+          `SELECT count(*)::bigint AS total FROM "${table}"`,
+        );
+        if ((rows[0]?.total ?? 0n) !== 0n) {
+          throw new Error(
+            `R1-P13 seed must leave ${table} empty; found commercial booking rows`,
+          );
+        }
+      }
+      const ruleRows = await prisma.$queryRaw<Array<{ total: bigint }>>`
+        SELECT count(*)::bigint AS total FROM "status_transition_rules"
+      `;
+      if ((ruleRows[0]?.total ?? 0n) < 4n) {
+        throw new Error(
+          "R1-P13 migration must seed executable status_transition_rules rows",
+        );
+      }
+      await probeR1P13Immutability(prisma);
+    }
   } finally {
     await prisma.$disconnect();
   }
@@ -1430,6 +1637,108 @@ export function readDatabaseSqlState(error: unknown): string | null {
   if (typeof cause !== "object" || cause === null) return null;
   const originalCode = (cause as Readonly<Record<string, unknown>>)["originalCode"];
   return typeof originalCode === "string" ? originalCode : null;
+}
+
+const R1_P13_IMMUTABILITY_ROLLBACK = "r1-p13-immutability-probe-rollback";
+
+/** Live rewrite/delete of frozen booking snapshot and price-breakdown rows must raise 55000. */
+async function probeR1P13Immutability(prisma: PrismaClient): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      DECLARE
+        country_id TEXT;
+      BEGIN
+        SELECT c."id" INTO STRICT country_id
+        FROM "countries" c
+        WHERE c."code" = 'EG'
+        LIMIT 1;
+
+        INSERT INTO "users" (
+          "id", "email_normalized", "email_verified_at", "account_categories",
+          "verified_categories", "status", "updated_at"
+        ) VALUES (
+          'r1p13-proof-customer', 'r1p13-proof-customer@example.invalid', CURRENT_TIMESTAMP,
+          ARRAY['INDIVIDUAL']::"AccountCategory"[], ARRAY['INDIVIDUAL']::"AccountCategory"[],
+          'ACTIVE', CURRENT_TIMESTAMP
+        );
+
+        INSERT INTO "bookings" (
+          "id", "customer_user_id", "country_id", "currency_code", "currency_decimal_places",
+          "status", "path", "service_id", "provider_id", "team_id", "city_id",
+          "starts_at", "ends_at", "crew_preference", "required_team_units", "locale",
+          "deposit_percent", "updated_at"
+        ) VALUES (
+          'r1p13-proof-booking', 'r1p13-proof-customer', country_id, 'EGP', 2,
+          'DRAFT', 'BROWSE', 'r1p13-proof-service', 'r1p13-proof-provider',
+          'r1p13-proof-team', 'r1p13-proof-city',
+          CURRENT_TIMESTAMP + INTERVAL '1 day',
+          CURRENT_TIMESTAMP + INTERVAL '1 day 2 hours',
+          'ANY', 1, 'EN', '25', CURRENT_TIMESTAMP
+        );
+
+        INSERT INTO "booking_snapshots" (
+          "id", "booking_id", "catalog_snapshot_json", "provider_snapshot_json",
+          "catalog_hash", "provider_hash", "price_input_hash", "frozen_at"
+        ) VALUES (
+          'r1p13-proof-snapshot', 'r1p13-proof-booking', '{}'::jsonb, '{}'::jsonb,
+          'catalog', 'provider', 'price', CURRENT_TIMESTAMP
+        );
+
+        INSERT INTO "booking_price_breakdowns" (
+          "id", "booking_id", "currency_code", "decimal_places",
+          "gross_minor_units", "deposit_minor_units", "remainder_minor_units",
+          "deposit_percent", "formula_version"
+        ) VALUES (
+          'r1p13-proof-breakdown', 'r1p13-proof-booking', 'EGP', 2,
+          10000, 2500, 7500, '25', 'r1-p13'
+        );
+
+        BEGIN
+          UPDATE "booking_snapshots"
+          SET "catalog_hash" = 'mutated'
+          WHERE "id" = 'r1p13-proof-snapshot';
+          RAISE EXCEPTION 'accepted snapshot rewrite';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        BEGIN
+          DELETE FROM "booking_snapshots" WHERE "id" = 'r1p13-proof-snapshot';
+          RAISE EXCEPTION 'accepted snapshot delete';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        BEGIN
+          UPDATE "booking_price_breakdowns"
+          SET "gross_minor_units" = 1
+          WHERE "id" = 'r1p13-proof-breakdown';
+          RAISE EXCEPTION 'accepted breakdown rewrite';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        BEGIN
+          DELETE FROM "booking_price_breakdowns"
+          WHERE "id" = 'r1p13-proof-breakdown';
+          RAISE EXCEPTION 'accepted breakdown delete';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        RAISE EXCEPTION '%', '${R1_P13_IMMUTABILITY_ROLLBACK}';
+      END $$;
+    `);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : String(error);
+    if (message.includes(R1_P13_IMMUTABILITY_ROLLBACK)) {
+      return;
+    }
+    throw error;
+  }
+  throw new Error("R1-P13 immutability probe did not roll back after trigger checks");
 }
 
 export async function expectR1P07ConstraintRejection(
@@ -2278,12 +2587,21 @@ async function run(): Promise<void> {
     "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
   );
 
-  const configuredConnectionString = requireR1P11ProofDatabaseUrl();
+  const configuredConnectionString = requireR1P13ProofDatabaseUrl();
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p11_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p13_proof_${process.pid}_${Date.now()}`;
+  if (!/^[a-z][a-z0-9_]{0,62}$/u.test(proofSchema)) {
+    throw new Error("Disposable proof identifier is invalid");
+  }
   proofUrl.searchParams.set("schema", proofSchema);
   proofUrl.searchParams.set("options", `-c search_path=${proofSchema}`);
   const connectionString = proofUrl.toString();
+  const admin = createMigrationProofPrismaClient(configuredConnectionString);
+  try {
+    await admin.$executeRawUnsafe(`CREATE SCHEMA "${proofSchema}"`);
+  } finally {
+    await admin.$disconnect();
+  }
   await assertTargetDatabaseEmpty(connectionString);
 
   const prismaCli = join(
@@ -2303,7 +2621,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, live snapshot/price-breakdown immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
   );
 }
 

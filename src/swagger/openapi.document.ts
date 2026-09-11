@@ -5,6 +5,7 @@ import { buildImplementedR1P08SwaggerFragments } from "./r1-p08-openapi.paths.js
 import { buildImplementedR1P09SwaggerFragments } from "./r1-p09-openapi.paths.js";
 import { buildImplementedR1P10SwaggerFragments } from "./r1-p10-openapi.paths.js";
 import { buildImplementedR1P12SwaggerFragments } from "./r1-p12-openapi.paths.js";
+import { buildImplementedR1P13SwaggerFragments } from "./r1-p13-openapi.paths.js";
 
 const r1P05Fragments = buildImplementedR1P05SwaggerFragments();
 const r1P06Fragments = buildImplementedR1P06SwaggerFragments();
@@ -13,6 +14,7 @@ const r1P08Fragments = buildImplementedR1P08SwaggerFragments();
 const r1P09Fragments = buildImplementedR1P09SwaggerFragments();
 const r1P10Fragments = buildImplementedR1P10SwaggerFragments();
 const r1P12Fragments = buildImplementedR1P12SwaggerFragments();
+const r1P13Fragments = buildImplementedR1P13SwaggerFragments();
 
 const apiErrorResponse = { $ref: "#/components/responses/ApiError" } as const;
 const rateLimitResponse = {
@@ -191,6 +193,7 @@ export const cleanoraOpenApiDocument = {
     ...r1P09Fragments.tags,
     ...r1P10Fragments.tags,
     ...r1P12Fragments.tags,
+    ...r1P13Fragments.tags,
   ],
   paths: {
     ...r1P05Fragments.paths,
@@ -200,6 +203,7 @@ export const cleanoraOpenApiDocument = {
     ...r1P09Fragments.paths,
     ...r1P10Fragments.paths,
     ...r1P12Fragments.paths,
+    ...r1P13Fragments.paths,
     "/system/health/live": {
       get: {
         tags: ["System Health"],
@@ -1140,6 +1144,7 @@ export const cleanoraOpenApiDocument = {
       ...r1P09Fragments.parameters,
       ...r1P10Fragments.parameters,
       ...r1P12Fragments.parameters,
+      ...r1P13Fragments.parameters,
     },
     requestBodies: {
       ...r1P05Fragments.requestBodies,
@@ -1152,6 +1157,7 @@ export const cleanoraOpenApiDocument = {
       ...r1P07Fragments.responses,
       ...r1P10Fragments.responses,
       ...r1P12Fragments.responses,
+      ...r1P13Fragments.responses,
       ApiError: {
         description: "Safe stable API failure.",
         headers: {
@@ -1184,6 +1190,7 @@ export const cleanoraOpenApiDocument = {
       ...r1P09Fragments.schemas,
       ...r1P10Fragments.schemas,
       ...r1P12Fragments.schemas,
+      ...r1P13Fragments.schemas,
       AccountCategory: {
         type: "string",
         enum: [

@@ -102,7 +102,7 @@ describe("browse controller and routes", () => {
       bookingPrerequisites: {
         bookingAvailable: false,
         requiresVerifiedCustomer: true,
-        phase: "R1-P13+",
+        phase: "R1-P13",
       },
       ratingSummary: null,
     });

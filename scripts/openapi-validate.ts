@@ -17,6 +17,7 @@ const defaults = [
   'specs/R1-P07-worker-team-crew-management/contracts/provider-workforce-api.openapi.yaml',
   'docs/apis/openapi/r1-p10-availability-capacity-textual-coverage.yaml',
   'docs/apis/openapi/r1-p12-browse-marketplace.yaml',
+  'docs/apis/openapi/r1-p13-booking-draft.yaml',
 ];
 
 async function main(): Promise<void> {

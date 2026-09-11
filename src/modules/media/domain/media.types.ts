@@ -24,6 +24,7 @@ export const MEDIA_OWNER_TYPES = [
   "PROVIDER_GALLERY_IMAGE",
   "PROVIDER_GALLERY_VIDEO",
   "CATALOG_SERVICE_IMAGE",
+  "BOOKING_ATTACHMENT",
 ] as const;
 
 export type MediaOwnerType = (typeof MEDIA_OWNER_TYPES)[number];

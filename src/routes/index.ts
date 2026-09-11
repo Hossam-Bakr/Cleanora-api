@@ -46,6 +46,8 @@ export interface RouteDependencies {
   readonly providerAvailabilityRouter?: Router;
   /** R1-P12 guest-capable marketplace Browse routes. */
   readonly bookingsBrowseRouter?: Router;
+  /** R1-P13 verified-customer booking draft/command routes. */
+  readonly bookingsCommandRouter?: Router;
 }
 
 /**
@@ -140,5 +142,9 @@ export function mountRoutes(
 
   if (dependencies.bookingsBrowseRouter !== undefined) {
     app.use(`${apiPrefix}/browse`, dependencies.bookingsBrowseRouter);
+  }
+
+  if (dependencies.bookingsCommandRouter !== undefined) {
+    app.use(`${apiPrefix}/bookings`, dependencies.bookingsCommandRouter);
   }
 }

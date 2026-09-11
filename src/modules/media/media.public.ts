@@ -317,3 +317,10 @@ export interface TransactionalProviderVerificationEvidenceAuthorizer {
 export type TransactionalProviderVerificationEvidenceAuthorizerFactory = (
   transaction: unknown,
 ) => TransactionalProviderVerificationEvidenceAuthorizer;
+
+export type {
+  BookingAttachmentDelivery,
+  BookingAttachmentFacts,
+  BookingAttachmentReader,
+} from "./infrastructure/prisma-booking-attachment.reader.js";
+export { createBookingAttachmentReader } from "./infrastructure/prisma-booking-attachment.reader.js";

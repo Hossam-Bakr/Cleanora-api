@@ -2877,3 +2877,100 @@ human message exactly equal to `commit and push`.
 Canonical record:
 `specs/R1-P12-browse-marketplace-provider-details/review-report.md`,
 `specs/R1-P11-eligibility-engine-v1/follow-up-review-resolution.md`.
+
+## DEC-090 — R1-P12 Complete and R1-P13 activation
+
+**Date:** 2026-09-10
+**Status:** Approved by human owner (explicit `/work-on-next-phase` plus
+`/goal` to activate and complete R1-P13), using Codex on Windows user `hossa`
+
+The owner instructed the next-phase workflow to activate and complete
+R1-P13 — Booking Draft, Pricing Snapshot & Status Machine. R1-P12 had already
+reached READY_FOR_OWNER_REVIEW with combined review PASS (DEC-089). That
+advance is treated as completion of R1-P12 and activation of R1-P13 as the
+sole active phase.
+
+- R1-P12 is Complete. Browse HTTP, privacy projections, and API artifacts
+  remain as reviewed. No P12 schema/migration was required.
+- R1-P13 becomes the sole active phase for Spec Kit preparation, Cursor
+  implementation, bounded Codex PM/review (`gpt-5.6-sol` / `xhigh` /
+  `service_tier=priority` on the `hossa` Codex home), and
+  READY_FOR_OWNER_REVIEW.
+- OQ-010 is frozen under DEC-091 (Codex PM ACCEPT_IMPLEMENTATION).
+- Unpublished P12 work stays in the working tree; publication still requires
+  a later exact human message `commit and push`.
+
+This decision does **not** authorize R1-P13 Complete, commit, push, merge,
+deployment, production migration, force-push, history rewriting, payment
+capture, ledger, wallets, Docker, or cloud.
+
+Canonical record:
+`specs/R1-P12-browse-marketplace-provider-details/completion-report.md`,
+`specs/R1-P13-booking-draft-pricing-snapshot-status-machine/activation.md`.
+
+## DEC-091 — R1-P13 OQ-010 freeze and in-scope implementation acceptance
+
+**Date:** 2026-09-10
+**Status:** Approved by Codex PM (`gpt-5.6-sol` / `xhigh` / `priority` on Windows
+user `hossa`) via `/codex-delegate` read-only relay
+
+Codex returned `VERDICT: ACCEPT_IMPLEMENTATION` for tasks T001–T038. OQ-010 is
+frozen as written in the P13 spec Clarifications:
+
+- Statuses: `DRAFT | AWAITING_DEPOSIT | CONFIRMED | CANCELLED`
+- Executable customer transitions: `NONE→DRAFT`, `DRAFT→AWAITING_DEPOSIT`,
+  `DRAFT|AWAITING_DEPOSIT→CANCELLED`
+- Emergency is `emergencySignaled` (default false), not a status and not HTTP
+- Snapshots freeze exactly on `DRAFT → AWAITING_DEPOSIT`
+- Configuration owns `commercial.deposit_percent` (Egypt 25); fail closed
+- Eligibility uses `evaluateEligibility` explicit mode; selected team must be eligible
+- Cancel records history and closed reasons with **no fees**
+
+Named exceptions **EX-01, EX-02, EX-03 KEEP unchanged**. No additional exception.
+
+This decision does **not** authorize phase Complete, Git publication, payments,
+ledger, wallets, Staff override HTTP, Docker, or cloud.
+
+Evidence: Codex thread `01a08b89-20e3-79c3-ba81-8998b18f980b`,
+`C:\Users\hossa\AppData\Local\Temp\delegate-relay\Cleanora_R1-2026-09-10T13-36-53-560Z\result.json`.
+
+## DEC-092 — R1-P13 owner substitution for Codex re-review
+
+**Date:** 2026-09-10
+**Status:** Approved by human owner (explicit “complete without Codex”
+because Codex hit the usage-time limit)
+
+The required R1-P13 Codex re-review after call-4 FAIL and Cursor repairs is
+**unavailable**. Codex budget is exhausted (4/4 calls, ~16 of 20 delegated
+minutes) and the owner hit the Codex usage-time limit. The owner substitutes
+owner review for that re-review so the phase may reach
+**READY_FOR_OWNER_REVIEW**.
+
+This substitution does **not** invent a Codex PASS. Historical call-4 verdict
+remains FAIL. Cursor remediations, file:line evidence in
+`review-resolution.md`, and Cursor phase/repo gates remain the technical
+basis for readiness. Live clean/upgrade proofs stay **BLOCKED** on missing
+`CLEANORA_R1_P13_DATABASE_URL` (SC-010 / T035).
+
+**Later the same day:** live proofs ran against a new empty disposable Neon
+project naming `cleanora_r1_p13_proof`. Clean install, populated P11→P13
+upgrade, and trigger rewrite proofs are recorded **PASS** in
+`specs/R1-P13-booking-draft-pricing-snapshot-status-machine/migration-evidence.md`.
+DEC-092's owner substitution is unchanged. This still does **not** invent a
+Codex PASS.
+
+**2026-09-11 technical follow-up:** the owner's new request to review Phase 13
+enabled a fresh in-thread Codex review after the historical delegation budget
+incident. That separate review inspected the repaired working tree, reran the
+Phase 13 and live migration gates on the final bytes, and returned PASS with no
+unresolved BLOCKER, MAJOR, or MINOR. The earlier delegated FAILs and DEC-092's
+historical substitution remain recorded as the outcomes they were; neither is
+retroactively relabeled.
+
+This decision does **not** authorize phase Complete, commit, push, merge,
+deployment, production migration, force-push, or history rewriting.
+
+Canonical record:
+`specs/R1-P13-booking-draft-pricing-snapshot-status-machine/review-report.md`,
+`specs/R1-P13-booking-draft-pricing-snapshot-status-machine/work-on-next-phase-progress.md`.
+

@@ -151,6 +151,7 @@ enum MediaOwnerType {
   PROVIDER_GALLERY_VIDEO
   PROVIDER_VERIFICATION_DOCUMENT_PAGE
   CATALOG_SERVICE_IMAGE
+  BOOKING_ATTACHMENT
 }
 
 enum MediaStorageProvider {
@@ -486,6 +487,7 @@ model Country {
   serviceCountryAvailability   ServiceCountryAvailability[]
   providerServicePricesAtProposal ProviderServicePrice[] @relation("ProviderServicePriceCountryAtProposal")
   eligibilityRuleVersions      EligibilityRuleVersion[]
+  bookings                     Booking[]
 
   @@index([isActive])
   @@index([defaultCurrencyId])
@@ -592,6 +594,9 @@ model User {
   availabilityHistoryActions          ProviderAvailabilityHistory[]         @relation("ProviderAvailabilityHistoryActor")
   temporaryPauseActions               ProviderTemporaryPause[]              @relation("ProviderTemporaryPauseActor")
   configurationLocalityCommandActions ConfigurationLocalityCommand[]        @relation("ConfigurationLocalityCommandActor")
+  customerBookings                    Booking[]                             @relation("BookingCustomer")
+  bookingCommands                     BookingCommand[]                      @relation("BookingCommandCustomer")
+  bookingStatusHistoryActions         BookingStatusHistory[]                @relation("BookingStatusHistoryActor")
 
   @@index([status])
   @@map("users")
@@ -2647,4 +2652,239 @@ model EligibilityCandidateResult {
 
   @@index([evaluationId, providerId])
   @@map("eligibility_candidate_results")
+}
+
+// R1-P13 booking draft, pricing snapshot, and status machine (DEC-090).
+// Bookings owns these tables. Provider/team/catalog/media ids are logical.
+
+enum BookingStatus {
+  DRAFT
+  AWAITING_DEPOSIT
+  CONFIRMED
+  CANCELLED
+}
+
+enum BookingPath {
+  BROWSE
+}
+
+enum BookingCrewPreference {
+  ALL_MALE
+  ALL_FEMALE
+  ANY
+}
+
+enum BookingCommandType {
+  CREATE
+  SUBMIT_FOR_DEPOSIT
+  CANCEL
+  ATTACH_MEDIA
+}
+
+enum BookingCancelReason {
+  CUSTOMER_CHANGED_MIND
+  CUSTOMER_WRONG_DETAILS
+  OTHER
+}
+
+enum StatusTransitionActor {
+  CUSTOMER
+  SYSTEM
+  STAFF_ADMIN
+}
+
+enum StatusTransitionCategory {
+  NORMAL
+  CANCELLATION
+  FAILURE
+  PRIVILEGED_OVERRIDE
+  COMPLETION
+  EMERGENCY_RELATED
+}
+
+model Booking {
+  id                      String                 @id @default(cuid())
+  customerUserId          String                 @map("customer_user_id")
+  countryId               String                 @map("country_id")
+  currencyCode            String                 @map("currency_code") @db.VarChar(3)
+  currencyDecimalPlaces   Int                    @map("currency_decimal_places")
+  status                  BookingStatus
+  path                    BookingPath            @default(BROWSE)
+  serviceId               String                 @map("service_id")
+  providerId              String                 @map("provider_id")
+  teamId                  String                 @map("team_id")
+  cityId                  String                 @map("city_id")
+  districtId              String?                @map("district_id")
+  startsAt                DateTime               @map("starts_at")
+  endsAt                  DateTime               @map("ends_at")
+  crewPreference          BookingCrewPreference  @map("crew_preference")
+  requiredTeamUnits       Int                    @map("required_team_units")
+  locale                  PreferredLanguage
+  notes                   String?                @db.VarChar(2000)
+  emergencySignaled       Boolean                @default(false) @map("emergency_signaled")
+  grossMinorUnits         Decimal?               @map("gross_minor_units") @db.Decimal(65, 0)
+  depositMinorUnits       Decimal?               @map("deposit_minor_units") @db.Decimal(65, 0)
+  remainderMinorUnits     Decimal?               @map("remainder_minor_units") @db.Decimal(65, 0)
+  depositPercent          String                 @map("deposit_percent") @db.VarChar(16)
+  eligibilityEvaluationId String?                @map("eligibility_evaluation_id")
+  version                 Int                    @default(1)
+  submittedAt             DateTime?              @map("submitted_at")
+  cancelledAt             DateTime?              @map("cancelled_at")
+  createdAt               DateTime               @default(now()) @map("created_at")
+  updatedAt               DateTime               @updatedAt @map("updated_at")
+  customer                User                   @relation("BookingCustomer", fields: [customerUserId], references: [id], onDelete: Restrict)
+  country                 Country                @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  items                   BookingItem[]
+  answers                 BookingAnswer[]
+  address                 BookingAddress?
+  media                   BookingMedia[]
+  snapshot                BookingSnapshot?
+  priceBreakdown          BookingPriceBreakdown?
+  statusHistory           BookingStatusHistory[]
+  commands                BookingCommand[]
+
+  @@index([customerUserId, createdAt])
+  @@index([status, createdAt])
+  @@map("bookings")
+}
+
+model BookingItem {
+  id                       String   @id @default(cuid())
+  bookingId                String   @unique @map("booking_id")
+  catalogServiceId         String   @map("catalog_service_id")
+  catalogServiceCode       String   @map("catalog_service_code")
+  catalogServiceVersion    Int      @map("catalog_service_version")
+  providerServiceId        String   @map("provider_service_id")
+  providerServiceVersion   Int      @map("provider_service_version")
+  providerServicePriceId   String   @map("provider_service_price_id")
+  estimatedDurationMinutes Int      @map("estimated_duration_minutes")
+  createdAt                DateTime @default(now()) @map("created_at")
+  booking                  Booking  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@map("booking_items")
+}
+
+model BookingAnswer {
+  id        String   @id @default(cuid())
+  bookingId String   @map("booking_id")
+  fieldId   String   @map("field_id")
+  fieldCode String   @map("field_code")
+  kind      String
+  valueJson Json     @map("value_json")
+  createdAt DateTime @default(now()) @map("created_at")
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@unique([bookingId, fieldId])
+  @@map("booking_answers")
+}
+
+model BookingAddress {
+  id                  String   @id @default(cuid())
+  bookingId           String   @unique @map("booking_id")
+  sourceUserAddressId String   @map("source_user_address_id")
+  countryCode         String   @map("country_code") @db.VarChar(2)
+  cityId              String   @map("city_id")
+  districtId          String?  @map("district_id")
+  cityLabel           String   @map("city_label")
+  districtLabel       String   @map("district_label")
+  addressText         String   @map("address_text")
+  building            String?
+  floor               String?
+  notes               String?
+  createdAt           DateTime @default(now()) @map("created_at")
+  booking             Booking  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@map("booking_addresses")
+}
+
+model BookingMedia {
+  id           String   @id @default(cuid())
+  bookingId    String   @map("booking_id")
+  mediaId      String   @map("media_id")
+  displayOrder Int      @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  booking      Booking  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@unique([bookingId, mediaId])
+  @@map("booking_media")
+}
+
+model BookingSnapshot {
+  id                 String   @id @default(cuid())
+  bookingId          String   @unique @map("booking_id")
+  catalogSnapshotJson Json    @map("catalog_snapshot_json")
+  providerSnapshotJson Json   @map("provider_snapshot_json")
+  catalogHash        String   @map("catalog_hash")
+  providerHash       String   @map("provider_hash")
+  priceInputHash     String   @map("price_input_hash")
+  frozenAt           DateTime @map("frozen_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+  booking            Booking  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@map("booking_snapshots")
+}
+
+model BookingPriceBreakdown {
+  id                  String   @id @default(cuid())
+  bookingId           String   @unique @map("booking_id")
+  currencyCode        String   @map("currency_code") @db.VarChar(3)
+  decimalPlaces       Int      @map("decimal_places")
+  grossMinorUnits     Decimal  @map("gross_minor_units") @db.Decimal(65, 0)
+  depositMinorUnits   Decimal  @map("deposit_minor_units") @db.Decimal(65, 0)
+  remainderMinorUnits Decimal  @map("remainder_minor_units") @db.Decimal(65, 0)
+  depositPercent      String   @map("deposit_percent") @db.VarChar(16)
+  formulaVersion      String   @map("formula_version")
+  createdAt           DateTime @default(now()) @map("created_at")
+  booking             Booking  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@map("booking_price_breakdowns")
+}
+
+model BookingStatusHistory {
+  id          String        @id @default(cuid())
+  bookingId   String        @map("booking_id")
+  fromStatus  String        @map("from_status")
+  toStatus    BookingStatus @map("to_status")
+  actorUserId String?       @map("actor_user_id")
+  actorType   StatusTransitionActor @map("actor_type")
+  reasonCode  String?       @map("reason_code")
+  requestId   String?       @map("request_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  booking     Booking       @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  actor       User?         @relation("BookingStatusHistoryActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId, createdAt])
+  @@map("booking_status_history")
+}
+
+model StatusTransitionRule {
+  id               String                   @id @default(cuid())
+  actor            StatusTransitionActor
+  fromStatus       String                   @map("from_status")
+  toStatus         String                   @map("to_status")
+  category         StatusTransitionCategory
+  executable       Boolean
+  preconditionsJson Json                    @map("preconditions_json")
+  sideEffectsJson  Json                     @map("side_effects_json")
+  auditJson        Json                     @map("audit_json")
+  failureJson      Json                     @map("failure_json")
+
+  @@unique([actor, fromStatus, toStatus])
+  @@map("status_transition_rules")
+}
+
+model BookingCommand {
+  id             String             @id @default(cuid())
+  customerUserId String             @map("customer_user_id")
+  commandType    BookingCommandType @map("command_type")
+  idempotencyKey String             @map("idempotency_key")
+  bookingId      String?            @map("booking_id")
+  requestHash    String             @map("request_hash")
+  responseJson   Json               @map("response_json")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  customer       User               @relation("BookingCommandCustomer", fields: [customerUserId], references: [id], onDelete: Restrict)
+  booking        Booking?           @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@unique([customerUserId, commandType, idempotencyKey])
+  @@map("booking_commands")
 }

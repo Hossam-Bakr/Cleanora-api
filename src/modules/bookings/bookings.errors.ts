@@ -8,6 +8,17 @@ export type BrowseErrorCode =
   | "BROWSE_SERVICE_NOT_FOUND"
   | "COUNTRY_UNAVAILABLE";
 
+export type BookingCommandErrorCode =
+  | "VALIDATION_FAILED"
+  | "AUTHENTICATION_REQUIRED"
+  | "FORBIDDEN"
+  | "NOT_FOUND"
+  | "NOT_ELIGIBLE"
+  | "CONFLICT"
+  | "TRANSITION_NOT_AVAILABLE"
+  | "DEPENDENCY_FAILURE"
+  | "DEPOSIT_PERCENT_UNAVAILABLE";
+
 const STATUS: Record<BrowseErrorCode, number> = {
   VALIDATION_FAILED: 400,
   AUTHENTICATION_REQUIRED: 401,
@@ -38,6 +49,46 @@ export function browseError(
     code,
     message: MESSAGES[code],
     statusCode: STATUS[code],
+    ...(details === undefined ? {} : { details }),
+  });
+}
+
+const COMMAND_STATUS: Record<BookingCommandErrorCode, number> = {
+  VALIDATION_FAILED: 400,
+  AUTHENTICATION_REQUIRED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  NOT_ELIGIBLE: 409,
+  CONFLICT: 409,
+  TRANSITION_NOT_AVAILABLE: 409,
+  DEPENDENCY_FAILURE: 503,
+  DEPOSIT_PERCENT_UNAVAILABLE: 503,
+};
+
+const COMMAND_MESSAGES: Record<BookingCommandErrorCode, string> = {
+  VALIDATION_FAILED: "Booking request validation failed",
+  AUTHENTICATION_REQUIRED: "Authentication is required",
+  FORBIDDEN: "Verified customer access is required",
+  NOT_FOUND: "Booking was not found",
+  NOT_ELIGIBLE: "The selected provider team is not eligible",
+  CONFLICT: "Booking command conflicted with current state",
+  TRANSITION_NOT_AVAILABLE: "This booking transition is not available",
+  DEPENDENCY_FAILURE: "A booking dependency failed",
+  DEPOSIT_PERCENT_UNAVAILABLE: "Deposit percent configuration is unavailable",
+};
+
+/**
+ * @desc Create a safe booking-command HTTP AppError.
+ * @access Bookings module
+ */
+export function bookingError(
+  code: BookingCommandErrorCode,
+  details?: Readonly<Record<string, unknown>>,
+): AppError {
+  return new AppError({
+    code,
+    message: COMMAND_MESSAGES[code],
+    statusCode: COMMAND_STATUS[code],
     ...(details === undefined ? {} : { details }),
   });
 }

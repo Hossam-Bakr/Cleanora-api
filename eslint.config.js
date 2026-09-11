@@ -13,8 +13,9 @@ module.exports = [
       "coverage/**",
       "node_modules/**",
       "src/generated/**",
-      "**/*.md"
-    ]
+      ".agents/**",
+      "**/*.md",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -29,20 +30,20 @@ module.exports = [
         __dirname: "readonly",
         __filename: "readonly",
         Buffer: "readonly",
-        exports: "readonly"
+        exports: "readonly",
       },
       parserOptions: {
         ecmaVersion: 2024,
-        sourceType: "module"
-      }
+        sourceType: "module",
+      },
     },
     rules: {
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
         "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }
-      ]
-    }
-  }
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+    },
+  },
 ];

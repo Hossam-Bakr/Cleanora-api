@@ -289,9 +289,9 @@ components:
           additionalProperties: false
           required: [bookingAvailable, requiresVerifiedCustomer, phase]
           properties:
-            bookingAvailable: { type: boolean, const: false }
+            bookingAvailable: { type: boolean }
             requiresVerifiedCustomer: { type: boolean, const: true }
-            phase: { type: string, const: 'R1-P13+' }
+            phase: { type: string, const: 'R1-P13' }
         sideEffects: { $ref: '#/components/schemas/BrowseNoSideEffects' }
     BrowseCityListData:
       type: object
@@ -403,7 +403,7 @@ components:
               crewSummary: { teamId: team-example, teamVersion: 1, active: true, memberCount: 1, cleaningStaffCount: 1, escortCount: 0, otherCount: 0, cleanerCount: 1, genderCounts: { male: 0, female: 1 } }
               servicePrice: { status: AVAILABLE, priceAmount: '100.00', minimumChargeAmount: '50.00', currencyCode: EGP, priceUnitId: unit-hour, estimatedDurationMinutes: 60 }
               ratingSummary: null
-              bookingPrerequisites: { bookingAvailable: false, requiresVerifiedCustomer: true, phase: 'R1-P13+' }
+              bookingPrerequisites: { bookingAvailable: false, requiresVerifiedCustomer: true, phase: 'R1-P13' }
               sideEffects: { bookingCreated: false, paymentInitiated: false }
             requestId: '00000000-0000-4000-8000-000000000012'
     BrowseError:

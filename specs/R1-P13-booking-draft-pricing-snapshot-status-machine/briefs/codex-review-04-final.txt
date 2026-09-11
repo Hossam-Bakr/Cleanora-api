@@ -1,0 +1,120 @@
+<xml>
+<task>
+You are a read-only Cleanora reviewer. Do not edit files. Do not implement. Do not run tests, linters, coverage, or git write commands.
+
+This is the FINAL adversarial review of R1-P13 — Booking Draft, Pricing Snapshot & Status Machine — after Cursor repaired Codex call-4 FAIL (0 BLOCKER, 6 MAJOR).
+
+Question: After inspecting the current working tree against spec.md / DEC-091 / EX-01/02/03, are there unresolved BLOCKER or MAJOR findings, or is the repaired tree ready for owner review?
+
+Verdict must be PASS, PASS_WITH_FOLLOWUPS, or FAIL. Do not relabel the historical call-4 FAIL as PASS without inspecting current files. Do not mark the phase Complete. Do not commit.
+
+Scope is R1-P13 only. Ignore unrelated untracked skill copies under .agents/ .claude/ skills-lock.json and R1-P12 completion docs unless they change P13 booking behavior.
+</task>
+
+<context>
+DEC-090: P12 Complete; P13 sole active; no Git publication from this workflow.
+DEC-091: OQ-010 freeze; EX-01/02/03 KEEP; T001–T038 authorized.
+T038 (READY_FOR_OWNER_REVIEW) is open until this review.
+
+Statuses: DRAFT | AWAITING_DEPOSIT | CONFIRMED | CANCELLED.
+Executable customer transitions: NONE→DRAFT, DRAFT→AWAITING_DEPOSIT, DRAFT|AWAITING_DEPOSIT→CANCELLED.
+emergencySignaled is a parallel boolean default false, not a status.
+Snapshot freeze at submit-for-deposit; booking_snapshots and booking_price_breakdowns have no updated_at and must fail closed on rewrite.
+Configuration owns commercial.deposit_percent (Egypt seed 25, fail closed elsewhere).
+Eligibility: evaluateEligibility mode explicit; selected teamId must be in eligibleTeams; never Browse facade for mutation.
+Cancel: closed reasons, persist history, no fees.
+PATCH: notes / answers / userAddressId only.
+Idempotency-Key required on create, submit, cancel, media. PATCH must ignore it.
+Optimistic version on mutate. Stale writes leave state unchanged.
+Auth: Bearer + requireFullAuthentication + verified INDIVIDUAL|COMPANY|ENGINEER. Guests and verification-only / invitation-onboarding rejected. Identity from token, never body.
+Money: digit-string minor units / Decimal; never JS number for amounts. Gross = max(price, minimumCharge). Deposit = round-half-up of gross * percent / 100.
+No payments, ledger, wallets, CONFIRMED execution, assignment, orders table, Staff override HTTP, Docker/cloud.
+
+EX-01 KEEP: CONFIRMED and privileged-override matrix rows exist as documented non-executable.
+EX-02 KEEP: no payment/webhook/ledger row.
+EX-03 KEEP: no Staff privileged override HTTP.
+
+Call-4 MAJORs Cursor claims repaired — re-verify each:
+1. Atomic version: claimOwnedBooking uses updateMany on id+owner+expectedVersion+expected status; side effects only after count===1.
+2. Runtime matrix: isExecutableTransition reads status_transition_rules.executable=true; command service must not import bookings.matrix as command authority.
+3. Catalog answers: bookings.answers.ts canonicalizes TEXT/NUMBER/BOOLEAN/SELECT; command service maps through it.
+4. Snapshot immutability: SQL triggers r1_p13_reject_booking_snapshot_mutation and r1_p13_reject_booking_price_breakdown_mutation raise 55000. Live rewrite proof remains BLOCKED (CLEANORA_R1_P13_DATABASE_URL unset). T035 allows BLOCKED.
+5. Egypt-only deposit seed: WHERE c."code" = 'EG'. Validator rejects unfiltered FROM countries seed.
+6. Signed media URLs: Media signOwnedReadyImage; present() attaches deliveryUrl/urlExpiresAt or omits on sign failure.
+
+MINOR already repaired: PATCH ignores Idempotency-Key.
+</context>
+
+<review_files>
+Read only these and P13-owned tests/OpenAPI/Postman/migration as needed. Do not wander into future phases.
+
+- specs/R1-P13-booking-draft-pricing-snapshot-status-machine/spec.md
+- specs/R1-P13-booking-draft-pricing-snapshot-status-machine/plan.md
+- specs/R1-P13-booking-draft-pricing-snapshot-status-machine/contracts/http-api.md
+- specs/R1-P13-booking-draft-pricing-snapshot-status-machine/review-resolution.md
+- prisma/migrations/r1_p13_booking_draft_pricing_snapshot_status_machine/migration.sql
+- prisma/schema.prisma (Booking* models and enums only)
+- src/modules/bookings/bookings.command.service.ts
+- src/modules/bookings/bookings.command.routes.ts
+- src/modules/bookings/bookings.command.controller.ts
+- src/modules/bookings/bookings.command.schema.ts
+- src/modules/bookings/bookings.command.types.ts
+- src/modules/bookings/bookings.answers.ts
+- src/modules/bookings/bookings.money.ts
+- src/modules/bookings/bookings.quote.ts
+- src/modules/bookings/bookings.matrix.ts
+- src/modules/bookings/bookings.customer.ts
+- src/modules/bookings/infrastructure/prisma-bookings.repository.ts
+- src/modules/configuration/infrastructure/prisma-deposit-percent.reader.ts
+- src/modules/customers/infrastructure/prisma-customer-address-snapshot.reader.ts
+- src/modules/media/infrastructure/prisma-booking-attachment.reader.ts
+- src/composition.ts (booking command composition only)
+- src/routes/index.ts (booking router mount only)
+- tests/unit/modules/bookings/booking-command.test.ts
+- tests/unit/modules/bookings/booking-command-http.test.ts
+- tests/unit/modules/bookings/module-boundaries.test.ts
+- tests/unit/modules/bookings/prisma-bookings.repository.test.ts
+- docs/apis/openapi/r1-p13-booking-draft.yaml
+</review_files>
+
+<gate_evidence>
+Cursor previously recorded these (do not re-run; do not treat as a substitute for file inspection):
+- npm run test:coverage:r1-p13 → PASS 14 files / 95 tests; 89.98 / 80.3 / 96.05 / 89.95
+- npx tsc --noEmit PASS; npm run build PASS
+- npx prisma validate PASS; npm run openapi:validate PASS; npm run postman:validate PASS (r1P13 9/env); npm run docs:check PASS
+- git diff --check on P13 paths PASS
+- Live clean/upgrade: BLOCKED — CLEANORA_R1_P13_DATABASE_URL unset. Do not relabel PASS.
+</gate_evidence>
+
+<grounding_rules>
+Ground every finding in file:line. Label inferences. Check money safety, authz, snapshot immutability, idempotency (including concurrent same-key races and stored vs presented response), module boundaries, EX-01/02/03, and whether catch-all handlers relabel unexpected persistence errors.
+
+A required live-migration BLOCKED gate is not automatically a BLOCKED/FAIL verdict if T035 documents it and no code BLOCKER/MAJOR exists. Say that explicitly.
+
+Refuse over-engineering. Do not invent missing product rules.
+</grounding_rules>
+
+<action_safety>
+Do not create, edit, or delete repository files. Do not git add or commit.
+You may use Get-Content / type to READ files. If a shell read is blocked, use Codex file-read tools.
+Do not run tests, linters, coverage, or formatters.
+</action_safety>
+
+<structured_output_contract>
+Output ONLY the review-report.md body using docs/ai/templates/review-report.md.
+
+Required sections:
+## Scope and evidence
+## Findings (BLOCKER|MAJOR|MINOR with file:line, criterion, impact, remediation)
+## Questions
+## Tests and checks not run
+## Verdict: PASS | PASS_WITH_FOLLOWUPS | FAIL
+
+Also list each of the six prior MAJORs as resolved or still open with evidence.
+
+A required live-migration BLOCKED gate is not automatically FAIL if T035 documents it and no code BLOCKER/MAJOR exists.
+
+Do not implement. Name exceptions if the implementation exceeded MVB.
+Stop after the report.
+</structured_output_contract>
+</xml>

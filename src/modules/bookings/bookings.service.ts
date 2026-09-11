@@ -1,3 +1,4 @@
+import type { AuthenticationPrincipal } from "#modules/authentication/authentication.public";
 import { isCatalogError } from "#modules/catalog/catalog.public";
 import { isEligibilityError } from "#modules/eligibility/eligibility.public";
 import {
@@ -9,9 +10,9 @@ import {
   decodeBrowseCursor,
   encodeBrowseCursor,
 } from "./bookings.cursor.js";
+import { bookingPrerequisitesFor } from "./bookings.customer.js";
 import { browseError } from "./bookings.errors.js";
 import {
-  BOOKING_PREREQUISITES,
   type BookingsBrowseDependencies,
   type BookingsBrowseReader,
   type BrowseProviderDetailResult,
@@ -234,6 +235,7 @@ export class BookingsBrowseService implements BookingsBrowseReader {
       BrowseProvidersQuery,
       "maxPriceAmount" | "q" | "limit" | "cursor"
     >;
+    readonly principal?: AuthenticationPrincipal | null;
   }): Promise<BrowseProviderDetailResult> {
     const projection = await this.evaluateBrowse(
       this.toEvaluationInput(input.query),
@@ -273,7 +275,7 @@ export class BookingsBrowseService implements BookingsBrowseReader {
       crewSummary,
       servicePrice,
       ratingSummary: null,
-      bookingPrerequisites: BOOKING_PREREQUISITES,
+      bookingPrerequisites: bookingPrerequisitesFor(input.principal ?? null),
       sideEffects: {
         bookingCreated: false,
         paymentInitiated: false,

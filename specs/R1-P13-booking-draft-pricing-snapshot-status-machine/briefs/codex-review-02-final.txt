@@ -1,0 +1,91 @@
+<xml>
+<task>
+You are a read-only Cleanora reviewer. Do not edit files. Do not implement. Do not run git write commands.
+
+Phase: R1-P13 — Booking Draft, Pricing Snapshot & Status Machine.
+Cursor implemented. You review the working tree against spec.md, DEC-091, and EX-01/EX-02/EX-03.
+
+Question: Are there unresolved BLOCKER or MAJOR findings, or is the phase ready for owner review?
+
+Do not mark the phase Complete. Do not commit.
+</task>
+
+<context>
+Accepted decisions:
+- DEC-090: P12 Complete; P13 sole active; no Git publication from this workflow
+- DEC-091: OQ-010 freeze; EX-01/02/03 KEEP; T001–T038 authorized
+- Statuses: DRAFT | AWAITING_DEPOSIT | CONFIRMED | CANCELLED
+- Executable customer transitions: NONE→DRAFT, DRAFT→AWAITING_DEPOSIT, DRAFT|AWAITING_DEPOSIT→CANCELLED
+- emergency = emergencySignaled boolean default false (not a status)
+- Snapshot freeze at submit-for-deposit
+- Configuration owns commercial.deposit_percent (Egypt 25, fail closed)
+- Eligibility evaluateEligibility mode explicit; selected teamId must be in eligibleTeams
+- Cancel with closed reasons, no fees
+- T030: rate-limit create and submit only (not a new limiter subsystem)
+- Module: extend existing src/modules/bookings/ (DEC-086). No new module.
+- Money: digit-string minor units / Decimal(65,0); never JS number for amounts
+- Auth: Bearer + requireFullAuthentication + verified INDIVIDUAL|COMPANY|ENGINEER
+- PATCH: notes / answers / userAddressId only
+- Idempotency-Key on create/submit/cancel/media; optimistic version
+- No payments, ledger, wallets, CONFIRMED execution, assignment, orders table, Staff override HTTP, Docker/cloud
+
+EX-01 KEEP: CONFIRMED and privileged-override matrix rows exist as documented non-executable.
+EX-02 KEEP: no payment/webhook/ledger row.
+EX-03 KEEP: no Staff privileged override HTTP.
+</context>
+
+<review_files>
+Read these (do not wander the repo):
+- specs/R1-P13-booking-draft-pricing-snapshot-status-machine/spec.md
+- specs/R1-P13-booking-draft-pricing-snapshot-status-machine/plan.md
+- prisma/migrations/r1_p13_booking_draft_pricing_snapshot_status_machine/migration.sql
+- src/modules/bookings/bookings.command.service.ts
+- src/modules/bookings/bookings.command.routes.ts
+- src/modules/bookings/bookings.command.controller.ts
+- src/modules/bookings/bookings.command.schema.ts
+- src/modules/bookings/bookings.money.ts
+- src/modules/bookings/bookings.quote.ts
+- src/modules/bookings/bookings.matrix.ts
+- src/modules/bookings/infrastructure/prisma-bookings.repository.ts
+- src/modules/configuration/infrastructure/prisma-deposit-percent.reader.ts
+- src/composition.ts (booking command composition only)
+- tests/unit/modules/bookings/booking-command.test.ts
+- tests/unit/modules/bookings/booking-command-http.test.ts
+- tests/unit/modules/bookings/module-boundaries.test.ts
+- docs/apis/openapi/r1-p13-booking-draft.yaml
+</review_files>
+
+<gate_evidence>
+Cursor re-ran these (do not re-run unless needed to read a file):
+- npx vitest run --config vitest.r1-p13.config.ts --coverage → PASS 11 files / 63 tests; statements 94.91, branches 86.21, functions 98.31, lines 94.91
+- npx tsc --noEmit → PASS
+- npx prisma validate → PASS
+- npm run openapi:validate → PASS (includes r1-p13-booking-draft.yaml)
+- npm run postman:validate → PASS (r1P13RequestsPerEnvironment 9)
+- npm run docs:check → PASS
+- Live clean/upgrade proofs: BLOCKED. CLEANORA_R1_P13_DATABASE_URL is unset. T035 allows BLOCKED with the exact missing URL. Do not relabel BLOCKED as PASS.
+- Command service/routes/repository must not import foreign infrastructure or #generated/prisma except the bookings-owned repository.
+</gate_evidence>
+
+<grounding_rules>
+Ground every finding in a file:line. Label inferences. Check money safety, authz, snapshot immutability, idempotency, module boundaries, and EX-01/02/03. Refuse over-engineering. Do not invent missing product rules.
+</grounding_rules>
+
+<action_safety>
+Read-only. Do not create, edit, or delete repository files. Do not commit.
+</action_safety>
+
+<structured_output_contract>
+Follow docs/ai/templates/review-report.md:
+
+## Scope and evidence
+## Findings (BLOCKER|MAJOR|MINOR with file:line, criterion, impact, remediation)
+## Questions
+## Tests and checks not run
+## Verdict: BLOCKED | CHANGES REQUIRED | PASS
+
+A required live-migration BLOCKED gate is not automatically a BLOCKED verdict if T035 documents it and no code BLOCKER/MAJOR exists. Say that explicitly.
+
+Do not implement. Name exceptions if the implementation exceeded MVB.
+</structured_output_contract>
+</xml>

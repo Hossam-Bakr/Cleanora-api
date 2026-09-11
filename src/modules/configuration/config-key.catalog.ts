@@ -96,6 +96,18 @@ export const CONFIG_KEY_CATALOG = {
     valueKind: "STRING",
     resolutionPolicy: "COUNTRY_REQUIRED",
   },
+  "commercial.deposit_percent": {
+    valueSchema: z
+      .number()
+      .gte(0)
+      .lte(100)
+      .refine(
+        (value) => Number.isFinite(value),
+        "deposit percent must be a finite number",
+      ),
+    valueKind: "NUMBER",
+    resolutionPolicy: "COUNTRY_REQUIRED",
+  },
   "providers.service_pricing_policy": {
     valueSchema: z
       .object({
