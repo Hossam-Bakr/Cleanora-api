@@ -936,6 +936,78 @@ export async function seedR1P14EgyptLedgerAccounts(
   }
 }
 
+const R1_P15_EGYPT_PAYMENT_METHODS = [
+  {
+    id: "paymthd_eg_paymob_card",
+    provider: "PAYMOB" as const,
+    methodKind: "CARD" as const,
+    code: "PAYMOB_CARD",
+    displayNameAr: "بطاقة",
+    displayNameEn: "Card",
+    enabled: true,
+    sortOrder: 10,
+  },
+  {
+    id: "paymthd_eg_paymob_wallet",
+    provider: "PAYMOB" as const,
+    methodKind: "WALLET" as const,
+    code: "PAYMOB_WALLET",
+    displayNameAr: "محفظة",
+    displayNameEn: "Wallet",
+    enabled: true,
+    sortOrder: 20,
+  },
+  {
+    id: "paymthd_eg_other_disabled",
+    provider: "OTHER_DISABLED" as const,
+    methodKind: "OTHER" as const,
+    code: "OTHER_DISABLED",
+    displayNameAr: "طريقة أخرى (معطلة)",
+    displayNameEn: "Other (disabled)",
+    enabled: false,
+    sortOrder: 90,
+  },
+] as const;
+
+/**
+ * @desc Idempotent Egypt payment methods (R1-P15). Migration INSERT is a no-op
+ * until the Egypt country row exists; seed applies after country creation.
+ */
+export async function seedR1P15EgyptPaymentMethods(
+  prisma: PrismaClient,
+  country: { readonly id: string },
+): Promise<void> {
+  for (const method of R1_P15_EGYPT_PAYMENT_METHODS) {
+    await prisma.paymentMethod.upsert({
+      where: {
+        countryId_code: {
+          countryId: country.id,
+          code: method.code,
+        },
+      },
+      create: {
+        id: method.id,
+        countryId: country.id,
+        provider: method.provider,
+        methodKind: method.methodKind,
+        code: method.code,
+        displayNameAr: method.displayNameAr,
+        displayNameEn: method.displayNameEn,
+        enabled: method.enabled,
+        sortOrder: method.sortOrder,
+      },
+      update: {
+        provider: method.provider,
+        methodKind: method.methodKind,
+        displayNameAr: method.displayNameAr,
+        displayNameEn: method.displayNameEn,
+        enabled: method.enabled,
+        sortOrder: method.sortOrder,
+      },
+    });
+  }
+}
+
 /**
  * Seed R1-P01 reference data and R1-P03 authorization definitions. Every write
  * uses its approved natural key so repeated runs stay idempotent.
@@ -1163,6 +1235,18 @@ export async function seed(
     `;
     if (ledgerAccountTable[0]?.exists === true) {
       await seedR1P14EgyptLedgerAccounts(prisma, country, currency);
+    }
+
+    const paymentMethodTable = await prisma.$queryRaw<Array<{ exists: boolean }>>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = current_schema()
+          AND table_name = 'payment_methods'
+      ) AS "exists"
+    `;
+    if (paymentMethodTable[0]?.exists === true) {
+      await seedR1P15EgyptPaymentMethods(prisma, country);
     }
   } finally {
     if (ownsClient) {

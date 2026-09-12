@@ -3,8 +3,6 @@ import { extname, join, relative } from "node:path";
 
 const repositoryRoot = process.cwd();
 const paymentsRoot = join(repositoryRoot, "src", "modules", "payments");
-const routesPath = join(repositoryRoot, "src", "routes", "index.ts");
-const compositionPath = join(repositoryRoot, "src", "composition.ts");
 
 function sourceFiles(root: string): string[] {
   if (!existsSync(root)) {
@@ -30,7 +28,7 @@ function importsOf(source: string): string[] {
     .filter((value): value is string => value !== undefined);
 }
 
-describe("R1-P14 payments module boundaries", () => {
+describe("R1-P15 payments module boundaries", () => {
   it("keeps Prisma out of payments application files", () => {
     const violations: string[] = [];
     const prismaPatterns = [/#generated\/prisma/i, /#database\/prisma/];
@@ -55,7 +53,9 @@ describe("R1-P14 payments module boundaries", () => {
       const relativePath = relative(paymentsRoot, file).replaceAll("\\", "/");
       for (const specifier of importsOf(readFileSync(file, "utf8"))) {
         if (
-          /#modules\/bookings\/(?!bookings\.public)/u.test(specifier) ||
+          /#modules\/bookings\/(?!bookings\.public|bookings\.customer)/u.test(
+            specifier,
+          ) ||
           /#modules\/configuration\/(?!configuration\.public)/u.test(specifier)
         ) {
           violations.push(`${relativePath} -> ${specifier}`);
@@ -65,17 +65,12 @@ describe("R1-P14 payments module boundaries", () => {
     expect(violations).toEqual([]);
   });
 
-  it("registers no payments or ledger HTTP router", () => {
-    const paymentsSources = sourceFiles(paymentsRoot)
+  it("does not invent wallet or InstaPay workflows", () => {
+    const sources = sourceFiles(paymentsRoot)
       .map((file) => readFileSync(file, "utf8"))
       .join("\n");
-    expect(paymentsSources).not.toMatch(/express/i);
-    expect(paymentsSources).not.toMatch(/Router/);
-    const routes = readFileSync(routesPath, "utf8");
-    expect(routes).not.toMatch(/\/payments/);
-    expect(routes).not.toMatch(/\/ledger/);
-    const composition = readFileSync(compositionPath, "utf8");
-    expect(composition).toMatch(/createPaymentsApplicationService/);
-    expect(composition).not.toMatch(/paymentsRouter|ledgerRouter/);
+    expect(sources).not.toMatch(/instapay/i);
+    expect(sources).not.toMatch(/walletBalance|userWallet|storedValueWallet/i);
+    expect(sources).not.toMatch(/executeGatewayRefund|postRefundJournal/);
   });
 });

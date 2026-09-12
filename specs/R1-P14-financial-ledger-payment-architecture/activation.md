@@ -1,9 +1,9 @@
 # R1-P14 Activation — Financial Ledger & Payment Architecture
 
 Date: 2026-09-11
-Status: Active — **READY_FOR_OWNER_REVIEW** (Codex T031 PASS 2026-09-12); not Complete.
+Status: **Complete** — DEC-094 (2026-09-12); prior READY_FOR_OWNER_REVIEW / Codex T031 PASS.
 Authority: Owner `/work-on-next-phase` plus explicit instruction to activate
-phase 14 (DEC-093), after R1-P13 Complete.
+phase 14 (DEC-093), after R1-P13 Complete. Closed by DEC-094.
 
 ## Owner authorization
 
@@ -29,6 +29,12 @@ Not authorized:
 - Payment capture, webhooks, `CONFIRMED` from money, stored-value wallets,
   Docker, or cloud.
 
+
+## Closure
+
+Owner instruction `mark P14 complete` on 2026-09-12 closes this phase under
+DEC-094. No next phase is activated by that instruction. Companion
+mark-complete was skipped (no usable `python3`).
 ## Readiness
 
 | Gate | Evidence |

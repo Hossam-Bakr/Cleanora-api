@@ -55,6 +55,6 @@ READY_FOR_OWNER_REVIEW without mark-complete or Git publication. **Achieved 2026
 
 ## Next owner actions
 
-1. Review handoff / diff when ready.
-2. `mark complete` when accepting the phase (not done by this workflow).
-3. Later: exact `commit and push` if publication is desired.
+**Closed under DEC-094 (2026-09-12).** R1-P14 is Complete. R1-P15 is the sole
+active phase — see `specs/R1-P15-deposit-payments-methods-webhooks/` and
+`docs/product/current.md`. No further P14 owner actions on this progress file.

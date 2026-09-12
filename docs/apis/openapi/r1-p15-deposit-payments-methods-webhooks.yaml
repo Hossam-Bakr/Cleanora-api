@@ -1,0 +1,151 @@
+openapi: 3.0.3
+info:
+  title: Cleanora R1-P15 Deposit Payments, Methods & Webhooks
+  version: 1.0.0
+  description: Locked MVB HTTP surface for deposit collection via Paymob CARD/WALLET.
+paths:
+  /api/v1/payments/methods:
+    get:
+      operationId: listPaymentMethods
+      tags: [Payments]
+      summary: List enabled country payment methods
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: countryId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Enabled methods
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+  /api/v1/payments/deposits:
+    post:
+      operationId: initiateBookingDeposit
+      tags: [Payments]
+      summary: Initiate idempotent booking deposit
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bookingId, paymentMethodId]
+              properties:
+                bookingId: { type: string }
+                paymentMethodId: { type: string }
+      responses:
+        "201":
+          description: Deposit attempt created or replayed
+        "409":
+          description: Conflict / already succeeded / transition unavailable
+        "503":
+          description: Gateway misconfigured
+  /api/v1/payments/return:
+    get:
+      operationId: getPaymentBrowserReturn
+      tags: [Payments]
+      summary: Browser return status projection (never marks paid)
+      parameters:
+        - in: query
+          name: paymentId
+          schema: { type: string }
+        - in: query
+          name: attemptId
+          schema: { type: string }
+        - in: query
+          name: returnToken
+          schema: { type: string }
+      responses:
+        "200":
+          description: Status only
+  /api/v1/webhooks/paymob:
+    post:
+      operationId: paymobWebhook
+      tags: [PaymentsWebhooks]
+      summary: Verified Paymob webhook (sole paid authority)
+      parameters:
+        - in: header
+          name: hmac
+          schema: { type: string }
+      responses:
+        "200":
+          description: Accepted verified processing or replay
+        "401":
+          description: Invalid signature
+  /api/v1/payments/{paymentId}:
+    get:
+      operationId: getPayment
+      tags: [Payments]
+      summary: Payment detail with optional receipt
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: paymentId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Payment view
+        "404":
+          description: Not found
+  /api/v1/staff/payments/methods/{methodId}:
+    patch:
+      operationId: patchPaymentMethodEnabled
+      tags: [StaffPayments]
+      summary: Enable or disable a payment method
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: methodId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: Updated method
+    put:
+      operationId: putPaymentMethodEnabled
+      tags: [StaffPayments]
+      summary: Enable or disable a payment method
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: methodId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: Updated method
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -214,4 +214,291 @@ describe("R1-P14 prisma payments repository mapping", () => {
     const byAccount = await repository.listEntriesByAccount("acc-1");
     expect(byAccount[0]?.bookingId).toBe("booking-1");
   });
+
+  it("maps deposit payment method and payment lifecycle rows", async () => {
+    const { Prisma } = await import("#generated/prisma/client");
+    const methodRow = {
+      id: "method-card",
+      countryId: "country-eg",
+      provider: "PAYMOB",
+      methodKind: "CARD",
+      code: "PAYMOB_CARD",
+      displayNameAr: "بطاقة",
+      displayNameEn: "Card",
+      enabled: true,
+      sortOrder: 1,
+    };
+    const paymentRow = {
+      id: "pay-1",
+      bookingId: "booking-1",
+      customerUserId: "customer-1",
+      purpose: "BOOKING_DEPOSIT",
+      status: "PENDING",
+      amountMinorUnits: decimal("2500"),
+      currencyCode: "EGP",
+      currencyDecimalPlaces: 2,
+      paymentMethodId: "method-card",
+      succeededAttemptId: null,
+      ledgerJournalId: null,
+    };
+    const attemptRow = {
+      id: "att-1",
+      paymentId: "pay-1",
+      bookingId: "booking-1",
+      customerUserId: "customer-1",
+      paymentMethodId: "method-card",
+      status: "CREATED",
+      amountMinorUnits: decimal("2500"),
+      currencyCode: "EGP",
+      currencyDecimalPlaces: 2,
+      idempotencyKey: "idem-1",
+      gatewaySessionRef: "session-1",
+      redirectUrl: "https://pay.test",
+      failureCode: null,
+      failureMessageSafe: null,
+      expiresAt: null,
+      returnTokenHash: "hash",
+    };
+    const eventRow = {
+      id: "evt-1",
+      provider: "PAYMOB",
+      idempotencyKey: "evt-1",
+      paymentAttemptId: "att-1",
+      paymentId: "pay-1",
+      eventType: "TRANSACTION",
+      signatureValid: true,
+      status: "RECEIVED",
+      payloadHash: "ph",
+      processedAt: null,
+    };
+    const receiptRow = {
+      id: "rcpt-1",
+      paymentId: "pay-1",
+      bookingId: "booking-1",
+      customerUserId: "customer-1",
+      amountMinorUnits: decimal("2500"),
+      currencyCode: "EGP",
+      currencyDecimalPlaces: 2,
+      methodCode: "PAYMOB_CARD",
+      providerRef: "session-1",
+      issuedAt: new Date("2026-09-01T00:00:00.000Z"),
+    };
+    const refundRow = {
+      id: "ref-1",
+      paymentId: "pay-1",
+      bookingId: "booking-1",
+      customerUserId: "customer-1",
+      amountMinorUnits: decimal("2500"),
+      currencyCode: "EGP",
+      currencyDecimalPlaces: 2,
+      status: "REQUESTED",
+      reason: "changed mind",
+    };
+
+    const client = {
+      paymentMethod: {
+        findMany: vi.fn().mockResolvedValue([methodRow]),
+        findUnique: vi.fn().mockResolvedValue(methodRow),
+        update: vi.fn().mockResolvedValue({ ...methodRow, enabled: false }),
+      },
+      payment: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        findUnique: vi.fn().mockResolvedValue(paymentRow),
+        create: vi.fn().mockResolvedValue(paymentRow),
+        update: vi.fn().mockResolvedValue(paymentRow),
+      },
+      paymentAttempt: {
+        findUnique: vi.fn().mockResolvedValue(attemptRow),
+        findFirst: vi.fn().mockResolvedValue(attemptRow),
+        create: vi.fn().mockResolvedValue(attemptRow),
+        update: vi.fn().mockResolvedValue(attemptRow),
+      },
+      paymentGatewayEvent: {
+        findUnique: vi.fn().mockResolvedValue(eventRow),
+        create: vi.fn().mockResolvedValue(eventRow),
+        update: vi.fn().mockResolvedValue(eventRow),
+      },
+      paymentReceipt: {
+        findUnique: vi.fn().mockResolvedValue(receiptRow),
+        create: vi.fn().mockResolvedValue(receiptRow),
+      },
+      refundRequest: {
+        create: vi.fn().mockResolvedValue(refundRow),
+      },
+    };
+    const repository = new PrismaPaymentsRepository(client as never);
+
+    await expect(
+      repository.listEnabledPaymentMethods("country-eg"),
+    ).resolves.toEqual([
+      expect.objectContaining({ id: "method-card", enabled: true }),
+    ]);
+    await expect(repository.findPaymentMethodById("method-card")).resolves.toEqual(
+      expect.objectContaining({ code: "PAYMOB_CARD" }),
+    );
+    await expect(
+      repository.setPaymentMethodEnabled("method-card", false),
+    ).resolves.toEqual(expect.objectContaining({ enabled: false }));
+
+    client.paymentMethod.update.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("missing", {
+        code: "P2025",
+        clientVersion: "test",
+      }),
+    );
+    await expect(
+      repository.setPaymentMethodEnabled("missing", true),
+    ).resolves.toBeNull();
+
+    await expect(
+      repository.findSucceededDepositPayment("booking-1"),
+    ).resolves.toBeNull();
+    await expect(repository.findPaymentById("pay-1")).resolves.toEqual(
+      expect.objectContaining({ amountMinorUnits: "2500" }),
+    );
+    await expect(
+      repository.findAttemptByIdempotency({
+        customerUserId: "customer-1",
+        bookingId: "booking-1",
+        idempotencyKey: "idem-1",
+      }),
+    ).resolves.toEqual(expect.objectContaining({ id: "att-1" }));
+    await expect(repository.findAttemptById("att-1")).resolves.toEqual(
+      expect.objectContaining({ gatewaySessionRef: "session-1" }),
+    );
+    await expect(
+      repository.findAttemptByGatewaySessionRef("session-1"),
+    ).resolves.toEqual(expect.objectContaining({ id: "att-1" }));
+
+    await repository.insertPayment({
+      id: "pay-1",
+      bookingId: "booking-1",
+      customerUserId: "customer-1",
+      purpose: "BOOKING_DEPOSIT",
+      status: "PENDING",
+      amountMinorUnits: "2500",
+      currencyCode: "EGP",
+      currencyDecimalPlaces: 2,
+      paymentMethodId: "method-card",
+    });
+    await repository.insertAttempt({
+      id: "att-1",
+      paymentId: "pay-1",
+      bookingId: "booking-1",
+      customerUserId: "customer-1",
+      paymentMethodId: "method-card",
+      status: "CREATED",
+      amountMinorUnits: "2500",
+      currencyCode: "EGP",
+      currencyDecimalPlaces: 2,
+      idempotencyKey: "idem-1",
+    });
+    client.paymentAttempt.create.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("dup", {
+        code: "P2002",
+        clientVersion: "test",
+      }),
+    );
+    await expect(
+      repository.insertAttempt({
+        id: "att-2",
+        paymentId: "pay-1",
+        bookingId: "booking-1",
+        customerUserId: "customer-1",
+        paymentMethodId: "method-card",
+        status: "CREATED",
+        amountMinorUnits: "2500",
+        currencyCode: "EGP",
+        currencyDecimalPlaces: 2,
+        idempotencyKey: "idem-1",
+      }),
+    ).rejects.toMatchObject({ name: "PaymentsIdempotencyCollision" });
+
+    await repository.updateAttemptGateway({
+      attemptId: "att-1",
+      status: "REDIRECTED",
+      gatewaySessionRef: "session-1",
+      redirectUrl: "https://pay.test",
+      returnTokenHash: "hash",
+    });
+    await repository.markAttemptTerminal({
+      attemptId: "att-1",
+      status: "FAILED",
+      failureCode: "DECLINED",
+      failureMessageSafe: "declined",
+    });
+    await repository.markPaymentSucceeded({
+      paymentId: "pay-1",
+      succeededAttemptId: "att-1",
+      ledgerJournalId: "j1",
+    });
+    await repository.markPaymentFailed("pay-1");
+
+    await expect(repository.findGatewayEvent("PAYMOB", "evt-1")).resolves.toEqual(
+      expect.objectContaining({ idempotencyKey: "evt-1" }),
+    );
+    await repository.insertGatewayEvent({
+      id: "evt-1",
+      provider: "PAYMOB",
+      idempotencyKey: "evt-1",
+      eventType: "TRANSACTION",
+      signatureValid: true,
+      status: "RECEIVED",
+      payloadHash: "ph",
+    });
+    client.paymentGatewayEvent.create.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("dup", {
+        code: "P2002",
+        clientVersion: "test",
+      }),
+    );
+    await expect(
+      repository.insertGatewayEvent({
+        id: "evt-2",
+        provider: "PAYMOB",
+        idempotencyKey: "evt-1",
+        eventType: "TRANSACTION",
+        signatureValid: true,
+        status: "RECEIVED",
+        payloadHash: "ph",
+      }),
+    ).rejects.toMatchObject({ name: "PaymentsIdempotencyCollision" });
+    await repository.markGatewayEventProcessed({
+      eventId: "evt-1",
+      status: "PROCESSED",
+      paymentAttemptId: "att-1",
+      paymentId: "pay-1",
+      processedAt: new Date("2026-09-01T00:00:00.000Z"),
+    });
+
+    await expect(repository.findReceiptByPaymentId("pay-1")).resolves.toEqual(
+      expect.objectContaining({ methodCode: "PAYMOB_CARD" }),
+    );
+    await repository.insertReceipt({
+      id: "rcpt-1",
+      paymentId: "pay-1",
+      bookingId: "booking-1",
+      customerUserId: "customer-1",
+      amountMinorUnits: "2500",
+      currencyCode: "EGP",
+      currencyDecimalPlaces: 2,
+      methodCode: "PAYMOB_CARD",
+      providerRef: "session-1",
+      issuedAt: new Date("2026-09-01T00:00:00.000Z"),
+    });
+    await expect(
+      repository.insertRefundRequest({
+        id: "ref-1",
+        paymentId: "pay-1",
+        bookingId: "booking-1",
+        customerUserId: "customer-1",
+        amountMinorUnits: "2500",
+        currencyCode: "EGP",
+        currencyDecimalPlaces: 2,
+        reason: "changed mind",
+        requestedByActorKind: "CUSTOMER",
+        requestedByActorId: "customer-1",
+      }),
+    ).resolves.toEqual(expect.objectContaining({ status: "REQUESTED" }));
+  });
 });

@@ -2,7 +2,7 @@
 
 Date: 2026-09-11  
 Branch: `codex/r1-p14-financial-ledger-payment-architecture`  
-Status: **READY_FOR_OWNER_REVIEW** — Codex T031 PASS 2026-09-12; not Complete
+Status: **Complete** — DEC-094 (2026-09-12); prior READY_FOR_OWNER_REVIEW / Codex T031 PASS
 
 ## Delivered
 

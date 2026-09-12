@@ -1,0 +1,66 @@
+<xml>
+<task>
+You are a read-only Cleanora PM. Do NOT use shell tools, do NOT open files, do NOT edit.
+The prior REJECT was procedural (sandbox could not read disk). All controlling text is
+INLINED below. Ground only on this brief. Grant or deny implementation authorization
+for T001–T036.
+
+Phase: R1-P15 — Deposit Payments, Methods & Webhooks. DEC-094. Extend payments module.
+
+Question: VERDICT for complete in-scope implementation authorization?
+</task>
+
+<inlined_mvb>
+CLARIFICATIONS (locked):
+- Module: extend existing payments; owns 6 P15 tables + P14 ledger; no cross-module Prisma.
+- Tables: payment_methods, payment_attempts, payments, payment_gateway_events, payment_receipts, refund_requests.
+  Migration: r1_p15_deposit_payments_methods_webhooks.
+- Egypt: enable Paymob CARD + Paymob WALLET only; other rails disabled config rows only; no InstaPay (OQ-009).
+- HTTP: (1) GET country-enabled methods (customer) (2) POST initiate deposit idempotent (customer, owned AWAITING_DEPOSIT)
+  (3) GET browser return never marks paid (4) POST Paymob webhook raw-body verify + idempotent
+  (5) GET payment/receipt owner customer + staff_admin (6) staff_admin PUT/PATCH enable/disable method.
+- Browser redirect NEVER proves payment / NEVER confirms booking.
+- Sole paid authority: verified webhook → SUCCEEDED → postJournal DEPOSIT → receipt → Bookings confirmDepositPayment (AWAITING_DEPOSIT→CONFIRMED).
+- Duplicate webhooks: harmless idempotent replay; no second payment/journal/confirm.
+- Retry: new attempt while AWAITING_DEPOSIT after FAILED/EXPIRED; at most one SUCCEEDED BOOKING_DEPOSIT per booking.
+- Refunds: refund_requests REQUESTED only; no gateway refund; no REFUND journal.
+- Money: decimal-safe minor units; reuse P14 helpers; no JS number money math.
+- Adapter: PaymentGatewayPort + Paymob + test fake; env secrets; fail closed if misconfigured on initiate.
+- Coverage: 80/75/80/80 on phase-owned files.
+- Out: wallets, InstaPay invention, cancel fees (OQ-001), coupons (OQ-008), P16 provider accept, assignment, payouts, remaining/COD, Docker/cloud.
+
+EXCEPTIONS:
+- EX-01 refund foundation only
+- EX-02 non-Paymob rails disabled-only
+- EX-03 browser return status-only
+
+TASKS: T001–T036 cover Prisma/migration/seed, vitest scripts, public types, gateway port/fake/Paymob,
+Bookings confirmDepositPayment, initiate/return/webhook/receipt/staff/refund foundation, HTTP+Zod,
+integrations for SC-001–SC-008, composition, OpenAPI/Postman, boundaries, migration evidence,
+summary, Codex reviews, READY_FOR_OWNER_REVIEW (no mark-complete/git unless owner phrase).
+
+DoD: six tables+ledger owned; Egypt rails; initiate idempotent; return non-proof; webhook sole confirm;
+duplicates/retries; refund REQUESTED only; migration reviewed; OpenAPI/Postman; coverage; no BLOCKER/MAJOR.
+</inlined_mvb>
+
+<grounding_rules>
+Do not attempt to read the repository. Use only the inlined_mvb block.
+Refuse over-engineering. Do not invent wallets/InstaPay/generic engines.
+</grounding_rules>
+
+<action_safety>
+Read-only. No shell. No file edits. No commit.
+</action_safety>
+
+<structured_output_contract>
+End with exactly:
+VERDICT: ACCEPT_IMPLEMENTATION | REJECT | ACCEPT_WITH_EXCEPTIONS
+
+Then:
+1. One-line holding per clarification lock listed above.
+2. EX-01/EX-02/EX-03 keep/drop/rewrite.
+3. Any additional named exception required.
+4. Reasons if not full accept.
+5. Note that evidence was the inlined brief only (disk unreadable in prior call).
+</structured_output_contract>
+</xml>

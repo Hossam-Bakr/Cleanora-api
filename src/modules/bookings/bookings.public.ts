@@ -155,6 +155,7 @@ export interface BookingsBrowseDependencies {
 
 export interface BookingFinancialSnapshot {
   readonly bookingId: string;
+  readonly customerUserId: string;
   readonly status: "DRAFT" | "AWAITING_DEPOSIT" | "CONFIRMED" | "CANCELLED";
   readonly countryId: string;
   readonly currencyCode: string;
@@ -171,4 +172,19 @@ export interface BookingFinancialSnapshotReader {
   }): Promise<BookingFinancialSnapshot | null>;
 }
 
+export interface ConfirmDepositPaymentInput {
+  readonly bookingId: string;
+  readonly paymentId: string;
+  readonly expectedDepositMinorUnits: string;
+  readonly currencyCode: string;
+  readonly actorKind: "SYSTEM" | "TEST";
+  readonly actorId: string;
+  readonly reason: string;
+}
+
+export type ConfirmDepositPayment = (
+  input: ConfirmDepositPaymentInput,
+) => Promise<{ readonly bookingId: string; readonly status: "CONFIRMED" }>;
+
 export { createPrismaBookingFinancialSnapshotReader } from "./infrastructure/prisma-booking-financial-snapshot.reader.js";
+export { createConfirmDepositPayment } from "./infrastructure/confirm-deposit-payment.js";

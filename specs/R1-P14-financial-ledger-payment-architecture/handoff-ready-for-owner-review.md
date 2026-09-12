@@ -1,6 +1,6 @@
-# Handoff — R1-P14 READY_FOR_OWNER_REVIEW
+# Handoff — R1-P14 Complete (DEC-094)
 
-**Status:** **READY_FOR_OWNER_REVIEW**  
+**Status:** **Complete** — DEC-094 (was READY_FOR_OWNER_REVIEW)  
 **Date:** 2026-09-12  
 **Branch:** `codex/r1-p14-financial-ledger-payment-architecture`
 
@@ -28,9 +28,10 @@ Zero payments/ledger HTTP. Live clean + P13→P14 upgrade proofs PASS.
 
 ## Boundaries
 
-- **Not** Complete — wait for owner `mark complete`
+- **Complete** under DEC-094 (mark P14 complete)
+- Companion mark-complete skipped (no usable `python3`)
 - Feature-branch publication via exact human `commit and push` (no merge/deploy)
-- No capture, Paymob, wallets, staff finance HTTP, Docker/cloud
+- No next phase activated; no capture, Paymob, wallets, staff finance HTTP, Docker/cloud
 
 ## Artifacts
 

@@ -243,10 +243,20 @@ import {
 import { EligibilityUnitOfWork } from "#modules/eligibility/infrastructure/eligibility.unit-of-work";
 import {
   createPaymentsApplicationService,
+  PaymobPaymentGateway,
   type PaymentsApplicationService,
 } from "#modules/payments/payments.public";
+import { MisconfiguredPaymentGateway } from "#modules/payments/adapters/misconfigured.payment-gateway";
 import { PaymentsUnitOfWork } from "#modules/payments/infrastructure/payments.unit-of-work";
-import { createPrismaBookingFinancialSnapshotReader } from "#modules/bookings/bookings.public";
+import {
+  createConfirmDepositPayment,
+  createPrismaBookingFinancialSnapshotReader,
+} from "#modules/bookings/bookings.public";
+import {
+  createPaymentsRouter,
+  createPaymobWebhookRouter,
+  createStaffPaymentsRouter,
+} from "#modules/payments/payments.routes";
 
 function adaptProviderActiveCountryReader(
   reader = createActiveCountryReader(),
@@ -377,7 +387,7 @@ export interface RuntimeDependencies {
    */
   readonly eligibilityApplicationService: EligibilityApplicationService;
   /**
-   * In-process Payments ledger (R1-P14). Composition-only — no payments HTTP.
+   * Payments ledger + deposit HTTP (R1-P14 / R1-P15).
    */
   readonly paymentsApplicationService: PaymentsApplicationService;
 }
@@ -1520,9 +1530,65 @@ export function createRuntimeDependencies(
       } satisfies ProviderServiceSnapshotReader),
     activeCountries: createActiveCountryReader(database.client),
   });
+  const paymentGateway =
+    PaymobPaymentGateway.fromEnv(process.env) ??
+    new MisconfiguredPaymentGateway();
+  const returnTokenSecret =
+    environment.AUTH_PRIVACY_HASH_SECRET ??
+    environment.JWT_ACCESS_SECRET ??
+    "cleanora-payments-return-token-dev";
+  const isStaffAdmin = async (userId: string): Promise<boolean> => {
+    const grants = await authorization.effectivePermissions({
+      userId,
+      sessionId: "payments-staff-check",
+      accountCategories: [],
+      verifiedCategories: [],
+      pendingCategories: [],
+      status: "ACTIVE",
+      verificationOnly: false,
+    });
+    return grants.roleCodes.includes("staff_admin");
+  };
   const paymentsApplicationService = createPaymentsApplicationService({
     unitOfWork: new PaymentsUnitOfWork(database.client),
     bookingReader: createPrismaBookingFinancialSnapshotReader(database.client),
+    gateway: paymentGateway,
+    confirmDepositPayment: createConfirmDepositPayment(database.client),
+    returnTokenSecret,
+    isStaffAdmin,
+    activeCountryExists: async (countryId) => {
+      const country = await createActiveCountryReader(
+        database.client,
+      ).getActiveCountryById(countryId);
+      return country !== null;
+    },
+  });
+  const paymentsRouter =
+    authentication === undefined
+      ? undefined
+      : createPaymentsRouter({
+          authenticateAccess: authentication.authenticateAccess,
+          optionalAuthenticateAccess: authentication.optionalAuthenticateAccess,
+          rateLimiter,
+          privacyHashSecret: browseCursorSecret,
+          service: paymentsApplicationService,
+          isStaffAdmin,
+        });
+  const staffPaymentsRouter =
+    authentication === undefined
+      ? undefined
+      : createStaffPaymentsRouter({
+          authenticateAccess: authentication.authenticateAccess,
+          rateLimiter,
+          privacyHashSecret: browseCursorSecret,
+          service: paymentsApplicationService,
+          isStaffAdmin,
+        });
+  const paymobWebhookRouter = createPaymobWebhookRouter({
+    rateLimiter,
+    privacyHashSecret: browseCursorSecret,
+    service: paymentsApplicationService,
+    isStaffAdmin,
   });
   const bookingsCommandRouter =
     authentication === undefined
@@ -1556,26 +1622,36 @@ export function createRuntimeDependencies(
       databaseProbe: database.databaseProbe(),
       readinessProbes: [
         database.readinessProbe(),
-        ...(providersComposition?.r1p06ReadinessProbe === undefined ? [] : [providersComposition.r1p06ReadinessProbe]),
+        ...(providersComposition?.r1p06ReadinessProbe === undefined
+          ? []
+          : [providersComposition.r1p06ReadinessProbe]),
         ...(customersRouter === undefined
           ? []
-          : [{
-              name: "customers-runtime-configuration",
-              check: async (): Promise<void> => {
-                assertCustomersRuntimeEnvironment(environment);
+          : [
+              {
+                name: "customers-runtime-configuration",
+                check: async (): Promise<void> => {
+                  assertCustomersRuntimeEnvironment(environment);
+                },
               },
-            }]),
+            ]),
       ],
       ownerInternalRouter,
-      ...(authentication === undefined ? {} : { authenticationRouter: authentication.router }),
+      ...(authentication === undefined
+        ? {}
+        : { authenticationRouter: authentication.router }),
       ...(customersRouter === undefined ? {} : { customersRouter }),
       ...(providersRouter === undefined ? {} : { providersRouter }),
-      ...(providerWorkforceRouter === undefined ? {} : { providerWorkforceRouter }),
+      ...(providerWorkforceRouter === undefined
+        ? {}
+        : { providerWorkforceRouter }),
       ...(providerServiceRouter === undefined ? {} : { providerServiceRouter }),
       ...(staffProviderServiceRouter === undefined
         ? {}
         : { staffProviderServiceRouter }),
-      ...(providerWorkerSelfRouter === undefined ? {} : { providerWorkerSelfRouter }),
+      ...(providerWorkerSelfRouter === undefined
+        ? {}
+        : { providerWorkerSelfRouter }),
       ...(providerWorkforceInvitationRouter === undefined
         ? {}
         : { providerWorkforceInvitationRouter }),
@@ -1583,9 +1659,7 @@ export function createRuntimeDependencies(
       ...(providerAdminInvitationRouter === undefined
         ? {}
         : { providerAdminInvitationRouter }),
-      ...(staffCatalogRouter === undefined
-        ? {}
-        : { staffCatalogRouter }),
+      ...(staffCatalogRouter === undefined ? {} : { staffCatalogRouter }),
       ...(staffConfigurationLocalityRouter === undefined
         ? {}
         : { staffConfigurationLocalityRouter }),
@@ -1594,6 +1668,9 @@ export function createRuntimeDependencies(
         : { providerAvailabilityRouter }),
       bookingsBrowseRouter,
       ...(bookingsCommandRouter === undefined ? {} : { bookingsCommandRouter }),
+      ...(paymentsRouter === undefined ? {} : { paymentsRouter }),
+      ...(staffPaymentsRouter === undefined ? {} : { staffPaymentsRouter }),
+      paymobWebhookRouter,
     },
   };
 }

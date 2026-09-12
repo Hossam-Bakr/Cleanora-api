@@ -25,6 +25,7 @@ export function createPrismaBookingFinancialSnapshotReader(
         where: { id: input.bookingId },
         select: {
           id: true,
+          customerUserId: true,
           status: true,
           countryId: true,
           currencyCode: true,
@@ -40,6 +41,7 @@ export function createPrismaBookingFinancialSnapshotReader(
       }
       return {
         bookingId: row.id,
+        customerUserId: row.customerUserId,
         status: row.status,
         countryId: row.countryId,
         currencyCode: row.currencyCode,

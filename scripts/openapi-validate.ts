@@ -18,6 +18,7 @@ const defaults = [
   'docs/apis/openapi/r1-p10-availability-capacity-textual-coverage.yaml',
   'docs/apis/openapi/r1-p12-browse-marketplace.yaml',
   'docs/apis/openapi/r1-p13-booking-draft.yaml',
+  'docs/apis/openapi/r1-p15-deposit-payments-methods-webhooks.yaml',
 ];
 
 async function main(): Promise<void> {

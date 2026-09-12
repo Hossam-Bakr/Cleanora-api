@@ -1,0 +1,62 @@
+<xml>
+<task>
+You are a read-only Cleanora adversarial reviewer. Do NOT use shell. Do NOT edit files.
+Prior sandbox could not read disk — all evidence is INLINED. Ground only on this brief.
+Phase: R1-P15 Deposit Payments, Methods & Webhooks. DEC-094. Prep-accept: ACCEPT_IMPLEMENTATION (EX-01/02/03 KEEP).
+
+Produce a review report matching docs/ai/templates/review-report.md shape with severities and VERDICT.
+</task>
+
+<accepted_mvb>
+Extend payments module; tables payment_methods/attempts/payments/gateway_events/receipts/refund_requests;
+migration r1_p15_deposit_payments_methods_webhooks; Egypt Paymob CARD+WALLET only; six HTTP caps;
+browser return never marks paid; verified webhook sole authority → SUCCEEDED + postJournal DEPOSIT +
+receipt + Bookings.confirmDepositPayment; duplicate webhooks idempotent; retry after FAILED/EXPIRED;
+one SUCCEEDED BOOKING_DEPOSIT/booking; refund REQUESTED only; no wallets/InstaPay/fees/coupons/P16;
+coverage 80/75/80/80.
+</accepted_mvb>
+
+<gate_evidence>
+- test:r1-p15 / coverage:r1-p15: PASS 12 files / 88 tests; coverage 89.47 / 78.87 / 98.8 / 89.32
+- typecheck: repair applied for routes test implicits; orchestrator re-verifying
+- openapi:validate PASS (includes r1-p15 yaml)
+- postman:validate PASS (no dedicated P15 Postman collection yet; OpenAPI wired)
+- docs:check PASS
+- Live migration clean+upgrade: BLOCKED — no disposable proof DB URL on host
+- SQL migration + unit migration shape test exist
+- Codex prep-accept PASS (consultation #3)
+</gate_evidence>
+
+<diff_summary>
+New/changed product: prisma Payment* models + migration SQL+seed; payments.deposit/controller/routes/schemas;
+adapters PaymentGatewayPort/Fake/Paymob/Misconfigured; repository/UoW deposit ops; composition+routes+app rawBody;
+Bookings confirm-deposit-payment + public export; OpenAPI r1-p15; vitest.r1-p15; tests for workflows/controller/
+schemas/routes/paymob/confirm/migration.
+</diff_summary>
+
+<invariants_to_check>
+1. Browser return cannot SUCCEEDED/confirm
+2. Webhook signature fail → no side effects
+3. Duplicate webhook no double journal/confirm
+4. Module boundaries (payments↔bookings public only)
+5. No wallet / InstaPay invention
+6. Refund foundation only
+7. Decimal-safe money
+8. Migration additive only
+</invariants_to_check>
+
+<action_safety>
+Read-only. No shell. No edits. No commit.
+</action_safety>
+
+<structured_output_contract>
+Use review-report sections. End with:
+
+VERDICT: PASS | CHANGES_REQUIRED | BLOCKED
+
+If PASS: state no unresolved BLOCKER/MAJOR.
+If not PASS: list each BLOCKER/MAJOR with evidence + remediation.
+Treat live migration BLOCKED as a finding severity you judge (often MAJOR if required by DoD without disposable target exception, or note as recorded BLOCKED gate).
+Do not invent files you cannot see beyond this brief.
+</structured_output_contract>
+</xml>
