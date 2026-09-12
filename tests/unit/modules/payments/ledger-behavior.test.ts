@@ -1,5 +1,6 @@
 import { PaymentsError } from "#modules/payments/payments.errors";
 import { createPaymentsApplicationService } from "#modules/payments/payments.service";
+import { FakePaymentGateway } from "#modules/payments/adapters/fake.payment-gateway";
 import { rejectWalletAccount } from "#modules/payments/payments.journal";
 import {
   addMinorUnits,
@@ -33,6 +34,7 @@ function bookingSnapshot(
 ): BookingFinancialSnapshot {
   return {
     bookingId: "booking-1",
+    customerUserId: "customer-1",
     status: "AWAITING_DEPOSIT",
     countryId: "country-eg",
     currencyCode: "EGP",
@@ -56,6 +58,12 @@ function createService(options?: {
     bookingReader: {
       readById: async () => booking,
     },
+    gateway: new FakePaymentGateway(),
+    confirmDepositPayment: async () => ({
+      bookingId: booking?.bookingId ?? "booking-1",
+      status: "CONFIRMED",
+    }),
+    returnTokenSecret: "test-return-secret",
   });
   return { service, memory };
 }
@@ -519,6 +527,12 @@ describe("R1-P14 reads, snapshots, and fail-closed paths", () => {
     const bare = createPaymentsApplicationService({
       unitOfWork: unseeded.unitOfWork,
       bookingReader: { readById: async () => null },
+      gateway: new FakePaymentGateway(),
+      confirmDepositPayment: async () => ({
+        bookingId: "booking-1",
+        status: "CONFIRMED",
+      }),
+      returnTokenSecret: "test-return-secret",
     });
     await expect(
       bare.postJournal({
@@ -592,6 +606,12 @@ describe("R1-P14 reads, snapshots, and fail-closed paths", () => {
     const currencyService = createPaymentsApplicationService({
       unitOfWork: mismatched.unitOfWork,
       bookingReader: { readById: async () => bookingSnapshot() },
+      gateway: new FakePaymentGateway(),
+      confirmDepositPayment: async () => ({
+        bookingId: "booking-1",
+        status: "CONFIRMED",
+      }),
+      returnTokenSecret: "test-return-secret",
     });
     await expect(
       currencyService.postJournal({

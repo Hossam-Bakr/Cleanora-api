@@ -1,0 +1,55 @@
+<xml>
+<task>
+You are a read-only Cleanora PM. Do not edit files. Do not implement. Do not run git write commands.
+
+Phase: R1-P15 — Deposit Payments, Methods & Webhooks.
+Repo: Cleanora modular monolith. Cursor implements; you only accept or reject MVB scope.
+
+Current state: R1-P14 Complete (DEC-094). P15 Spec Kit artifacts are written under
+specs/R1-P15-deposit-payments-methods-webhooks/.
+
+Question: Grant complete in-scope implementation authorization for tasks T001–T036?
+
+Read only:
+- specs/R1-P15-deposit-payments-methods-webhooks/spec.md (Clarifications + FR/SC + DoD)
+- specs/R1-P15-deposit-payments-methods-webhooks/plan.md
+- specs/R1-P15-deposit-payments-methods-webhooks/tasks.md
+- specs/R1-P15-deposit-payments-methods-webhooks/data-model.md
+- specs/R1-P15-deposit-payments-methods-webhooks/contracts/http-api.md
+- specs/R1-P15-deposit-payments-methods-webhooks/contracts/payments-deposit-public-contract.md
+- specs/R1-P15-deposit-payments-methods-webhooks/test-strategy.md
+
+Locked constraints: one modular monolith; extend existing payments module; no stored-value
+wallets; no Docker/cloud; no invented InstaPay (OQ-009); no cancel-fee matrix (OQ-001);
+no coupons (OQ-008); browser redirect is never payment proof; verified webhook alone
+confirms deposit + booking; refund foundation rows only; P14 ledger postJournal reused
+for DEPOSIT; Egypt enables Paymob CARD + WALLET only.
+</task>
+
+<grounding_rules>
+Ground every claim in those named files. Label inferences. Refuse over-engineering.
+Name exceptions explicitly. Do not ask Cursor to add wallets, InstaPay workflows,
+payout execution, provider accept (P16), or remaining/COD collection.
+</grounding_rules>
+
+<action_safety>
+Read-only. Do not create, edit, or delete repository files. Do not commit.
+</action_safety>
+
+<structured_output_contract>
+End with exactly:
+
+VERDICT: ACCEPT_IMPLEMENTATION | REJECT | ACCEPT_WITH_EXCEPTIONS
+
+Then:
+1. One-line holding per Clarification lock (module, tables/migration, Egypt rails, HTTP set,
+   browser non-proof, webhook authority, duplicate webhooks, retry, refund foundation,
+   money, adapter, coverage, out-of-scope).
+2. Named exceptions EX-01/EX-02/EX-03 keep / drop / rewrite.
+3. Any additional named exception you require.
+4. Reasons if not a full accept.
+5. Files you considered.
+
+Do not implement. Do not suggest extra modules or generic payment engines.
+</structured_output_contract>
+</xml>

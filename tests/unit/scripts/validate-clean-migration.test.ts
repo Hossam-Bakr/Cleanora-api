@@ -30,6 +30,7 @@ const EXPECTED = [
   "r1_p11_eligibility_engine_v1",
   "r1_p13_booking_draft_pricing_snapshot_status_machine",
   "r1_p14_financial_ledger_payment_architecture",
+  "r1_p15_deposit_payments_methods_webhooks",
 ] as const;
 
 const r1P07MigrationSql = readFileSync(

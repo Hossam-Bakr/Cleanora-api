@@ -7,10 +7,22 @@ import type {
   InsertSnapshotInput,
   LedgerAccountRow,
   LedgerEntryRow,
+  PaymentAttemptRow,
+  PaymentGatewayEventRow,
+  PaymentMethodRow,
+  PaymentReceiptRow,
+  PaymentRow,
   PaymentsRepository,
+  RefundRequestRow,
 } from "../payments.repository.js";
 import { PaymentsIdempotencyCollision } from "../payments.repository.js";
-import type { LedgerAccountType } from "../payments.public.js";
+import type {
+  LedgerAccountType,
+  PaymentPurpose,
+  PaymentRailProvider,
+  PaymentStatus,
+  PaymentAttemptStatus,
+} from "../payments.public.js";
 
 type PaymentsClient = Prisma.TransactionClient;
 /**
@@ -223,6 +235,520 @@ export class PrismaPaymentsRepository implements PaymentsRepository {
       },
     });
   }
+
+  public async listEnabledPaymentMethods(
+    countryId: string,
+  ): Promise<readonly PaymentMethodRow[]> {
+    const rows = await this.client.paymentMethod.findMany({
+      where: { countryId, enabled: true },
+      orderBy: [{ sortOrder: "asc" }, { code: "asc" }],
+    });
+    return rows.map(mapMethod);
+  }
+
+  public async findPaymentMethodById(
+    methodId: string,
+  ): Promise<PaymentMethodRow | null> {
+    const row = await this.client.paymentMethod.findUnique({
+      where: { id: methodId },
+    });
+    return row === null ? null : mapMethod(row);
+  }
+
+  public async setPaymentMethodEnabled(
+    methodId: string,
+    enabled: boolean,
+  ): Promise<PaymentMethodRow | null> {
+    try {
+      const row = await this.client.paymentMethod.update({
+        where: { id: methodId },
+        data: { enabled },
+      });
+      return mapMethod(row);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  public async findSucceededDepositPayment(
+    bookingId: string,
+  ): Promise<PaymentRow | null> {
+    const row = await this.client.payment.findFirst({
+      where: {
+        bookingId,
+        purpose: "BOOKING_DEPOSIT",
+        status: "SUCCEEDED",
+      },
+    });
+    return row === null ? null : mapPayment(row);
+  }
+
+  public async findPaymentById(paymentId: string): Promise<PaymentRow | null> {
+    const row = await this.client.payment.findUnique({ where: { id: paymentId } });
+    return row === null ? null : mapPayment(row);
+  }
+
+  public async findAttemptByIdempotency(input: {
+    readonly customerUserId: string;
+    readonly bookingId: string;
+    readonly idempotencyKey: string;
+  }): Promise<PaymentAttemptRow | null> {
+    const row = await this.client.paymentAttempt.findUnique({
+      where: {
+        customerUserId_bookingId_idempotencyKey: {
+          customerUserId: input.customerUserId,
+          bookingId: input.bookingId,
+          idempotencyKey: input.idempotencyKey,
+        },
+      },
+    });
+    return row === null ? null : mapAttempt(row);
+  }
+
+  public async findAttemptById(
+    attemptId: string,
+  ): Promise<PaymentAttemptRow | null> {
+    const row = await this.client.paymentAttempt.findUnique({
+      where: { id: attemptId },
+    });
+    return row === null ? null : mapAttempt(row);
+  }
+
+  public async findAttemptByGatewaySessionRef(
+    sessionRef: string,
+  ): Promise<PaymentAttemptRow | null> {
+    const row = await this.client.paymentAttempt.findFirst({
+      where: { gatewaySessionRef: sessionRef },
+    });
+    return row === null ? null : mapAttempt(row);
+  }
+
+  public async insertPayment(input: {
+    readonly id: string;
+    readonly bookingId: string;
+    readonly customerUserId: string;
+    readonly purpose: PaymentPurpose;
+    readonly status: PaymentStatus;
+    readonly amountMinorUnits: string;
+    readonly currencyCode: string;
+    readonly currencyDecimalPlaces: number;
+    readonly paymentMethodId: string;
+  }): Promise<PaymentRow> {
+    const row = await this.client.payment.create({
+      data: {
+        id: input.id,
+        bookingId: input.bookingId,
+        customerUserId: input.customerUserId,
+        purpose: input.purpose,
+        status: input.status,
+        amountMinorUnits: new Prisma.Decimal(input.amountMinorUnits),
+        currencyCode: input.currencyCode,
+        currencyDecimalPlaces: input.currencyDecimalPlaces,
+        paymentMethodId: input.paymentMethodId,
+      },
+    });
+    return mapPayment(row);
+  }
+
+  public async insertAttempt(input: {
+    readonly id: string;
+    readonly paymentId: string;
+    readonly bookingId: string;
+    readonly customerUserId: string;
+    readonly paymentMethodId: string;
+    readonly status: PaymentAttemptStatus;
+    readonly amountMinorUnits: string;
+    readonly currencyCode: string;
+    readonly currencyDecimalPlaces: number;
+    readonly idempotencyKey: string;
+    readonly gatewaySessionRef?: string;
+    readonly redirectUrl?: string;
+    readonly returnTokenHash?: string;
+    readonly expiresAt?: Date;
+  }): Promise<PaymentAttemptRow> {
+    try {
+      const row = await this.client.paymentAttempt.create({
+        data: {
+          id: input.id,
+          paymentId: input.paymentId,
+          bookingId: input.bookingId,
+          customerUserId: input.customerUserId,
+          paymentMethodId: input.paymentMethodId,
+          status: input.status,
+          amountMinorUnits: new Prisma.Decimal(input.amountMinorUnits),
+          currencyCode: input.currencyCode,
+          currencyDecimalPlaces: input.currencyDecimalPlaces,
+          idempotencyKey: input.idempotencyKey,
+          gatewaySessionRef: input.gatewaySessionRef ?? null,
+          redirectUrl: input.redirectUrl ?? null,
+          returnTokenHash: input.returnTokenHash ?? null,
+          expiresAt: input.expiresAt ?? null,
+        },
+      });
+      return mapAttempt(row);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new PaymentsIdempotencyCollision();
+      }
+      throw error;
+    }
+  }
+
+  public async updateAttemptGateway(input: {
+    readonly attemptId: string;
+    readonly status: PaymentAttemptStatus;
+    readonly gatewaySessionRef: string;
+    readonly redirectUrl: string;
+    readonly returnTokenHash: string;
+  }): Promise<void> {
+    await this.client.paymentAttempt.update({
+      where: { id: input.attemptId },
+      data: {
+        status: input.status,
+        gatewaySessionRef: input.gatewaySessionRef,
+        redirectUrl: input.redirectUrl,
+        returnTokenHash: input.returnTokenHash,
+      },
+    });
+  }
+
+  public async markAttemptTerminal(input: {
+    readonly attemptId: string;
+    readonly status: "FAILED" | "EXPIRED" | "SUCCEEDED";
+    readonly failureCode?: string;
+    readonly failureMessageSafe?: string;
+  }): Promise<void> {
+    await this.client.paymentAttempt.update({
+      where: { id: input.attemptId },
+      data: {
+        status: input.status,
+        failureCode: input.failureCode ?? null,
+        failureMessageSafe: input.failureMessageSafe ?? null,
+      },
+    });
+  }
+
+  public async markPaymentSucceeded(input: {
+    readonly paymentId: string;
+    readonly succeededAttemptId: string;
+    readonly ledgerJournalId: string;
+  }): Promise<void> {
+    await this.client.payment.update({
+      where: { id: input.paymentId },
+      data: {
+        status: "SUCCEEDED",
+        succeededAttemptId: input.succeededAttemptId,
+        ledgerJournalId: input.ledgerJournalId,
+      },
+    });
+  }
+
+  public async markPaymentFailed(paymentId: string): Promise<void> {
+    await this.client.payment.update({
+      where: { id: paymentId },
+      data: { status: "FAILED" },
+    });
+  }
+
+  public async findGatewayEvent(
+    provider: PaymentRailProvider,
+    idempotencyKey: string,
+  ): Promise<PaymentGatewayEventRow | null> {
+    const row = await this.client.paymentGatewayEvent.findUnique({
+      where: {
+        provider_idempotencyKey: { provider, idempotencyKey },
+      },
+    });
+    return row === null ? null : mapGatewayEvent(row);
+  }
+
+  public async insertGatewayEvent(input: {
+    readonly id: string;
+    readonly provider: PaymentRailProvider;
+    readonly idempotencyKey: string;
+    readonly paymentAttemptId?: string;
+    readonly paymentId?: string;
+    readonly eventType: string;
+    readonly signatureValid: boolean;
+    readonly status: "RECEIVED" | "PROCESSED" | "IGNORED" | "REJECTED";
+    readonly payloadHash: string;
+    readonly processedAt?: Date;
+  }): Promise<PaymentGatewayEventRow> {
+    try {
+      const row = await this.client.paymentGatewayEvent.create({
+        data: {
+          id: input.id,
+          provider: input.provider,
+          idempotencyKey: input.idempotencyKey,
+          paymentAttemptId: input.paymentAttemptId ?? null,
+          paymentId: input.paymentId ?? null,
+          eventType: input.eventType,
+          signatureValid: input.signatureValid,
+          status: input.status,
+          payloadHash: input.payloadHash,
+          processedAt: input.processedAt ?? null,
+        },
+      });
+      return mapGatewayEvent(row);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new PaymentsIdempotencyCollision();
+      }
+      throw error;
+    }
+  }
+
+  public async markGatewayEventProcessed(input: {
+    readonly eventId: string;
+    readonly status: "PROCESSED" | "IGNORED" | "REJECTED";
+    readonly paymentAttemptId?: string;
+    readonly paymentId?: string;
+    readonly processedAt: Date;
+  }): Promise<void> {
+    await this.client.paymentGatewayEvent.update({
+      where: { id: input.eventId },
+      data: {
+        status: input.status,
+        processedAt: input.processedAt,
+        ...(input.paymentAttemptId === undefined
+          ? {}
+          : { paymentAttemptId: input.paymentAttemptId }),
+        ...(input.paymentId === undefined ? {} : { paymentId: input.paymentId }),
+      },
+    });
+  }
+
+  public async findReceiptByPaymentId(
+    paymentId: string,
+  ): Promise<PaymentReceiptRow | null> {
+    const row = await this.client.paymentReceipt.findUnique({
+      where: { paymentId },
+    });
+    return row === null ? null : mapReceipt(row);
+  }
+
+  public async insertReceipt(input: {
+    readonly id: string;
+    readonly paymentId: string;
+    readonly bookingId: string;
+    readonly customerUserId: string;
+    readonly amountMinorUnits: string;
+    readonly currencyCode: string;
+    readonly currencyDecimalPlaces: number;
+    readonly methodCode: string;
+    readonly providerRef?: string;
+    readonly issuedAt: Date;
+  }): Promise<PaymentReceiptRow> {
+    const row = await this.client.paymentReceipt.create({
+      data: {
+        id: input.id,
+        paymentId: input.paymentId,
+        bookingId: input.bookingId,
+        customerUserId: input.customerUserId,
+        amountMinorUnits: new Prisma.Decimal(input.amountMinorUnits),
+        currencyCode: input.currencyCode,
+        currencyDecimalPlaces: input.currencyDecimalPlaces,
+        methodCode: input.methodCode,
+        providerRef: input.providerRef ?? null,
+        issuedAt: input.issuedAt,
+      },
+    });
+    return mapReceipt(row);
+  }
+
+  public async insertRefundRequest(input: {
+    readonly id: string;
+    readonly paymentId: string;
+    readonly bookingId: string;
+    readonly customerUserId: string;
+    readonly amountMinorUnits: string;
+    readonly currencyCode: string;
+    readonly currencyDecimalPlaces: number;
+    readonly reason?: string;
+    readonly requestedByActorKind: string;
+    readonly requestedByActorId: string;
+  }): Promise<RefundRequestRow> {
+    const row = await this.client.refundRequest.create({
+      data: {
+        id: input.id,
+        paymentId: input.paymentId,
+        bookingId: input.bookingId,
+        customerUserId: input.customerUserId,
+        amountMinorUnits: new Prisma.Decimal(input.amountMinorUnits),
+        currencyCode: input.currencyCode,
+        currencyDecimalPlaces: input.currencyDecimalPlaces,
+        status: "REQUESTED",
+        reason: input.reason ?? null,
+        requestedByActorKind: input.requestedByActorKind,
+        requestedByActorId: input.requestedByActorId,
+      },
+    });
+    return {
+      id: row.id,
+      paymentId: row.paymentId,
+      bookingId: row.bookingId,
+      customerUserId: row.customerUserId,
+      amountMinorUnits: row.amountMinorUnits.toFixed(0),
+      currencyCode: row.currencyCode,
+      currencyDecimalPlaces: row.currencyDecimalPlaces,
+      status: "REQUESTED",
+      reason: row.reason,
+    };
+  }
+}
+
+function mapMethod(row: {
+  readonly id: string;
+  readonly countryId: string;
+  readonly provider: PaymentMethodRow["provider"];
+  readonly methodKind: PaymentMethodRow["methodKind"];
+  readonly code: string;
+  readonly displayNameAr: string;
+  readonly displayNameEn: string;
+  readonly enabled: boolean;
+  readonly sortOrder: number;
+}): PaymentMethodRow {
+  return {
+    id: row.id,
+    countryId: row.countryId,
+    provider: row.provider,
+    methodKind: row.methodKind,
+    code: row.code,
+    displayNameAr: row.displayNameAr,
+    displayNameEn: row.displayNameEn,
+    enabled: row.enabled,
+    sortOrder: row.sortOrder,
+  };
+}
+
+function mapPayment(row: {
+  readonly id: string;
+  readonly bookingId: string;
+  readonly customerUserId: string;
+  readonly purpose: PaymentPurpose;
+  readonly status: PaymentStatus;
+  readonly amountMinorUnits: Prisma.Decimal;
+  readonly currencyCode: string;
+  readonly currencyDecimalPlaces: number;
+  readonly paymentMethodId: string;
+  readonly succeededAttemptId: string | null;
+  readonly ledgerJournalId: string | null;
+}): PaymentRow {
+  return {
+    id: row.id,
+    bookingId: row.bookingId,
+    customerUserId: row.customerUserId,
+    purpose: row.purpose,
+    status: row.status,
+    amountMinorUnits: row.amountMinorUnits.toFixed(0),
+    currencyCode: row.currencyCode,
+    currencyDecimalPlaces: row.currencyDecimalPlaces,
+    paymentMethodId: row.paymentMethodId,
+    succeededAttemptId: row.succeededAttemptId,
+    ledgerJournalId: row.ledgerJournalId,
+  };
+}
+
+function mapAttempt(row: {
+  readonly id: string;
+  readonly paymentId: string;
+  readonly bookingId: string;
+  readonly customerUserId: string;
+  readonly paymentMethodId: string;
+  readonly status: PaymentAttemptStatus;
+  readonly amountMinorUnits: Prisma.Decimal;
+  readonly currencyCode: string;
+  readonly currencyDecimalPlaces: number;
+  readonly idempotencyKey: string;
+  readonly gatewaySessionRef: string | null;
+  readonly redirectUrl: string | null;
+  readonly failureCode: string | null;
+  readonly failureMessageSafe: string | null;
+  readonly expiresAt: Date | null;
+  readonly returnTokenHash: string | null;
+}): PaymentAttemptRow {
+  return {
+    id: row.id,
+    paymentId: row.paymentId,
+    bookingId: row.bookingId,
+    customerUserId: row.customerUserId,
+    paymentMethodId: row.paymentMethodId,
+    status: row.status,
+    amountMinorUnits: row.amountMinorUnits.toFixed(0),
+    currencyCode: row.currencyCode,
+    currencyDecimalPlaces: row.currencyDecimalPlaces,
+    idempotencyKey: row.idempotencyKey,
+    gatewaySessionRef: row.gatewaySessionRef,
+    redirectUrl: row.redirectUrl,
+    failureCode: row.failureCode,
+    failureMessageSafe: row.failureMessageSafe,
+    expiresAt: row.expiresAt,
+    returnTokenHash: row.returnTokenHash,
+  };
+}
+
+function mapGatewayEvent(row: {
+  readonly id: string;
+  readonly provider: PaymentRailProvider;
+  readonly idempotencyKey: string;
+  readonly paymentAttemptId: string | null;
+  readonly paymentId: string | null;
+  readonly eventType: string;
+  readonly signatureValid: boolean;
+  readonly status: PaymentGatewayEventRow["status"];
+  readonly payloadHash: string;
+  readonly processedAt: Date | null;
+}): PaymentGatewayEventRow {
+  return {
+    id: row.id,
+    provider: row.provider,
+    idempotencyKey: row.idempotencyKey,
+    paymentAttemptId: row.paymentAttemptId,
+    paymentId: row.paymentId,
+    eventType: row.eventType,
+    signatureValid: row.signatureValid,
+    status: row.status,
+    payloadHash: row.payloadHash,
+    processedAt: row.processedAt,
+  };
+}
+
+function mapReceipt(row: {
+  readonly id: string;
+  readonly paymentId: string;
+  readonly bookingId: string;
+  readonly customerUserId: string;
+  readonly amountMinorUnits: Prisma.Decimal;
+  readonly currencyCode: string;
+  readonly currencyDecimalPlaces: number;
+  readonly methodCode: string;
+  readonly providerRef: string | null;
+  readonly issuedAt: Date;
+}): PaymentReceiptRow {
+  return {
+    id: row.id,
+    paymentId: row.paymentId,
+    bookingId: row.bookingId,
+    customerUserId: row.customerUserId,
+    amountMinorUnits: row.amountMinorUnits.toFixed(0),
+    currencyCode: row.currencyCode,
+    currencyDecimalPlaces: row.currencyDecimalPlaces,
+    methodCode: row.methodCode,
+    providerRef: row.providerRef,
+    issuedAt: row.issuedAt,
+  };
 }
 
 function mapEntry(

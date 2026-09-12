@@ -41,6 +41,7 @@ const migrationNames = [
   'r1_p11_eligibility_engine_v1',
   'r1_p13_booking_draft_pricing_snapshot_status_machine',
   'r1_p14_financial_ledger_payment_architecture',
+  'r1_p15_deposit_payments_methods_webhooks',
 ] as const;
 const expectedTablesThroughR1P10 = [
   "currencies",
@@ -157,6 +158,12 @@ const expectedTables = [
   "financial_idempotency_keys",
   "financial_snapshots",
   "financial_adjustments",
+  "payment_methods",
+  "payments",
+  "payment_attempts",
+  "payment_gateway_events",
+  "payment_receipts",
+  "refund_requests",
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -296,6 +303,14 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "financial_idempotency_keys",
     "financial_snapshots",
     "financial_adjustments"
+  ],
+  r1_p15_deposit_payments_methods_webhooks: [
+    "payment_methods",
+    "payments",
+    "payment_attempts",
+    "payment_gateway_events",
+    "payment_receipts",
+    "refund_requests"
   ]
 };
 const expectedPostDeployTablesThroughR1P10 = [
@@ -1438,6 +1453,124 @@ export function assertR1P14MigrationSql(sql: string): void {
   }
 }
 
+export const R1_P15_MIGRATION =
+  "r1_p15_deposit_payments_methods_webhooks";
+
+export const R1_P15_PAYMENT_TABLES = [
+  "payment_methods",
+  "payments",
+  "payment_attempts",
+  "payment_gateway_events",
+  "payment_receipts",
+  "refund_requests",
+] as const;
+
+export const MIGRATION_NAMES_THROUGH_R1_P15 = [
+  ...MIGRATION_NAMES_THROUGH_R1_P14,
+  R1_P15_MIGRATION,
+] as const;
+
+export const POST_DEPLOY_TABLES_THROUGH_R1_P15 = [
+  ...POST_DEPLOY_TABLES_THROUGH_R1_P14,
+  ...R1_P15_PAYMENT_TABLES,
+] as const;
+
+export const APPROVED_R1_P15_TARGET_PATTERN =
+  /^cleanora_r1_p15(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
+
+/** Require an explicitly named R1-P15 disposable target for deposit proofs. */
+export function assertR1P15DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  let targetName: string;
+  try {
+    const url = new URL(connectionString);
+    targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  } catch {
+    throw new Error("R1-P15 database URL is not a valid URL");
+  }
+  if (!APPROVED_R1_P15_TARGET_PATTERN.test(targetName)) {
+    throw new Error(
+      `Refusing R1-P15 database work against unapproved target "${targetName}"`,
+    );
+  }
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+}
+
+/**
+ * Resolve the separate R1-P15 live/proof URL.
+ * Never falls back to DATABASE_URL, CLEANORA_R1_P14_DATABASE_URL, or any prior-phase target.
+ */
+export function requireR1P15ProofDatabaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const value = env["CLEANORA_R1_P15_DATABASE_URL"];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      "CLEANORA_R1_P15_DATABASE_URL is required for R1-P15 disposable proofs",
+    );
+  }
+  assertR1P15DisposableDatabaseUrl(value);
+  try {
+    const url = new URL(value);
+    url.hostname = url.hostname.replace("-pooler", "");
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
+/** Accept only the additive, phase-owned R1-P15 deposit payment migration inventory. */
+export function assertR1P15MigrationSql(sql: string): void {
+  if (/\b(DROP\s+TABLE|TRUNCATE)\b/iu.test(sql)) {
+    throw new Error("R1-P15 deposit migration contains destructive SQL");
+  }
+  if (/\bDELETE\s+FROM\b/iu.test(sql)) {
+    throw new Error("R1-P15 deposit migration must not delete existing rows");
+  }
+  if (
+    sql.includes('CREATE TABLE "wallets"') ||
+    sql.includes('CREATE TABLE "user_wallets"') ||
+    sql.includes('CREATE TABLE "customer_wallets"')
+  ) {
+    throw new Error("R1-P15 migration must not create wallets");
+  }
+  if (/create\s+table\s+"?[^"]*instapay/iu.test(sql)) {
+    throw new Error("R1-P15 migration must not invent InstaPay tables");
+  }
+  const tables = migrationOwnedTables[R1_P15_MIGRATION] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P15 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 6) {
+    throw new Error("R1-P15 migration must create exactly six payment tables");
+  }
+  for (const required of [
+    'CREATE TYPE "PaymentRailProvider"',
+    'CREATE TYPE "PaymentMethodKind"',
+    'CREATE TYPE "PaymentAttemptStatus"',
+    'CREATE TYPE "PaymentStatus"',
+    'CREATE TYPE "PaymentPurpose"',
+    'CREATE TYPE "PaymentGatewayEventStatus"',
+    'CREATE TYPE "RefundRequestStatus"',
+    "payments_one_succeeded_booking_deposit_key",
+    'WHERE "status" = \'SUCCEEDED\'',
+    "DECIMAL(65,0)",
+    "PAYMOB_CARD",
+    "PAYMOB_WALLET",
+    "OTHER_DISABLED",
+    "str_sys_awaiting_confirmed",
+    'c."code" = \'EG\'',
+  ]) {
+    if (!sql.includes(required)) {
+      throw new Error(`R1-P15 migration is missing ${required}`);
+    }
+  }
+}
+
 export function assertExactMigrationDirectoryNames(
   directoryNames: readonly string[],
 ): void {
@@ -1544,6 +1677,10 @@ async function validateMigrationFolder(): Promise<void> {
     }
     if (migrationName === R1_P14_MIGRATION) {
       assertR1P14MigrationSql(sql);
+      continue;
+    }
+    if (migrationName === R1_P15_MIGRATION) {
+      assertR1P15MigrationSql(sql);
       continue;
     }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
@@ -1737,6 +1874,74 @@ export async function assertPostDeployState(
         }
       }
       await probeR1P14Immutability(prisma);
+    }
+    if (expectedMigrationNames.includes(R1_P15_MIGRATION)) {
+      const methodRows = await prisma.$queryRaw<
+        Array<{
+          code: string;
+          enabled: boolean;
+          provider: string;
+          method_kind: string;
+        }>
+      >`
+        SELECT pm."code"::text AS code,
+          pm."enabled" AS enabled,
+          pm."provider"::text AS provider,
+          pm."method_kind"::text AS method_kind
+        FROM "payment_methods" pm
+        JOIN "countries" c ON c."id" = pm."country_id"
+        WHERE c."code" = 'EG'
+        ORDER BY pm."code"
+      `;
+      const byCode = new Map(methodRows.map((row) => [row.code, row]));
+      const card = byCode.get("PAYMOB_CARD");
+      const wallet = byCode.get("PAYMOB_WALLET");
+      const other = byCode.get("OTHER_DISABLED");
+      if (
+        card === undefined ||
+        card.enabled !== true ||
+        card.provider !== "PAYMOB" ||
+        card.method_kind !== "CARD"
+      ) {
+        throw new Error(
+          "R1-P15 seed must enable Egypt Paymob CARD payment method",
+        );
+      }
+      if (
+        wallet === undefined ||
+        wallet.enabled !== true ||
+        wallet.provider !== "PAYMOB" ||
+        wallet.method_kind !== "WALLET"
+      ) {
+        throw new Error(
+          "R1-P15 seed must enable Egypt Paymob WALLET payment method",
+        );
+      }
+      if (
+        other === undefined ||
+        other.enabled !== false ||
+        other.provider !== "OTHER_DISABLED"
+      ) {
+        throw new Error(
+          "R1-P15 seed must keep Egypt OTHER_DISABLED method disabled",
+        );
+      }
+      for (const table of [
+        "payments",
+        "payment_attempts",
+        "payment_gateway_events",
+        "payment_receipts",
+        "refund_requests",
+      ] as const) {
+        const rows = await prisma.$queryRawUnsafe<Array<{ total: bigint }>>(
+          `SELECT count(*)::bigint AS total FROM "${table}"`,
+        );
+        if ((rows[0]?.total ?? 0n) !== 0n) {
+          throw new Error(
+            `R1-P15 seed must leave ${table} empty; found commercial payment rows`,
+          );
+        }
+      }
     }
   } finally {
     await prisma.$disconnect();
@@ -2883,9 +3088,9 @@ async function run(): Promise<void> {
     "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
   );
 
-  const configuredConnectionString = requireR1P14ProofDatabaseUrl();
+  const configuredConnectionString = requireR1P15ProofDatabaseUrl();
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p14_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p15_proof_${process.pid}_${Date.now()}`;
   if (!/^[a-z][a-z0-9_]{0,62}$/u.test(proofSchema)) {
     throw new Error("Disposable proof identifier is invalid");
   }
@@ -2917,7 +3122,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, eight Egypt system ledger accounts, empty commercial ledger journals, live snapshot/price-breakdown and ledger immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, eight Egypt system ledger accounts, empty commercial ledger journals, Egypt Paymob CARD+WALLET enabled methods, empty commercial payment tables, live snapshot/price-breakdown and ledger immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
   );
 }
 

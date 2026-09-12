@@ -1,7 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import type { BookingFinancialSnapshotReader } from "#modules/bookings/bookings.public";
+import type {
+  BookingFinancialSnapshotReader,
+  ConfirmDepositPayment,
+} from "#modules/bookings/bookings.public";
 
+import type { PaymentGatewayPort } from "./adapters/payment-gateway.port.js";
+import { createDepositWorkflows } from "./payments.deposit.js";
 import { paymentsError } from "./payments.errors.js";
 import {
   assertPostableJournal,
@@ -29,6 +34,11 @@ import type {
 export interface PaymentsApplicationServiceDependencies {
   readonly unitOfWork: PaymentsUnitOfWork;
   readonly bookingReader: BookingFinancialSnapshotReader;
+  readonly gateway: PaymentGatewayPort;
+  readonly confirmDepositPayment: ConfirmDepositPayment;
+  readonly returnTokenSecret: string;
+  readonly isStaffAdmin?: (userId: string) => Promise<boolean>;
+  readonly activeCountryExists?: (countryId: string) => Promise<boolean>;
   readonly clock?: () => Date;
 }
 
@@ -39,6 +49,21 @@ export interface PaymentsApplicationServiceDependencies {
 export function createPaymentsApplicationService(
   dependencies: PaymentsApplicationServiceDependencies,
 ): PaymentsApplicationService {
+  const deposit = createDepositWorkflows({
+    unitOfWork: dependencies.unitOfWork,
+    bookingReader: dependencies.bookingReader,
+    gateway: dependencies.gateway,
+    confirmDepositPayment: dependencies.confirmDepositPayment,
+    returnTokenSecret: dependencies.returnTokenSecret,
+    ...(dependencies.isStaffAdmin === undefined
+      ? {}
+      : { isStaffAdmin: dependencies.isStaffAdmin }),
+    ...(dependencies.activeCountryExists === undefined
+      ? {}
+      : { activeCountryExists: dependencies.activeCountryExists }),
+    ...(dependencies.clock === undefined ? {} : { clock: dependencies.clock }),
+  });
+
   return {
     async postJournal(input: PostJournalInput) {
       const command = parsePostJournalInput(input);
@@ -422,6 +447,14 @@ export function createPaymentsApplicationService(
     async createAccount(input: unknown): Promise<never> {
       rejectWalletAccount(input);
     },
+
+    listEnabledMethodsForCountry: deposit.listEnabledMethodsForCountry,
+    initiateBookingDeposit: deposit.initiateBookingDeposit,
+    getBrowserReturnStatus: deposit.getBrowserReturnStatus,
+    processPaymobWebhook: deposit.processPaymobWebhook,
+    getPaymentForReader: deposit.getPaymentForReader,
+    setPaymentMethodEnabled: deposit.setPaymentMethodEnabled,
+    createRefundRequest: deposit.createRefundRequest,
   };
 }
 

@@ -489,6 +489,7 @@ model Country {
   eligibilityRuleVersions      EligibilityRuleVersion[]
   bookings                     Booking[]
   ledgerAccounts               LedgerAccount[]
+  paymentMethods               PaymentMethod[]
 
   @@index([isActive])
   @@index([defaultCurrencyId])
@@ -3033,4 +3034,186 @@ model FinancialAdjustment {
 
   @@index([originalJournalId])
   @@map("financial_adjustments")
+}
+
+enum PaymentRailProvider {
+  PAYMOB
+  OTHER_DISABLED
+}
+
+enum PaymentMethodKind {
+  CARD
+  WALLET
+  OTHER
+}
+
+enum PaymentAttemptStatus {
+  CREATED
+  REDIRECTED
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentPurpose {
+  BOOKING_DEPOSIT
+}
+
+enum PaymentGatewayEventStatus {
+  RECEIVED
+  PROCESSED
+  IGNORED
+  REJECTED
+}
+
+enum RefundRequestStatus {
+  REQUESTED
+}
+
+model PaymentMethod {
+  id            String              @id @default(cuid())
+  countryId     String              @map("country_id")
+  provider      PaymentRailProvider
+  methodKind    PaymentMethodKind   @map("method_kind")
+  code          String
+  displayNameAr String              @map("display_name_ar")
+  displayNameEn String              @map("display_name_en")
+  enabled       Boolean             @default(false)
+  sortOrder     Int                 @default(0) @map("sort_order")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+  country       Country             @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  attempts      PaymentAttempt[]
+  payments      Payment[]
+
+  @@unique([countryId, code])
+  @@unique([countryId, provider, methodKind])
+  @@index([countryId, enabled])
+  @@map("payment_methods")
+}
+
+model Payment {
+  id                    String           @id @default(cuid())
+  bookingId             String           @map("booking_id")
+  customerUserId        String           @map("customer_user_id")
+  purpose               PaymentPurpose
+  status                PaymentStatus
+  amountMinorUnits      Decimal          @map("amount_minor_units") @db.Decimal(65, 0)
+  currencyCode          String           @map("currency_code") @db.VarChar(3)
+  currencyDecimalPlaces Int              @map("currency_decimal_places")
+  paymentMethodId       String           @map("payment_method_id")
+  succeededAttemptId    String?          @unique @map("succeeded_attempt_id")
+  ledgerJournalId       String?          @map("ledger_journal_id")
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+  paymentMethod         PaymentMethod    @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  succeededAttempt      PaymentAttempt?  @relation("PaymentSucceededAttempt", fields: [succeededAttemptId], references: [id], onDelete: Restrict)
+  attempts              PaymentAttempt[] @relation("PaymentAttempts")
+  gatewayEvents         PaymentGatewayEvent[]
+  receipt               PaymentReceipt?
+  refundRequests        RefundRequest[]
+
+  @@index([bookingId, purpose, status])
+  @@index([customerUserId, createdAt])
+  @@map("payments")
+}
+
+model PaymentAttempt {
+  id                    String               @id @default(cuid())
+  paymentId             String               @map("payment_id")
+  bookingId             String               @map("booking_id")
+  customerUserId        String               @map("customer_user_id")
+  paymentMethodId       String               @map("payment_method_id")
+  status                PaymentAttemptStatus
+  amountMinorUnits      Decimal              @map("amount_minor_units") @db.Decimal(65, 0)
+  currencyCode          String               @map("currency_code") @db.VarChar(3)
+  currencyDecimalPlaces Int                  @map("currency_decimal_places")
+  idempotencyKey        String               @map("idempotency_key")
+  gatewaySessionRef     String?              @map("gateway_session_ref")
+  redirectUrl           String?              @map("redirect_url")
+  failureCode           String?              @map("failure_code")
+  failureMessageSafe    String?              @map("failure_message_safe")
+  expiresAt             DateTime?            @map("expires_at")
+  returnTokenHash       String?              @map("return_token_hash")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  payment               Payment              @relation("PaymentAttempts", fields: [paymentId], references: [id], onDelete: Restrict)
+  paymentMethod         PaymentMethod        @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  succeededPayment      Payment?             @relation("PaymentSucceededAttempt")
+  gatewayEvents         PaymentGatewayEvent[]
+
+  @@unique([customerUserId, bookingId, idempotencyKey])
+  @@index([bookingId, status])
+  @@index([gatewaySessionRef])
+  @@map("payment_attempts")
+}
+
+model PaymentGatewayEvent {
+  id               String                    @id @default(cuid())
+  provider         PaymentRailProvider
+  idempotencyKey   String                    @map("idempotency_key")
+  paymentAttemptId String?                   @map("payment_attempt_id")
+  paymentId        String?                   @map("payment_id")
+  eventType        String                    @map("event_type")
+  signatureValid   Boolean                   @map("signature_valid")
+  status           PaymentGatewayEventStatus
+  payloadHash      String                    @map("payload_hash")
+  rawPayloadStored Boolean                   @default(false) @map("raw_payload_stored")
+  processedAt      DateTime?                 @map("processed_at")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  paymentAttempt   PaymentAttempt?           @relation(fields: [paymentAttemptId], references: [id], onDelete: Restrict)
+  payment          Payment?                  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@unique([provider, idempotencyKey])
+  @@index([paymentId])
+  @@index([paymentAttemptId])
+  @@map("payment_gateway_events")
+}
+
+model PaymentReceipt {
+  id                    String   @id @default(cuid())
+  paymentId             String   @unique @map("payment_id")
+  bookingId             String   @map("booking_id")
+  customerUserId        String   @map("customer_user_id")
+  amountMinorUnits      Decimal  @map("amount_minor_units") @db.Decimal(65, 0)
+  currencyCode          String   @map("currency_code") @db.VarChar(3)
+  currencyDecimalPlaces Int      @map("currency_decimal_places")
+  methodCode            String   @map("method_code")
+  providerRef           String?  @map("provider_ref")
+  issuedAt              DateTime @map("issued_at")
+  createdAt             DateTime @default(now()) @map("created_at")
+  payment               Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([customerUserId, issuedAt])
+  @@map("payment_receipts")
+}
+
+model RefundRequest {
+  id                   String              @id @default(cuid())
+  paymentId            String              @map("payment_id")
+  bookingId            String              @map("booking_id")
+  customerUserId       String              @map("customer_user_id")
+  amountMinorUnits     Decimal             @map("amount_minor_units") @db.Decimal(65, 0)
+  currencyCode         String              @map("currency_code") @db.VarChar(3)
+  currencyDecimalPlaces Int                @map("currency_decimal_places")
+  status               RefundRequestStatus
+  reason               String?
+  requestedByActorKind String              @map("requested_by_actor_kind")
+  requestedByActorId   String              @map("requested_by_actor_id")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  payment              Payment             @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@index([paymentId])
+  @@index([status, createdAt])
+  @@map("refund_requests")
 }

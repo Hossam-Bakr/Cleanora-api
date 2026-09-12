@@ -15,6 +15,15 @@ const DEFAULT_MESSAGES: Record<PaymentsErrorCode, string> = {
   ADJUSTMENT_REASON_REQUIRED: "Adjustments require a staff-finance reason",
   WALLET_PROHIBITED: "Stored-value user accounts are prohibited",
   SNAPSHOT_HASH_MISMATCH: "Financial snapshot hash does not match included entries",
+  NOT_FOUND: "Payment resource was not found",
+  FORBIDDEN: "Payments access is forbidden",
+  CONFLICT: "Payments request conflicted with current state",
+  TRANSITION_NOT_AVAILABLE: "Payment transition is not available",
+  GATEWAY_MISCONFIGURED: "Payment gateway is misconfigured",
+  WEBHOOK_SIGNATURE_INVALID: "Payment webhook signature is invalid",
+  PAYMENT_ALREADY_SUCCEEDED: "A succeeded deposit already exists for this booking",
+  AMOUNT_MISMATCH: "Payment amount does not match the required deposit",
+  AUTHENTICATION_REQUIRED: "Authentication is required",
 };
 
 /**
@@ -61,4 +70,34 @@ export function paymentsError(
   details?: Readonly<Record<string, unknown>>,
 ): PaymentsError {
   return new PaymentsError(code, details === undefined ? {} : { details });
+}
+
+import { AppError } from "#shared/errors/app-error";
+
+const HTTP_STATUS: Partial<Record<PaymentsErrorCode, number>> = {
+  VALIDATION_FAILED: 400,
+  AUTHENTICATION_REQUIRED: 401,
+  FORBIDDEN: 403,
+  WEBHOOK_SIGNATURE_INVALID: 401,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  TRANSITION_NOT_AVAILABLE: 409,
+  PAYMENT_ALREADY_SUCCEEDED: 409,
+  AMOUNT_MISMATCH: 409,
+  IDEMPOTENCY_CONFLICT: 409,
+  GATEWAY_MISCONFIGURED: 503,
+  DEPENDENCY_FAILURE: 503,
+};
+
+/**
+ * @desc Map PaymentsError to the standard HTTP AppError envelope.
+ * @access Payments HTTP adapters
+ */
+export function toPaymentsHttpError(error: PaymentsError): AppError {
+  return new AppError({
+    code: error.code,
+    message: error.message,
+    statusCode: HTTP_STATUS[error.code] ?? 400,
+    ...(error.details === undefined ? {} : { details: error.details }),
+  });
 }

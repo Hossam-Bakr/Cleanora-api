@@ -6,6 +6,7 @@ describe("R1-P14 booking financial snapshot reader", () => {
       .fn()
       .mockResolvedValueOnce({
         id: "booking-1",
+        customerUserId: "customer-1",
         status: "AWAITING_DEPOSIT",
         countryId: "country-eg",
         currencyCode: "EGP",
@@ -21,6 +22,7 @@ describe("R1-P14 booking financial snapshot reader", () => {
     });
     await expect(reader.readById({ bookingId: "booking-1" })).resolves.toEqual({
       bookingId: "booking-1",
+      customerUserId: "customer-1",
       status: "AWAITING_DEPOSIT",
       countryId: "country-eg",
       currencyCode: "EGP",

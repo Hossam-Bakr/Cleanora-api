@@ -48,6 +48,12 @@ export interface RouteDependencies {
   readonly bookingsBrowseRouter?: Router;
   /** R1-P13 verified-customer booking draft/command routes. */
   readonly bookingsCommandRouter?: Router;
+  /** R1-P15 customer payment routes. */
+  readonly paymentsRouter?: Router;
+  /** R1-P15 staff payment method admin routes. */
+  readonly staffPaymentsRouter?: Router;
+  /** R1-P15 Paymob webhook routes. */
+  readonly paymobWebhookRouter?: Router;
 }
 
 /**
@@ -146,5 +152,17 @@ export function mountRoutes(
 
   if (dependencies.bookingsCommandRouter !== undefined) {
     app.use(`${apiPrefix}/bookings`, dependencies.bookingsCommandRouter);
+  }
+
+  if (dependencies.paymentsRouter !== undefined) {
+    app.use(`${apiPrefix}/payments`, dependencies.paymentsRouter);
+  }
+
+  if (dependencies.staffPaymentsRouter !== undefined) {
+    app.use(`${apiPrefix}/staff/payments`, dependencies.staffPaymentsRouter);
+  }
+
+  if (dependencies.paymobWebhookRouter !== undefined) {
+    app.use(`${apiPrefix}/webhooks/paymob`, dependencies.paymobWebhookRouter);
   }
 }

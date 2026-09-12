@@ -65,6 +65,16 @@ export function createApp(
   // Security and request parsing.
   app.use(helmet());
   app.use(cors(createCorsOptions(routes.environment)));
+  const webhookPath = `${routes.environment.API_PREFIX}/webhooks/paymob`;
+  app.use(
+    webhookPath,
+    express.json({
+      limit: routes.environment.REQUEST_BODY_LIMIT,
+      verify: (request, _response, buffer) => {
+        (request as { rawBody?: Buffer }).rawBody = Buffer.from(buffer);
+      },
+    }),
+  );
   app.use(express.json({ limit: routes.environment.REQUEST_BODY_LIMIT }));
   app.use(cookieParser());
 

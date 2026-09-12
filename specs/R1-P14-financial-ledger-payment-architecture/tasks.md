@@ -1,7 +1,7 @@
 # Tasks: R1-P14 — Financial Ledger & Payment Architecture
 
 **Input**: [spec.md](./spec.md), [plan.md](./plan.md), [data-model.md](./data-model.md)
-**Status**: Implementation complete; T031 Codex PASS; **READY_FOR_OWNER_REVIEW**; not Complete
+**Status**: **Complete** — DEC-094 (owner `mark P14 complete`); T031 Codex PASS
 
 ## Phase 1 — Foundation (blocking)
 

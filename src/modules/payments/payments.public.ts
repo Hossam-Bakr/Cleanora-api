@@ -1,7 +1,5 @@
 /**
- * Payments public contract (R1-P14).
- *
- * In-process ledger only. No HTTP adapters.
+ * Payments public contract (R1-P14 ledger + R1-P15 deposit payments).
  */
 
 export type LedgerAccountType =
@@ -95,6 +93,69 @@ export interface LedgerEntryView {
   readonly bookingId: string | null;
 }
 
+export type PaymentPurpose = "BOOKING_DEPOSIT";
+export type PaymentStatus = "PENDING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+export type PaymentAttemptStatus =
+  | "CREATED"
+  | "REDIRECTED"
+  | "PENDING"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "EXPIRED";
+export type PaymentRailProvider = "PAYMOB" | "OTHER_DISABLED";
+export type PaymentMethodKind = "CARD" | "WALLET" | "OTHER";
+
+export interface PaymentMethodPublic {
+  readonly id: string;
+  readonly countryId: string;
+  readonly code: string;
+  readonly provider: PaymentRailProvider;
+  readonly methodKind: PaymentMethodKind;
+  readonly displayNameAr: string;
+  readonly displayNameEn: string;
+  readonly enabled: boolean;
+  readonly sortOrder: number;
+}
+
+export interface InitiateDepositResult {
+  readonly paymentId: string;
+  readonly attemptId: string;
+  readonly status: "PENDING" | "CREATED" | "REDIRECTED";
+  readonly amountMinorUnits: string;
+  readonly currencyCode: string;
+  readonly currencyDecimalPlaces: number;
+  readonly gateway: {
+    readonly provider: "PAYMOB";
+    readonly redirectUrl?: string;
+    readonly sessionRef?: string;
+  };
+  readonly returnToken: string;
+}
+
+export interface BrowserReturnStatus {
+  readonly paymentId: string | null;
+  readonly attemptId: string | null;
+  readonly paymentStatus: PaymentStatus | "UNKNOWN";
+  readonly bookingStatus: string;
+  readonly message: string;
+}
+
+export interface PaymentPublicView {
+  readonly paymentId: string;
+  readonly bookingId: string;
+  readonly purpose: PaymentPurpose;
+  readonly status: PaymentStatus;
+  readonly amountMinorUnits: string;
+  readonly currencyCode: string;
+  readonly currencyDecimalPlaces: number;
+  readonly methodCode: string;
+  readonly receipt?: {
+    readonly receiptId: string;
+    readonly issuedAt: string;
+    readonly providerRef?: string;
+  };
+}
+
 export type PaymentsErrorCode =
   | "VALIDATION_FAILED"
   | "JOURNAL_UNBALANCED"
@@ -106,7 +167,16 @@ export type PaymentsErrorCode =
   | "DEPENDENCY_FAILURE"
   | "ADJUSTMENT_REASON_REQUIRED"
   | "WALLET_PROHIBITED"
-  | "SNAPSHOT_HASH_MISMATCH";
+  | "SNAPSHOT_HASH_MISMATCH"
+  | "NOT_FOUND"
+  | "FORBIDDEN"
+  | "CONFLICT"
+  | "TRANSITION_NOT_AVAILABLE"
+  | "GATEWAY_MISCONFIGURED"
+  | "WEBHOOK_SIGNATURE_INVALID"
+  | "PAYMENT_ALREADY_SUCCEEDED"
+  | "AMOUNT_MISMATCH"
+  | "AUTHENTICATION_REQUIRED";
 
 export interface PaymentsError extends Error {
   readonly code: PaymentsErrorCode;
@@ -132,10 +202,54 @@ export interface PaymentsApplicationService {
     readonly bookingId: string;
   }): Promise<BookingReconcileResult>;
   createAccount(input: unknown): Promise<never>;
+
+  listEnabledMethodsForCountry(input: {
+    readonly countryId: string;
+  }): Promise<readonly PaymentMethodPublic[]>;
+
+  initiateBookingDeposit(input: {
+    readonly actorUserId: string;
+    readonly bookingId: string;
+    readonly paymentMethodId: string;
+    readonly idempotencyKey: string;
+  }): Promise<InitiateDepositResult>;
+
+  getBrowserReturnStatus(input: {
+    readonly actorUserId?: string;
+    readonly paymentId?: string;
+    readonly attemptId?: string;
+    readonly returnToken?: string;
+  }): Promise<BrowserReturnStatus>;
+
+  processPaymobWebhook(input: {
+    readonly rawBody: Buffer;
+    readonly signatureHeader: string | undefined;
+  }): Promise<{ readonly replayed: boolean; readonly paymentId?: string }>;
+
+  getPaymentForReader(input: {
+    readonly paymentId: string;
+    readonly reader:
+      | { readonly kind: "CUSTOMER"; readonly userId: string }
+      | { readonly kind: "STAFF_ADMIN"; readonly userId: string };
+  }): Promise<PaymentPublicView>;
+
+  setPaymentMethodEnabled(input: {
+    readonly staffUserId: string;
+    readonly methodId: string;
+    readonly enabled: boolean;
+  }): Promise<PaymentMethodPublic>;
+
+  createRefundRequest(input: {
+    readonly paymentId: string;
+    readonly actorKind: string;
+    readonly actorId: string;
+    readonly reason?: string;
+    readonly amountMinorUnits?: string;
+  }): Promise<{ readonly refundRequestId: string; readonly status: "REQUESTED" }>;
 }
 
 export const PAYMENTS_PUBLIC_CONTRACT = {
-  contractVersion: "payments.public.v1",
+  contractVersion: "payments.public.v2",
   module: "payments",
 } as const;
 
@@ -145,3 +259,13 @@ export {
 } from "./payments.service.js";
 
 export { isPaymentsError } from "./payments.errors.js";
+
+export type {
+  PaymentGatewayPort,
+  CreateDepositSessionInput,
+  CreateDepositSessionResult,
+  ParsedWebhookEvent,
+} from "./adapters/payment-gateway.port.js";
+
+export { FakePaymentGateway } from "./adapters/fake.payment-gateway.js";
+export { PaymobPaymentGateway } from "./adapters/paymob.gateway.js";
