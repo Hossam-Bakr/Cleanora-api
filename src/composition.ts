@@ -241,6 +241,12 @@ import {
   type EligibilityApplicationService,
 } from "#modules/eligibility/eligibility.public";
 import { EligibilityUnitOfWork } from "#modules/eligibility/infrastructure/eligibility.unit-of-work";
+import {
+  createPaymentsApplicationService,
+  type PaymentsApplicationService,
+} from "#modules/payments/payments.public";
+import { PaymentsUnitOfWork } from "#modules/payments/infrastructure/payments.unit-of-work";
+import { createPrismaBookingFinancialSnapshotReader } from "#modules/bookings/bookings.public";
 
 function adaptProviderActiveCountryReader(
   reader = createActiveCountryReader(),
@@ -370,6 +376,10 @@ export interface RuntimeDependencies {
    * no Eligibility HTTP routes in this phase.
    */
   readonly eligibilityApplicationService: EligibilityApplicationService;
+  /**
+   * In-process Payments ledger (R1-P14). Composition-only — no payments HTTP.
+   */
+  readonly paymentsApplicationService: PaymentsApplicationService;
 }
 
 /**
@@ -1510,6 +1520,10 @@ export function createRuntimeDependencies(
       } satisfies ProviderServiceSnapshotReader),
     activeCountries: createActiveCountryReader(database.client),
   });
+  const paymentsApplicationService = createPaymentsApplicationService({
+    unitOfWork: new PaymentsUnitOfWork(database.client),
+    bookingReader: createPrismaBookingFinancialSnapshotReader(database.client),
+  });
   const bookingsCommandRouter =
     authentication === undefined
       ? undefined
@@ -1534,6 +1548,7 @@ export function createRuntimeDependencies(
     providerServiceSnapshotReader,
     providerOperationalAvailabilityReader,
     eligibilityApplicationService,
+    paymentsApplicationService,
     routes: {
       environment,
       logger,

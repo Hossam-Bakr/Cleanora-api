@@ -24,9 +24,11 @@ execution are configured consistently.
 
 Useful commands: `npm run seed`, `npm run db:validate-clean-migration`,
 `npm run docs:check`, and `npm run openapi:validate`.
-The clean-migration and R1-P13 upgrade proofs read
-`CLEANORA_R1_P13_DATABASE_URL` and must target a named R1-P13 disposable
-database (`cleanora_r1_p13_*_(test|proof|clean|ci)`).
+The clean-migration and R1-P14 upgrade proofs read
+`CLEANORA_R1_P14_DATABASE_URL` and must target a named R1-P14 disposable
+database (`cleanora_r1_p14_*_(test|proof|clean|ci)`).
+Historical R1-P13 booking proofs still read `CLEANORA_R1_P13_DATABASE_URL`
+(`cleanora_r1_p13_*_(test|proof|clean|ci)`).
 Historical R1-P11 Eligibility proofs still read `CLEANORA_R1_P11_DATABASE_URL`
 (`cleanora_r1_p11_*_(test|proof|clean|ci)`).
 Historical R1-P10 upgrade proofs still read

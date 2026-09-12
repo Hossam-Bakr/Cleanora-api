@@ -11,7 +11,7 @@ READY_FOR_OWNER_REVIEW without mark-complete or Git publication.
 - branch: `codex/r1-p13-booking-draft-pricing-snapshot-status-machine`
 - activated: 2026-09-10 via `/work-on-next-phase` + owner goal to complete P13
 - prior: R1-P12 Complete (DEC-090)
-- status: **READY_FOR_OWNER_REVIEW** (fresh Codex re-review PASS; DEC-092 retained as historical context); not Complete
+- status: **Complete** under DEC-093; owner activated R1-P14
 - Codex account: Windows user `hossa` (`CODEX_HOME=C:\Users\hossa\.codex`); not `alyoser`
 - Codex CLI: `C:\Users\hossa\AppData\Local\OpenAI\Codex\bin\7ac07f4ce733f89a\codex.exe` (`codex-cli 0.153.4`, ChatGPT login)
 
@@ -88,5 +88,5 @@ Owner `commit and push` publishes the feature branch only. Phase remains Active 
 
 ## Next unblocked work
 
-- Wait for owner `mark complete`
+- Closed. R1-P14 is the sole active phase under DEC-093.
 - Do not merge, deploy, or run a production migration from this workflow

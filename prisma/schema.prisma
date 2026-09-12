@@ -488,6 +488,7 @@ model Country {
   providerServicePricesAtProposal ProviderServicePrice[] @relation("ProviderServicePriceCountryAtProposal")
   eligibilityRuleVersions      EligibilityRuleVersion[]
   bookings                     Booking[]
+  ledgerAccounts               LedgerAccount[]
 
   @@index([isActive])
   @@index([defaultCurrencyId])
@@ -2887,4 +2888,149 @@ model BookingCommand {
 
   @@unique([customerUserId, commandType, idempotencyKey])
   @@map("booking_commands")
+}
+
+enum LedgerAccountType {
+  PLATFORM_CLEARING
+  PLATFORM_REVENUE
+  PROVIDER_PAYABLE
+  CUSTOMER_DEPOSIT_LIABILITY
+  COD_CLEARING
+  PAYOUT_CLEARING
+  REFUND_CLEARING
+  ADJUSTMENT_CLEARING
+}
+
+enum LedgerEntryType {
+  DEPOSIT
+  PLATFORM_FEE
+  PROVIDER_SHARE
+  MARKETER_COMMISSION
+  COD_REMAINING
+  PAYOUT
+  REFUND
+  ADJUSTMENT
+}
+
+enum LedgerEntrySide {
+  DEBIT
+  CREDIT
+}
+
+enum LedgerLinkKind {
+  BOOKING
+  ORDER
+}
+
+enum LedgerCommandType {
+  POST_JOURNAL
+  POST_ADJUSTMENT
+  CREATE_SNAPSHOT
+}
+
+enum LedgerActorKind {
+  SYSTEM
+  TEST
+  STAFF_FINANCE
+}
+
+enum LedgerSnapshotSubjectKind {
+  ACCOUNT
+  BOOKING
+}
+
+model LedgerAccount {
+  id                     String            @id @default(cuid())
+  countryId              String            @map("country_id")
+  currencyCode           String            @map("currency_code") @db.VarChar(3)
+  currencyDecimalPlaces  Int               @map("currency_decimal_places")
+  accountType            LedgerAccountType @map("account_type")
+  createdAt              DateTime          @default(now()) @map("created_at")
+  country                Country           @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  entries                LedgerEntry[]
+  snapshots              FinancialSnapshot[]
+
+  @@unique([countryId, currencyCode, accountType])
+  @@index([countryId, accountType])
+  @@map("ledger_accounts")
+}
+
+model LedgerEntry {
+  id                    String          @id @default(cuid())
+  journalId             String          @map("journal_id")
+  accountId             String          @map("account_id")
+  entryType             LedgerEntryType @map("entry_type")
+  side                  LedgerEntrySide
+  amountMinorUnits      Decimal         @map("amount_minor_units") @db.Decimal(65, 0)
+  currencyCode          String          @map("currency_code") @db.VarChar(3)
+  currencyDecimalPlaces Int             @map("currency_decimal_places")
+  createdAt             DateTime        @default(now()) @map("created_at")
+  account               LedgerAccount   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  links                 LedgerEntryLink[]
+
+  @@index([journalId])
+  @@index([accountId, createdAt])
+  @@index([entryType, createdAt])
+  @@map("ledger_entries")
+}
+
+model LedgerEntryLink {
+  id        String         @id @default(cuid())
+  journalId String         @map("journal_id")
+  entryId   String?        @map("entry_id")
+  kind      LedgerLinkKind
+  bookingId String?        @map("booking_id")
+  createdAt DateTime       @default(now()) @map("created_at")
+  entry     LedgerEntry?   @relation(fields: [entryId], references: [id], onDelete: Restrict)
+
+  @@unique([journalId, kind, bookingId])
+  @@index([bookingId])
+  @@map("ledger_entry_links")
+}
+
+model FinancialIdempotencyKey {
+  id             String            @id @default(cuid())
+  commandType    LedgerCommandType @map("command_type")
+  actorKind      LedgerActorKind   @map("actor_kind")
+  actorId        String            @map("actor_id")
+  idempotencyKey String            @map("idempotency_key")
+  payloadHash    String            @map("payload_hash")
+  journalId      String?           @map("journal_id")
+  snapshotId     String?           @map("snapshot_id")
+  adjustmentId   String?           @map("adjustment_id")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  @@unique([commandType, actorKind, actorId, idempotencyKey])
+  @@map("financial_idempotency_keys")
+}
+
+model FinancialSnapshot {
+  id                      String                    @id @default(cuid())
+  subjectKind             LedgerSnapshotSubjectKind @map("subject_kind")
+  accountId               String?                   @map("account_id")
+  bookingId               String?                   @map("booking_id")
+  currencyCode            String                    @map("currency_code") @db.VarChar(3)
+  currencyDecimalPlaces   Int                       @map("currency_decimal_places")
+  debitMinorUnits         Decimal                   @map("debit_minor_units") @db.Decimal(65, 0)
+  creditNetMinorUnits     Decimal                   @map("credit_net_minor_units") @db.Decimal(65, 0)
+  derivedBalanceMinorUnits Decimal                  @map("derived_balance_minor_units") @db.Decimal(65, 0)
+  entryIdHash             String                    @map("entry_id_hash")
+  createdAt               DateTime                  @default(now()) @map("created_at")
+  account                 LedgerAccount?            @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@map("financial_snapshots")
+}
+
+model FinancialAdjustment {
+  id                 String          @id @default(cuid())
+  actorKind          LedgerActorKind @map("actor_kind")
+  actorId            String          @map("actor_id")
+  reason             String          @db.VarChar(500)
+  originalJournalId  String          @map("original_journal_id")
+  reversingJournalId String          @map("reversing_journal_id")
+  createdAt          DateTime        @default(now()) @map("created_at")
+
+  @@index([originalJournalId])
+  @@map("financial_adjustments")
 }

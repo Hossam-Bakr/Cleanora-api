@@ -2,7 +2,7 @@
 
 Date: 2026-09-11  
 Branch: `codex/r1-p13-booking-draft-pricing-snapshot-status-machine`  
-Status: **READY_FOR_OWNER_REVIEW** (fresh Codex re-review PASS; DEC-092 retained as historical context) — not Complete
+Status: **Complete** under DEC-093 — owner activated R1-P14 after PASS review
 
 ## Delivered
 

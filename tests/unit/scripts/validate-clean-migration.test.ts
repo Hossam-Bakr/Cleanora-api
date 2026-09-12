@@ -29,6 +29,7 @@ const EXPECTED = [
   "r1_p10_availability_capacity_textual_coverage",
   "r1_p11_eligibility_engine_v1",
   "r1_p13_booking_draft_pricing_snapshot_status_machine",
+  "r1_p14_financial_ledger_payment_architecture",
 ] as const;
 
 const r1P07MigrationSql = readFileSync(

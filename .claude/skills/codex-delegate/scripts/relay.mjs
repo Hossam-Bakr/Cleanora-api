@@ -31,6 +31,8 @@
  *   --effort <level>        Reasoning effort, passed to Codex as
  *                           `-c model_reasoning_effort=<level>` (default: Codex's
  *                           own configured default).
+ *   --service-tier <tier>   Passed to Codex as `-c service_tier=<tier>` (e.g.
+ *                           priority for Cleanora locked Fast 1.5x reviews).
  *   --sandbox <mode>        read-only | workspace-write | danger-full-access
  *                           (default: workspace-write).
  *   --read-only             Shortcut for --sandbox read-only (review/diagnosis, no edits).
@@ -145,6 +147,7 @@ function parseArgs(argv) {
     cd: process.cwd(),
     model: null,
     effort: null,
+    serviceTier: null,
     sandbox: "workspace-write",
     sandboxConfigured: false,
     resumeLast: false,
@@ -175,6 +178,7 @@ function parseArgs(argv) {
       case "--lane": opts.lane = next(); break;
       case "--model": opts.model = next(); flagged.add("model"); break;
       case "--effort": opts.effort = next(); flagged.add("effort"); break;
+      case "--service-tier": opts.serviceTier = next(); flagged.add("serviceTier"); break;
       case "--sandbox": opts.sandbox = next(); opts.sandboxConfigured = true; flagged.add("sandbox"); break;
       case "--read-only": opts.sandbox = "read-only"; opts.sandboxConfigured = true; flagged.add("sandbox"); flagged.add("readOnly"); break;
       case "--resume-last": opts.resumeLast = true; break;
@@ -195,6 +199,9 @@ function parseArgs(argv) {
   }
   if (opts.effort !== null && !/^[a-z][a-z0-9-]*$/i.test(opts.effort)) {
     fail(`invalid --effort "${opts.effort}" (expected a non-empty bare token)`);
+  }
+  if (opts.serviceTier !== null && !/^[a-z][a-z0-9-]*$/i.test(opts.serviceTier)) {
+    fail(`invalid --service-tier "${opts.serviceTier}" (expected a non-empty bare token)`);
   }
   if (opts.model !== null && !SAFE_MODEL.test(opts.model)) {
     fail("--model contains unsupported characters (allowed: letters, digits, . _ : / -)");
@@ -380,6 +387,7 @@ function buildArgv(opts, finalPath) {
   // `-c` is accepted by the resume subcommand, so the effort override applies to
   // fresh and resumed runs alike.
   if (opts.effort !== null) argv.push("-c", `model_reasoning_effort=${opts.effort}`);
+  if (opts.serviceTier !== null) argv.push("-c", `service_tier=${opts.serviceTier}`);
   if (opts.skipGitRepoCheck) argv.push("--skip-git-repo-check");
   argv.push("-"); // read the prompt from stdin
   return argv;
@@ -440,6 +448,7 @@ function makeResultWriter(opts, version, run) {
       sandbox: !resuming || opts.sandboxConfigured ? opts.sandbox : "(Codex config on resume)",
       model: opts.model,
       effort: opts.effort,
+      serviceTier: opts.serviceTier,
       resumeLast: opts.resumeLast,
       session: opts.session,
       cleanEnv: opts.cleanEnv,

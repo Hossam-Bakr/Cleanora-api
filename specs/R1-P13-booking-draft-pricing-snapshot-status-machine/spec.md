@@ -2,7 +2,7 @@
 
 **Feature Branch**: `codex/r1-p13-booking-draft-pricing-snapshot-status-machine`
 **Created**: 2026-09-10
-**Status**: **READY_FOR_OWNER_REVIEW** (fresh Codex re-review PASS; DEC-092 retained as historical context); not Complete
+**Status**: **Complete** under DEC-093 (owner activated R1-P14)
 **Input**: Roadmap §R1-P13; `/work-on-next-phase` activation DEC-090; vision §§3.1, 7.1, 8; OQ-001, OQ-010; architecture entity ownership for `bookings`.
 
 ## Clarifications

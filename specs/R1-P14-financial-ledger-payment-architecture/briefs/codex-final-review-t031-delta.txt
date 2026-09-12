@@ -1,0 +1,20 @@
+Role: read-only Cleanora reviewer. Do NOT edit files.
+
+Delta: prior T031 turn timed out at 5m with no final message. Deliver the
+verdict NOW in under 800 words. Do not re-read the whole tree.
+
+Phase R1-P14 Financial Ledger. Return PASS or CHANGES_REQUIRED using
+docs/ai/templates/review-report.md shape. No unresolved BLOCKER/MAJOR for PASS.
+
+Focus only on:
+1) payments public contract + no HTTP/wallets
+2) journal-level BOOKING link resolve on Prisma reads
+3) postedDeposit multi-line DEBIT sum
+4) migration immutability + Egypt 8 accounts
+5) reconcile never mutates booking status
+
+Gates already claimed by Cursor (do not re-run long suites): test:r1-p14 37 PASS;
+coverage 89.23/80.66/98.59/88.84; live clean+upgrade PASS; Cursor interim PASS
+after MAJOR remediations.
+
+Answer with: Verdict, findings list (or none), one-line exceptions if any.
