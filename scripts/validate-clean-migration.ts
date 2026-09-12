@@ -40,6 +40,7 @@ const migrationNames = [
   ...MIGRATION_NAMES_THROUGH_R1_P10,
   'r1_p11_eligibility_engine_v1',
   'r1_p13_booking_draft_pricing_snapshot_status_machine',
+  'r1_p14_financial_ledger_payment_architecture',
 ] as const;
 const expectedTablesThroughR1P10 = [
   "currencies",
@@ -150,6 +151,12 @@ const expectedTables = [
   "booking_status_history",
   "status_transition_rules",
   "booking_commands",
+  "ledger_accounts",
+  "ledger_entries",
+  "ledger_entry_links",
+  "financial_idempotency_keys",
+  "financial_snapshots",
+  "financial_adjustments",
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -281,6 +288,14 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "booking_status_history",
     "status_transition_rules",
     "booking_commands"
+  ],
+  r1_p14_financial_ledger_payment_architecture: [
+    "ledger_accounts",
+    "ledger_entries",
+    "ledger_entry_links",
+    "financial_idempotency_keys",
+    "financial_snapshots",
+    "financial_adjustments"
   ]
 };
 const expectedPostDeployTablesThroughR1P10 = [
@@ -1289,6 +1304,140 @@ export function assertR1P13MigrationSql(sql: string): void {
   }
 }
 
+export const R1_P14_MIGRATION =
+  "r1_p14_financial_ledger_payment_architecture";
+
+export const R1_P14_LEDGER_TABLES = [
+  "ledger_accounts",
+  "ledger_entries",
+  "ledger_entry_links",
+  "financial_idempotency_keys",
+  "financial_snapshots",
+  "financial_adjustments",
+] as const;
+
+export const MIGRATION_NAMES_THROUGH_R1_P14 = [
+  ...MIGRATION_NAMES_THROUGH_R1_P13,
+  R1_P14_MIGRATION,
+] as const;
+
+export const POST_DEPLOY_TABLES_THROUGH_R1_P14 = [
+  ...POST_DEPLOY_TABLES_THROUGH_R1_P13,
+  ...R1_P14_LEDGER_TABLES,
+] as const;
+
+export const APPROVED_R1_P14_TARGET_PATTERN =
+  /^cleanora_r1_p14(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
+
+/** Require an explicitly named R1-P14 disposable target for ledger proofs. */
+export function assertR1P14DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  let targetName: string;
+  try {
+    const url = new URL(connectionString);
+    targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  } catch {
+    throw new Error("R1-P14 database URL is not a valid URL");
+  }
+  if (!APPROVED_R1_P14_TARGET_PATTERN.test(targetName)) {
+    throw new Error(
+      `Refusing R1-P14 database work against unapproved target "${targetName}"`,
+    );
+  }
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+}
+
+/**
+ * Resolve the separate R1-P14 live/proof URL.
+ * Never falls back to DATABASE_URL or a prior-phase disposable target.
+ */
+export function requireR1P14ProofDatabaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const value = env["CLEANORA_R1_P14_DATABASE_URL"];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      "CLEANORA_R1_P14_DATABASE_URL is required for R1-P14 disposable proofs",
+    );
+  }
+  assertR1P14DisposableDatabaseUrl(value);
+  try {
+    const url = new URL(value);
+    url.hostname = url.hostname.replace("-pooler", "");
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
+/** Accept only the additive, phase-owned R1-P14 ledger migration inventory. */
+export function assertR1P14MigrationSql(sql: string): void {
+  if (/\b(DROP\s+TABLE|TRUNCATE)\b/iu.test(sql)) {
+    throw new Error("R1-P14 ledger migration contains destructive SQL");
+  }
+  if (/\bDELETE\s+FROM\b/iu.test(sql)) {
+    throw new Error("R1-P14 ledger migration must not delete existing rows");
+  }
+  if (
+    sql.includes('CREATE TABLE "wallets"') ||
+    sql.includes('CREATE TABLE "user_wallets"') ||
+    sql.includes('CREATE TABLE "customer_wallets"')
+  ) {
+    throw new Error("R1-P14 migration must not create wallets");
+  }
+  if (sql.includes('CREATE TABLE "orders"')) {
+    throw new Error("R1-P14 migration must not create an orders table");
+  }
+  const tables = migrationOwnedTables[R1_P14_MIGRATION] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P14 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 6) {
+    throw new Error("R1-P14 migration must create exactly six ledger tables");
+  }
+  for (const required of [
+    "DECIMAL(65,0)",
+    "PLATFORM_CLEARING",
+    "CUSTOMER_DEPOSIT_LIABILITY",
+    "ADJUSTMENT_CLEARING",
+    "MARKETER_COMMISSION",
+    "r1_p14_reject_ledger_entry_mutation",
+    "r1_p14_reject_ledger_entry_link_mutation",
+    "r1_p14_reject_financial_snapshot_mutation",
+    'BEFORE UPDATE OR DELETE ON "ledger_entries"',
+    'BEFORE UPDATE OR DELETE ON "ledger_entry_links"',
+    'BEFORE UPDATE OR DELETE ON "financial_snapshots"',
+    'c."code" = \'EG\'',
+  ]) {
+    if (!sql.includes(required)) {
+      throw new Error(`R1-P14 migration is missing ${required}`);
+    }
+  }
+  const entriesSql = sql.slice(
+    sql.indexOf('CREATE TABLE "ledger_entries"'),
+    sql.indexOf('CREATE TABLE "ledger_entry_links"'),
+  );
+  const linksSql = sql.slice(
+    sql.indexOf('CREATE TABLE "ledger_entry_links"'),
+    sql.indexOf('CREATE TABLE "financial_idempotency_keys"'),
+  );
+  const snapshotsSql = sql.slice(
+    sql.indexOf('CREATE TABLE "financial_snapshots"'),
+    sql.indexOf('CREATE TABLE "financial_adjustments"'),
+  );
+  if (
+    entriesSql.includes('"updated_at"') ||
+    linksSql.includes('"updated_at"') ||
+    snapshotsSql.includes('"updated_at"')
+  ) {
+    throw new Error("R1-P14 immutable ledger tables must not have updated_at");
+  }
+}
+
 export function assertExactMigrationDirectoryNames(
   directoryNames: readonly string[],
 ): void {
@@ -1391,6 +1540,10 @@ async function validateMigrationFolder(): Promise<void> {
     }
     if (migrationName === R1_P13_MIGRATION) {
       assertR1P13MigrationSql(sql);
+      continue;
+    }
+    if (migrationName === R1_P14_MIGRATION) {
+      assertR1P14MigrationSql(sql);
       continue;
     }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
@@ -1543,6 +1696,47 @@ export async function assertPostDeployState(
         );
       }
       await probeR1P13Immutability(prisma);
+    }
+    if (expectedMigrationNames.includes(R1_P14_MIGRATION)) {
+      const accountRows = await prisma.$queryRaw<Array<{ total: bigint }>>`
+        SELECT count(*)::bigint AS total
+        FROM "ledger_accounts" a
+        JOIN "countries" c ON c."id" = a."country_id"
+        WHERE c."code" = 'EG'
+      `;
+      if ((accountRows[0]?.total ?? 0n) !== 8n) {
+        throw new Error(
+          "R1-P14 seed must create exactly eight Egypt system ledger accounts",
+        );
+      }
+      const typeRows = await prisma.$queryRaw<Array<{ total: bigint }>>`
+        SELECT count(DISTINCT a."account_type")::bigint AS total
+        FROM "ledger_accounts" a
+        JOIN "countries" c ON c."id" = a."country_id"
+        WHERE c."code" = 'EG'
+      `;
+      if ((typeRows[0]?.total ?? 0n) !== 8n) {
+        throw new Error(
+          "R1-P14 seed must cover every closed system account type for Egypt",
+        );
+      }
+      for (const table of [
+        "ledger_entries",
+        "ledger_entry_links",
+        "financial_idempotency_keys",
+        "financial_snapshots",
+        "financial_adjustments",
+      ] as const) {
+        const rows = await prisma.$queryRawUnsafe<Array<{ total: bigint }>>(
+          `SELECT count(*)::bigint AS total FROM "${table}"`,
+        );
+        if ((rows[0]?.total ?? 0n) !== 0n) {
+          throw new Error(
+            `R1-P14 seed must leave ${table} empty; found commercial ledger rows`,
+          );
+        }
+      }
+      await probeR1P14Immutability(prisma);
     }
   } finally {
     await prisma.$disconnect();
@@ -1739,6 +1933,108 @@ async function probeR1P13Immutability(prisma: PrismaClient): Promise<void> {
     throw error;
   }
   throw new Error("R1-P13 immutability probe did not roll back after trigger checks");
+}
+
+const R1_P14_IMMUTABILITY_ROLLBACK = "r1-p14-immutability-probe-rollback";
+
+/** Live rewrite/delete of frozen ledger entries, links, and snapshots must raise 55000. */
+async function probeR1P14Immutability(prisma: PrismaClient): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      DECLARE
+        account_id TEXT;
+      BEGIN
+        SELECT a."id" INTO STRICT account_id
+        FROM "ledger_accounts" a
+        JOIN "countries" c ON c."id" = a."country_id"
+        WHERE c."code" = 'EG' AND a."account_type" = 'PLATFORM_CLEARING'
+        LIMIT 1;
+
+        INSERT INTO "ledger_entries" (
+          "id", "journal_id", "account_id", "entry_type", "side",
+          "amount_minor_units", "currency_code", "currency_decimal_places"
+        ) VALUES (
+          'r1p14-proof-entry', 'r1p14-proof-journal', account_id, 'DEPOSIT', 'DEBIT',
+          2500, 'EGP', 2
+        );
+
+        INSERT INTO "ledger_entry_links" (
+          "id", "journal_id", "entry_id", "kind", "booking_id"
+        ) VALUES (
+          'r1p14-proof-link', 'r1p14-proof-journal', 'r1p14-proof-entry',
+          'BOOKING', 'r1p14-proof-booking'
+        );
+
+        INSERT INTO "financial_snapshots" (
+          "id", "subject_kind", "booking_id", "currency_code", "currency_decimal_places",
+          "debit_minor_units", "credit_net_minor_units", "derived_balance_minor_units",
+          "entry_id_hash"
+        ) VALUES (
+          'r1p14-proof-snapshot', 'BOOKING', 'r1p14-proof-booking', 'EGP', 2,
+          2500, 2500, 0, 'proof-hash'
+        );
+
+        BEGIN
+          UPDATE "ledger_entries"
+          SET "amount_minor_units" = 1
+          WHERE "id" = 'r1p14-proof-entry';
+          RAISE EXCEPTION 'accepted ledger entry rewrite';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        BEGIN
+          DELETE FROM "ledger_entries" WHERE "id" = 'r1p14-proof-entry';
+          RAISE EXCEPTION 'accepted ledger entry delete';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        BEGIN
+          UPDATE "ledger_entry_links"
+          SET "booking_id" = 'mutated'
+          WHERE "id" = 'r1p14-proof-link';
+          RAISE EXCEPTION 'accepted ledger link rewrite';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        BEGIN
+          DELETE FROM "ledger_entry_links" WHERE "id" = 'r1p14-proof-link';
+          RAISE EXCEPTION 'accepted ledger link delete';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        BEGIN
+          UPDATE "financial_snapshots"
+          SET "entry_id_hash" = 'mutated'
+          WHERE "id" = 'r1p14-proof-snapshot';
+          RAISE EXCEPTION 'accepted financial snapshot rewrite';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        BEGIN
+          DELETE FROM "financial_snapshots" WHERE "id" = 'r1p14-proof-snapshot';
+          RAISE EXCEPTION 'accepted financial snapshot delete';
+        EXCEPTION
+          WHEN SQLSTATE '55000' THEN NULL;
+        END;
+
+        RAISE EXCEPTION '%', '${R1_P14_IMMUTABILITY_ROLLBACK}';
+      END $$;
+    `);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : String(error);
+    if (message.includes(R1_P14_IMMUTABILITY_ROLLBACK)) {
+      return;
+    }
+    throw error;
+  }
+  throw new Error("R1-P14 immutability probe did not roll back after trigger checks");
 }
 
 export async function expectR1P07ConstraintRejection(
@@ -2587,9 +2883,9 @@ async function run(): Promise<void> {
     "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
   );
 
-  const configuredConnectionString = requireR1P13ProofDatabaseUrl();
+  const configuredConnectionString = requireR1P14ProofDatabaseUrl();
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p13_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p14_proof_${process.pid}_${Date.now()}`;
   if (!/^[a-z][a-z0-9_]{0,62}$/u.test(proofSchema)) {
     throw new Error("Disposable proof identifier is invalid");
   }
@@ -2621,7 +2917,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, live snapshot/price-breakdown immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, eight Egypt system ledger accounts, empty commercial ledger journals, live snapshot/price-breakdown and ledger immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
   );
 }
 

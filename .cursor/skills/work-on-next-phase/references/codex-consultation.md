@@ -30,9 +30,14 @@ codex --version
 codex login status
 ```
 
-Confirm `~/.codex/config.toml` has `service_tier = "priority"` so Fast 1.5x is active. The installed `/codex-delegate` relay does not expose a `--service-tier` flag; do **not** pass `--clean-env`, so this config applies. If `service_tier` is missing or not `priority`, stop new Codex calls, record the exact config, and ask the owner before changing global Codex settings.
-
-Inspect live model/effort help from this CLI version. Accept only an exact `gpt-5.6-sol` match, or a documented alias that the CLI itself lists as that model. If `gpt-5.6-sol`, `xhigh`, or Fast 1.5x / `priority` is missing, unauthenticated, or rejected, **stop new Codex calls**. Record the exact CLI output. Do not silently switch to another model, including `gpt-5.5`, `gpt-5.6-sol-medium`, or the account default.
+Confirm `~/.codex/config.toml` has `service_tier = "priority"` **or** pass
+`--service-tier priority` on the relay so Fast 1.5x is active for the call
+without editing the global default. Do **not** pass `--clean-env`. If neither
+config nor `--service-tier priority` can supply Fast 1.5x, and `gpt-5.6-sol` /
+`xhigh` are unavailable, **stop new Codex calls**. Record the exact CLI output.
+Do not silently switch to another model, including `gpt-5.5`,
+`gpt-5.6-sol-medium`, or the account default. Ask the owner before changing
+global Codex settings when a permanent dial restore is preferred.
 
 ## Budget
 
@@ -77,6 +82,7 @@ node "<codex-delegate-skill-dir>/scripts/relay.mjs" \
   --read-only \
   --model gpt-5.6-sol \
   --effort xhigh \
+  --service-tier priority \
   --timeout 5m
 ```
 

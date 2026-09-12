@@ -47,11 +47,11 @@ Precedence:
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
 
-**Live pointer:** `R1-P13 — Booking Draft, Pricing Snapshot & Status Machine`
-is **Active** under DEC-090. Feature artifacts live in
-`specs/R1-P13-booking-draft-pricing-snapshot-status-machine/`.
-`docs/product/current.md` is the authority for live state. R1-P12 is Complete
-under DEC-090; R1-P11 is Complete under DEC-062 / DEC-085. Git publication
+**Live pointer:** `R1-P14 — Financial Ledger & Payment Architecture`
+is **Active** under DEC-093. Feature artifacts live in
+`specs/R1-P14-financial-ledger-payment-architecture/`.
+`docs/product/current.md` is the authority for live state. R1-P13 is Complete
+under DEC-093; R1-P12 is Complete under DEC-090. Git publication
 still requires exact `commit and push`.
 
 ## Current backend navigation

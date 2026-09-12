@@ -1,9 +1,9 @@
 # R1-P13 Activation — Booking Draft, Pricing Snapshot & Status Machine
 
 Date: 2026-09-10
-Status: Active — **READY_FOR_OWNER_REVIEW** (fresh Codex re-review PASS; DEC-092 retained as historical context); not Complete.
+Status: **Complete** — DEC-093 (owner instructed activate and complete R1-P14).
 Authority: Owner `/work-on-next-phase` + `/goal` to activate and complete
-phase 13 (DEC-090), after R1-P12 Complete.
+phase 13 (DEC-090), after R1-P12 Complete. Closed by DEC-093.
 
 ## Owner authorization
 

@@ -2974,3 +2974,33 @@ Canonical record:
 `specs/R1-P13-booking-draft-pricing-snapshot-status-machine/review-report.md`,
 `specs/R1-P13-booking-draft-pricing-snapshot-status-machine/work-on-next-phase-progress.md`.
 
+## DEC-093 — R1-P13 Complete and R1-P14 activation
+
+**Date:** 2026-09-11
+**Status:** Approved by human owner (explicit `/work-on-next-phase` plus
+instruction to activate phase 14 and work on it)
+
+The owner instructed the next-phase workflow to activate and complete
+R1-P14 — Financial Ledger & Payment Architecture. R1-P13 had already reached
+READY_FOR_OWNER_REVIEW with a fresh Codex re-review PASS. That advance is
+treated as completion of R1-P13 and activation of R1-P14 as the sole active
+phase, matching the DEC-090 P12→P13 precedent.
+
+- R1-P13 is Complete. Booking draft, server quote/deposit, snapshot freeze,
+  status matrix, and cancel-without-fees remain as reviewed.
+- R1-P14 becomes the sole active phase for Spec Kit preparation, Cursor
+  implementation, bounded Codex PM/review when the locked dials are available,
+  and READY_FOR_OWNER_REVIEW.
+- Unpublished P13 work stays in the working tree / feature-branch history;
+  publication still requires a later exact human message `commit and push`.
+- Companion `mark-complete` was skipped: P13 has no `.spec-context.json`, and
+  `python3` on this host is the Windows Store stub.
+
+This decision does **not** authorize R1-P14 Complete, commit, push, merge,
+deployment, production migration, force-push, history rewriting, payment
+capture, webhooks, stored-value wallets, Docker, or cloud.
+
+Canonical record:
+`specs/R1-P13-booking-draft-pricing-snapshot-status-machine/completion-report.md`,
+`specs/R1-P14-financial-ledger-payment-architecture/activation.md`.
+

@@ -895,6 +895,55 @@ export async function seedR1P11EligibilityRuleVersion(
  * disconnect. Standalone CLI seed opens a dedicated max-1 pool so it cannot
  * exhaust shared Neon connection budgets during Vitest coverage runs.
  */
+const R1_P14_SYSTEM_ACCOUNT_TYPES = [
+  "PLATFORM_CLEARING",
+  "PLATFORM_REVENUE",
+  "PROVIDER_PAYABLE",
+  "CUSTOMER_DEPOSIT_LIABILITY",
+  "COD_CLEARING",
+  "PAYOUT_CLEARING",
+  "REFUND_CLEARING",
+  "ADJUSTMENT_CLEARING",
+] as const;
+
+/**
+ * @desc Idempotent Egypt system ledger accounts (R1-P14). Safe when the
+ * migration INSERT already ran against an existing country row.
+ */
+export async function seedR1P14EgyptLedgerAccounts(
+  prisma: PrismaClient,
+  country: { readonly id: string },
+  currency: { readonly code: string; readonly decimalPlaces: number },
+): Promise<void> {
+  for (const accountType of R1_P14_SYSTEM_ACCOUNT_TYPES) {
+    await prisma.ledgerAccount.upsert({
+      where: {
+        countryId_currencyCode_accountType: {
+          countryId: country.id,
+          currencyCode: currency.code,
+          accountType,
+        },
+      },
+      create: {
+        id: `ldgacc_${country.id}_${accountType}`,
+        countryId: country.id,
+        currencyCode: currency.code,
+        currencyDecimalPlaces: currency.decimalPlaces,
+        accountType,
+      },
+      update: {},
+    });
+  }
+}
+
+/**
+ * Seed R1-P01 reference data and R1-P03 authorization definitions. Every write
+ * uses its approved natural key so repeated runs stay idempotent.
+ *
+ * When a Prisma client is provided (test lifecycle), reuse it and do not
+ * disconnect. Standalone CLI seed opens a dedicated max-1 pool so it cannot
+ * exhaust shared Neon connection budgets during Vitest coverage runs.
+ */
 export async function seed(
   existingClient?: PrismaClient,
   options?: Readonly<{ skipCatalogSeed?: boolean; skipCatalogAuth?: boolean }>,
@@ -1102,6 +1151,18 @@ export async function seed(
     `;
     if (eligibilityRuleTable[0]?.exists === true) {
       await seedR1P11EligibilityRuleVersion(prisma);
+    }
+
+    const ledgerAccountTable = await prisma.$queryRaw<Array<{ exists: boolean }>>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = current_schema()
+          AND table_name = 'ledger_accounts'
+      ) AS "exists"
+    `;
+    if (ledgerAccountTable[0]?.exists === true) {
+      await seedR1P14EgyptLedgerAccounts(prisma, country, currency);
     }
   } finally {
     if (ownsClient) {

@@ -152,3 +152,23 @@ export interface BookingsBrowseDependencies {
   };
   readonly cursorSecret: string;
 }
+
+export interface BookingFinancialSnapshot {
+  readonly bookingId: string;
+  readonly status: "DRAFT" | "AWAITING_DEPOSIT" | "CONFIRMED" | "CANCELLED";
+  readonly countryId: string;
+  readonly currencyCode: string;
+  readonly currencyDecimalPlaces: number;
+  readonly providerId: string;
+  readonly grossMinorUnits: string | null;
+  readonly depositMinorUnits: string | null;
+  readonly remainderMinorUnits: string | null;
+}
+
+export interface BookingFinancialSnapshotReader {
+  readById(input: {
+    readonly bookingId: string;
+  }): Promise<BookingFinancialSnapshot | null>;
+}
+
+export { createPrismaBookingFinancialSnapshotReader } from "./infrastructure/prisma-booking-financial-snapshot.reader.js";

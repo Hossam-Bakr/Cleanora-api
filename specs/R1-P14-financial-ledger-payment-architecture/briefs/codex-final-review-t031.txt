@@ -1,0 +1,50 @@
+Role: read-only Cleanora reviewer. Do NOT edit files. Do NOT implement.
+
+Phase: R1-P14 Financial Ledger & Payment Architecture
+Authority: DEC-093 activation; canonical freeze MVB; stop at READY_FOR_OWNER_REVIEW
+  (no mark-complete / Git publish). PM ACCEPT_IMPLEMENTATION was never labeled PASS;
+  implementation proceeded from canonical freeze — judge the shipped MVB, not invent
+  capture/wallets/HTTP.
+
+Question: Adversarial final review (T031). Return PASS or CHANGES_REQUIRED with
+findings using docs/ai/templates/review-report.md shape (severity, file:line if
+possible, violated AC/rule, impact, remediation). No unresolved BLOCKER/MAJOR for PASS.
+
+Locked scope:
+- New payments module; six ledger tables; system accounts only; in-process public API
+- No payments/ledger HTTP; no stored-value wallets; no capture/Paymob/webhooks
+- ORDER links unused/rejected; MARKETER_COMMISSION posting rejected
+- Adjustments append-only; SQL rewrite guards; reconcile never mutates booking status
+
+Acceptance criteria: FR-001–FR-015, SC-001–SC-010, DoD items 1–8 in
+specs/R1-P14-financial-ledger-payment-architecture/spec.md
+
+Gate evidence (Cursor-recorded; re-verify claims you doubt):
+- test:r1-p14 PASS 37 tests (2026-09-12)
+- test:coverage:r1-p14 PASS 89.23 / 80.66 / 98.59 / 88.84
+- typecheck / prisma:validate / openapi:validate / postman:validate / docs:check PASS
+- Live clean + P13→P14 upgrade PASS on disposable cleanora_r1_p14_proof
+- Cursor interim post-fix review PASS; prior MAJORs remediated
+  (journal-level BOOKING links; multi-line postedDeposit sum) — not a Codex PASS
+
+Read only these (and named paths they cite):
+- specs/R1-P14-financial-ledger-payment-architecture/spec.md
+- specs/R1-P14-financial-ledger-payment-architecture/plan.md
+- specs/R1-P14-financial-ledger-payment-architecture/data-model.md
+- specs/R1-P14-financial-ledger-payment-architecture/contracts/payments-public-contract.md
+- specs/R1-P14-financial-ledger-payment-architecture/implementation-summary.md
+- specs/R1-P14-financial-ledger-payment-architecture/review-resolution.md
+- specs/R1-P14-financial-ledger-payment-architecture/migration-review.md
+- specs/R1-P14-financial-ledger-payment-architecture/migration-evidence.md
+- prisma/schema.prisma (ledger models only)
+- prisma/migrations/r1_p14_financial_ledger_payment_architecture/migration.sql
+- src/modules/payments/
+- src/modules/bookings/bookings.public.ts (BookingFinancialSnapshotReader only)
+- src/modules/bookings/infrastructure/prisma-booking-financial-snapshot.reader.ts
+- src/composition.ts (payments wiring only)
+- tests/unit/modules/payments/
+- tests/integration/payments/
+- tests/helpers/r1-p14-in-memory-payments.ts
+
+Answer shape: verdict PASS | CHANGES_REQUIRED; list findings by severity; name any
+required exceptions; refuse over-engineering and out-of-scope invention.
