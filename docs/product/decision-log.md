@@ -3035,3 +3035,40 @@ is exactly `commit and push`.
 Canonical record:
 `specs/R1-P14-financial-ledger-payment-architecture/completion-report.md`,
 `specs/R1-P14-financial-ledger-payment-architecture/handoff-ready-for-owner-review.md`.
+
+## DEC-095 — R1-P15 completion
+
+**Date:** 2026-09-13
+**Status:** Approved — explicit human-owner phase completion
+
+After receiving the READY_FOR_OWNER_REVIEW handoff (Cursor interim PASS after
+remediated Codex final BLOCKED migration/typecheck findings), the owner
+stated: `mark complete`.
+
+- R1-P15 is Complete. Deposit methods, idempotent initiate, browser return
+  (status only), verified Paymob webhook → SUCCEEDED + DEPOSIT journal +
+  receipt + Bookings `confirmDepositPayment`, staff method toggle, and
+  refund-request foundation remain as reviewed. No stored-value wallets or
+  invented InstaPay.
+- Phase tasks are checked. Codex prep-accept returned ACCEPT_IMPLEMENTATION.
+  Codex final review was BLOCKED then remediated; Cursor post-fix interim
+  PASS with no unresolved BLOCKER or MAJOR (Codex budget exhausted).
+- Phase tests and coverage passed as recorded in the handoff
+  (89.47% statements, 78.87% branches, 98.8% functions, 89.32% lines).
+- Live clean install and populated P14→P15 upgrade proofs passed on disposable
+  `cleanora_r1_p15_proof`. Typecheck, OpenAPI, Postman, and docs gates passed
+  as recorded in the handoff.
+- Companion `mark-complete` refused: no finished Companion implement context
+  for the feature directory. Cleanora Complete is this decision plus the phase
+  completion report.
+
+No next phase is activated by this decision. Completion does not authorize
+staging, commit, push, merge, deployment, production migration, history
+rewriting, stored-value wallets, invented InstaPay, Docker, or cloud. Git
+publication of any leftover working-tree files still requires a separate human
+message whose entire content is exactly `commit and push` or
+`commit and push plus`.
+
+Canonical record:
+`specs/R1-P15-deposit-payments-methods-webhooks/completion-report.md`,
+`specs/R1-P15-deposit-payments-methods-webhooks/handoff-ready-for-owner-review.md`.

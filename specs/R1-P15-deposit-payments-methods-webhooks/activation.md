@@ -1,9 +1,10 @@
 # R1-P15 Activation — Deposit Payments, Methods & Webhooks
 
 Date: 2026-09-12
-Status: **Active** — sole active phase under DEC-094
+Status: **Complete** — DEC-095 (2026-09-13); prior READY_FOR_OWNER_REVIEW /
+Cursor interim PASS after remediated Codex final BLOCKED findings.
 Authority: Owner `/work-on-next-phase` with instruction to finish phase 15
-after R1-P14 Complete (DEC-094).
+after R1-P14 Complete (DEC-094). Closed by DEC-095.
 
 ## Owner authorization
 
@@ -93,6 +94,13 @@ Out of scope:
 | Bounded PM / reviewer | Codex CLI via `/codex-delegate` on `C:\Users\hossa\.codex` when locked dials are present |
 | Material undecidable product/UX/security | Human owner (Arabic decision format) |
 | Phase Complete / Git publication | Human owner (`mark complete` / `commit and push`) |
+
+## Closure
+
+Owner instruction `mark complete` on 2026-09-13 closes this phase under
+DEC-095. No next phase is activated by that instruction. Companion
+`mark-complete` refused (no finished Companion implement context); Cleanora
+Complete is DEC-095 plus `completion-report.md`.
 
 ## Progress file
 

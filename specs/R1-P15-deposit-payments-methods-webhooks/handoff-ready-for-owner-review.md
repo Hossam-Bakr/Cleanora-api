@@ -1,8 +1,8 @@
 # Handoff — R1-P15 READY_FOR_OWNER_REVIEW
 
-**Status:** **READY_FOR_OWNER_REVIEW**  
-**Date:** 2026-09-12  
-**Branch:** `codex/r1-p15-deposit-payments-methods-webhooks`
+**Status:** **Complete** under DEC-095 (was READY_FOR_OWNER_REVIEW)  
+**Date:** 2026-09-12 (handoff); 2026-09-13 (owner `mark complete`)  
+**Branch:** merged to `main` via PR #16 (`codex/r1-p15-deposit-payments-methods-webhooks`)
 
 ## Delivered
 
@@ -28,8 +28,9 @@ OpenAPI for new HTTP. No wallets / InstaPay invention.
 
 ## Boundaries
 
-- **Not** Complete — wait for owner `mark complete`
-- Feature-branch publication via exact human `commit and push` (no merge/deploy)
+- **Complete** under DEC-095 after owner `mark complete`
+- Does **not** activate R1-P16; does not authorize leftover-file Git publication,
+  deploy, or production migration
 - No stored-value wallets, InstaPay invention, cancel fees, Docker/cloud
 
 ## Artifacts

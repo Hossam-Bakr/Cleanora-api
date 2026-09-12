@@ -1,9 +1,9 @@
 # Implementation Summary — R1-P15 Deposit Payments, Methods & Webhooks
 
-**Branch**: `codex/r1-p15-deposit-payments-methods-webhooks`
-**Status**: Implementation delivered for owner review prep (not Complete; no git publish)
-**Codex**: Prep-accept **ACCEPT_IMPLEMENTATION** (see `preparation-acceptance.md`).
-Final review still pending (1 budget call remaining).
+**Branch**: merged to `main` via PR #16 (`codex/r1-p15-deposit-payments-methods-webhooks`)
+**Status**: **Complete** under DEC-095 (2026-09-13)
+**Codex**: Prep-accept **ACCEPT_IMPLEMENTATION**. Final review BLOCKED then
+remediated; Cursor interim PASS (budget exhausted).
 
 ## What shipped
 
@@ -21,12 +21,11 @@ Final review still pending (1 budget call remaining).
 
 ## Explicit non-claims / gaps
 
-- Codex final review: **PENDING** (prep-accept already **ACCEPT_IMPLEMENTATION** in
-  `preparation-acceptance.md`; 1 budget call remaining).
-- Live migration clean install + P14→P15 upgrade: **BLOCKED** (no disposable DB URL).
-- Postman collection generation: OpenAPI validated; dedicated Postman generator
-  not added (P13 pattern was static; validate scripts updated for OpenAPI).
-- Do not mark Complete; do not commit/push without owner phrase.
+- Codex final review was BLOCKED then remediated; Cursor interim PASS.
+- Live migration clean + upgrade: PASS on `cleanora_r1_p15_proof` (see
+  `migration-evidence.md`).
+- Phase Complete under DEC-095; does not activate R1-P16 or authorize leftover
+  Git publication.
 
 ## Gate log (implementation pass)
 

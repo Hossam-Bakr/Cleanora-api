@@ -3,37 +3,39 @@
 | Field | Value |
 |---|---|
 | Current Release | Release 1 — Core Marketplace |
-| Current Phase | R1-P15 — Deposit Payments, Methods & Webhooks |
-| Status | **READY_FOR_OWNER_REVIEW** — prep-accept PASS; migration MAJORs remediated; Cursor interim PASS; not Complete |
-| Backend Owner | Cursor (implementation); Codex bounded PM/review |
-| Local Checkout | `codex/r1-p15-deposit-payments-methods-webhooks` |
-| Verified Main | `origin/main` remains P13-merged baseline; this workflow does not merge |
-| Started At | 2026-09-12 |
-| Completed At | — |
-| Last Updated | 2026-09-12 — R1-P15 READY_FOR_OWNER_REVIEW |
+| Current Phase | — (none active) |
+| Status | **R1-P15 Complete** under DEC-095; no next phase activated |
+| Backend Owner | — |
+| Local Checkout | `main` (P15 merged via PR #16) |
+| Verified Main | `origin/main` includes R1-P15 |
+| Started At | — |
+| Completed At | 2026-09-13 (R1-P15) |
+| Last Updated | 2026-09-13 — R1-P15 Complete (DEC-095) |
 
-## Active phase — R1-P15
+## No active phase
 
-R1-P15 is the sole active phase under DEC-094 at **READY_FOR_OWNER_REVIEW**.
-Cursor delivered Spec Kit artifacts, deposit/webhook implementation, tests,
-Prisma migration, and API docs. Codex prep-accept **ACCEPT_IMPLEMENTATION**.
-Codex final review was BLOCKED on live migration + pending typecheck; both
-were remediated (typecheck PASS; clean + P14→P15 upgrade PASS on
-`cleanora_r1_p15_proof`). Cursor post-fix interim **PASS** (Codex budget
-exhausted). Handoff:
-`specs/R1-P15-deposit-payments-methods-webhooks/handoff-ready-for-owner-review.md`.
+R1-P15 is **Complete** under DEC-095 after READY_FOR_OWNER_REVIEW and owner
+`mark complete`. No phase is active. R1-P16 (Provider Booking Response &
+Cancellation Events) is the next dependency-ready roadmap phase and requires a
+separate owner `/work-on-next-phase` (or equivalent activation) to become
+active.
 
-The phase is **not** Complete. Feature-branch publication uses the exact
-human message `commit and push`; this does not merge, deploy, or mark
-Complete.
+Completion does not authorize leftover-file publication, merge, deploy, or
+production migration. Exact `commit and push` / `commit and push plus` remain
+separate human Git authorizations when needed.
 
-No stored-value wallets, invented InstaPay (OQ-009), assignment execution,
-Docker, or cloud.
+No stored-value wallets, invented InstaPay (OQ-009), Docker, or cloud.
 
-## Most recently completed phase — R1-P14
+## Most recently completed phase — R1-P15
 
-R1-P14 is **Complete** under DEC-094 after READY_FOR_OWNER_REVIEW and Codex
-T031 PASS. In-process ledger module only. Closure:
+R1-P15 Deposit Payments, Methods & Webhooks is **Complete** under DEC-095.
+Deposit initiate, Paymob webhook, ledger DEPOSIT post, booking confirm,
+receipts, staff method toggle, refund-request foundation. Closure:
+`specs/R1-P15-deposit-payments-methods-webhooks/completion-report.md`.
+
+## Previously completed phase — R1-P14
+
+R1-P14 is **Complete** under DEC-094. In-process ledger module only. Closure:
 `specs/R1-P14-financial-ledger-payment-architecture/completion-report.md`.
 
 ## Previously completed phase — R1-P13
