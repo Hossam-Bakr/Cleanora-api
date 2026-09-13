@@ -3072,3 +3072,69 @@ message whose entire content is exactly `commit and push` or
 Canonical record:
 `specs/R1-P15-deposit-payments-methods-webhooks/completion-report.md`,
 `specs/R1-P15-deposit-payments-methods-webhooks/handoff-ready-for-owner-review.md`.
+
+## DEC-096 — R1-P16 activation
+
+**Date:** 2026-09-13
+**Status:** Approved by human owner (explicit `/work-on-next-phase` plus
+`/goal` to finish phase 16 and achieve accepted coverage)
+
+The owner instructed the next-phase workflow to activate and complete
+R1-P16 — Provider Booking Response & Cancellation Events. R1-P15 is
+Complete under DEC-095. That instruction activates R1-P16 as the sole
+active phase.
+
+- R1-P15 remains Complete. Deposit, webhook, ledger DEPOSIT, and booking
+  confirm remain as reviewed.
+- R1-P16 becomes the sole active phase for Spec Kit preparation, Cursor
+  implementation, bounded Codex PM/review (`gpt-5.6-sol` / `xhigh` /
+  `service_tier=priority`), accepted coverage 80/75/80/80, and
+  READY_FOR_OWNER_REVIEW.
+- OQ-001 remains open for fee/deposit-fate amounts. This phase builds
+  cancellable states and audit events only; it must not calculate
+  unapproved fees.
+- Counteroffer, dynamic price, assignment, orders, wallets, InstaPay
+  invention, Docker, and cloud remain out of scope.
+
+This decision does **not** authorize R1-P16 Complete, commit, push, merge,
+deployment, production migration, force-push, history rewriting, fee
+invention, stored-value wallets, Docker, or cloud.
+
+Canonical record:
+`specs/R1-P16-provider-booking-response-cancellation-events/activation.md`.
+
+## DEC-097 — R1-P16 completion
+
+**Date:** 2026-09-14
+**Status:** Approved — explicit human-owner phase completion
+
+After receiving the READY_FOR_OWNER_REVIEW handoff (Codex call 7 PASS after
+five MAJOR repairs from call 6), the owner stated: `mark complete`.
+
+- R1-P16 is Complete. Selected-provider inbox/dossier, idempotent
+  accept/reject, lazy expiry, customer/provider/staff cancellation events,
+  and notification intents remain as reviewed. No fees, wallets,
+  refund_request, REFUND journals, delivery, expiry worker, or counteroffers.
+- Tasks T001–T033 are checked. Codex prep-accept returned
+  ACCEPT_WITH_EXCEPTIONS (KEEP EX-01/02/03). Codex final review call 6
+  returned CHANGES REQUIRED; five MAJORs were repaired; call 7 re-review
+  returned PASS with no unresolved BLOCKER or MAJOR.
+- Phase tests passed 9 files / 108 tests. Coverage passed at 98.16%
+  statements, 85.61% branches, 96.29% functions, and 98.51% lines.
+- Live clean install and populated P15→P16 upgrade remain BLOCKED:
+  `CLEANORA_R1_P16_DATABASE_URL` missing (SC-012 allows BLOCKED). Typecheck,
+  OpenAPI, Postman, and docs gates passed as recorded in the handoff.
+- Companion `mark-complete` succeeded after sanctioned implement task sync
+  (33/33): `.spec-context.json` `status=completed`. Living-spec fold was a
+  no-op. Cleanora Complete is this decision plus the phase completion report.
+
+No next phase is activated by this decision. Completion does not authorize
+staging, commit, push, merge, deployment, production migration, history
+rewriting, unapproved cancellation fees (OQ-001), stored-value wallets,
+invented InstaPay, Docker, or cloud. Git publication still requires a
+separate human message whose entire content is exactly `commit and push`
+or `commit and push plus`.
+
+Canonical record:
+`specs/R1-P16-provider-booking-response-cancellation-events/completion-report.md`,
+`specs/R1-P16-provider-booking-response-cancellation-events/handoff-ready-for-owner-review.md`.

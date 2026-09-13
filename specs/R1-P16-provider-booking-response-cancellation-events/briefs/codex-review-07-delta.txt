@@ -1,0 +1,20 @@
+Role: read-only re-review. Do not edit files. Do not implement.
+
+Phase: R1-P16. Previous verdict CHANGES REQUIRED (thread 01a09cff-cf1a-71e1-bcfd-98f858e65011).
+Question: Re-review only the five accepted MAJOR repairs. Return findings with severity and a single verdict: PASS | CHANGES REQUIRED | BLOCKED.
+
+Repairs to verify (do not reopen holdings EX-01/02/03):
+1. Customer/staff cancel after lazy expiry now throws RESPONSE_EXPIRED via expireThenDenyIfExpired.
+2. providerCancel asserts active OWNER/ADMIN before withActorIdempotency.
+3. Dossier includes serviceId and frozen catalog service code/version; inbox has serviceLabel.
+4. Inbox expires overdue PENDING rows first, then lists live expiresAt > now up to limit.
+5. withActorIdempotency catches P2002, reloads the winner, compares request hash, and replays.
+
+Files: src/modules/bookings/bookings.response.service.ts and tests/unit/modules/bookings/booking-response.service.test.ts.
+
+Gate evidence: npm run test:coverage:r1-p16 PASS 98.16 / 85.61 / 96.29 / 98.51 (108 tests); tsc PASS.
+
+Answer shape: short findings with severity and file:line. Verdict last line exactly:
+VERDICT: PASS
+or VERDICT: CHANGES REQUIRED
+or VERDICT: BLOCKED

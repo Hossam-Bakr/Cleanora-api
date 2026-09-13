@@ -108,6 +108,19 @@ export const CONFIG_KEY_CATALOG = {
     valueKind: "NUMBER",
     resolutionPolicy: "COUNTRY_REQUIRED",
   },
+  "commercial.provider_response_hours": {
+    valueSchema: z
+      .number()
+      .int()
+      .gte(1)
+      .lte(168)
+      .refine(
+        (value) => Number.isFinite(value),
+        "provider response hours must be a finite integer",
+      ),
+    valueKind: "NUMBER",
+    resolutionPolicy: "COUNTRY_REQUIRED",
+  },
   "providers.service_pricing_policy": {
     valueSchema: z
       .object({

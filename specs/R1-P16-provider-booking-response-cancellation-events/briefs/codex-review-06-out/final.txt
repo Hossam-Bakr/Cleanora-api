@@ -1,0 +1,15 @@
+Five major findings prevent phase acceptance:
+
+- **MAJOR — `src/modules/bookings/bookings.response.service.ts:605` and `:613`** — Customer cancellation does commit lazy expiry first, but then observes `CANCELLED` and throws `TRANSITION_NOT_AVAILABLE`, not the required `RESPONSE_EXPIRED`. The staff path has the same defect at `:528` and `:545`. Return whether `expireIfPending()` performed expiry and throw `RESPONSE_EXPIRED` afterward, outside the expiry transaction.
+
+- **MAJOR — `src/modules/bookings/bookings.response.service.ts:468` and `:963`** — `providerCancel()` enters the idempotency helper before checking active OWNER/ADMIN membership. A completed same-key replay returns the stored response at line 965 without executing the authorization check at line 480, so a former or otherwise inactive provider manager can retrieve the result. Perform `assertActiveProviderManager()` before `withActorIdempotency()`, matching accept/reject.
+
+- **MAJOR — `src/modules/bookings/bookings.response.service.ts:927`** — The provider dossier projection omits the frozen service facts required by the spec. It returns schedule, address, crew preference, price, response, and cancellation, but not even `serviceId` or any frozen catalog/provider-service snapshot facts. Add the safe frozen service projection required by the dossier contract.
+
+- **MAJOR — `src/modules/bookings/bookings.response.service.ts:241`** — The inbox fetches only the first 100 rows ordered by earliest expiry, expires those rows, and always returns `nextCursor: null` at line 268. If those 100 rows are expired, the response can be empty while actionable pending bookings exist after them. Continue scanning until the requested live-item limit is filled, or implement cursor pagination that exposes the remaining candidates.
+
+- **MAJOR — `src/modules/bookings/bookings.response.service.ts:954` and `:967`** — Actor idempotency has a check-then-create race. Two simultaneous requests with the same key can both observe no row; the loser then receives an uncaught unique-constraint error at line 968 instead of the stored result or `IDEMPOTENCY_BODY_MISMATCH`. Catch the command-row uniqueness collision, reload the winning row, compare its request hash, and replay it as the customer-command path does.
+
+The confirmation hook, same-transaction customer command record, customer GET flattening, OWNER/ADMIN composition check, transition migration rows, and no-fee/no-refund boundary are otherwise present. The supplied coverage and TypeScript evidence was accepted; live migration was not rerun, and the missing phase database URL remains an allowed SC-012 gate record. The generic debate workflow was skipped because it cannot honor the expressly limited six-file review scope.
+
+VERDICT: CHANGES REQUIRED

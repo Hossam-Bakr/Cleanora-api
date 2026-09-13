@@ -1,0 +1,23 @@
+<task>
+Read-only PM resume. Do NOT spawn powershell, rg, or any shell. Answer from this delta plus what you already read in this thread.
+
+Call 1 timed out after you noted data-model.md had an optional fifth command table.
+
+Resolution now locked in artifacts (do not reopen):
+- Keep roadmap product tables: booking_responses, booking_cancellations, cancellation_reasons.
+- Keep booking_notification_intents (EX-02).
+- booking_actor_commands is REQUIRED for provider/staff idempotency because booking_commands is unique on (customerUserId, commandType, idempotencyKey). Do not overload customer commands. This is persistence for FR-008 idempotency, not a new product entity.
+- KEEP EX-01 EX-02 EX-03 unchanged. No extra modules, queues, fees, P23 delivery, or ASSIGNED status.
+
+Issue VERDICT now. First line ACCEPT_IMPLEMENTATION or REJECT or ACCEPT_WITH_EXCEPTIONS.
+Authorize T001–T033 if you accept.
+</task>
+
+<action_safety>
+Read-only. No edits. No shell.
+</action_safety>
+
+<structured_output_contract>
+First line VERDICT: ACCEPT_IMPLEMENTATION | REJECT | ACCEPT_WITH_EXCEPTIONS
+Then exceptions list, task changes if any, authorization sentence.
+</structured_output_contract>

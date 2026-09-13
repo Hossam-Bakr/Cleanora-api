@@ -414,6 +414,50 @@ function assertR1P07RequestBodies(collection: PostmanCollection): number {
   return validated;
 }
 
+function assertR1P16Collection(collection: PostmanCollection): number {
+  const expectedFolders = ["Hosted (Not hosted yet)", "Local"];
+  assert(
+    collection.item.map((item) => item.name).sort().join("|") ===
+      expectedFolders.sort().join("|"),
+    "R1-P16 must contain mirrored Local and Hosted folders",
+  );
+  const expectedOperations = [
+    "GET /api/v1/bookings/cancellation-reasons",
+    "GET /api/v1/bookings/{bookingId}",
+    "POST /api/v1/bookings/{bookingId}/cancel",
+    "GET /api/v1/providers/{providerId}/bookings/{bookingId}",
+    "POST /api/v1/providers/{providerId}/bookings/{bookingId}/accept",
+    "POST /api/v1/providers/{providerId}/bookings/{bookingId}/cancel",
+    "POST /api/v1/providers/{providerId}/bookings/{bookingId}/reject",
+    "GET /api/v1/providers/{providerId}/bookings/inbox",
+    "GET /api/v1/staff/bookings/{bookingId}",
+    "POST /api/v1/staff/bookings/{bookingId}/cancel",
+  ].sort();
+  let total = 0;
+  for (const folder of collection.item) {
+    const requests = collectRequestItems(folder.item ?? []);
+    total += requests.length;
+    const prefix = folder.name === "Local" ? "{{baseUrl}}" : "{{hostUrl}}";
+    for (const item of requests) {
+      assert(
+        item.request !== undefined && rawUrl(item.request).startsWith(prefix),
+        `R1-P16 ${folder.name}/${item.name} must start with ${prefix}`,
+      );
+    }
+    const operations = requests
+      .map((item) => {
+        const request = item.request!;
+        return `${request.method.toUpperCase()} ${normalizeCollectionRoute(rawUrl(request)).split("?")[0]!}`;
+      })
+      .sort();
+    assert(
+      JSON.stringify(operations) === JSON.stringify(expectedOperations),
+      `R1-P16 ${folder.name} operations differ from the expected contract.\nPostman: ${JSON.stringify(operations)}\nExpected: ${JSON.stringify(expectedOperations)}`,
+    );
+  }
+  return total;
+}
+
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
@@ -761,6 +805,31 @@ async function main(): Promise<void> {
     );
   }
 
+  const r1P16CollectionPath = resolve(
+    postmanDirectory,
+    "Cleanora-R1-P16-Provider-Booking-Response.postman_collection.json",
+  );
+  const r1P16Collection = await parseJson<PostmanCollection>(r1P16CollectionPath);
+  assert(
+    r1P16Collection.info.schema.endsWith("/collection/v2.1.0/collection.json"),
+    "R1-P16 collection must use Postman collection schema v2.1.0",
+  );
+  const r1P16RequestCount = assertR1P16Collection(r1P16Collection);
+  const r1P16Serialized = await readFile(r1P16CollectionPath, "utf8");
+  for (const forbidden of [
+    "CLOUDINARY_API_SECRET",
+    "JWT_ACCESS_SECRET",
+    "JWT_REFRESH_SECRET",
+    "DATABASE_URL",
+    "Bearer eyJ",
+    "storageKey",
+  ]) {
+    assert(
+      !r1P16Serialized.includes(forbidden),
+      `R1-P16 collection contains forbidden secret/private material: ${forbidden}`,
+    );
+  }
+
   process.stdout.write(
     `${JSON.stringify({
       ok: true,
@@ -791,6 +860,8 @@ async function main(): Promise<void> {
       r1P12RequestsPerEnvironment: r1P12RequestCount / 2,
       r1P13Requests: r1P13RequestCount,
       r1P13RequestsPerEnvironment: r1P13RequestCount / 2,
+      r1P16Requests: r1P16RequestCount,
+      r1P16RequestsPerEnvironment: r1P16RequestCount / 2,
       runtimeParity: true,
       environments: 2,
     })}\n`,

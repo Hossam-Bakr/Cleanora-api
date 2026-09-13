@@ -12,10 +12,26 @@ export const EXECUTABLE_TRANSITIONS = [
   { actor: "CUSTOMER", from: "AWAITING_DEPOSIT", to: "CANCELLED" },
 ] as const;
 
+/**
+ * Seed documentation for executable R1-P16 rows persisted by the P16
+ * migration. Runtime commands still read `status_transition_rules`.
+ */
+export const P16_EXECUTABLE_TRANSITIONS = [
+  { actor: "CUSTOMER", from: "CONFIRMED", to: "CANCELLED" },
+  { actor: "CUSTOMER", from: "ACCEPTED", to: "CANCELLED" },
+  { actor: "PROVIDER", from: "CONFIRMED", to: "ACCEPTED" },
+  { actor: "PROVIDER", from: "CONFIRMED", to: "CANCELLED" },
+  { actor: "PROVIDER", from: "ACCEPTED", to: "CANCELLED" },
+  { actor: "SYSTEM", from: "CONFIRMED", to: "CANCELLED" },
+  { actor: "STAFF_ADMIN", from: "CONFIRMED", to: "CANCELLED" },
+  { actor: "STAFF_ADMIN", from: "ACCEPTED", to: "CANCELLED" },
+] as const;
+
 export type BookingStatusName =
   | "DRAFT"
   | "AWAITING_DEPOSIT"
   | "CONFIRMED"
+  | "ACCEPTED"
   | "CANCELLED";
 
 /**

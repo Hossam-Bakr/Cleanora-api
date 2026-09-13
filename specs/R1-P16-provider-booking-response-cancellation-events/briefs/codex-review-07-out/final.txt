@@ -1,0 +1,15 @@
+No findings. All five previously accepted MAJOR issues are resolved:
+
+- **RESOLVED — `src/modules/bookings/bookings.response.service.ts:575`, `:652`, `:789`** — Staff and customer cancellation call `expireThenDenyIfExpired()`. It awaits the independent expiry transaction before throwing `RESPONSE_EXPIRED`; the regression cases at `tests/unit/modules/bookings/booking-response.service.test.ts:512` and `:525` also verify that the booking remains durably `CANCELLED`.
+
+- **RESOLVED — `src/modules/bookings/bookings.response.service.ts:514`** — `providerCancel()` checks active OWNER/ADMIN membership before entering `withActorIdempotency()`, preventing unauthorized replay. Covered at `tests/unit/modules/bookings/booking-response.service.test.ts:1416`.
+
+- **RESOLVED — `src/modules/bookings/bookings.response.service.ts:311`, `:988`, `:989`** — Inbox items expose `serviceLabel`; dossiers expose `serviceId` and the frozen catalog service code/version. Covered at `tests/unit/modules/bookings/booking-response.service.test.ts:395` and `:767`.
+
+- **RESOLVED — `src/modules/bookings/bookings.response.service.ts:267` and `:291`** — Inbox processing exhausts overdue `PENDING` rows first, then queries only live rows with `expiresAt > now`, bounded by the requested limit. Covered at `tests/unit/modules/bookings/booking-response.service.test.ts:816` and `:847`.
+
+- **RESOLVED — `src/modules/bookings/bookings.response.service.ts:1025` and `:1044`** — Actor-command creation catches only P2002-shaped collisions, reloads the winning command, validates its request hash, and replays the stored response. Covered at `tests/unit/modules/bookings/booking-response.service.test.ts:1460`.
+
+The supplied 108-test coverage result and TypeScript result were accepted and not rerun. The broader debate workflow was not used because it cannot honor the required two-file scope.
+
+VERDICT: PASS

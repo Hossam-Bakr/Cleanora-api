@@ -7,26 +7,97 @@ import type {
   ConfirmDepositPaymentInput,
 } from "../bookings.public.js";
 
+export interface ConfirmDepositPaymentExtras {
+  readonly onConfirmed: (input: {
+    readonly tx: unknown;
+    readonly bookingId: string;
+    readonly providerId: string;
+    readonly countryId: string;
+    readonly customerUserId: string;
+    readonly locale: "AR" | "EN";
+  }) => Promise<void>;
+}
+
+function isBlank(value: string): boolean {
+  return value.trim().length === 0;
+}
+
+function hasBlankConfirmFields(input: ConfirmDepositPaymentInput): boolean {
+  return [
+    input.bookingId,
+    input.paymentId,
+    input.expectedDepositMinorUnits,
+    input.currencyCode,
+    input.reason,
+  ].some((field) => isBlank(field));
+}
+
+function isAllowedConfirmActor(actorKind: string): boolean {
+  return actorKind === "SYSTEM" || actorKind === "TEST";
+}
+
+function depositText(
+  value: { toFixed(digits: number): string } | null | undefined,
+): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  } else {
+    return value.toFixed(0);
+  }
+}
+
+function depositMatchesExpected(stored: string | null, expected: string): boolean {
+  if (stored === null) {
+    return false;
+  } else {
+    return stored === expected;
+  }
+}
+
+function isConfirmedStatus(status: string | undefined): boolean {
+  return status === "CONFIRMED";
+}
+
+async function invokeOnConfirmed(
+  extras: ConfirmDepositPaymentExtras | undefined,
+  tx: unknown,
+  booking: {
+    readonly id: string;
+    readonly providerId: string;
+    readonly countryId: string;
+    readonly customerUserId: string;
+    readonly locale: "AR" | "EN";
+  },
+): Promise<void> {
+  if (extras === undefined) {
+    return;
+  } else {
+    await extras.onConfirmed({
+      tx,
+      bookingId: booking.id,
+      providerId: booking.providerId,
+      countryId: booking.countryId,
+      customerUserId: booking.customerUserId,
+      locale: booking.locale,
+    });
+  }
+}
+
 /**
  * @desc SYSTEM seam: AWAITING_DEPOSIT → CONFIRMED after verified deposit success.
  * @access Bookings public / composition
  */
 export function createConfirmDepositPayment(
   suppliedClient?: unknown,
+  extras?: ConfirmDepositPaymentExtras,
 ): ConfirmDepositPayment {
   const client = (suppliedClient ?? getPrismaClient()) as PrismaClient;
 
   return async (input: ConfirmDepositPaymentInput) => {
-    if (
-      input.bookingId.trim().length === 0 ||
-      input.paymentId.trim().length === 0 ||
-      input.expectedDepositMinorUnits.trim().length === 0 ||
-      input.currencyCode.trim().length === 0 ||
-      input.reason.trim().length === 0
-    ) {
+    if (hasBlankConfirmFields(input)) {
       throw bookingError("VALIDATION_FAILED");
     }
-    if (input.actorKind !== "SYSTEM" && input.actorKind !== "TEST") {
+    if (!isAllowedConfirmActor(input.actorKind)) {
       throw bookingError("FORBIDDEN");
     }
 
@@ -52,13 +123,20 @@ export function createConfirmDepositPayment(
           currencyCode: true,
           depositMinorUnits: true,
           version: true,
+          providerId: true,
+          countryId: true,
+          customerUserId: true,
+          locale: true,
         },
       });
       if (booking === null) {
         throw bookingError("NOT_FOUND");
       }
-      if (booking.status === "CONFIRMED") {
-        // Idempotent replay after durable confirm.
+      if (booking.status === "ACCEPTED") {
+        return { bookingId: booking.id, status: "CONFIRMED" as const };
+      }
+      if (isConfirmedStatus(booking.status)) {
+        await invokeOnConfirmed(extras, tx, booking);
         return { bookingId: booking.id, status: "CONFIRMED" as const };
       }
       if (booking.status !== "AWAITING_DEPOSIT") {
@@ -67,11 +145,7 @@ export function createConfirmDepositPayment(
       if (booking.currencyCode !== input.currencyCode) {
         throw bookingError("VALIDATION_FAILED", { reason: "CURRENCY" });
       }
-      const deposit = booking.depositMinorUnits?.toFixed(0) ?? null;
-      if (
-        deposit === null ||
-        deposit !== input.expectedDepositMinorUnits
-      ) {
+      if (!depositMatchesExpected(depositText(booking.depositMinorUnits), input.expectedDepositMinorUnits)) {
         throw bookingError("VALIDATION_FAILED", { reason: "AMOUNT_MISMATCH" });
       }
 
@@ -91,7 +165,7 @@ export function createConfirmDepositPayment(
           where: { id: input.bookingId },
           select: { status: true },
         });
-        if (again?.status === "CONFIRMED") {
+        if (isConfirmedStatus(again?.status)) {
           return { bookingId: input.bookingId, status: "CONFIRMED" as const };
         }
         throw bookingError("CONFLICT");
@@ -107,6 +181,8 @@ export function createConfirmDepositPayment(
           requestId: input.paymentId,
         },
       });
+
+      await invokeOnConfirmed(extras, tx, booking);
 
       return { bookingId: input.bookingId, status: "CONFIRMED" as const };
     });

@@ -1,0 +1,57 @@
+<task>
+You are a read-only Cleanora reviewer. Do not edit files. Do not implement. Do not commit.
+
+Phase: R1-P16 Provider Booking Response & Cancellation Events (DEC-096). Cursor implemented accepted T001–T031 plus a customer-GET contract fix. Review the phase diff against spec/plan/tasks and modular-monolith rules.
+
+Question: Issue a review verdict using docs/ai/templates/review-report.md. Name BLOCKER/MAJOR/MINOR with file:line evidence. Do not invent extra features.
+
+Locked holdings:
+- KEEP EX-01 no fees/refunds; EX-02 intents not delivery; EX-03 lazy expiry not a job.
+- Extend bookings module only. ACCEPTED status. booking_actor_commands required for provider/staff idempotency.
+- Membership at composition root. No providers Prisma from bookings. No wallets/Docker/cloud.
+
+HTTP to verify:
+GET /api/v1/providers/:providerId/bookings/inbox
+GET/POST accept|reject|cancel on /api/v1/providers/:providerId/bookings/:bookingId
+GET /api/v1/bookings/cancellation-reasons
+POST /api/v1/bookings/:bookingId/cancel (customer; CONFIRMED/ACCEPTED; OTHER→CUSTOMER_CANCEL_OTHER)
+GET /api/v1/bookings/:bookingId must include response and cancellation projections (not a nested dossier Promise)
+GET/POST /api/v1/staff/bookings/:bookingId and .../cancel
+
+Read these files only (do not rewrite):
+- specs/R1-P16-provider-booking-response-cancellation-events/spec.md (FR/SC/DoD)
+- specs/R1-P16-provider-booking-response-cancellation-events/contracts/http-api.md
+- specs/R1-P16-provider-booking-response-cancellation-events/implementation-summary.md
+- src/modules/bookings/bookings.response.service.ts
+- src/modules/bookings/bookings.response.controller.ts
+- src/modules/bookings/bookings.response.routes.ts
+- src/modules/bookings/bookings.command.service.ts (get + cancelConfirmed only)
+- src/modules/bookings/infrastructure/confirm-deposit-payment.ts
+- src/modules/configuration/infrastructure/prisma-provider-response-hours.reader.ts
+- src/composition.ts (bookingResponseService wiring only)
+- prisma/migrations/r1_p16_provider_booking_response_cancellation_events/migration.sql
+- tests/unit/modules/bookings/booking-response-boundaries.test.ts
+- tests/unit/modules/bookings/booking-command-p16-hooks.test.ts
+
+Gate evidence Cursor recorded (do not re-run unless needed to refute):
+- test:r1-p16 PASS 9 files / 94 tests after customer-GET fix
+- prior test:coverage:r1-p16 PASS 98.51 / 85.07 / 97.6 / 98.41 (phase-owned; re-run only if you dispute)
+- typecheck PASS; docs/openapi/postman PASS
+- live migration BLOCKED: CLEANORA_R1_P16_DATABASE_URL missing (honest, not a pass)
+</task>
+
+<grounding_rules>
+Ground findings in named files and acceptance criteria. Label inferences. Refuse over-engineering.
+</grounding_rules>
+
+<action_safety>
+Read-only. Do not edit, implement, commit, or run mutating commands.
+</action_safety>
+
+<structured_output_contract>
+Follow docs/ai/templates/review-report.md.
+First line MUST be: VERDICT: BLOCKED | CHANGES REQUIRED | PASS
+Then findings with severity, file:line, criterion, impact, remediation.
+No unresolved BLOCKER/MAJOR allowed for PASS.
+Treat missing live DB proof as documented BLOCKED gate, not a code BLOCKER, unless SQL itself is unsafe.
+</structured_output_contract>

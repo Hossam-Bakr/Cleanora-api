@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: Cleanora R1-P16 Provider Booking Response & Cancellation Events
+  version: 1.0.0
+  description: >
+    Selected-provider inbox, accept/reject, lazy expiry, and cancellation
+    events. Customer GET `/api/v1/bookings/{bookingId}` and customer cancel
+    are extended on the existing P13 bookings document (`ACCEPTED` status,
+    `response` and `cancellation` projections, CONFIRMED/ACCEPTED cancel).
+    No fees, wallets, or notification delivery.
+paths:
+  /api/v1/providers/{providerId}/bookings/inbox:
+    get:
+      operationId: listProviderBookingInbox
+      tags: [BookingResponse]
+      summary: List pending confirmed bookings for the selected provider
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        "200":
+          description: Pending inbox items
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+  /api/v1/providers/{providerId}/bookings/{bookingId}:
+    get:
+      operationId: getProviderBookingDossier
+      tags: [BookingResponse]
+      summary: Selected-provider booking dossier
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Dossier
+        "404":
+          description: Not found
+  /api/v1/providers/{providerId}/bookings/{bookingId}/accept:
+    post:
+      operationId: acceptProviderBooking
+      tags: [BookingResponse]
+      summary: Accept a confirmed booking
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version]
+              properties:
+                version: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Accepted
+        "409":
+          description: Conflict, expired, or transition unavailable
+  /api/v1/providers/{providerId}/bookings/{bookingId}/reject:
+    post:
+      operationId: rejectProviderBooking
+      tags: [BookingResponse]
+      summary: Reject a confirmed booking with a seeded reason
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version, reasonCode]
+              properties:
+                version: { type: integer, minimum: 1 }
+                reasonCode: { type: string }
+      responses:
+        "200":
+          description: Rejected and cancelled without fees
+        "409":
+          description: Conflict, expired, or transition unavailable
+  /api/v1/providers/{providerId}/bookings/{bookingId}/cancel:
+    post:
+      operationId: cancelAcceptedProviderBooking
+      tags: [BookingResponse]
+      summary: Cancel an accepted booking as the selected provider
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version, reasonCode]
+              properties:
+                version: { type: integer, minimum: 1 }
+                reasonCode: { type: string }
+      responses:
+        "200":
+          description: Cancelled without fees
+        "409":
+          description: Transition unavailable from CONFIRMED
+  /api/v1/bookings/cancellation-reasons:
+    get:
+      operationId: listCancellationReasons
+      tags: [BookingResponse]
+      summary: List active cancellation or reject reasons
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: actor
+          required: true
+          schema:
+            type: string
+            enum: [CUSTOMER, PROVIDER, STAFF_ADMIN]
+        - in: query
+          name: purpose
+          required: true
+          schema:
+            type: string
+            enum: [REJECT, CANCEL]
+      responses:
+        "200":
+          description: Active reasons
+  /api/v1/staff/bookings/{bookingId}:
+    get:
+      operationId: getStaffBookingDossier
+      tags: [StaffBookings]
+      summary: Staff booking dossier
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Dossier
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /api/v1/staff/bookings/{bookingId}/cancel:
+    post:
+      operationId: staffCancelBooking
+      tags: [StaffBookings]
+      summary: Staff privileged cancel of a confirmed or accepted booking
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version, reasonCode]
+              properties:
+                version: { type: integer, minimum: 1 }
+                reasonCode: { type: string }
+      responses:
+        "200":
+          description: Cancelled without fees
+        "403":
+          description: Forbidden
+        "409":
+          description: Transition unavailable
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

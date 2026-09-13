@@ -42,6 +42,7 @@ const migrationNames = [
   'r1_p13_booking_draft_pricing_snapshot_status_machine',
   'r1_p14_financial_ledger_payment_architecture',
   'r1_p15_deposit_payments_methods_webhooks',
+  'r1_p16_provider_booking_response_cancellation_events',
 ] as const;
 const expectedTablesThroughR1P10 = [
   "currencies",
@@ -164,6 +165,11 @@ const expectedTables = [
   "payment_gateway_events",
   "payment_receipts",
   "refund_requests",
+  "cancellation_reasons",
+  "booking_responses",
+  "booking_cancellations",
+  "booking_notification_intents",
+  "booking_actor_commands",
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -311,6 +317,13 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "payment_gateway_events",
     "payment_receipts",
     "refund_requests"
+  ],
+  r1_p16_provider_booking_response_cancellation_events: [
+    "cancellation_reasons",
+    "booking_responses",
+    "booking_cancellations",
+    "booking_notification_intents",
+    "booking_actor_commands"
   ]
 };
 const expectedPostDeployTablesThroughR1P10 = [
@@ -1571,6 +1584,117 @@ export function assertR1P15MigrationSql(sql: string): void {
   }
 }
 
+export const R1_P16_MIGRATION =
+  "r1_p16_provider_booking_response_cancellation_events";
+
+export const R1_P16_TABLES = [
+  "cancellation_reasons",
+  "booking_responses",
+  "booking_cancellations",
+  "booking_notification_intents",
+  "booking_actor_commands",
+] as const;
+
+export const MIGRATION_NAMES_THROUGH_R1_P16 = [
+  ...MIGRATION_NAMES_THROUGH_R1_P15,
+  R1_P16_MIGRATION,
+] as const;
+
+export const POST_DEPLOY_TABLES_THROUGH_R1_P16 = [
+  ...POST_DEPLOY_TABLES_THROUGH_R1_P15,
+  ...R1_P16_TABLES,
+] as const;
+
+export const APPROVED_R1_P16_TARGET_PATTERN =
+  /^cleanora_r1_p16(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
+
+/** Require an explicitly named R1-P16 disposable target. */
+export function assertR1P16DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  let targetName: string;
+  try {
+    const url = new URL(connectionString);
+    targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  } catch {
+    throw new Error("R1-P16 database URL is not a valid URL");
+  }
+  if (!APPROVED_R1_P16_TARGET_PATTERN.test(targetName)) {
+    throw new Error(
+      `Refusing R1-P16 database work against unapproved target "${targetName}"`,
+    );
+  }
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+}
+
+/**
+ * Resolve the separate R1-P16 live/proof URL.
+ * Never falls back to DATABASE_URL or any prior-phase target.
+ */
+export function requireR1P16ProofDatabaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const value = env["CLEANORA_R1_P16_DATABASE_URL"];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      "CLEANORA_R1_P16_DATABASE_URL is required for R1-P16 disposable proofs",
+    );
+  }
+  assertR1P16DisposableDatabaseUrl(value);
+  try {
+    const url = new URL(value);
+    url.hostname = url.hostname.replace("-pooler", "");
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
+/** Accept only the additive, phase-owned R1-P16 booking-response migration. */
+export function assertR1P16MigrationSql(sql: string): void {
+  const uncommented = sql.replace(/--[^\n]*/gu, "");
+  if (/\b(DROP\s+TABLE|TRUNCATE)\b/iu.test(uncommented)) {
+    throw new Error("R1-P16 booking-response migration contains destructive SQL");
+  }
+  if (/\bDELETE\s+FROM\b/iu.test(uncommented)) {
+    throw new Error("R1-P16 booking-response migration must not delete existing rows");
+  }
+  if (
+    sql.includes('CREATE TABLE "wallets"') ||
+    sql.includes('CREATE TABLE "user_wallets"') ||
+    sql.includes('CREATE TABLE "customer_wallets"')
+  ) {
+    throw new Error("R1-P16 migration must not create wallets");
+  }
+  if (/fee_minor|fee_amount|cancellation_fee/iu.test(sql)) {
+    throw new Error("R1-P16 migration must not add fee columns");
+  }
+  const tables = migrationOwnedTables[R1_P16_MIGRATION] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P16 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 5) {
+    throw new Error("R1-P16 migration must create exactly five tables");
+  }
+  for (const required of [
+    "ADD VALUE 'ACCEPTED'",
+    "ADD VALUE 'PROVIDER'",
+    "booking_actor_commands",
+    "commercial.provider_response_hours",
+    "PROVIDER_RESPONSE_EXPIRED",
+    "str_prov_confirmed_accepted",
+    "str_sys_confirmed_cancelled_expiry",
+    'c."code" = \'EG\'',
+  ]) {
+    if (!sql.includes(required)) {
+      throw new Error(`R1-P16 migration is missing ${required}`);
+    }
+  }
+}
+
 export function assertExactMigrationDirectoryNames(
   directoryNames: readonly string[],
 ): void {
@@ -1681,6 +1805,10 @@ async function validateMigrationFolder(): Promise<void> {
     }
     if (migrationName === R1_P15_MIGRATION) {
       assertR1P15MigrationSql(sql);
+      continue;
+    }
+    if (migrationName === R1_P16_MIGRATION) {
+      assertR1P16MigrationSql(sql);
       continue;
     }
     for (const table of migrationOwnedTables[migrationName] ?? []) {

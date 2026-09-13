@@ -48,6 +48,12 @@ export interface RouteDependencies {
   readonly bookingsBrowseRouter?: Router;
   /** R1-P13 verified-customer booking draft/command routes. */
   readonly bookingsCommandRouter?: Router;
+  /** R1-P16 cancellation-reason listing on `/bookings`. */
+  readonly bookingsReasonsRouter?: Router;
+  /** R1-P16 provider inbox/accept/reject/cancel routes. */
+  readonly bookingsProviderResponseRouter?: Router;
+  /** R1-P16 staff booking cancel/dossier routes. */
+  readonly bookingsStaffResponseRouter?: Router;
   /** R1-P15 customer payment routes. */
   readonly paymentsRouter?: Router;
   /** R1-P15 staff payment method admin routes. */
@@ -150,8 +156,20 @@ export function mountRoutes(
     app.use(`${apiPrefix}/browse`, dependencies.bookingsBrowseRouter);
   }
 
+  if (dependencies.bookingsReasonsRouter !== undefined) {
+    app.use(`${apiPrefix}/bookings`, dependencies.bookingsReasonsRouter);
+  }
+
   if (dependencies.bookingsCommandRouter !== undefined) {
     app.use(`${apiPrefix}/bookings`, dependencies.bookingsCommandRouter);
+  }
+
+  if (dependencies.bookingsProviderResponseRouter !== undefined) {
+    app.use(`${apiPrefix}/providers`, dependencies.bookingsProviderResponseRouter);
+  }
+
+  if (dependencies.bookingsStaffResponseRouter !== undefined) {
+    app.use(`${apiPrefix}/staff/bookings`, dependencies.bookingsStaffResponseRouter);
   }
 
   if (dependencies.paymentsRouter !== undefined) {

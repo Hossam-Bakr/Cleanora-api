@@ -1,0 +1,258 @@
+{
+  "info": {
+    "_postman_id": "a1b0c016-4000-8000-8000-000000000016",
+    "name": "Cleanora R1-P16 Provider Booking Response",
+    "description": "Selected-provider inbox, accept/reject, cancellation events. No fees, wallets, or notification delivery.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "hostUrl", "value": "https://YOUR-HOSTED-DOMAIN.example" },
+    { "key": "accessToken", "value": "" },
+    { "key": "idempotencyKey", "value": "" },
+    { "key": "providerId", "value": "" },
+    { "key": "bookingId", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const body = pm.response.json();",
+          "pm.test('Uses the Cleanora response envelope', function () {",
+          "  pm.expect(body.requestId).to.be.a('string');",
+          "  pm.expect(body.success).to.be.a('boolean');",
+          "  if (pm.response.code < 400) { pm.expect(body.success).to.eql(true); pm.expect(body).to.have.property('data'); }",
+          "  else { pm.expect(body.success).to.eql(false); pm.expect(body.error.statusCode).to.eql(pm.response.code); pm.expect(body.error.code).to.be.a('string'); }",
+          "});",
+          "pm.test('Does not invent cancellation fees', function () {",
+          "  pm.expect(JSON.stringify(body)).to.not.match(/feeAmount|feeMinor/i);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Hosted (Not hosted yet)",
+      "item": [
+        {
+          "name": "List provider inbox",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/inbox"
+          }
+        },
+        {
+          "name": "Get provider booking dossier",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Accept booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4\n}" },
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/accept"
+          }
+        },
+        {
+          "name": "Reject booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4,\n  \"reasonCode\": \"PROVIDER_CANNOT_FULFILL\"\n}" },
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/reject"
+          }
+        },
+        {
+          "name": "Provider cancel accepted booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4,\n  \"reasonCode\": \"PROVIDER_UNABLE_TO_CONTINUE\"\n}" },
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/cancel"
+          }
+        },
+        {
+          "name": "List cancellation reasons",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/bookings/cancellation-reasons?actor=PROVIDER&purpose=REJECT"
+          }
+        },
+        {
+          "name": "Customer cancel confirmed booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4,\n  \"reason\": \"CUSTOMER_CHANGED_MIND\"\n}" },
+            "url": "{{hostUrl}}/api/v1/bookings/{{bookingId}}/cancel"
+          }
+        },
+        {
+          "name": "Customer get booking with response",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Staff booking dossier",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/staff/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Staff cancel booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4,\n  \"reasonCode\": \"STAFF_OPS_CANCEL\"\n}" },
+            "url": "{{hostUrl}}/api/v1/staff/bookings/{{bookingId}}/cancel"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Local",
+      "item": [
+        {
+          "name": "List provider inbox",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/inbox"
+          }
+        },
+        {
+          "name": "Get provider booking dossier",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Accept booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4\n}" },
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/accept"
+          }
+        },
+        {
+          "name": "Reject booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4,\n  \"reasonCode\": \"PROVIDER_CANNOT_FULFILL\"\n}" },
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/reject"
+          }
+        },
+        {
+          "name": "Provider cancel accepted booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4,\n  \"reasonCode\": \"PROVIDER_UNABLE_TO_CONTINUE\"\n}" },
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/cancel"
+          }
+        },
+        {
+          "name": "List cancellation reasons",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/bookings/cancellation-reasons?actor=PROVIDER&purpose=REJECT"
+          }
+        },
+        {
+          "name": "Customer cancel confirmed booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4,\n  \"reason\": \"CUSTOMER_CHANGED_MIND\"\n}" },
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel"
+          }
+        },
+        {
+          "name": "Customer get booking with response",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Staff booking dossier",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/staff/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Staff cancel booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"version\": 4,\n  \"reasonCode\": \"STAFF_OPS_CANCEL\"\n}" },
+            "url": "{{baseUrl}}/api/v1/staff/bookings/{{bookingId}}/cancel"
+          }
+        }
+      ]
+    }
+  ]
+}

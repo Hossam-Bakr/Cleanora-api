@@ -156,7 +156,7 @@ export interface BookingsBrowseDependencies {
 export interface BookingFinancialSnapshot {
   readonly bookingId: string;
   readonly customerUserId: string;
-  readonly status: "DRAFT" | "AWAITING_DEPOSIT" | "CONFIRMED" | "CANCELLED";
+  readonly status: "DRAFT" | "AWAITING_DEPOSIT" | "CONFIRMED" | "ACCEPTED" | "CANCELLED";
   readonly countryId: string;
   readonly currencyCode: string;
   readonly currencyDecimalPlaces: number;

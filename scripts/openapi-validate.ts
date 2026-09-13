@@ -19,6 +19,7 @@ const defaults = [
   'docs/apis/openapi/r1-p12-browse-marketplace.yaml',
   'docs/apis/openapi/r1-p13-booking-draft.yaml',
   'docs/apis/openapi/r1-p15-deposit-payments-methods-webhooks.yaml',
+  'docs/apis/openapi/r1-p16-provider-booking-response-cancellation-events.yaml',
 ];
 
 async function main(): Promise<void> {

@@ -81,6 +81,7 @@ import { getActiveCountryIdByCode } from "#modules/configuration/configuration.s
 import {
   createActiveCountryReader,
   createDepositPercentReader,
+  createProviderResponseHoursReader,
   createLocalityReader,
   createTransactionalActiveCountryReader,
   createTransactionalCountryTimeZoneReader,
@@ -236,6 +237,13 @@ import { createBookingsCommandRouter } from "#modules/bookings/bookings.command.
 import { BookingsCommandService } from "#modules/bookings/bookings.command.service";
 import { createPrismaBookingsCommandRepository } from "#modules/bookings/infrastructure/prisma-bookings.repository";
 import { BookingsBrowseService } from "#modules/bookings/bookings.service";
+import {
+  createBookingProviderResponseRouter,
+  createBookingReasonsRouter,
+  createBookingStaffResponseRouter,
+} from "#modules/bookings/bookings.response.routes";
+import { createBookingResponseService } from "#modules/bookings/bookings.response.service";
+import { bookingError } from "#modules/bookings/bookings.errors";
 import {
   createEligibilityApplicationService,
   type EligibilityApplicationService,
@@ -1505,6 +1513,48 @@ export function createRuntimeDependencies(
     privacyHashSecret: browseCursorSecret,
     service: bookingsBrowseService,
   });
+  const isStaffAdmin = async (userId: string): Promise<boolean> => {
+    const grants = await authorization.effectivePermissions({
+      userId,
+      sessionId: "payments-staff-check",
+      accountCategories: [],
+      verifiedCategories: [],
+      pendingCategories: [],
+      status: "ACTIVE",
+      verificationOnly: false,
+    });
+    return grants.roleCodes.includes("staff_admin");
+  };
+  const bookingResponseHours = createProviderResponseHoursReader(database.client);
+  const bookingResponseService = createBookingResponseService({
+    client: database.client,
+    now: () => new Date(),
+    readResponseHours: (countryId) =>
+      bookingResponseHours.readHoursForCountryId(countryId),
+    assertActiveProviderManager: async (providerId, userId) => {
+      const member = await database.client.providerMember.findFirst({
+        where: {
+          providerId,
+          userId,
+          status: "ACTIVE",
+          level: { in: ["OWNER", "ADMIN"] },
+        },
+        select: { level: true },
+      });
+      if (member === null) {
+        throw bookingError("FORBIDDEN");
+      }
+      return { providerId, userId, level: member.level };
+    },
+    resolveProviderOwnerUserId: async (providerId) => {
+      const provider = await database.client.provider.findUnique({
+        where: { id: providerId },
+        select: { ownerUserId: true },
+      });
+      return provider?.ownerUserId ?? null;
+    },
+    isStaffAdmin,
+  });
   const bookingsCommandService = new BookingsCommandService({
     repository: createPrismaBookingsCommandRepository(database.client),
     eligibility: eligibilityApplicationService,
@@ -1529,6 +1579,9 @@ export function createRuntimeDependencies(
         getSnapshotReadyFacts: async () => ({ status: "UNAVAILABLE" as const }),
       } satisfies ProviderServiceSnapshotReader),
     activeCountries: createActiveCountryReader(database.client),
+    cancelConfirmed: (input) =>
+      bookingResponseService.customerCancelConfirmed(input),
+    readDossier: (bookingId) => bookingResponseService.peekDossier(bookingId),
   });
   const paymentGateway =
     PaymobPaymentGateway.fromEnv(process.env) ??
@@ -1537,23 +1590,20 @@ export function createRuntimeDependencies(
     environment.AUTH_PRIVACY_HASH_SECRET ??
     environment.JWT_ACCESS_SECRET ??
     "cleanora-payments-return-token-dev";
-  const isStaffAdmin = async (userId: string): Promise<boolean> => {
-    const grants = await authorization.effectivePermissions({
-      userId,
-      sessionId: "payments-staff-check",
-      accountCategories: [],
-      verifiedCategories: [],
-      pendingCategories: [],
-      status: "ACTIVE",
-      verificationOnly: false,
-    });
-    return grants.roleCodes.includes("staff_admin");
-  };
   const paymentsApplicationService = createPaymentsApplicationService({
     unitOfWork: new PaymentsUnitOfWork(database.client),
     bookingReader: createPrismaBookingFinancialSnapshotReader(database.client),
     gateway: paymentGateway,
-    confirmDepositPayment: createConfirmDepositPayment(database.client),
+    confirmDepositPayment: createConfirmDepositPayment(database.client, {
+      onConfirmed: (input) =>
+        bookingResponseService.ensurePendingResponse(input.tx as never, {
+          bookingId: input.bookingId,
+          providerId: input.providerId,
+          countryId: input.countryId,
+          customerUserId: input.customerUserId,
+          locale: input.locale,
+        }),
+    }),
     returnTokenSecret,
     isStaffAdmin,
     activeCountryExists: async (countryId) => {
@@ -1599,6 +1649,27 @@ export function createRuntimeDependencies(
           privacyHashSecret: browseCursorSecret,
           service: bookingsCommandService,
         });
+  const bookingsResponseRouterDeps =
+    authentication === undefined
+      ? undefined
+      : {
+          authenticateAccess: authentication.authenticateAccess,
+          rateLimiter,
+          privacyHashSecret: browseCursorSecret,
+          service: bookingResponseService,
+        };
+  const bookingsReasonsRouter =
+    bookingsResponseRouterDeps === undefined
+      ? undefined
+      : createBookingReasonsRouter(bookingsResponseRouterDeps);
+  const bookingsProviderResponseRouter =
+    bookingsResponseRouterDeps === undefined
+      ? undefined
+      : createBookingProviderResponseRouter(bookingsResponseRouterDeps);
+  const bookingsStaffResponseRouter =
+    bookingsResponseRouterDeps === undefined
+      ? undefined
+      : createBookingStaffResponseRouter(bookingsResponseRouterDeps);
 
   return {
     database,
@@ -1668,6 +1739,13 @@ export function createRuntimeDependencies(
         : { providerAvailabilityRouter }),
       bookingsBrowseRouter,
       ...(bookingsCommandRouter === undefined ? {} : { bookingsCommandRouter }),
+      ...(bookingsReasonsRouter === undefined ? {} : { bookingsReasonsRouter }),
+      ...(bookingsProviderResponseRouter === undefined
+        ? {}
+        : { bookingsProviderResponseRouter }),
+      ...(bookingsStaffResponseRouter === undefined
+        ? {}
+        : { bookingsStaffResponseRouter }),
       ...(paymentsRouter === undefined ? {} : { paymentsRouter }),
       ...(staffPaymentsRouter === undefined ? {} : { staffPaymentsRouter }),
       paymobWebhookRouter,

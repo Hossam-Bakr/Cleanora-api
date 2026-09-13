@@ -206,6 +206,7 @@ function createService(overrides?: {
       version: 2,
       cancelledAt: "2026-09-10T09:00:00.000Z",
     }),
+    recordCompletedCommand: vi.fn().mockResolvedValue(undefined),
     ...overrides?.repository,
   };
   const evaluateEligibility = overrides?.eligibilityError
