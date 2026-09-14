@@ -22,7 +22,7 @@ refund_request, REFUND journals, delivery, expiry worker, or counteroffers.
 | Functional review | Codex call 6 CHANGES REQUIRED → five MAJOR repaired; call 7 **PASS**; no unresolved BLOCKER/MAJOR | PASS |
 | Phase tests | `test:coverage:r1-p16` PASS (108 tests) | PASS |
 | Phase coverage | 98.16 / 85.61 / 96.29 / 98.51 | PASS |
-| Migration | Live clean + upgrade BLOCKED — `CLEANORA_R1_P16_DATABASE_URL` missing (SC-012 allows BLOCKED) | BLOCKED |
+| Migration | Live clean + P15→P16 upgrade PASS on `cleanora_r1_p16_proof` | PASS |
 | API artifacts | OpenAPI + Postman + docs validate (20 P16 requests) | PASS |
 | Completion authority | DEC-097 owner `mark complete` | PASS |
 

@@ -667,7 +667,7 @@ async function upsertCountryConfigCompatible(
     countryId: string;
     key: string;
     value: Prisma.InputJsonValue;
-    valueKind: "STRING" | "ARRAY" | "OBJECT";
+    valueKind: "STRING" | "ARRAY" | "OBJECT" | "NUMBER";
   }>,
 ): Promise<void> {
   if (await countryConfigsHaveVersionColumn(prisma)) {
@@ -1201,6 +1201,28 @@ export async function seed(
       key: "platform.default_timezone",
       value: "Africa/Cairo",
       valueKind: "STRING",
+    });
+    await prisma.appConfig.upsert({
+      where: { key: "commercial.provider_response_hours" },
+      create: {
+        key: "commercial.provider_response_hours",
+        value: 24,
+        valueKind: "NUMBER",
+        resolutionPolicy: "COUNTRY_REQUIRED",
+        description:
+          "Country-required hours the selected provider has to accept or reject a confirmed booking",
+      },
+      update: {
+        value: 24,
+        valueKind: "NUMBER",
+        resolutionPolicy: "COUNTRY_REQUIRED",
+      },
+    });
+    await upsertCountryConfigCompatible(prisma, {
+      countryId: country.id,
+      key: "commercial.provider_response_hours",
+      value: 24,
+      valueKind: "NUMBER",
     });
 
     await seedAuthorizationDefinitions(prisma, {

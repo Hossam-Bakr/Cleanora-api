@@ -27,3 +27,6 @@ If hours seed misses a country, fail closed at confirm; backfill `country_config
 ## Live proof
 
 Requires disposable `CLEANORA_R1_P16_DATABASE_URL` matching `cleanora_r1_p16_*_(test|proof|clean|ci)`. SQL shape is unit-tested independently of that URL.
+
+Live clean install and populated P15→P16 upgrade **PASS** on 2026-09-14 against
+`cleanora_r1_p16_proof`. See `migration-evidence.md`.

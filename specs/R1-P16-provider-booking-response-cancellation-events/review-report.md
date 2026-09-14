@@ -9,7 +9,7 @@
   - `npx tsc --noEmit` PASS (2026-09-14 02:16)
   - Codex call 6 **CHANGES REQUIRED**; five MAJOR repaired (`review-resolution.md`)
   - Codex call 7 re-review **PASS** (thread `01a09cff-cf1a-71e1-bcfd-98f858e65011`)
-  - Live migration proof BLOCKED: `CLEANORA_R1_P16_DATABASE_URL` missing
+  - Live clean + P15→P16 upgrade PASS on `cleanora_r1_p16_proof` (2026-09-14)
 
 ## Findings
 
@@ -33,7 +33,8 @@ No unresolved BLOCKER or MAJOR. Call 6 MAJOR items are resolved per call 7.
 
 ## Tests and checks not run
 
-- Live disposable P16 migrate-deploy (missing `CLEANORA_R1_P16_DATABASE_URL`)
+- None for SC-012. Live disposable P16 migrate-deploy and populated upgrade
+  passed on `cleanora_r1_p16_proof`.
 
 ## Verdict
 

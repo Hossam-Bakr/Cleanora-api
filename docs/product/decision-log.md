@@ -3121,9 +3121,11 @@ five MAJOR repairs from call 6), the owner stated: `mark complete`.
   returned PASS with no unresolved BLOCKER or MAJOR.
 - Phase tests passed 9 files / 108 tests. Coverage passed at 98.16%
   statements, 85.61% branches, 96.29% functions, and 98.51% lines.
-- Live clean install and populated P15→P16 upgrade remain BLOCKED:
-  `CLEANORA_R1_P16_DATABASE_URL` missing (SC-012 allows BLOCKED). Typecheck,
-  OpenAPI, Postman, and docs gates passed as recorded in the handoff.
+- Live clean install and populated P15→P16 upgrade later **PASS** on
+  disposable `cleanora_r1_p16_proof` (2026-09-14; see
+  `specs/R1-P16-provider-booking-response-cancellation-events/migration-evidence.md`).
+  Typecheck, OpenAPI, Postman, and docs gates passed as recorded in the
+  handoff.
 - Companion `mark-complete` succeeded after sanctioned implement task sync
   (33/33): `.spec-context.json` `status=completed`. Living-spec fold was a
   no-op. Cleanora Complete is this decision plus the phase completion report.

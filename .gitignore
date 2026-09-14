@@ -33,6 +33,7 @@ railway.exampleRailway.env
 # stay on the developer host and must never be staged.
 .tmp/
 .r1-p13-upgrade-*/
+.r1-p16-upgrade-*/
 tmp/
 __pycache__/
 *.py[cod]

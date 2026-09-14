@@ -31,7 +31,8 @@
 
 ## Explicit non-claims / gaps
 
-- Live migration clean + upgrade: **BLOCKED** — `CLEANORA_R1_P16_DATABASE_URL` missing.
+- Live migration clean + upgrade: **PASS** on `cleanora_r1_p16_proof` (see
+  `migration-evidence.md`).
 - No fees, wallets, refund_request, REFUND journal, FCM/SMS/email delivery,
   expiry worker, counteroffers, Docker, or cloud.
 - Codex final review is **PASS** (T032). Phase Complete under DEC-097; does
@@ -49,7 +50,7 @@
 | `npm run docs:check` | **PASS** (unchanged API artifacts) |
 | `npm run openapi:validate` | **PASS** (includes P16 yaml) |
 | `npm run postman:validate` | **PASS** — 20 P16 requests, 10 per environment |
-| Live migration proof | **BLOCKED** — `CLEANORA_R1_P16_DATABASE_URL` missing |
+| Live migration proof | **PASS** — clean `cleanora_r1_p16_proof_30060_1789366004622`; upgrade `cleanora_r1_p16_upgrade_proof_12396_1789366361098` |
 | SQL shape unit tests | **PASS** — `tests/unit/scripts/validate-r1-p16-migration.test.ts` |
 
 FR-008 follow-up (20:04): customer CONFIRMED/ACCEPTED cancel now writes

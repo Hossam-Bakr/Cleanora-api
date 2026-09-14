@@ -2071,6 +2071,72 @@ export async function assertPostDeployState(
         }
       }
     }
+    if (expectedMigrationNames.includes(R1_P16_MIGRATION)) {
+      const acceptedEnum = await prisma.$queryRaw<Array<{ label: string }>>`
+        SELECT label::text AS label
+        FROM unnest(enum_range(NULL::"BookingStatus")) AS label
+        WHERE label::text = 'ACCEPTED'
+      `;
+      if (acceptedEnum.length !== 1) {
+        throw new Error("R1-P16 migration must add BookingStatus.ACCEPTED");
+      }
+      const reasonRows = await prisma.$queryRaw<Array<{ total: bigint }>>`
+        SELECT count(*)::bigint AS total FROM "cancellation_reasons"
+      `;
+      if ((reasonRows[0]?.total ?? 0n) < 11n) {
+        throw new Error(
+          "R1-P16 migration must seed cancellation_reasons including reject, cancel, and expiry",
+        );
+      }
+      const expiredReason = await prisma.$queryRaw<Array<{ code: string }>>`
+        SELECT "code" FROM "cancellation_reasons"
+        WHERE "code" = 'PROVIDER_RESPONSE_EXPIRED' AND "actor" = 'SYSTEM'
+      `;
+      if (expiredReason.length !== 1) {
+        throw new Error(
+          "R1-P16 migration must seed PROVIDER_RESPONSE_EXPIRED",
+        );
+      }
+      for (const table of [
+        "booking_responses",
+        "booking_cancellations",
+        "booking_notification_intents",
+        "booking_actor_commands",
+      ] as const) {
+        const rows = await prisma.$queryRawUnsafe<Array<{ total: bigint }>>(
+          `SELECT count(*)::bigint AS total FROM "${table}"`,
+        );
+        if ((rows[0]?.total ?? 0n) !== 0n) {
+          throw new Error(
+            `R1-P16 seed must leave ${table} empty; found commercial response rows`,
+          );
+        }
+      }
+      const hoursRows = await prisma.$queryRaw<Array<{ value: unknown }>>`
+        SELECT cc."value" AS value
+        FROM "country_configs" cc
+        JOIN "countries" c ON c."id" = cc."country_id"
+        WHERE c."code" = 'EG' AND cc."key" = 'commercial.provider_response_hours'
+      `;
+      if (JSON.stringify(hoursRows[0]?.value) !== "24") {
+        throw new Error(
+          "R1-P16 migration must seed Egypt commercial.provider_response_hours = 24",
+        );
+      }
+      const acceptRule = await prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "status_transition_rules"
+        WHERE "id" = 'str_prov_confirmed_accepted'
+          AND "actor" = 'PROVIDER'
+          AND "from_status" = 'CONFIRMED'
+          AND "to_status" = 'ACCEPTED'
+          AND "executable" = true
+      `;
+      if (acceptRule.length !== 1) {
+        throw new Error(
+          "R1-P16 migration must seed executable PROVIDER CONFIRMED→ACCEPTED",
+        );
+      }
+    }
   } finally {
     await prisma.$disconnect();
   }
@@ -3216,9 +3282,9 @@ async function run(): Promise<void> {
     "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
   );
 
-  const configuredConnectionString = requireR1P15ProofDatabaseUrl();
+  const configuredConnectionString = requireR1P16ProofDatabaseUrl();
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p15_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p16_proof_${process.pid}_${Date.now()}`;
   if (!/^[a-z][a-z0-9_]{0,62}$/u.test(proofSchema)) {
     throw new Error("Disposable proof identifier is invalid");
   }
@@ -3250,7 +3316,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, eight Egypt system ledger accounts, empty commercial ledger journals, Egypt Paymob CARD+WALLET enabled methods, empty commercial payment tables, live snapshot/price-breakdown and ledger immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, eight Egypt system ledger accounts, empty commercial ledger journals, Egypt Paymob CARD+WALLET enabled methods, empty commercial payment tables, ACCEPTED status, seeded cancellation_reasons including PROVIDER_RESPONSE_EXPIRED, Egypt provider_response_hours=24, empty booking response/cancellation/intent/actor-command tables, live snapshot/price-breakdown and ledger immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
   );
 }
 
