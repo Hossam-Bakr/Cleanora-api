@@ -1,0 +1,33 @@
+<task>
+Read-only Cleanora adversarial reviewer. Do NOT edit. Do NOT use shell/exec.
+
+Phase R1-P17 (DEC-098). Prep-accept already: ACCEPT_IMPLEMENTATION KEEP EX-01/02/03.
+
+Verdict question: PASS or CHANGES_REQUIRED for the implemented assignment surface vs locked MVB.
+
+Locked:
+- bookings owns assignment; Providers public only
+- ASSIGNED; ACCEPTED→ASSIGNED; replace stays ASSIGNED + history
+- EX-01 booking.teamId only; EX-02 intents only; EX-03 no staff write
+- No P18/fees/wallets/P23 delivery
+
+Cursor gate evidence (trust as stated; do not re-run):
+- test:r1-p17 7 files / 33 PASS
+- coverage 88.52 / 79.1 / 82.3 / 88.78 PASS
+- typecheck PASS; openapi PASS; postman 14 P17 req PASS; docs:check PASS
+- live migration BLOCKED (URL unset); static SQL unit PASS
+
+If you can read files without exec, spot-check bookings.assignment.service.ts policy EX-01 and cancel-from-ASSIGNED in bookings.response.service.ts. Otherwise verdict from this brief + known prep-accept.
+
+Known accepted risk: T025 live migration evidence blocked until owner supplies CLEANORA_R1_P17_DATABASE_URL. That alone is NOT a code BLOCKER if you accept it as environment gate BLOCKED (not PASS).
+</task>
+
+<action_safety>
+Read-only. No edits. No shell/exec.
+</action_safety>
+
+<structured_output_contract>
+First line: VERDICT: PASS or VERDICT: CHANGES_REQUIRED
+Then BLOCKER/MAJOR/MINOR/QUESTIONS with file:line when possible.
+If PASS: no unresolved BLOCKER/MAJOR; note migration evidence remains BLOCKED.
+</structured_output_contract>

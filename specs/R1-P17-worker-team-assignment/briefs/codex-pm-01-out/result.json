@@ -1,0 +1,40 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "lane": null,
+  "laneSource": null,
+  "workdir": "d:\\new_repos\\Cleanora_R1",
+  "sandbox": "read-only",
+  "model": "gpt-5.6-sol",
+  "effort": "xhigh",
+  "serviceTier": "priority",
+  "resumeLast": false,
+  "session": null,
+  "cleanEnv": false,
+  "ignoreUserConfig": false,
+  "keepEnv": [],
+  "codexVersion": "codex-cli 0.154.0",
+  "startedAt": "2026-09-14T07:47:23.091Z",
+  "finishedAt": "2026-09-14T07:52:24.144Z",
+  "briefPath": "d:\\new_repos\\Cleanora_R1\\specs\\R1-P17-worker-team-assignment\\briefs\\codex-pm-01-out\\brief.txt",
+  "eventsPath": "d:\\new_repos\\Cleanora_R1\\specs\\R1-P17-worker-team-assignment\\briefs\\codex-pm-01-out\\events.jsonl",
+  "finalPath": null,
+  "stderrPath": "d:\\new_repos\\Cleanora_R1\\specs\\R1-P17-worker-team-assignment\\briefs\\codex-pm-01-out\\stderr.txt",
+  "status": "timeout",
+  "exitCode": 1,
+  "signal": null,
+  "threadId": "01a09ee2-968b-7c80-b80e-0b220d685b53",
+  "finalMessage": "",
+  "touchedFiles": [
+    " M docs/product/current.md",
+    " M docs/product/decision-log.md",
+    "?? %SystemDrive%/",
+    "?? specs/R1-P17-worker-team-assignment/"
+  ],
+  "stderrTail": [
+    "2026-09-14T07:49:46.837757Z ERROR codex_core::tools::router: error=exec_command failed: CreateProcess { message: \"Rejected(\\\"Failed to create unified exec process: orchestrator_helper_launch_canceled: ShellExecuteExW failed to launch setup helper: 1223\\\")\" }",
+    "2026-09-14T07:49:46.837761Z ERROR codex_core::tools::router: error=exec_command failed: CreateProcess { message: \"Rejected(\\\"Failed to create unified exec process: orchestrator_helper_launch_canceled: ShellExecuteExW failed to launch setup helper: 1223\\\")\" }",
+    "2026-09-14T07:51:55.307556Z ERROR codex_core::tools::router: error=exec_command failed: CreateProcess { message: \"Rejected(\\\"Failed to create unified exec process: orchestrator_helper_launch_canceled: ShellExecuteExW failed to launch setup helper: 1223\\\")\" }",
+    "2026-09-14T07:51:55.307866Z ERROR codex_core::tools::router: error=exec_command failed: CreateProcess { message: \"Rejected(\\\"Failed to create unified exec process: orchestrator_helper_launch_canceled: ShellExecuteExW failed to launch setup helper: 1223\\\")\" }"
+  ],
+  "error": "codex did not finish within --timeout 5m; killed by the relay watchdog"
+}

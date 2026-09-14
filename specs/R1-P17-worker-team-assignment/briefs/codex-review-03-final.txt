@@ -1,0 +1,51 @@
+<task>
+You are a read-only Cleanora adversarial reviewer. Do not edit files. Do not implement.
+
+Phase: R1-P17 Worker & Team Assignment (DEC-098; Codex prep-accept call 2 ACCEPT_IMPLEMENTATION KEEP EX-01/02/03).
+
+Question: Review the phase diff for BLOCKER/MAJOR findings against spec.md acceptance criteria and EX-01/02/03. Return PASS or CHANGES REQUIRED.
+
+Locked scope reminder:
+- bookings owns assignment tables; Providers via public contracts only
+- ASSIGNED status; ACCEPTED→ASSIGNED; replace stays ASSIGNED with history
+- EX-01 booking.teamId only; EX-02 intents only; EX-03 no staff write
+- No P18 execution, fees, wallets, P23 delivery
+
+Gate evidence (Cursor re-verified):
+- npm run test:r1-p17 — 7 files / 33 tests PASS
+- npm run test:coverage:r1-p17 — 88.52% stmts / 79.1% branches / 82.3% funcs / 88.78% lines PASS (thresholds 80/75/80/80)
+- npm run typecheck — PASS
+- npm run openapi:validate — PASS (includes r1-p17 yaml + runtime document)
+- npm run postman:validate — PASS (14 P17 requests / 7 per environment)
+- npm run docs:check — PASS
+- Migration live proof BLOCKED: CLEANORA_R1_P17_DATABASE_URL unset (static SQL unit test PASS; migration-evidence.md records BLOCKED)
+
+Read (prefer built-in read; avoid shell/exec): 
+specs/R1-P17-worker-team-assignment/spec.md Clarifications+DoD+FR/SC
+specs/R1-P17-worker-team-assignment/plan.md
+specs/R1-P17-worker-team-assignment/tasks.md
+specs/R1-P17-worker-team-assignment/contracts/http-api.md
+specs/R1-P17-worker-team-assignment/implementation-summary.md
+specs/R1-P17-worker-team-assignment/migration-evidence.md
+docs/ai/templates/review-report.md shape
+Key code: src/modules/bookings/bookings.assignment.service.ts, .policy.ts, .controller.ts, .routes.ts, bookings.worker-visibility.routes.ts, bookings.response.service.ts cancel-from-ASSIGNED, providers.public.ts workforce extensions, prisma/migrations/r1_p17_worker_team_assignment/migration.sql
+</task>
+
+<grounding_rules>
+Ground every finding in file+line evidence. Label inferences. Refuse over-engineering. Do not invent modules or fee engines.
+</grounding_rules>
+
+<action_safety>
+Read-only. No edits. Prefer not to use exec/shell.
+</action_safety>
+
+<structured_output_contract>
+Follow docs/ai/templates/review-report.md shape as closely as possible.
+First line MUST be one of:
+VERDICT: PASS
+VERDICT: CHANGES_REQUIRED
+
+Then list BLOCKER / MAJOR / MINOR / QUESTIONS separately.
+For each finding: severity, file:line, violated rule/AC, impact, focused remediation.
+If PASS: state no unresolved BLOCKER/MAJOR and note accepted risks (incl. migration evidence BLOCKED if still blocked).
+</structured_output_contract>

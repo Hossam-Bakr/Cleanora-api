@@ -1,0 +1,40 @@
+<task>
+Read-only Cleanora PM. Do NOT edit files. Do NOT run shell/exec tools. Answer from the brief alone plus any file reads via your built-in read tool if available without exec.
+
+Phase R1-P17 Worker & Team Assignment (DEC-098). Prior R1-P16 Complete (DEC-097).
+
+Question: Accept tasks T001–T028 for complete in-scope implementation with EX-01/EX-02/EX-03, or reject.
+
+Locked MVB (already in specs/R1-P17-worker-team-assignment/):
+- Extend bookings only; Providers via public contracts only.
+- Tables: booking_assignments, booking_assignment_members, booking_assignment_history.
+- Migration: r1_p17_worker_team_assignment.
+- Status ASSIGNED; first assign ACCEPTED→ASSIGNED; replace stays ASSIGNED with history.
+- Writers: selected provider OWNER/ADMIN only. Staff read-only (EX-03). Workers: GET /workers/me/assignments only.
+- Assign/replace team (EX-01: booking.teamId only) and assign/replace workers.
+- Enforce ownership, ACTIVE, ≥1 cleans=true, escort cleans=false, crew preference on cleaners, calendar cover, no overlapping ACTIVE assignment, requiredTeamUnits for ad-hoc.
+- Intents BOOKING_ASSIGNED / BOOKING_ASSIGNMENT_REPLACED only (EX-02). No P18/P19/P20, fees, wallets, Docker/cloud.
+- Coverage 80/75/80/80. Cancel ASSIGNED via P16 paths + new transition rows only.
+
+KEEP exceptions: EX-01 teamId lock; EX-02 intents; EX-03 no staff write.
+
+If you cannot read files, still verdict from this brief.
+</task>
+
+<action_safety>
+Read-only. No edits. Prefer not to use exec/shell.
+</action_safety>
+
+<structured_output_contract>
+First line MUST be one of:
+VERDICT: ACCEPT_IMPLEMENTATION
+VERDICT: REJECT
+VERDICT: ACCEPT_WITH_EXCEPTIONS
+
+Then:
+1. Exceptions keep/change
+2. Any Txxx that must change
+3. Authorization sentence for which tasks may proceed
+4. Risks accept vs must-fix-before-code
+No extra features.
+</structured_output_contract>

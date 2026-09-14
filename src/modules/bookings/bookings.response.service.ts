@@ -45,6 +45,19 @@ export interface BookingResponseServiceDependencies {
   ) => Promise<{ readonly providerId: string; readonly userId: string; readonly level: BookingManagerLevel }>;
   readonly resolveProviderOwnerUserId: (providerId: string) => Promise<string | null>;
   readonly isStaffAdmin: (userId: string) => Promise<boolean>;
+  readonly readAssignmentSummary?: (
+    bookingId: string,
+  ) => Promise<{
+    readonly assignmentId: string;
+    readonly source: "TEAM" | "WORKERS";
+    readonly teamId: string | null;
+    readonly members: readonly {
+      readonly workerId: string;
+      readonly cleans: boolean;
+      readonly displayNameEn: string;
+      readonly displayNameAr: string;
+    }[];
+  } | null>;
 }
 
 export interface InboxItem {
@@ -89,6 +102,17 @@ export interface BookingDossier {
     readonly reasonCode: string;
     readonly createdAt: string;
   } | null;
+  readonly assignment: {
+    readonly assignmentId: string;
+    readonly source: "TEAM" | "WORKERS";
+    readonly teamId: string | null;
+    readonly members: readonly {
+      readonly workerId: string;
+      readonly cleans: boolean;
+      readonly displayNameEn: string;
+      readonly displayNameAr: string;
+    }[];
+  } | null;
 }
 
 function isExpiredResponse(row: { readonly status?: string } | null): boolean {
@@ -100,7 +124,7 @@ function isPendingResponse(row: { readonly status?: string } | null): boolean {
 }
 
 function canCancelAfterConfirm(status: string): boolean {
-  return status === "CONFIRMED" || status === "ACCEPTED";
+  return status === "CONFIRMED" || status === "ACCEPTED" || status === "ASSIGNED";
 }
 
 function isConflictError(error: unknown): boolean {
@@ -527,7 +551,10 @@ export class BookingResponseService {
         await this.deps.assertActiveProviderManager(input.providerId, input.actorUserId);
         const booking = await this.requireProviderBooking(tx, input.bookingId, input.providerId);
         failWhen(booking.status === "CONFIRMED", () => bookingError("TRANSITION_NOT_AVAILABLE"));
-        failWhen(booking.status !== "ACCEPTED", () => bookingError("TRANSITION_NOT_AVAILABLE"));
+        failWhen(
+          booking.status !== "ACCEPTED" && booking.status !== "ASSIGNED",
+          () => bookingError("TRANSITION_NOT_AVAILABLE"),
+        );
         failWhen(booking.version !== input.version, () => bookingError("CONFLICT"));
         const reason = requirePresent(
           await tx.cancellationReason.findFirst({
@@ -540,11 +567,11 @@ export class BookingResponseService {
           }),
           () => bookingError("VALIDATION_FAILED", { reason: "UNKNOWN_REASON" }),
         );
-        await this.requireRule(tx, "PROVIDER", "ACCEPTED", "CANCELLED");
+        await this.requireRule(tx, "PROVIDER", booking.status, "CANCELLED");
         const cancellationId = await this.terminalCancel(tx, {
           bookingId: input.bookingId,
           expectedVersion: input.version,
-          fromStatus: "ACCEPTED",
+          fromStatus: booking.status,
           actorKind: "PROVIDER",
           actorUserId: input.actorUserId,
           actorType: "PROVIDER",
@@ -980,6 +1007,10 @@ export class BookingResponseService {
     if (booking === null) {
       return null;
     } else {
+    const assignment =
+      this.deps.readAssignmentSummary === undefined
+        ? null
+        : await this.deps.readAssignmentSummary(bookingId);
     return {
       bookingId: booking.id,
       status: booking.status,
@@ -995,6 +1026,20 @@ export class BookingResponseService {
       quote: quoteProjection(booking.priceBreakdown),
       response: responseProjection(booking.response),
       cancellation: cancellationProjection(booking.cancellation),
+      assignment:
+        assignment === null
+          ? null
+          : {
+              assignmentId: assignment.assignmentId,
+              source: assignment.source,
+              teamId: assignment.teamId,
+              members: assignment.members.map((member) => ({
+                workerId: member.workerId,
+                cleans: member.cleans,
+                displayNameEn: member.displayNameEn,
+                displayNameAr: member.displayNameAr,
+              })),
+            },
     };
     }
   }

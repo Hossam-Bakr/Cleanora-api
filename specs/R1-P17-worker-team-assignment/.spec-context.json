@@ -1,0 +1,54 @@
+{
+  "workflow": "speckit",
+  "specName": "R1-P17 — Worker & Team Assignment",
+  "branch": "r1-p17-worker-team-assignment",
+  "currentStep": "implement",
+  "status": "completed",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "cursor-manual-fallback",
+      "at": "2026-09-14T07:45:00.000Z",
+      "note": "companion write-context.py skipped: no usable python on PATH"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "cursor-manual-fallback",
+      "at": "2026-09-14T07:45:01.000Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "cursor-manual-fallback",
+      "at": "2026-09-14T07:45:02.000Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "cursor-manual-fallback",
+      "at": "2026-09-14T11:22:00.000Z",
+      "note": "T001–T028 reconciled; companion mark-complete skipped (no python3); Cleanora Complete via DEC-099"
+    }
+  ],
+  "tasks": {
+    "completed": [
+      "T001", "T002", "T003", "T004", "T005", "T006", "T007", "T008",
+      "T009", "T010", "T011", "T012", "T013", "T014", "T015", "T016",
+      "T017", "T018", "T019", "T020", "T021", "T022", "T023", "T024",
+      "T025", "T026", "T027", "T028"
+    ],
+    "total": 28
+  },
+  "completion": {
+    "by": "owner-mark-complete",
+    "decision": "DEC-099",
+    "at": "2026-09-14T11:22:00.000Z",
+    "companion": "skipped-no-python3"
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "info": {
+    "_postman_id": "a1b0c017-4000-8000-8000-000000000017",
+    "name": "Cleanora R1-P17 Worker Team Assignment",
+    "description": "Provider assign/replace, assignment reads, worker visibility. Intents only. No fees or wallets.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "hostUrl", "value": "https://YOUR-HOSTED-DOMAIN.example" },
+    { "key": "accessToken", "value": "" },
+    { "key": "idempotencyKey", "value": "" },
+    { "key": "providerId", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "teamId", "value": "" },
+    { "key": "workerId", "value": "" },
+    { "key": "expectedBookingVersion", "value": "1" }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const body = pm.response.json();",
+          "pm.test('Uses the Cleanora response envelope', function () {",
+          "  pm.expect(body.requestId).to.be.a('string');",
+          "  pm.expect(body.success).to.be.a('boolean');",
+          "  if (pm.response.code < 400) { pm.expect(body.success).to.eql(true); pm.expect(body).to.have.property('data'); }",
+          "  else { pm.expect(body.success).to.eql(false); pm.expect(body.error.statusCode).to.eql(pm.response.code); pm.expect(body.error.code).to.be.a('string'); }",
+          "});",
+          "pm.test('Does not invent fees or wallets', function () {",
+          "  pm.expect(JSON.stringify(body)).to.not.match(/feeAmount|feeMinor|walletBalance/i);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Hosted (Not hosted yet)",
+      "item": [
+        {
+          "name": "Assign team",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedBookingVersion\": {{expectedBookingVersion}},\n  \"teamId\": \"{{teamId}}\"\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/team"
+          }
+        },
+        {
+          "name": "Assign workers",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedBookingVersion\": {{expectedBookingVersion}},\n  \"workerIds\": [\"{{workerId}}\"]\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/workers"
+          }
+        },
+        {
+          "name": "Replace team",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedBookingVersion\": {{expectedBookingVersion}},\n  \"teamId\": \"{{teamId}}\"\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/team/replace"
+          }
+        },
+        {
+          "name": "Replace workers",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedBookingVersion\": {{expectedBookingVersion}},\n  \"workerIds\": [\"{{workerId}}\"]\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/workers/replace"
+          }
+        },
+        {
+          "name": "Current assignment",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/current"
+          }
+        },
+        {
+          "name": "Assignment history",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/history"
+          }
+        },
+        {
+          "name": "Worker my assignments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{hostUrl}}/api/v1/workers/me/assignments"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Local",
+      "item": [
+        {
+          "name": "Assign team",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedBookingVersion\": {{expectedBookingVersion}},\n  \"teamId\": \"{{teamId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/team"
+          }
+        },
+        {
+          "name": "Assign workers",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedBookingVersion\": {{expectedBookingVersion}},\n  \"workerIds\": [\"{{workerId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/workers"
+          }
+        },
+        {
+          "name": "Replace team",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedBookingVersion\": {{expectedBookingVersion}},\n  \"teamId\": \"{{teamId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/team/replace"
+          }
+        },
+        {
+          "name": "Replace workers",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedBookingVersion\": {{expectedBookingVersion}},\n  \"workerIds\": [\"{{workerId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/workers/replace"
+          }
+        },
+        {
+          "name": "Current assignment",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/current"
+          }
+        },
+        {
+          "name": "Assignment history",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/providers/{{providerId}}/bookings/{{bookingId}}/assignments/history"
+          }
+        },
+        {
+          "name": "Worker my assignments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/workers/me/assignments"
+          }
+        }
+      ]
+    }
+  ]
+}

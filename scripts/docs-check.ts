@@ -20,6 +20,8 @@ const requiredPaths = [
   "docs/apis/openapi/r1-p15-deposit-payments-methods-webhooks.yaml",
   "docs/apis/openapi/r1-p16-provider-booking-response-cancellation-events.yaml",
   "postman/Cleanora-R1-P16-Provider-Booking-Response.postman_collection.json",
+  "docs/apis/openapi/r1-p17-worker-team-assignment.yaml",
+  "postman/Cleanora-R1-P17-Worker-Team-Assignment.postman_collection.json",
   "docs/apis/README.md",
   "postman/Cleanora-R1-P01-Foundation-Country-Configuration.postman_collection.json",
   "postman/Cleanora-R1-P05-Provider-Onboarding.postman_collection.json",

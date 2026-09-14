@@ -1,0 +1,47 @@
+VERDICT: ACCEPT_IMPLEMENTATION
+
+1. Exceptions keep/change
+
+   **KEEP EX-01 EX-02 EX-03 unchanged. No additional exception.**
+
+   - **EX-01 — Team lock:** Team assignment and replacement remain limited to `booking.teamId`. R1-P17 must not add team switching, alternative-team browsing, or any broader team-selection workflow.
+   - **EX-02 — Notification intents only:** R1-P17 may create only `BOOKING_ASSIGNED` and `BOOKING_ASSIGNMENT_REPLACED` intents. It must not implement FCM, SMS, email, queues, retries, or other P23 delivery infrastructure.
+   - **EX-03 — No staff reassignment write:** Only an active `OWNER` or `ADMIN` of the booking’s selected provider may assign or replace. Staff remain read-only. Workers receive only their read-only `GET /workers/me/assignments` surface.
+
+2. Any Txxx that must change
+
+   **None. No task from T001 through T028 must change based on the supplied phase brief.**
+
+   Acceptance assumes the tasks preserve every locked requirement stated in the brief:
+
+   - Extend the existing bookings module only.
+   - Access Providers workforce and availability information exclusively through public contracts.
+   - Add exactly the three phase-owned tables and the `r1_p17_worker_team_assignment` migration.
+   - Add `BookingStatus.ASSIGNED`, with first assignment transitioning `ACCEPTED → ASSIGNED` and replacement remaining `ASSIGNED`.
+   - Preserve every assignment, member, replacement, and transition record; do not delete superseded history.
+   - Enforce exactly one active assignment per booking and prevent overlapping active assignments for the same worker.
+   - Enforce provider ownership, active-worker status, cleaning-role rules, cleaner-only crew preference, half-open calendar coverage `[startsAt, endsAt)`, and `requiredTeamUnits` for ad-hoc worker assignments.
+   - Reuse the R1-P16 cancellation paths for cancellation from `ASSIGNED`, adding only the necessary transition rows and no fee behavior.
+   - Keep P18 execution statuses, P19/P20 concerns, P23 delivery, fees, wallets, payment inventions, Docker, and cloud work out of scope.
+   - Meet the locked phase-owned coverage thresholds of 80/75/80/80.
+
+3. Authorization sentence
+
+   **Tasks T001–T028 may be implemented now, in dependency order and exactly within the R1-P17 scope represented in the brief, with EX-01, EX-02, and EX-03 preserved unchanged.** This authorization does not extend to later-phase execution behavior, notification delivery, fees, wallets, payment rails, Docker, cloud work, or any additional module.
+
+4. Risks accepted vs must-fix-before-code
+
+   **Accepted product and scope risks:**
+
+   - Team assignment is deliberately constrained to `booking.teamId`; reduced team-selection flexibility is accepted under EX-01.
+   - Notifications stop at assignment and replacement intents; absence of delivery is accepted under EX-02.
+   - Staff cannot perform reassignment writes; the narrower OWNER/ADMIN operational path is accepted under EX-03.
+   - Worker access is intentionally read-only and limited to the worker’s own assignments.
+   - R1-P17 introduces assignment state without introducing order execution or the later operational statuses.
+   - Cancellation from `ASSIGNED` carries no fee calculation or collection behavior.
+   - The implementation must handle transactional and concurrency-sensitive invariants—especially one active assignment per booking, worker-overlap prevention, and replacement history—but those are normal implementation risks within the accepted scope, not reasons to expand the phase.
+
+   **Must fix before code:**
+
+   - **None identified from the supplied brief. There is no pre-implementation product, scope, or architecture blocker.**
+   - Any actual T001–T028 wording that contradicts a locked item above would fall outside this authorization and would need correction before that conflicting task proceeds. This is a boundary of the verdict, not an additional exception.

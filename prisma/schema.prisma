@@ -603,6 +603,8 @@ model User {
   bookingCancellations                BookingCancellation[]                 @relation("BookingCancellationActor")
   bookingNotificationRecipients       BookingNotificationIntent[]           @relation("BookingNotificationRecipient")
   bookingActorCommands                BookingActorCommand[]                 @relation("BookingActorCommandActor")
+  bookingAssignmentActors             BookingAssignment[]                   @relation("BookingAssignmentActor")
+  bookingAssignmentHistoryActors      BookingAssignmentHistory[]            @relation("BookingAssignmentHistoryActor")
 
   @@index([status])
   @@map("users")
@@ -2668,6 +2670,7 @@ enum BookingStatus {
   AWAITING_DEPOSIT
   CONFIRMED
   ACCEPTED
+  ASSIGNED
   CANCELLED
 }
 
@@ -2754,6 +2757,8 @@ model Booking {
   cancellation            BookingCancellation?
   notificationIntents     BookingNotificationIntent[]
   actorCommands           BookingActorCommand[]
+  assignments             BookingAssignment[]
+  assignmentHistory       BookingAssignmentHistory[]
 
   @@index([customerUserId, createdAt])
   @@index([status, createdAt])
@@ -2927,6 +2932,8 @@ enum BookingNotificationTemplate {
   BOOKING_REJECTED
   BOOKING_RESPONSE_EXPIRED
   BOOKING_CANCELLED
+  BOOKING_ASSIGNED
+  BOOKING_ASSIGNMENT_REPLACED
 }
 
 enum BookingNotificationIntentStatus {
@@ -2938,6 +2945,10 @@ enum BookingActorCommandType {
   REJECT
   PROVIDER_CANCEL
   STAFF_CANCEL
+  ASSIGN_TEAM
+  ASSIGN_WORKERS
+  REPLACE_TEAM
+  REPLACE_WORKERS
 }
 
 model CancellationReason {
@@ -3026,6 +3037,94 @@ model BookingActorCommand {
   @@unique([actorUserId, commandType, idempotencyKey])
   @@index([bookingId])
   @@map("booking_actor_commands")
+}
+
+// ---------------------------------------------------------------------------
+// R1-P17 — Worker & Team Assignment
+// ---------------------------------------------------------------------------
+
+enum BookingAssignmentStatus {
+  ACTIVE
+  SUPERSEDED
+}
+
+enum BookingAssignmentSource {
+  TEAM
+  WORKERS
+}
+
+enum BookingAssignmentHistoryEvent {
+  CREATED
+  REPLACED
+  SUPERSEDED
+}
+
+model BookingAssignment {
+  id               String                   @id @default(cuid())
+  bookingId        String                   @map("booking_id")
+  providerId       String                   @map("provider_id")
+  status           BookingAssignmentStatus
+  source           BookingAssignmentSource
+  teamId           String?                  @map("team_id")
+  teamVersion      Int?                     @map("team_version")
+  startsAt         DateTime                 @map("starts_at")
+  endsAt           DateTime                 @map("ends_at")
+  assignedByUserId String                   @map("assigned_by_user_id")
+  version          Int                      @default(1)
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
+  supersededAt     DateTime?                @map("superseded_at")
+  booking          Booking                  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  assignedBy       User                     @relation("BookingAssignmentActor", fields: [assignedByUserId], references: [id], onDelete: Restrict)
+  members          BookingAssignmentMember[]
+  history          BookingAssignmentHistory[]
+
+  @@index([bookingId, status])
+  @@index([providerId, status, startsAt, endsAt])
+  @@index([status, startsAt, endsAt])
+  @@map("booking_assignments")
+}
+
+model BookingAssignmentMember {
+  id            String            @id @default(cuid())
+  assignmentId  String            @map("assignment_id")
+  workerId      String            @map("worker_id")
+  workerUserId  String?           @map("worker_user_id")
+  workerType    String            @map("worker_type") @db.VarChar(40)
+  gender        String            @db.VarChar(40)
+  cleans        Boolean
+  displayNameEn String            @map("display_name_en") @db.VarChar(200)
+  displayNameAr String            @map("display_name_ar") @db.VarChar(200)
+  sortOrder     Int               @map("sort_order")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  assignment    BookingAssignment @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+
+  @@unique([assignmentId, workerId])
+  @@index([workerId, assignmentId])
+  @@index([workerUserId, assignmentId])
+  @@map("booking_assignment_members")
+}
+
+model BookingAssignmentHistory {
+  id             String                         @id @default(cuid())
+  bookingId      String                         @map("booking_id")
+  assignmentId   String                         @map("assignment_id")
+  event          BookingAssignmentHistoryEvent
+  actorUserId    String                         @map("actor_user_id")
+  reasonCode     String                         @map("reason_code") @db.VarChar(100)
+  reasonText     String?                        @map("reason_text") @db.VarChar(1000)
+  safeBefore     Json?                          @map("safe_before")
+  safeAfter      Json                           @map("safe_after")
+  requestId      String                         @map("request_id") @db.VarChar(200)
+  operationKey   String                         @unique @map("operation_key") @db.VarChar(240)
+  createdAt      DateTime                       @default(now()) @map("created_at")
+  booking        Booking                        @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  assignment     BookingAssignment              @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  actor          User                           @relation("BookingAssignmentHistoryActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId, createdAt])
+  @@index([assignmentId, createdAt])
+  @@map("booking_assignment_history")
 }
 
 enum LedgerAccountType {

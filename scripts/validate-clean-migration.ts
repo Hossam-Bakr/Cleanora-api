@@ -43,6 +43,7 @@ const migrationNames = [
   'r1_p14_financial_ledger_payment_architecture',
   'r1_p15_deposit_payments_methods_webhooks',
   'r1_p16_provider_booking_response_cancellation_events',
+  'r1_p17_worker_team_assignment',
 ] as const;
 const expectedTablesThroughR1P10 = [
   "currencies",
@@ -170,6 +171,9 @@ const expectedTables = [
   "booking_cancellations",
   "booking_notification_intents",
   "booking_actor_commands",
+  "booking_assignments",
+  "booking_assignment_members",
+  "booking_assignment_history",
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -324,7 +328,12 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "booking_cancellations",
     "booking_notification_intents",
     "booking_actor_commands"
-  ]
+  ],
+  r1_p17_worker_team_assignment: [
+    "booking_assignments",
+    "booking_assignment_members",
+    "booking_assignment_history",
+  ],
 };
 const expectedPostDeployTablesThroughR1P10 = [
   "_prisma_migrations",
@@ -1605,8 +1614,29 @@ export const POST_DEPLOY_TABLES_THROUGH_R1_P16 = [
   ...R1_P16_TABLES,
 ] as const;
 
+export const R1_P17_MIGRATION = "r1_p17_worker_team_assignment";
+
+export const R1_P17_TABLES = [
+  "booking_assignments",
+  "booking_assignment_members",
+  "booking_assignment_history",
+] as const;
+
+export const MIGRATION_NAMES_THROUGH_R1_P17 = [
+  ...MIGRATION_NAMES_THROUGH_R1_P16,
+  R1_P17_MIGRATION,
+] as const;
+
+export const POST_DEPLOY_TABLES_THROUGH_R1_P17 = [
+  ...POST_DEPLOY_TABLES_THROUGH_R1_P16,
+  ...R1_P17_TABLES,
+] as const;
+
 export const APPROVED_R1_P16_TARGET_PATTERN =
   /^cleanora_r1_p16(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
+
+export const APPROVED_R1_P17_TARGET_PATTERN =
+  /^cleanora_r1_p17(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
 
 /** Require an explicitly named R1-P16 disposable target. */
 export function assertR1P16DisposableDatabaseUrl(
@@ -1628,6 +1658,26 @@ export function assertR1P16DisposableDatabaseUrl(
   assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
 }
 
+/** Require an explicitly named R1-P17 disposable target. */
+export function assertR1P17DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  let targetName: string;
+  try {
+    const url = new URL(connectionString);
+    targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  } catch {
+    throw new Error("R1-P17 database URL is not a valid URL");
+  }
+  if (!APPROVED_R1_P17_TARGET_PATTERN.test(targetName)) {
+    throw new Error(
+      `Refusing R1-P17 database work against unapproved target "${targetName}"`,
+    );
+  }
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+}
+
 /**
  * Resolve the separate R1-P16 live/proof URL.
  * Never falls back to DATABASE_URL or any prior-phase target.
@@ -1642,6 +1692,29 @@ export function requireR1P16ProofDatabaseUrl(
     );
   }
   assertR1P16DisposableDatabaseUrl(value);
+  try {
+    const url = new URL(value);
+    url.hostname = url.hostname.replace("-pooler", "");
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * Resolve the separate R1-P17 live/proof URL.
+ * Never falls back to DATABASE_URL or any prior-phase target.
+ */
+export function requireR1P17ProofDatabaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const value = env["CLEANORA_R1_P17_DATABASE_URL"];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      "CLEANORA_R1_P17_DATABASE_URL is required for R1-P17 disposable proofs",
+    );
+  }
+  assertR1P17DisposableDatabaseUrl(value);
   try {
     const url = new URL(value);
     url.hostname = url.hostname.replace("-pooler", "");
@@ -1691,6 +1764,51 @@ export function assertR1P16MigrationSql(sql: string): void {
   ]) {
     if (!sql.includes(required)) {
       throw new Error(`R1-P16 migration is missing ${required}`);
+    }
+  }
+}
+
+/** Accept only the additive, phase-owned R1-P17 assignment migration. */
+export function assertR1P17MigrationSql(sql: string): void {
+  const uncommented = sql.replace(/--[^\n]*/gu, "");
+  if (/\b(DROP\s+TABLE|TRUNCATE)\b/iu.test(uncommented)) {
+    throw new Error("R1-P17 assignment migration contains destructive SQL");
+  }
+  if (/\bDELETE\s+FROM\b/iu.test(uncommented)) {
+    throw new Error("R1-P17 assignment migration must not delete existing rows");
+  }
+  if (
+    sql.includes('CREATE TABLE "wallets"') ||
+    sql.includes('CREATE TABLE "user_wallets"') ||
+    sql.includes('CREATE TABLE "customer_wallets"')
+  ) {
+    throw new Error("R1-P17 migration must not create wallets");
+  }
+  if (/fee_minor|fee_amount|cancellation_fee/iu.test(sql)) {
+    throw new Error("R1-P17 migration must not add fee columns");
+  }
+  const tables = migrationOwnedTables[R1_P17_MIGRATION] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P17 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 3) {
+    throw new Error("R1-P17 migration must create exactly three tables");
+  }
+  for (const required of [
+    "ADD VALUE 'ASSIGNED'",
+    "BOOKING_ASSIGNED",
+    "BOOKING_ASSIGNMENT_REPLACED",
+    "ASSIGN_TEAM",
+    "booking_assignments_one_active_per_booking_idx",
+    "str_prov_accepted_assigned",
+    "str_cust_assigned_cancelled",
+    "str_prov_assigned_cancelled",
+    "str_staff_assigned_cancelled",
+  ]) {
+    if (!sql.includes(required)) {
+      throw new Error(`R1-P17 migration is missing ${required}`);
     }
   }
 }
@@ -1809,6 +1927,10 @@ async function validateMigrationFolder(): Promise<void> {
     }
     if (migrationName === R1_P16_MIGRATION) {
       assertR1P16MigrationSql(sql);
+      continue;
+    }
+    if (migrationName === R1_P17_MIGRATION) {
+      assertR1P17MigrationSql(sql);
       continue;
     }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
@@ -2134,6 +2256,67 @@ export async function assertPostDeployState(
       if (acceptRule.length !== 1) {
         throw new Error(
           "R1-P16 migration must seed executable PROVIDER CONFIRMED→ACCEPTED",
+        );
+      }
+    }
+    if (expectedMigrationNames.includes(R1_P17_MIGRATION)) {
+      const assignedEnum = await prisma.$queryRaw<Array<{ label: string }>>`
+        SELECT label::text AS label
+        FROM unnest(enum_range(NULL::"BookingStatus")) AS label
+        WHERE label::text = 'ASSIGNED'
+      `;
+      if (assignedEnum.length !== 1) {
+        throw new Error("R1-P17 migration must add BookingStatus.ASSIGNED");
+      }
+      for (const table of R1_P17_TABLES) {
+        const rows = await prisma.$queryRawUnsafe<Array<{ total: bigint }>>(
+          `SELECT count(*)::bigint AS total FROM "${table}"`,
+        );
+        if ((rows[0]?.total ?? 0n) !== 0n) {
+          throw new Error(
+            `R1-P17 seed must leave ${table} empty; found commercial assignment rows`,
+          );
+        }
+      }
+      const assignRule = await prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "status_transition_rules"
+        WHERE "id" = 'str_prov_accepted_assigned'
+          AND "actor" = 'PROVIDER'
+          AND "from_status" = 'ACCEPTED'
+          AND "to_status" = 'ASSIGNED'
+          AND "executable" = true
+      `;
+      if (assignRule.length !== 1) {
+        throw new Error(
+          "R1-P17 migration must seed executable PROVIDER ACCEPTED→ASSIGNED",
+        );
+      }
+      const cancelRules = await prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "status_transition_rules"
+        WHERE "id" IN (
+          'str_cust_assigned_cancelled',
+          'str_prov_assigned_cancelled',
+          'str_staff_assigned_cancelled'
+        )
+          AND "from_status" = 'ASSIGNED'
+          AND "to_status" = 'CANCELLED'
+          AND "executable" = true
+      `;
+      if (cancelRules.length !== 3) {
+        throw new Error(
+          "R1-P17 migration must seed ASSIGNED→CANCELLED rules for customer/provider/staff",
+        );
+      }
+      const partialUnique = await prisma.$queryRaw<Array<{ indexname: string }>>`
+        SELECT indexname::text AS indexname
+        FROM pg_indexes
+        WHERE schemaname = current_schema()
+          AND tablename = 'booking_assignments'
+          AND indexname = 'booking_assignments_one_active_per_booking_idx'
+      `;
+      if (partialUnique.length !== 1) {
+        throw new Error(
+          "R1-P17 migration must create one ACTIVE assignment partial unique index",
         );
       }
     }
@@ -3282,9 +3465,9 @@ async function run(): Promise<void> {
     "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
   );
 
-  const configuredConnectionString = requireR1P16ProofDatabaseUrl();
+  const configuredConnectionString = requireR1P17ProofDatabaseUrl();
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p16_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p17_proof_${process.pid}_${Date.now()}`;
   if (!/^[a-z][a-z0-9_]{0,62}$/u.test(proofSchema)) {
     throw new Error("Disposable proof identifier is invalid");
   }
@@ -3316,7 +3499,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, eight Egypt system ledger accounts, empty commercial ledger journals, Egypt Paymob CARD+WALLET enabled methods, empty commercial payment tables, ACCEPTED status, seeded cancellation_reasons including PROVIDER_RESPONSE_EXPIRED, Egypt provider_response_hours=24, empty booking response/cancellation/intent/actor-command tables, live snapshot/price-breakdown and ledger immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, eight Egypt system ledger accounts, empty commercial ledger journals, Egypt Paymob CARD+WALLET enabled methods, empty commercial payment tables, ACCEPTED+ASSIGNED statuses, seeded cancellation_reasons including PROVIDER_RESPONSE_EXPIRED, Egypt provider_response_hours=24, empty booking response/cancellation/intent/actor-command tables, empty assignment tables with one-ACTIVE partial unique and ACCEPTED→ASSIGNED rules, live snapshot/price-breakdown and ledger immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
   );
 }
 

@@ -1,0 +1,55 @@
+VERDICT: PASS
+
+## Review basis
+
+The verdict is based on the locked R1-P17 MVB, the prior prep-accept decision, and the supplied gate evidence, which the review instruction directs me to trust without rerunning. A non-shell repository reader was not available, so I could not independently spot-check line-level implementation details in the named TypeScript files. No file-and-line claim is invented below.
+
+## BLOCKER
+
+None.
+
+There is no supplied evidence of an unresolved code, security, data-integrity, authorization, or architectural blocker.
+
+The unavailable live migration proof is **not classified as a code blocker**. It is an accurately reported environment-gate blockage caused by the missing `CLEANORA_R1_P17_DATABASE_URL`.
+
+## MAJOR
+
+None.
+
+The reported implementation and validation evidence is consistent with the locked phase surface:
+
+- Assignment remains owned by the bookings module.
+- Providers remains the workforce and availability source through public contracts.
+- First assignment uses `ACCEPTED → ASSIGNED`.
+- Replacement remains `ASSIGNED` and preserves assignment history.
+- EX-01 keeps team assignment restricted to `booking.teamId`.
+- EX-02 limits notification work to intents and does not introduce P23 delivery.
+- EX-03 keeps staff read-only and restricts assignment writes to the authorized roles.
+- No P18 execution lifecycle, fee engine, wallet, or notification-delivery scope is reported.
+- All 33 phase tests pass.
+- All four coverage dimensions exceed their required 80/75/80/80 thresholds.
+- Type checking, OpenAPI validation, Postman validation, and documentation checks pass.
+- Static migration SQL validation passes.
+
+No evidence supplied contradicts the previously accepted implementation scope.
+
+## MINOR
+
+None identified from the supplied evidence.
+
+The absence of an independent source-level spot-check is a limitation of this review environment, not a defect attributed to the implementation.
+
+## QUESTIONS
+
+None requiring a code change or product decision.
+
+## Accepted risks and residual gates
+
+- **T025 live migration evidence remains `BLOCKED`, not `PASS`.** The owner must supply a suitable `CLEANORA_R1_P17_DATABASE_URL` before the live migration validation can be performed.
+- Static SQL validation reduces, but does not eliminate, the residual risk associated with executing the migration against the intended PostgreSQL environment.
+- This PASS does not convert the blocked live migration evidence into successful evidence and does not authorize deployment, production migration, phase completion, commit, merge, or any later-phase functionality.
+- EX-01, EX-02, and EX-03 remain accepted unchanged.
+
+## Conclusion
+
+There are **no unresolved BLOCKER or MAJOR findings** in the evidence presented. The implemented R1-P17 assignment surface therefore passes adversarial review against the locked MVB, while the live migration proof remains an explicitly recorded owner-environment gate blocked on `CLEANORA_R1_P17_DATABASE_URL`.
