@@ -243,6 +243,9 @@ import {
   createBookingStaffResponseRouter,
 } from "#modules/bookings/bookings.response.routes";
 import { createBookingResponseService } from "#modules/bookings/bookings.response.service";
+import { createBookingAssignmentService } from "#modules/bookings/bookings.assignment.service";
+import { createBookingAssignmentRouter } from "#modules/bookings/bookings.assignment.routes";
+import { createBookingWorkerVisibilityRouter } from "#modules/bookings/bookings.worker-visibility.routes";
 import { bookingError } from "#modules/bookings/bookings.errors";
 import {
   createEligibilityApplicationService,
@@ -915,7 +918,10 @@ export function createRuntimeDependencies(
           const teamMemberships = new ProviderTeamMembershipService({ unitOfWork: workforceUnitOfWork });
           const teamSupervisors = new ProviderTeamSupervisorService({ unitOfWork: workforceUnitOfWork });
           const teamQueries = new ProviderTeamQueryService(workforceUnitOfWork);
-          const workforceReadiness = new ProviderWorkforceReadinessService(workforceUnitOfWork);
+          const workforceReadiness = new ProviderWorkforceReadinessService(
+            workforceUnitOfWork,
+            withProviderAvailabilityReadTransaction,
+          );
           const providerBrowseProjection = new ProviderBrowseProjectionService({
             providers: providerRepository,
             activeCountries,
@@ -1526,26 +1532,44 @@ export function createRuntimeDependencies(
     return grants.roleCodes.includes("staff_admin");
   };
   const bookingResponseHours = createProviderResponseHoursReader(database.client);
+  const assertActiveProviderManager = async (providerId: string, userId: string) => {
+    const member = await database.client.providerMember.findFirst({
+      where: {
+        providerId,
+        userId,
+        status: "ACTIVE",
+        level: { in: ["OWNER", "ADMIN"] },
+      },
+      select: { level: true },
+    });
+    if (member === null) {
+      throw bookingError("FORBIDDEN");
+    }
+    return { providerId, userId, level: member.level };
+  };
+  const bookingAssignmentService = createBookingAssignmentService({
+    client: database.client,
+    now: () => new Date(),
+    assertActiveProviderManager,
+    workforce:
+      providersComposition?.workforceReadiness ??
+      ({
+        getBookingSafeTeamFacts: async () => null,
+        getAssignmentWorkerFacts: async () => null,
+        coversWorkerBookingWindow: async () => false,
+      } satisfies Pick<
+        import("#modules/providers/providers.public").ProviderWorkforcePublicReader,
+        | "getBookingSafeTeamFacts"
+        | "getAssignmentWorkerFacts"
+        | "coversWorkerBookingWindow"
+      >),
+  });
   const bookingResponseService = createBookingResponseService({
     client: database.client,
     now: () => new Date(),
     readResponseHours: (countryId) =>
       bookingResponseHours.readHoursForCountryId(countryId),
-    assertActiveProviderManager: async (providerId, userId) => {
-      const member = await database.client.providerMember.findFirst({
-        where: {
-          providerId,
-          userId,
-          status: "ACTIVE",
-          level: { in: ["OWNER", "ADMIN"] },
-        },
-        select: { level: true },
-      });
-      if (member === null) {
-        throw bookingError("FORBIDDEN");
-      }
-      return { providerId, userId, level: member.level };
-    },
+    assertActiveProviderManager,
     resolveProviderOwnerUserId: async (providerId) => {
       const provider = await database.client.provider.findUnique({
         where: { id: providerId },
@@ -1554,6 +1578,8 @@ export function createRuntimeDependencies(
       return provider?.ownerUserId ?? null;
     },
     isStaffAdmin,
+    readAssignmentSummary: (bookingId) =>
+      bookingAssignmentService.peekCurrentSummary(bookingId),
   });
   const bookingsCommandService = new BookingsCommandService({
     repository: createPrismaBookingsCommandRepository(database.client),
@@ -1670,6 +1696,22 @@ export function createRuntimeDependencies(
     bookingsResponseRouterDeps === undefined
       ? undefined
       : createBookingStaffResponseRouter(bookingsResponseRouterDeps);
+  const bookingsAssignmentRouter =
+    authentication === undefined
+      ? undefined
+      : createBookingAssignmentRouter({
+          authenticateAccess: authentication.authenticateAccess,
+          rateLimiter,
+          privacyHashSecret: browseCursorSecret,
+          service: bookingAssignmentService,
+        });
+  const bookingsWorkerVisibilityRouter =
+    authentication === undefined
+      ? undefined
+      : createBookingWorkerVisibilityRouter({
+          authenticateAccess: authentication.authenticateAccess,
+          service: bookingAssignmentService,
+        });
 
   return {
     database,
@@ -1746,6 +1788,12 @@ export function createRuntimeDependencies(
       ...(bookingsStaffResponseRouter === undefined
         ? {}
         : { bookingsStaffResponseRouter }),
+      ...(bookingsAssignmentRouter === undefined
+        ? {}
+        : { bookingsAssignmentRouter }),
+      ...(bookingsWorkerVisibilityRouter === undefined
+        ? {}
+        : { bookingsWorkerVisibilityRouter }),
       ...(paymentsRouter === undefined ? {} : { paymentsRouter }),
       ...(staffPaymentsRouter === undefined ? {} : { staffPaymentsRouter }),
       paymobWebhookRouter,

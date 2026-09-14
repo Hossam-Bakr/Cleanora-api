@@ -1,14 +1,77 @@
-import type { ProviderWorkersReadyFacts, ProviderWorkforcePublicReader } from "./providers.public.js";
+import type {
+  BookingAssignmentWorkerFact,
+  ProviderWorkforcePublicReader,
+  ProviderWorkersReadyFacts,
+} from "./providers.public.js";
 import type {
   ProvidersWorkforceTransactionContext,
   ProvidersWorkforceUnitOfWorkPort,
+  WorkerSnapshot,
+  WorkerType,
 } from "./domain/provider-workforce.types.js";
-import { isQualifyingWorker, validateWorkerProfile, WorkforcePolicyError } from "./domain/provider-workforce.policy.js";
+import {
+  isQualifyingWorker,
+  validateWorkerProfile,
+  WorkforcePolicyError,
+} from "./domain/provider-workforce.policy.js";
+import { coversWorkerBookingWindow } from "./provider-worker-booking-window.js";
+import type { ProviderAvailabilityTransactionContext } from "./infrastructure/prisma-provider-availability.repository.js";
 
 type BlockerCode = ProviderWorkersReadyFacts["blockerCodes"][number];
 
+/**
+ * Ad-hoc assign-workers cleans defaults (MVB — no request override):
+ * CLEANING_STAFF → true; ESCORT → false; OTHER → false.
+ */
+export function defaultCleansForWorkerType(workerType: WorkerType): boolean {
+  return workerType === "CLEANING_STAFF";
+}
+
+function mapWorkerGender(
+  gender: WorkerSnapshot["profile"]["gender"],
+): BookingAssignmentWorkerFact["gender"] {
+  if (gender === "MALE") {
+    return "male";
+  }
+  if (gender === "FEMALE") {
+    return "female";
+  }
+  return "other_or_unspecified";
+}
+
+function mapWorkerFact(worker: WorkerSnapshot): BookingAssignmentWorkerFact {
+  let profileComplete = true;
+  try {
+    validateWorkerProfile(worker.profile);
+  } catch {
+    profileComplete = false;
+  }
+  const display =
+    worker.profile.displayTitle?.trim() ||
+    worker.profile.fullLegalName.trim() ||
+    worker.id;
+  return {
+    workerId: worker.id,
+    workerUserId: worker.identityUserId,
+    workerType: worker.profile.workerType,
+    gender: mapWorkerGender(worker.profile.gender),
+    cleans: defaultCleansForWorkerType(worker.profile.workerType),
+    status: worker.status,
+    displayNameEn: display.slice(0, 200),
+    displayNameAr: display.slice(0, 200),
+    profileComplete,
+  };
+}
+
 export class ProviderWorkforceReadinessService implements ProviderWorkforcePublicReader {
-  public constructor(private readonly unitOfWork: ProvidersWorkforceUnitOfWorkPort) {}
+  public constructor(
+    private readonly unitOfWork: ProvidersWorkforceUnitOfWorkPort,
+    private readonly runAvailabilityRead:
+      | (<T>(
+          work: (context: ProviderAvailabilityTransactionContext) => Promise<T>,
+        ) => Promise<T>)
+      | undefined = undefined,
+  ) {}
 
   public getWorkersReady(providerId: string): Promise<ProviderWorkersReadyFacts | null> {
     return this.unitOfWork.run(async (context) => {
@@ -36,6 +99,51 @@ export class ProviderWorkforceReadinessService implements ProviderWorkforcePubli
         })),
       } as const;
     });
+  }
+
+  /**
+   * @desc Resolve worker facts for assign-workers (cleans from workerType defaults).
+   * @access Providers public reader
+   */
+  public getAssignmentWorkerFacts(input: {
+    readonly providerId: string;
+    readonly workerIds: readonly string[];
+  }): Promise<readonly BookingAssignmentWorkerFact[] | null> {
+    return this.unitOfWork.run(async (context) => {
+      if (await context.workforce.lockProvider(input.providerId) === null) {
+        return null;
+      }
+      const facts: BookingAssignmentWorkerFact[] = [];
+      const seen = new Set<string>();
+      for (const workerId of input.workerIds) {
+        if (seen.has(workerId)) {
+          continue;
+        }
+        seen.add(workerId);
+        const worker = await context.workforce.getWorker(input.providerId, workerId);
+        if (worker === null) {
+          continue;
+        }
+        facts.push(mapWorkerFact(worker));
+      }
+      return facts;
+    });
+  }
+
+  /**
+   * @desc Whether the worker calendar covers the booking window.
+   * @access Providers public reader
+   */
+  public async coversWorkerBookingWindow(input: {
+    readonly providerId: string;
+    readonly workerId: string;
+    readonly startsAt: Date;
+    readonly endsAt: Date;
+  }): Promise<boolean> {
+    if (this.runAvailabilityRead === undefined) {
+      return false;
+    }
+    return coversWorkerBookingWindow(this.runAvailabilityRead, input);
   }
 
   public async getForActor(input: { readonly actorUserId: string; readonly providerId: string }) {

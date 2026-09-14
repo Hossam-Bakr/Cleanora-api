@@ -54,6 +54,10 @@ export interface RouteDependencies {
   readonly bookingsProviderResponseRouter?: Router;
   /** R1-P16 staff booking cancel/dossier routes. */
   readonly bookingsStaffResponseRouter?: Router;
+  /** R1-P17 provider assignment write/read routes. */
+  readonly bookingsAssignmentRouter?: Router;
+  /** R1-P17 worker my-assignments visibility. */
+  readonly bookingsWorkerVisibilityRouter?: Router;
   /** R1-P15 customer payment routes. */
   readonly paymentsRouter?: Router;
   /** R1-P15 staff payment method admin routes. */
@@ -166,6 +170,14 @@ export function mountRoutes(
 
   if (dependencies.bookingsProviderResponseRouter !== undefined) {
     app.use(`${apiPrefix}/providers`, dependencies.bookingsProviderResponseRouter);
+  }
+
+  if (dependencies.bookingsAssignmentRouter !== undefined) {
+    app.use(`${apiPrefix}/providers`, dependencies.bookingsAssignmentRouter);
+  }
+
+  if (dependencies.bookingsWorkerVisibilityRouter !== undefined) {
+    app.use(`${apiPrefix}/workers`, dependencies.bookingsWorkerVisibilityRouter);
   }
 
   if (dependencies.bookingsStaffResponseRouter !== undefined) {

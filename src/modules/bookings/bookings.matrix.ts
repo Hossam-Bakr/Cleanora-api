@@ -32,7 +32,19 @@ export type BookingStatusName =
   | "AWAITING_DEPOSIT"
   | "CONFIRMED"
   | "ACCEPTED"
+  | "ASSIGNED"
   | "CANCELLED";
+
+/**
+ * Seed documentation for executable R1-P17 rows persisted by the P17
+ * migration. Runtime commands still read `status_transition_rules`.
+ */
+export const P17_EXECUTABLE_TRANSITIONS = [
+  { actor: "PROVIDER", from: "ACCEPTED", to: "ASSIGNED" },
+  { actor: "CUSTOMER", from: "ASSIGNED", to: "CANCELLED" },
+  { actor: "PROVIDER", from: "ASSIGNED", to: "CANCELLED" },
+  { actor: "STAFF_ADMIN", from: "ASSIGNED", to: "CANCELLED" },
+] as const;
 
 /**
  * @desc Whether a customer-initiated transition is executable in R1-P13.

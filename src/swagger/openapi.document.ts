@@ -8,6 +8,7 @@ import { buildImplementedR1P12SwaggerFragments } from "./r1-p12-openapi.paths.js
 import { buildImplementedR1P13SwaggerFragments } from "./r1-p13-openapi.paths.js";
 import { buildImplementedR1P15SwaggerFragments } from "./r1-p15-openapi.paths.js";
 import { buildImplementedR1P16SwaggerFragments } from "./r1-p16-openapi.paths.js";
+import { buildImplementedR1P17SwaggerFragments } from "./r1-p17-openapi.paths.js";
 
 const r1P05Fragments = buildImplementedR1P05SwaggerFragments();
 const r1P06Fragments = buildImplementedR1P06SwaggerFragments();
@@ -19,6 +20,7 @@ const r1P12Fragments = buildImplementedR1P12SwaggerFragments();
 const r1P13Fragments = buildImplementedR1P13SwaggerFragments();
 const r1P15Fragments = buildImplementedR1P15SwaggerFragments();
 const r1P16Fragments = buildImplementedR1P16SwaggerFragments();
+const r1P17Fragments = buildImplementedR1P17SwaggerFragments();
 
 const apiErrorResponse = { $ref: "#/components/responses/ApiError" } as const;
 const rateLimitResponse = {
@@ -200,6 +202,7 @@ export const cleanoraOpenApiDocument = {
     ...r1P13Fragments.tags,
     ...r1P15Fragments.tags,
     ...r1P16Fragments.tags,
+    ...r1P17Fragments.tags,
   ],
   paths: {
     ...r1P05Fragments.paths,
@@ -212,6 +215,7 @@ export const cleanoraOpenApiDocument = {
     ...r1P13Fragments.paths,
     ...r1P15Fragments.paths,
     ...r1P16Fragments.paths,
+    ...r1P17Fragments.paths,
     "/system/health/live": {
       get: {
         tags: ["System Health"],

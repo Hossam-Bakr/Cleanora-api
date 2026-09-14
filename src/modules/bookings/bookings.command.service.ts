@@ -332,7 +332,9 @@ export class BookingsCommandService {
       run: async () => {
         const current = await this.requireOwned(principal.userId, bookingId);
         if (
-          (current.status === "CONFIRMED" || current.status === "ACCEPTED") &&
+          (current.status === "CONFIRMED" ||
+            current.status === "ACCEPTED" ||
+            current.status === "ASSIGNED") &&
           this.deps.cancelConfirmed !== undefined
         ) {
           if (current.version !== body.version) {

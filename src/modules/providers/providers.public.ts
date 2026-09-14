@@ -228,12 +228,51 @@ export interface BookingSafeTeamFacts {
   readonly members: readonly BookingSafeTeamMemberFact[];
 }
 
+/**
+ * Worker facts for booking assignment snapshots.
+ *
+ * `cleans` semantics (MVB):
+ * - Team assign: use current team membership `cleans` via `getBookingSafeTeamFacts`.
+ * - Assign-workers (ad-hoc): derived from `workerType` only —
+ *   CLEANING_STAFF → true, ESCORT → false, OTHER → false (no request override).
+ */
+export interface BookingAssignmentWorkerFact {
+  readonly workerId: string;
+  readonly workerUserId: string | null;
+  readonly workerType: "CLEANING_STAFF" | "ESCORT" | "OTHER";
+  readonly gender: "male" | "female" | "other_or_unspecified";
+  readonly cleans: boolean;
+  readonly status: "DRAFT" | "ACTIVE" | "INACTIVE" | "REMOVED";
+  readonly displayNameEn: string;
+  readonly displayNameAr: string;
+  readonly profileComplete: boolean;
+}
+
 export interface ProviderWorkforcePublicReader {
   getWorkersReady(providerId: string): Promise<ProviderWorkersReadyFacts | null>;
   getBookingSafeTeamFacts(input: {
     readonly providerId: string;
     readonly teamId: string;
   }): Promise<BookingSafeTeamFacts | null>;
+  /**
+   * Resolve provider-owned workers by id for assign-workers.
+   * Returns null when the provider is missing; otherwise one fact per found id
+   * (caller rejects when any requested id is absent).
+   */
+  getAssignmentWorkerFacts(input: {
+    readonly providerId: string;
+    readonly workerIds: readonly string[];
+  }): Promise<readonly BookingAssignmentWorkerFact[] | null>;
+  /**
+   * Whether the named worker's calendar (intersected with provider calendar)
+   * fully covers the half-open booking window `[startsAt, endsAt)`.
+   */
+  coversWorkerBookingWindow(input: {
+    readonly providerId: string;
+    readonly workerId: string;
+    readonly startsAt: Date;
+    readonly endsAt: Date;
+  }): Promise<boolean>;
 }
 
 export type ProviderApplicationStatus =

@@ -3140,3 +3140,73 @@ or `commit and push plus`.
 Canonical record:
 `specs/R1-P16-provider-booking-response-cancellation-events/completion-report.md`,
 `specs/R1-P16-provider-booking-response-cancellation-events/handoff-ready-for-owner-review.md`.
+
+## DEC-098 — R1-P17 activation
+
+**Date:** 2026-09-14
+**Status:** Approved by human owner (explicit `/work-on-next-phase` after
+R1-P16 Complete)
+
+The owner instructed the next-phase workflow after R1-P16 Complete under
+DEC-097 with no next phase active. That instruction activates R1-P17 —
+Worker & Team Assignment as the sole active phase.
+
+- R1-P16 remains Complete. Provider accept/reject, lazy expiry, and
+  cancellation events remain as reviewed.
+- R1-P17 becomes the sole active phase for Spec Kit preparation, Cursor
+  implementation, bounded Codex PM/review (`gpt-5.6-sol` / `xhigh` /
+  `service_tier=priority`), accepted coverage 80/75/80/80, and
+  READY_FOR_OWNER_REVIEW.
+- Scope is assignment of eligible workers or an existing team to an
+  accepted booking, with ownership/active/schedule/crew/`cleans` checks,
+  replace-with-history, and worker order visibility.
+- Order execution / completion code (P18), panic (P19), remaining/COD
+  (P20), fee invention (OQ-001), wallets, InstaPay invention, Docker, and
+  cloud remain out of scope.
+
+This decision does **not** authorize R1-P17 Complete, commit, push, merge,
+deployment, production migration, force-push, history rewriting, fee
+invention, stored-value wallets, Docker, or cloud.
+
+Canonical record:
+`specs/R1-P17-worker-team-assignment/activation.md`.
+
+## DEC-099 — R1-P17 completion
+
+**Date:** 2026-09-14
+**Status:** Approved — explicit human-owner phase completion
+
+After receiving the READY_FOR_OWNER_REVIEW handoff (Codex call 4 PASS) and
+T025 live migration proofs PASS on disposable `cleanora_r1_p17_proof`, the
+owner stated: `mark complete`.
+
+- R1-P17 is Complete. Assign/replace team (EX-01 `booking.teamId` only) or
+  ad-hoc workers, ownership/ACTIVE/crew/`cleans`/schedule/overlap checks,
+  `ASSIGNED` status, assignment history, worker assignment visibility,
+  cancel-from-ASSIGNED, and notification intents remain as reviewed. No
+  staff assignment write (EX-03), order execution, completion code, panic,
+  fees, wallets, Docker, or cloud.
+- Phase tasks T001–T028 are checked. Codex prep-accept returned
+  ACCEPT_IMPLEMENTATION (KEEP EX-01/02/03). Codex final review call 4
+  returned PASS with no unresolved BLOCKER or MAJOR.
+- Phase tests passed 7 files / 33 tests. Coverage passed at 88.52%
+  statements, 79.1% branches, 82.3% functions, and 88.78% lines
+  (thresholds 80/75/80/80).
+- Live clean install and populated P16→P17 upgrade **PASS** on disposable
+  `cleanora_r1_p17_proof` (see
+  `specs/R1-P17-worker-team-assignment/migration-evidence.md`).
+  Typecheck, OpenAPI, Postman, and docs gates passed as recorded in the
+  handoff.
+- Companion `mark-complete` skipped: no usable `python3` on PATH. Cleanora
+  Complete is this decision plus the phase completion report.
+
+No next phase is activated by this decision. Completion does not authorize
+staging, commit, push, merge, deployment, production migration, history
+rewriting, unapproved cancellation fees (OQ-001), stored-value wallets,
+invented InstaPay, Docker, or cloud. Git publication still requires a
+separate human message whose entire content is exactly `commit and push`
+or `commit and push plus`.
+
+Canonical record:
+`specs/R1-P17-worker-team-assignment/completion-report.md`,
+`specs/R1-P17-worker-team-assignment/handoff-ready-for-owner-review.md`.
