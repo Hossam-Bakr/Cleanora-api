@@ -67,6 +67,20 @@ export interface BookingsCommandDependencies {
       countryId: string,
     ): Promise<{ readonly id: string; readonly code: string } | null>;
   };
+  readonly cancelConfirmed?: (input: {
+    readonly customerUserId: string;
+    readonly bookingId: string;
+    readonly version: number;
+    readonly reason: string;
+    readonly command: {
+      readonly customerUserId: string;
+      readonly commandType: "CANCEL";
+      readonly idempotencyKey: string;
+      readonly requestHash: string;
+    };
+    readonly responseJson: Record<string, unknown>;
+  }) => Promise<{ readonly bookingId: string; readonly status: "CANCELLED" }>;
+  readonly readDossier?: (bookingId: string) => Promise<unknown>;
 }
 
 const CREW_DB = {
@@ -153,7 +167,23 @@ export class BookingsCommandService {
   ): Promise<unknown> {
     this.assertCustomer(principal);
     const booking = await this.requireOwned(principal.userId, bookingId);
-    return this.present(booking);
+    const presented = await this.present(booking);
+    if (this.deps.readDossier === undefined) {
+      return presented;
+    }
+    const dossier = await this.deps.readDossier(bookingId);
+    if (dossier === null || typeof dossier !== "object") {
+      return presented;
+    }
+    const facts = dossier as {
+      readonly response?: unknown;
+      readonly cancellation?: unknown;
+    };
+    return {
+      ...presented,
+      response: facts.response ?? null,
+      cancellation: facts.cancellation ?? null,
+    };
   }
 
   public async patchDraft(
@@ -301,6 +331,34 @@ export class BookingsCommandService {
       request: { bookingId, ...body },
       run: async () => {
         const current = await this.requireOwned(principal.userId, bookingId);
+        if (
+          (current.status === "CONFIRMED" || current.status === "ACCEPTED") &&
+          this.deps.cancelConfirmed !== undefined
+        ) {
+          if (current.version !== body.version) {
+            throw bookingError("CONFLICT");
+          }
+          const updated = {
+            ...current,
+            status: "CANCELLED" as const,
+            version: current.version + 1,
+            cancelledAt: new Date().toISOString(),
+          };
+          await this.deps.cancelConfirmed({
+            customerUserId: principal.userId,
+            bookingId,
+            version: body.version,
+            reason: body.reason,
+            command: {
+              customerUserId: principal.userId,
+              commandType: "CANCEL",
+              idempotencyKey,
+              requestHash: hashBookingRequest({ bookingId, ...body }),
+            },
+            responseJson: presentBooking(updated),
+          });
+          return updated;
+        }
         await this.requireTransition(current.status, "CANCELLED");
         if (current.version !== body.version) {
           throw bookingError("CONFLICT");

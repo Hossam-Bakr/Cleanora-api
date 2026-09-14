@@ -927,5 +927,27 @@ export function createPrismaBookingsCommandRepository(
         throw error;
       }
     },
+    async recordCompletedCommand(input) {
+      try {
+        await client.bookingCommand.create({
+          data: {
+            customerUserId: input.command.customerUserId,
+            commandType: input.command.commandType,
+            idempotencyKey: input.command.idempotencyKey,
+            bookingId: input.bookingId,
+            requestHash: input.command.requestHash,
+            responseJson: presentBooking(input.aggregate) as Prisma.InputJsonValue,
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof PrismaNamespace.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new BookingIdempotencyCollision();
+        }
+        throw error;
+      }
+    },
   };
 }

@@ -77,6 +77,7 @@ paths:
     get:
       tags: [Bookings]
       operationId: getBooking
+      summary: Get an owned booking, including P16 response and cancellation projections
       parameters:
         - $ref: "#/components/parameters/BookingId"
       responses:
@@ -125,6 +126,10 @@ paths:
     post:
       tags: [Bookings]
       operationId: cancelBooking
+      summary: Cancel DRAFT, AWAITING_DEPOSIT, CONFIRMED, or ACCEPTED owned booking
+      description: >
+        P16 records a booking_cancellations row for CONFIRMED and ACCEPTED.
+        No cancellation fee is calculated or returned.
       parameters:
         - $ref: "#/components/parameters/BookingId"
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -179,7 +184,7 @@ components:
   schemas:
     BookingStatus:
       type: string
-      enum: [DRAFT, AWAITING_DEPOSIT, CONFIRMED, CANCELLED]
+      enum: [DRAFT, AWAITING_DEPOSIT, CONFIRMED, ACCEPTED, CANCELLED]
     BookingQuote:
       type: object
       additionalProperties: false
@@ -580,6 +585,30 @@ components:
         createdAt: { type: string, format: date-time }
         submittedAt: { type: [string, "null"], format: date-time }
         cancelledAt: { type: [string, "null"], format: date-time }
+        response:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [status, expiresAt, decidedAt]
+              properties:
+                status:
+                  type: string
+                  enum: [PENDING, ACCEPTED, REJECTED, EXPIRED]
+                expiresAt: { type: string, format: date-time }
+                decidedAt: { type: [string, "null"], format: date-time }
+            - type: "null"
+        cancellation:
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [actorKind, reasonCode, createdAt]
+              properties:
+                actorKind:
+                  type: string
+                  enum: [CUSTOMER, PROVIDER, STAFF_ADMIN, SYSTEM]
+                reasonCode: { type: string }
+                createdAt: { type: string, format: date-time }
+            - type: "null"
     BookingListData:
       type: object
       additionalProperties: false

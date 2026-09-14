@@ -286,4 +286,396 @@ describe("R1-P15 confirmDepositPayment", () => {
       }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
   });
+
+  it("creates the pending provider response after a verified confirm", async () => {
+    const onConfirmed = vi.fn().mockResolvedValue(undefined);
+    const confirm = createConfirmDepositPayment(
+      {
+        $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+          work({
+            statusTransitionRule: {
+              findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+            },
+            booking: {
+              findUnique: vi.fn().mockResolvedValue({
+                id: "booking-1",
+                status: "AWAITING_DEPOSIT",
+                currencyCode: "EGP",
+                depositMinorUnits: { toFixed: () => "2500" },
+                version: 3,
+                providerId: "prov-1",
+                countryId: "eg",
+                customerUserId: "cust-1",
+                locale: "AR",
+              }),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+            },
+            bookingStatusHistory: { create: vi.fn().mockResolvedValue({}) },
+          }),
+      },
+      { onConfirmed },
+    );
+    await expect(
+      confirm({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "SYSTEM",
+        actorId: "payments-webhook",
+        reason: "verified",
+      }),
+    ).resolves.toEqual({ bookingId: "booking-1", status: "CONFIRMED" });
+    expect(onConfirmed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: "booking-1",
+        providerId: "prov-1",
+        countryId: "eg",
+        customerUserId: "cust-1",
+        locale: "AR",
+      }),
+    );
+  });
+
+  it("replays a confirmed booking by ensuring the pending response exists", async () => {
+    const onConfirmed = vi.fn().mockResolvedValue(undefined);
+    const confirm = createConfirmDepositPayment(
+      {
+        $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+          work({
+            statusTransitionRule: {
+              findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+            },
+            booking: {
+              findUnique: vi.fn().mockResolvedValue({
+                id: "booking-1",
+                status: "CONFIRMED",
+                currencyCode: "EGP",
+                depositMinorUnits: { toFixed: () => "2500" },
+                version: 4,
+                providerId: "prov-1",
+                countryId: "eg",
+                customerUserId: "cust-1",
+                locale: "AR",
+              }),
+            },
+          }),
+      },
+      { onConfirmed },
+    );
+    await expect(
+      confirm({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "SYSTEM",
+        actorId: "payments-webhook",
+        reason: "verified",
+      }),
+    ).resolves.toEqual({ bookingId: "booking-1", status: "CONFIRMED" });
+    expect(onConfirmed).toHaveBeenCalled();
+  });
+
+  it("does not recreate a pending response after the booking is accepted", async () => {
+    const onConfirmed = vi.fn().mockResolvedValue(undefined);
+    const confirm = createConfirmDepositPayment(
+      {
+        $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+          work({
+            statusTransitionRule: {
+              findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+            },
+            booking: {
+              findUnique: vi.fn().mockResolvedValue({
+                id: "booking-1",
+                status: "ACCEPTED",
+                currencyCode: "EGP",
+                depositMinorUnits: { toFixed: () => "2500" },
+                version: 5,
+                providerId: "prov-1",
+                countryId: "eg",
+                customerUserId: "cust-1",
+                locale: "AR",
+              }),
+            },
+          }),
+      },
+      { onConfirmed },
+    );
+    await expect(
+      confirm({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "SYSTEM",
+        actorId: "payments-webhook",
+        reason: "verified",
+      }),
+    ).resolves.toEqual({ bookingId: "booking-1", status: "CONFIRMED" });
+    expect(onConfirmed).not.toHaveBeenCalled();
+  });
+
+  it("returns already-confirmed without creating extras when none are wired", async () => {
+    const confirm = createConfirmDepositPayment({
+      $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+        work({
+          statusTransitionRule: {
+            findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+          },
+          booking: {
+            findUnique: vi.fn().mockResolvedValue({
+              id: "booking-1",
+              status: "CONFIRMED",
+              currencyCode: "EGP",
+              depositMinorUnits: { toFixed: () => "2500" },
+              version: 4,
+              providerId: "prov-1",
+              countryId: "eg",
+              customerUserId: "cust-1",
+              locale: "AR",
+            }),
+          },
+        }),
+    });
+    await expect(
+      confirm({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "SYSTEM",
+        actorId: "payments-webhook",
+        reason: "verified",
+      }),
+    ).resolves.toEqual({ bookingId: "booking-1", status: "CONFIRMED" });
+  });
+
+  it("rejects currency mismatch, missing booking, and illegal status", async () => {
+    const currency = createConfirmDepositPayment({
+      $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+        work({
+          statusTransitionRule: {
+            findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+          },
+          booking: {
+            findUnique: vi.fn().mockResolvedValue({
+              id: "booking-1",
+              status: "AWAITING_DEPOSIT",
+              currencyCode: "USD",
+              depositMinorUnits: { toFixed: () => "2500" },
+              version: 3,
+            }),
+          },
+        }),
+    });
+    await expect(
+      currency({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "SYSTEM",
+        actorId: "system",
+        reason: "verified",
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+
+    const missing = createConfirmDepositPayment({
+      $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+        work({
+          statusTransitionRule: {
+            findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+          },
+          booking: { findUnique: vi.fn().mockResolvedValue(null) },
+        }),
+    });
+    await expect(
+      missing({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "SYSTEM",
+        actorId: "system",
+        reason: "verified",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    const draft = createConfirmDepositPayment({
+      $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+        work({
+          statusTransitionRule: {
+            findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+          },
+          booking: {
+            findUnique: vi.fn().mockResolvedValue({
+              id: "booking-1",
+              status: "DRAFT",
+              currencyCode: "EGP",
+              depositMinorUnits: { toFixed: () => "2500" },
+              version: 1,
+            }),
+          },
+        }),
+    });
+    await expect(
+      draft({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "SYSTEM",
+        actorId: "system",
+        reason: "verified",
+      }),
+    ).rejects.toMatchObject({ code: "TRANSITION_NOT_AVAILABLE" });
+  });
+
+  it("rejects a missing deposit amount and a non-system actor", async () => {
+    const missingDeposit = createConfirmDepositPayment({
+      $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+        work({
+          statusTransitionRule: {
+            findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+          },
+          booking: {
+            findUnique: vi.fn().mockResolvedValue({
+              id: "booking-1",
+              status: "AWAITING_DEPOSIT",
+              currencyCode: "EGP",
+              depositMinorUnits: null,
+              version: 3,
+              providerId: "prov-1",
+              countryId: "eg",
+              customerUserId: "cust-1",
+              locale: "AR",
+            }),
+          },
+        }),
+    });
+    await expect(
+      missingDeposit({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "SYSTEM",
+        actorId: "system",
+        reason: "verified",
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+
+    const forbidden = createConfirmDepositPayment({
+      $transaction: async () => {
+        throw new Error("should not run");
+      },
+    });
+    await expect(
+      forbidden({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "CUSTOMER" as "SYSTEM",
+        actorId: "cust",
+        reason: "verified",
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("rejects remaining blank confirm fields and accepts TEST actors", async () => {
+    const confirm = createConfirmDepositPayment({
+      $transaction: async () => {
+        throw new Error("should not run");
+      },
+    });
+    const base = {
+      bookingId: "booking-1",
+      paymentId: "pay-1",
+      expectedDepositMinorUnits: "2500",
+      currencyCode: "EGP",
+      actorKind: "SYSTEM" as const,
+      actorId: "system",
+      reason: "verified",
+    };
+    await expect(confirm({ ...base, paymentId: "" })).rejects.toMatchObject({
+      code: "VALIDATION_FAILED",
+    });
+    await expect(confirm({ ...base, expectedDepositMinorUnits: "" })).rejects.toMatchObject({
+      code: "VALIDATION_FAILED",
+    });
+    await expect(confirm({ ...base, currencyCode: "" })).rejects.toMatchObject({
+      code: "VALIDATION_FAILED",
+    });
+    await expect(confirm({ ...base, reason: "" })).rejects.toMatchObject({
+      code: "VALIDATION_FAILED",
+    });
+
+    const testActor = createConfirmDepositPayment({
+      $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+        work({
+          statusTransitionRule: {
+            findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+          },
+          booking: {
+            findUnique: vi.fn().mockResolvedValue({
+              id: "booking-1",
+              status: "CONFIRMED",
+              currencyCode: "EGP",
+              depositMinorUnits: { toFixed: () => "2500" },
+              version: 4,
+              providerId: "prov-1",
+              countryId: "eg",
+              customerUserId: "cust-1",
+              locale: "AR",
+            }),
+          },
+        }),
+    });
+    await expect(
+      testActor({ ...base, actorKind: "TEST" }),
+    ).resolves.toEqual({ bookingId: "booking-1", status: "CONFIRMED" });
+  });
+
+  it("treats a vanished booking after a lost claim as a conflict", async () => {
+    const vanished = createConfirmDepositPayment({
+      $transaction: async (work: (tx: unknown) => Promise<unknown>) =>
+        work({
+          statusTransitionRule: {
+            findFirst: vi.fn().mockResolvedValue({ id: "rule-1" }),
+          },
+          booking: {
+            findUnique: vi
+              .fn()
+              .mockResolvedValueOnce({
+                id: "booking-1",
+                status: "AWAITING_DEPOSIT",
+                currencyCode: "EGP",
+                depositMinorUnits: { toFixed: () => "2500" },
+                version: 1,
+                providerId: "prov-1",
+                countryId: "eg",
+                customerUserId: "cust-1",
+                locale: "AR",
+              })
+              .mockResolvedValueOnce(null),
+            updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+          },
+          bookingStatusHistory: { create: vi.fn() },
+        }),
+    });
+    await expect(
+      vanished({
+        bookingId: "booking-1",
+        paymentId: "pay-1",
+        expectedDepositMinorUnits: "2500",
+        currencyCode: "EGP",
+        actorKind: "SYSTEM",
+        actorId: "system",
+        reason: "verified",
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
 });

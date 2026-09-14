@@ -1,0 +1,33 @@
+Role: read-only reviewer. Do not edit files. Do not implement.
+
+Phase: R1-P16 Provider Booking Response & Cancellation Events
+Question: Final review of the phase diff against spec.md. Return findings with severity and a single verdict: PASS | CHANGES REQUIRED | BLOCKED.
+
+Accepted holdings (do not reopen):
+- KEEP EX-01/02/03 (no fees/refunds, intents only, lazy expiry)
+- Extend bookings module; status ACCEPTED; booking_actor_commands required
+- Membership asserted at composition root; P16_EXECUTABLE_TRANSITIONS not in P13 EXECUTABLE_TRANSITIONS
+- Live migrate BLOCKED without CLEANORA_R1_P16_DATABASE_URL is allowed (SC-012)
+
+Review these files only (plus spec.md):
+- src/modules/bookings/bookings.response.service.ts
+- src/modules/bookings/bookings.command.service.ts (customer GET flatten; CONFIRMED/ACCEPTED cancel)
+- src/modules/bookings/infrastructure/confirm-deposit-payment.ts
+- src/composition.ts (OWNER/ADMIN membership; onConfirmed ensurePendingResponse)
+- prisma/migrations/r1_p16_provider_booking_response_cancellation_events/migration.sql
+
+Known behavior to verify, not reopen:
+- Lazy expiry commits in its own transaction before accept/reject/cancel throw RESPONSE_EXPIRED
+- Second accept/reject/provider-cancel with a new idempotency key fails TRANSITION_NOT_AVAILABLE
+- Customer CONFIRMED/ACCEPTED cancel writes booking_commands in the SAME transaction as the cancellation
+- Customer GET flattens response/cancellation after awaiting present()
+
+Gate evidence (do not re-run unless you doubt the claim):
+- npm run test:coverage:r1-p16 PASS 98.3 / 85.92 / 96.89 / 98.69 (103 tests)
+- npx tsc --noEmit PASS
+- Live migrate BLOCKED: CLEANORA_R1_P16_DATABASE_URL missing (SC-012 allows BLOCKED)
+
+Answer shape: short findings with severity and file:line. Verdict last line exactly:
+VERDICT: PASS
+or VERDICT: CHANGES REQUIRED
+or VERDICT: BLOCKED

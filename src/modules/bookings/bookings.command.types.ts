@@ -268,6 +268,11 @@ export interface BookingsCommandRepository {
     readonly requestId?: string;
     readonly command: BookingCommandWrite;
   }): Promise<BookingAggregate | "NOT_FOUND" | "CONFLICT" | "NOT_CANCELLABLE">;
+  recordCompletedCommand(input: {
+    readonly command: BookingCommandWrite;
+    readonly bookingId: string;
+    readonly aggregate: BookingAggregate;
+  }): Promise<void>;
 }
 
 /**

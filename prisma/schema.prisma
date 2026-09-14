@@ -599,6 +599,10 @@ model User {
   customerBookings                    Booking[]                             @relation("BookingCustomer")
   bookingCommands                     BookingCommand[]                      @relation("BookingCommandCustomer")
   bookingStatusHistoryActions         BookingStatusHistory[]                @relation("BookingStatusHistoryActor")
+  bookingResponseDecisions            BookingResponse[]                     @relation("BookingResponseDecider")
+  bookingCancellations                BookingCancellation[]                 @relation("BookingCancellationActor")
+  bookingNotificationRecipients       BookingNotificationIntent[]           @relation("BookingNotificationRecipient")
+  bookingActorCommands                BookingActorCommand[]                 @relation("BookingActorCommandActor")
 
   @@index([status])
   @@map("users")
@@ -2663,6 +2667,7 @@ enum BookingStatus {
   DRAFT
   AWAITING_DEPOSIT
   CONFIRMED
+  ACCEPTED
   CANCELLED
 }
 
@@ -2693,6 +2698,7 @@ enum StatusTransitionActor {
   CUSTOMER
   SYSTEM
   STAFF_ADMIN
+  PROVIDER
 }
 
 enum StatusTransitionCategory {
@@ -2744,9 +2750,14 @@ model Booking {
   priceBreakdown          BookingPriceBreakdown?
   statusHistory           BookingStatusHistory[]
   commands                BookingCommand[]
+  response                BookingResponse?
+  cancellation            BookingCancellation?
+  notificationIntents     BookingNotificationIntent[]
+  actorCommands           BookingActorCommand[]
 
   @@index([customerUserId, createdAt])
   @@index([status, createdAt])
+  @@index([providerId, status, createdAt])
   @@map("bookings")
 }
 
@@ -2889,6 +2900,132 @@ model BookingCommand {
 
   @@unique([customerUserId, commandType, idempotencyKey])
   @@map("booking_commands")
+}
+
+enum BookingResponseStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum BookingCancellationActor {
+  CUSTOMER
+  PROVIDER
+  STAFF_ADMIN
+  SYSTEM
+}
+
+enum CancellationReasonPurpose {
+  REJECT
+  CANCEL
+}
+
+enum BookingNotificationTemplate {
+  BOOKING_CONFIRMED_FOR_PROVIDER
+  BOOKING_ACCEPTED
+  BOOKING_REJECTED
+  BOOKING_RESPONSE_EXPIRED
+  BOOKING_CANCELLED
+}
+
+enum BookingNotificationIntentStatus {
+  PENDING
+}
+
+enum BookingActorCommandType {
+  ACCEPT
+  REJECT
+  PROVIDER_CANCEL
+  STAFF_CANCEL
+}
+
+model CancellationReason {
+  id             String                     @id @default(cuid())
+  code           String                     @unique
+  actor          BookingCancellationActor
+  purpose        CancellationReasonPurpose
+  labelAr        String                     @map("label_ar") @db.VarChar(200)
+  labelEn        String                     @map("label_en") @db.VarChar(200)
+  active         Boolean                    @default(true)
+  sortOrder      Int                        @map("sort_order")
+  createdAt      DateTime                   @default(now()) @map("created_at")
+  updatedAt      DateTime                   @updatedAt @map("updated_at")
+  responses      BookingResponse[]
+  cancellations  BookingCancellation[]
+
+  @@index([actor, purpose, active])
+  @@map("cancellation_reasons")
+}
+
+model BookingResponse {
+  id               String                 @id @default(cuid())
+  bookingId        String                 @unique @map("booking_id")
+  providerId       String                 @map("provider_id")
+  status           BookingResponseStatus
+  expiresAt        DateTime               @map("expires_at")
+  decidedAt        DateTime?              @map("decided_at")
+  decidedByUserId  String?                @map("decided_by_user_id")
+  rejectReasonId   String?                @map("reject_reason_id")
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  booking          Booking                @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  decidedBy        User?                  @relation("BookingResponseDecider", fields: [decidedByUserId], references: [id], onDelete: Restrict)
+  rejectReason     CancellationReason?    @relation(fields: [rejectReasonId], references: [id], onDelete: Restrict)
+
+  @@index([providerId, status, expiresAt])
+  @@map("booking_responses")
+}
+
+model BookingCancellation {
+  id          String                     @id @default(cuid())
+  bookingId   String                     @unique @map("booking_id")
+  actorKind   BookingCancellationActor   @map("actor_kind")
+  actorUserId String?                    @map("actor_user_id")
+  reasonId    String                     @map("reason_id")
+  fromStatus  String                     @map("from_status")
+  notes       String?                    @db.VarChar(500)
+  createdAt   DateTime                   @default(now()) @map("created_at")
+  booking     Booking                    @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  actor       User?                      @relation("BookingCancellationActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  reason      CancellationReason         @relation(fields: [reasonId], references: [id], onDelete: Restrict)
+
+  @@index([actorKind, createdAt])
+  @@map("booking_cancellations")
+}
+
+model BookingNotificationIntent {
+  id              String                           @id @default(cuid())
+  bookingId       String                           @map("booking_id")
+  template        BookingNotificationTemplate
+  locale          PreferredLanguage
+  recipientUserId String                           @map("recipient_user_id")
+  idempotencyKey  String                           @unique @map("idempotency_key")
+  safeVariables   Json                             @map("safe_variables")
+  status          BookingNotificationIntentStatus  @default(PENDING)
+  createdAt       DateTime                         @default(now()) @map("created_at")
+  booking         Booking                          @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  recipient       User                             @relation("BookingNotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId, template])
+  @@map("booking_notification_intents")
+}
+
+model BookingActorCommand {
+  id             String                   @id @default(cuid())
+  actorUserId    String                   @map("actor_user_id")
+  commandType    BookingActorCommandType  @map("command_type")
+  idempotencyKey String                   @map("idempotency_key")
+  bookingId      String                   @map("booking_id")
+  requestHash    String                   @map("request_hash")
+  responseJson   Json                     @map("response_json")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  actor          User                     @relation("BookingActorCommandActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  booking        Booking                  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@unique([actorUserId, commandType, idempotencyKey])
+  @@index([bookingId])
+  @@map("booking_actor_commands")
 }
 
 enum LedgerAccountType {

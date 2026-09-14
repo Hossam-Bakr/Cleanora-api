@@ -173,6 +173,7 @@ function createCommandApp(options: {
       answers: [],
       emergencySignaled: false,
     }),
+    recordCompletedCommand: vi.fn(),
   } as BookingsCommandRepository;
   const service = new BookingsCommandService({
     repository,

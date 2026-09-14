@@ -351,3 +351,5 @@ export type {
   DepositPercentReader,
 } from "./infrastructure/prisma-deposit-percent.reader.js";
 export { createDepositPercentReader } from "./infrastructure/prisma-deposit-percent.reader.js";
+export type { ProviderResponseHoursReader } from "./infrastructure/prisma-provider-response-hours.reader.js";
+export { createProviderResponseHoursReader } from "./infrastructure/prisma-provider-response-hours.reader.js";

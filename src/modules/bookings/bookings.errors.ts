@@ -17,7 +17,9 @@ export type BookingCommandErrorCode =
   | "CONFLICT"
   | "TRANSITION_NOT_AVAILABLE"
   | "DEPENDENCY_FAILURE"
-  | "DEPOSIT_PERCENT_UNAVAILABLE";
+  | "DEPOSIT_PERCENT_UNAVAILABLE"
+  | "RESPONSE_EXPIRED"
+  | "IDEMPOTENCY_BODY_MISMATCH";
 
 const STATUS: Record<BrowseErrorCode, number> = {
   VALIDATION_FAILED: 400,
@@ -63,6 +65,8 @@ const COMMAND_STATUS: Record<BookingCommandErrorCode, number> = {
   TRANSITION_NOT_AVAILABLE: 409,
   DEPENDENCY_FAILURE: 503,
   DEPOSIT_PERCENT_UNAVAILABLE: 503,
+  RESPONSE_EXPIRED: 409,
+  IDEMPOTENCY_BODY_MISMATCH: 409,
 };
 
 const COMMAND_MESSAGES: Record<BookingCommandErrorCode, string> = {
@@ -75,6 +79,8 @@ const COMMAND_MESSAGES: Record<BookingCommandErrorCode, string> = {
   TRANSITION_NOT_AVAILABLE: "This booking transition is not available",
   DEPENDENCY_FAILURE: "A booking dependency failed",
   DEPOSIT_PERCENT_UNAVAILABLE: "Deposit percent configuration is unavailable",
+  RESPONSE_EXPIRED: "The provider response window has expired",
+  IDEMPOTENCY_BODY_MISMATCH: "Idempotency key was reused with a different body",
 };
 
 /**

@@ -47,13 +47,12 @@ Precedence:
 Canonical phase specifications remain under `specs/<phase>/` only when the live
 pointer activates that phase.
 
-**Live pointer:** no active phase. R1-P15 is **Complete** under DEC-095.
-Feature artifacts live in
-`specs/R1-P15-deposit-payments-methods-webhooks/`.
-`docs/product/current.md` is the authority for live state. R1-P14 is Complete
-under DEC-094; R1-P13 is Complete under DEC-093; R1-P12 is Complete under
-DEC-090. Next dependency-ready roadmap phase is R1-P16 and requires separate
-activation. Git publication still requires exact `commit and push`.
+**Live pointer:** R1-P16 is **Complete** under DEC-097. Feature artifacts live
+in `specs/R1-P16-provider-booking-response-cancellation-events/`.
+`docs/product/current.md` is the authority for live state. R1-P15 is Complete
+under DEC-095; R1-P14 is Complete under DEC-094; R1-P13 is Complete under
+DEC-093. No next phase is activated. Git publication still requires exact
+`commit and push`.
 
 ## Current backend navigation
 
