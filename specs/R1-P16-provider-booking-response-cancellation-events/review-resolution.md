@@ -28,7 +28,8 @@ Allowed decisions: `accepted`, `rejected-with-evidence`, `already-resolved`, `ow
 
 ## Remaining risks or decisions
 
-- Codex re-review of these repairs **PASS** (call 7). Live migrate remains BLOCKED without `CLEANORA_R1_P16_DATABASE_URL`. Phase Complete under DEC-097.
+- Codex re-review of these repairs **PASS** (call 7). Live clean + P15→P16
+  upgrade **PASS** on `cleanora_r1_p16_proof`. Phase Complete under DEC-097.
 
 ## Final checks
 

@@ -45,7 +45,7 @@
 
 - coverage: 98.16 / 85.61 / 96.29 / 98.51 (phase-owned); 108 tests
 - Codex call 6 CHANGES REQUIRED; five MAJOR repairs applied; call 7 **PASS**
-- typecheck PASS; live P16 migration proof BLOCKED: `CLEANORA_R1_P16_DATABASE_URL` missing
+- typecheck PASS; live P16 migration proof **PASS** on `cleanora_r1_p16_proof`
 
 ## Acceptance evidence
 
@@ -63,7 +63,7 @@
 | US10 intents same transaction | accept/reject/cancel/expiry templates; intent insert failure keeps CONFIRMED |
 | SC-009 coverage | 98.16 / 85.61 / 96.29 / 98.51 |
 | SC-011 OpenAPI/Postman | validate PASS; P13 BookingData has response/cancellation; 20 Postman requests |
-| SC-012 live migrate | BLOCKED missing `CLEANORA_R1_P16_DATABASE_URL` |
+| SC-012 live migrate | **PASS** clean + P15→P16 upgrade on `cleanora_r1_p16_proof` |
 | T032 Codex final review | **PASS** (call 7 re-review) |
 
 ## Status

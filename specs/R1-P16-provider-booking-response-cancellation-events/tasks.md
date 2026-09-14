@@ -49,7 +49,7 @@
 
 - [x] T028 Wire composition: clock, config hours reader, membership, route mounts — FR-016
 - [x] T029 OpenAPI `docs/apis/openapi/r1-p16-provider-booking-response-cancellation-events.yaml` + Postman — FR-014, SC-011
-- [x] T030 Migration evidence on disposable URL or BLOCKED with exact missing env — SC-012
+- [x] T030 Migration evidence on disposable `CLEANORA_R1_P16_DATABASE_URL` — SC-012
 - [x] T031 Implementation summary + gate log — implementation-summary.md
 - [x] T032 Codex prep-accept then final review via `/codex-delegate`; repair BLOCKER/MAJOR
 - [x] T033 Record READY_FOR_OWNER_REVIEW (no mark-complete, no git publish)

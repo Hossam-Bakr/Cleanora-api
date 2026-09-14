@@ -31,6 +31,7 @@ const EXPECTED = [
   "r1_p13_booking_draft_pricing_snapshot_status_machine",
   "r1_p14_financial_ledger_payment_architecture",
   "r1_p15_deposit_payments_methods_webhooks",
+  "r1_p16_provider_booking_response_cancellation_events",
 ] as const;
 
 const r1P07MigrationSql = readFileSync(

@@ -74,6 +74,7 @@
     "db:validate-r1-p13-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p13-upgrade.ts",
     "db:validate-r1-p14-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p14-upgrade.ts",
     "db:validate-r1-p15-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p15-upgrade.ts",
+    "db:validate-r1-p16-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p16-upgrade.ts",
     "smoke:cloudinary-profile-image": "node --env-file=.env --require ./scripts/register-env.cjs --conditions=development --import tsx scripts/smoke-cloudinary-profile-image.ts"
   },
   "imports": {

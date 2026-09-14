@@ -71,3 +71,44 @@ describe("R1-P16 migration SQL shape and disposable URL guards", () => {
     ).toThrow(/fee/u);
   });
 });
+
+describe("R1-P16 upgrade baseline guards", () => {
+  it("requires the complete through-P15 history and no extra rows", async () => {
+    const { assertR1P15UpgradeBaselineHistory, assertBaselineDigestsPreserved } =
+      await import("../../../scripts/validate-r1-p16-upgrade.js");
+    const { MIGRATION_NAMES_THROUGH_R1_P15 } = await import(
+      "../../../scripts/validate-clean-migration.js"
+    );
+    const rows = MIGRATION_NAMES_THROUGH_R1_P15.map((migration_name) => ({
+      migration_name,
+      finished_at: new Date("2026-09-13T00:00:00.000Z"),
+      rolled_back_at: null,
+    }));
+    expect(() => assertR1P15UpgradeBaselineHistory(rows)).not.toThrow();
+    expect(() => assertR1P15UpgradeBaselineHistory(rows.slice(1))).toThrow(
+      /one successful/u,
+    );
+    expect(() =>
+      assertR1P15UpgradeBaselineHistory([
+        ...rows,
+        {
+          migration_name: R1_P16_MIGRATION,
+          finished_at: new Date("2026-09-14T00:00:00.000Z"),
+          rolled_back_at: null,
+        },
+      ]),
+    ).toThrow(/unexpected migrations/u);
+    expect(() =>
+      assertBaselineDigestsPreserved(
+        new Map([["users", { rowCount: 1, digest: "abc" }]]),
+        new Map([["users", { rowCount: 1, digest: "abc" }]]),
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertBaselineDigestsPreserved(
+        new Map([["users", { rowCount: 1, digest: "abc" }]]),
+        new Map([["users", { rowCount: 2, digest: "abc" }]]),
+      ),
+    ).toThrow(/baseline data changed/u);
+  });
+});

@@ -37,7 +37,7 @@ refund_request, REFUND journals, delivery, expiry worker, or counteroffers.
 | `npm run test:coverage:r1-p16` | **PASS** 108 tests; statements **98.16%**, branches **85.61%**, functions **96.29%**, lines **98.51%** |
 | `npx tsc --noEmit` | **PASS** |
 | OpenAPI / Postman / docs | **PASS** (20 P16 Postman requests; previously validated) |
-| Live P16 migrate | **BLOCKED** — `CLEANORA_R1_P16_DATABASE_URL` missing (SC-012 allows BLOCKED) |
+| Live P16 migrate | **PASS** — clean `cleanora_r1_p16_proof_30060_1789366004622`; upgrade `cleanora_r1_p16_upgrade_proof_12396_1789366361098` |
 
 ## Artifacts
 
