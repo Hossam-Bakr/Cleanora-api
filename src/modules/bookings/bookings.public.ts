@@ -188,3 +188,9 @@ export type ConfirmDepositPayment = (
 
 export { createPrismaBookingFinancialSnapshotReader } from "./infrastructure/prisma-booking-financial-snapshot.reader.js";
 export { createConfirmDepositPayment } from "./infrastructure/confirm-deposit-payment.js";
+export {
+  createPrismaBookingOrderActivationReader,
+  type BookingOrderActivationFacts,
+  type BookingOrderActivationMember,
+  type BookingOrderActivationReader,
+} from "./infrastructure/prisma-booking-order-activation.reader.js";

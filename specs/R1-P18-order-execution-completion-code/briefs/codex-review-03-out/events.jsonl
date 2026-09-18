@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a0a001-81b3-7ed2-99fe-7e92e4e6c1a6"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"VERDICT: BLOCKED\n- Code not inspected.\n- The gate package alone is insufficient to verify the locked holdings and exclusions.\n- Cursor-reported tests, coverage, typecheck, documentation, and migration checks are positive evidence but cannot substitute for code review."}}
+{"type":"turn.completed","usage":{"input_tokens":18787,"cached_input_tokens":11392,"cache_write_input_tokens":0,"output_tokens":56,"reasoning_output_tokens":0}}

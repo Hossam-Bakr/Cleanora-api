@@ -1,0 +1,54 @@
+<task>
+Read-only Cleanora PM. Do NOT edit files. Do NOT implement. Do NOT run shell/exec tools that mutate state. Answer from this brief plus read-only file reads if available.
+
+Phase: R1-P18 — Order Execution & Client Completion Code
+Activation: DEC-100 via owner `/work-on-next-phase` after R1-P17 Complete (DEC-099).
+Artifacts: specs/R1-P18-order-execution-completion-code/{spec,plan,tasks,data-model,analysis-report,activation}.md
+
+Question: Accept tasks T001–T025 for complete in-scope implementation with EX-01/EX-02/EX-03/EX-04, or reject with reasons.
+
+Locked MVB holdings (also in spec Clarifications):
+- NEW module `orders` owns all seven roadmap tables + order notification intents / optional actor commands.
+- Migration: r1_p18_order_execution_completion_code.
+- BookingStatus unchanged (no ON_THE_WAY/IN_PROGRESS/COMPLETED on booking). Fulfillment on OrderStatus only.
+- OrderStatus freeze: ASSIGNED | ON_THE_WAY | IN_PROGRESS | READY_TO_COMPLETE | COMPLETED | CANCELLED.
+- Forward path only: ASSIGNED→ON_THE_WAY→IN_PROGRESS→READY_TO_COMPLETE→COMPLETED. Illegal jumps fail closed.
+- Idempotent ensure-order from booking ASSIGNED + ACTIVE assignment (1:1 bookingId). Lazy create OK (no P17 rewrite required).
+- Field actors: ACTIVE assignment members OR selected provider OWNER/ADMIN. Complete requires same actors + valid six-digit code proof (hash stored; TTL default 1800s; maxAttempts default 5). Customer does not enter code to complete.
+- READY_TO_COMPLETE issues code + ORDER_READY_TO_COMPLETE intent; also ORDER_ON_THE_WAY and ORDER_COMPLETED intents.
+- Optional completion media/notes; customer reads COMPLETION media only after COMPLETED.
+- Shared timeline; no plaintext code on GET.
+- Booking cancel cancels non-terminal order; no fee invention (OQ-001).
+- Coverage 80/75/80/80 on phase-owned files.
+- Out of scope: panic P19, remaining/COD P20, live sockets/GPS, P23 delivery, wallets, InstaPay invention, Docker/cloud, staff force-complete.
+
+KEEP exceptions:
+- EX-01: no FAILED status this MVB
+- EX-02: no PENDING_SCHEDULED status (ASSIGNED covers wait)
+- EX-03: staff read-only (no force jump/complete)
+- EX-04: notification intents only (no SMS/FCM/email send)
+
+If you cannot read files, still verdict from this brief.
+</task>
+
+<grounding_rules>
+Ground claims in the brief or named artifact paths. Label inferences. Refuse over-engineering. Do not invent endpoints beyond the brief.
+</grounding_rules>
+
+<action_safety>
+Read-only. No edits. Prefer not to use exec/shell. Do not implement code.
+</action_safety>
+
+<structured_output_contract>
+First line MUST be one of:
+VERDICT: ACCEPT_IMPLEMENTATION
+VERDICT: REJECT
+VERDICT: ACCEPT_WITH_EXCEPTIONS
+
+Then:
+1. Exceptions keep/change (EX-01..EX-04)
+2. Any Txxx that must change before code
+3. Authorization sentence for which tasks may proceed
+4. Risks: accept-as-is vs must-fix-before-code
+No extra features. No implementation plan rewrite.
+</structured_output_contract>

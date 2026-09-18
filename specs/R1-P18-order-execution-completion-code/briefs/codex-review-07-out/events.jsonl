@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a0a034-3325-7023-b483-19bef755357a"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"VERDICT: PASS\n\nBLOCKER/MAJOR: none.\n\nEX-01: ok  \nEX-02: ok  \nEX-03: ok  \nEX-04: ok\n\nThe inlined evidence satisfies the locked constraints: forbidden statuses are absent, staff access remains read-only through `isFieldActor`-restricted mutations, notification delivery is intent-only with `PENDING` status, authorization precedes order creation, state changes use CAS guards, completion codes are securely issued and verified, active-code uniqueness is enforced, and sensitive plaintext is excluded from read models. Cursor’s tests, coverage, schema, documentation, and live migration gates all pass."}}
+{"type":"turn.completed","usage":{"input_tokens":19146,"cached_input_tokens":11392,"cache_write_input_tokens":0,"output_tokens":372,"reasoning_output_tokens":236}}

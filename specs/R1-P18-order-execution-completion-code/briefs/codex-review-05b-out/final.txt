@@ -1,0 +1,4 @@
+VERDICT: BLOCKED  
+reason: code not inspected
+
+BLOCKER/MAJOR findings: none assessed — the repository commands did not return file contents before the review was stopped, so no code-inspecting R1-P18 verdict can be issued.

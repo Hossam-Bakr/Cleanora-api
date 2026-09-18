@@ -1,0 +1,55 @@
+<task>
+Read-only Cleanora adversarial reviewer. Do NOT edit files. Do NOT implement.
+
+Phase: R1-P18 Order Execution & Client Completion Code (DEC-100).
+Prior prep-accept: Codex call 1 ACCEPT_IMPLEMENTATION KEEP EX-01/02/03/04.
+Thread for context only: 01a09fc0-3640-7c00-9f40-3741ff8b5ca9
+
+Question: Review the phase against acceptance criteria and report PASS / CHANGES REQUIRED / BLOCKED using docs/ai/templates/review-report.md shape.
+
+Locked holdings:
+- New orders module; seven roadmap tables + intents/actor commands; migration r1_p18_order_execution_completion_code.
+- BookingStatus unchanged; OrderStatus ASSIGNED|ON_THE_WAY|IN_PROGRESS|READY_TO_COMPLETE|COMPLETED|CANCELLED; forward-only.
+- Lazy ensure-order from ASSIGNED+ACTIVE assignment; field actors = assignment members OR provider OWNER/ADMIN; complete requires hashed 6-digit code; intents only; staff read-only; no FAILED/PENDING_SCHEDULED/panic/COD/GPS/fees/wallets.
+
+Gate evidence (Cursor re-verified):
+- npm run test:r1-p18 → 10 files / 23 tests PASS
+- npm run test:coverage:r1-p18 → 87.39% / 76.62% / 81% / 87.29% (stmts/branches/funcs/lines) thresholds 80/75/80/80 PASS
+- npm run typecheck PASS
+- npm run openapi:validate PASS (includes r1-p18 yaml)
+- npm run postman:validate PASS (r1P18Requests 22 / 11 per env)
+- npm run docs:check PASS
+- Live migration: clean install PASS + P17→P18 upgrade PASS on Neon morning-base-18570783 (pg SQL apply because prisma migrate deploy no-op'd; evidence in specs/R1-P18-order-execution-completion-code/migration-evidence.md)
+
+Key paths to inspect (read-only):
+- src/modules/orders/**
+- src/modules/bookings/*activation* / cancel hook wiring
+- prisma/migrations/r1_p18_order_execution_completion_code/migration.sql
+- specs/R1-P18-order-execution-completion-code/{spec,tasks,migration-evidence}.md
+- tests/unit/modules/orders/**
+
+Focus: authz, illegal jumps, code hash/TTL/attempts/resend, media visibility, timeline redaction, cancel coordination, module boundaries, EX-01–04 compliance. No scope expansion.
+</task>
+
+<grounding_rules>
+Ground every finding in file/line evidence. Label inferences. Do not invent missing endpoints.
+</grounding_rules>
+
+<action_safety>
+Read-only. No edits. Prefer not to use exec/shell.
+</action_safety>
+
+<structured_output_contract>
+First line MUST be one of:
+VERDICT: PASS
+VERDICT: CHANGES REQUIRED
+VERDICT: BLOCKED
+
+Then a review report with:
+1. Scope and evidence
+2. Findings (BLOCKER/MAJOR/MINOR) with path:line, criterion, impact, remediation — or none
+3. Questions
+4. Checks not run
+5. Final verdict sentence
+Honor EX-01–04. No unresolved BLOCKER/MAJOR allowed for PASS.
+</structured_output_contract>

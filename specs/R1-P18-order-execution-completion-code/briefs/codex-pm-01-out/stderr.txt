@@ -1,0 +1,1 @@
+2026-09-14T11:49:57.097019Z ERROR codex_core::tools::router: error=exec_command failed: CreateProcess { message: "Rejected(\"Failed to create unified exec process: helper_sandbox_lock_failed: lock sandbox bin dir C:\\\\Users\\\\hossa\\\\.codex\\\\.sandbox-bin failed: SetNamedSecurityInfoW sandbox dir failed: 5\")" }

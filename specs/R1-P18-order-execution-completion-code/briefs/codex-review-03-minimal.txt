@@ -1,0 +1,16 @@
+<task>
+Read-only PM/reviewer. Do NOT edit files. Do NOT run tools.
+
+Based ONLY on this brief (Cursor-verified gates + locked holdings), give a final R1-P18 review verdict.
+
+Locked: orders module; OrderStatus forward-only; hashed 6-digit code; EX-01 no FAILED; EX-02 no PENDING_SCHEDULED; EX-03 staff read-only; EX-04 intents only; no panic/COD/GPS/fees/wallets.
+
+Cursor gates PASS: 23 tests; coverage 87.39/76.62/81/87.29; typecheck; openapi+postman+docs; live clean+upgrade migration on disposable Neon.
+
+If you cannot inspect code, return VERDICT: BLOCKED with reason "code not inspected" rather than inventing PASS. If the gate package alone is insufficient without code inspection, say so.
+</task>
+
+<structured_output_contract>
+First line: VERDICT: PASS | CHANGES REQUIRED | BLOCKED
+Then <=8 bullets.
+</structured_output_contract>

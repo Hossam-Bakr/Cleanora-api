@@ -3453,3 +3453,211 @@ model RefundRequest {
   @@index([status, createdAt])
   @@map("refund_requests")
 }
+
+// ---------------------------------------------------------------------------
+// R1-P18 — Order Execution & Client Completion Code
+// Orders owns these tables. bookingId / providerId / customerUserId are logical.
+// ---------------------------------------------------------------------------
+
+enum OrderStatus {
+  ASSIGNED
+  ON_THE_WAY
+  IN_PROGRESS
+  READY_TO_COMPLETE
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderMediaKind {
+  PROGRESS
+  COMPLETION
+}
+
+enum CompletionCodeStatus {
+  ACTIVE
+  SUPERSEDED
+  CONSUMED
+}
+
+enum OrderEventType {
+  CREATED
+  STATUS_CHANGED
+  CODE_ISSUED
+  CODE_RESENT
+  CODE_ATTEMPT
+  MEDIA_ATTACHED
+  NOTE_ADDED
+  CANCELLED
+}
+
+enum OrderNotificationTemplateKey {
+  ORDER_ON_THE_WAY
+  ORDER_READY_TO_COMPLETE
+  ORDER_COMPLETED
+}
+
+enum OrderNotificationDeliveryStatus {
+  PENDING
+}
+
+enum OrderActorCommandType {
+  TRANSITION_ON_THE_WAY
+  TRANSITION_IN_PROGRESS
+  TRANSITION_READY_TO_COMPLETE
+  COMPLETE
+  RESEND_COMPLETION_CODE
+  ATTACH_MEDIA
+  ADD_NOTE
+}
+
+model Order {
+  id                 String        @id @default(cuid())
+  bookingId          String        @unique @map("booking_id")
+  providerId         String        @map("provider_id")
+  customerUserId     String        @map("customer_user_id")
+  status             OrderStatus
+  assignedAt         DateTime      @map("assigned_at")
+  onTheWayAt         DateTime?     @map("on_the_way_at")
+  inProgressAt       DateTime?     @map("in_progress_at")
+  readyToCompleteAt  DateTime?     @map("ready_to_complete_at")
+  completedAt        DateTime?     @map("completed_at")
+  cancelledAt        DateTime?     @map("cancelled_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  statusHistory      OrderStatusHistory[]
+  completionCodes    CompletionCode[]
+  completionAttempts CompletionCodeAttempt[]
+  media              OrderMedia[]
+  notes              OrderNote[]
+  events             OrderEvent[]
+  notificationIntents OrderNotificationIntent[]
+  actorCommands      OrderActorCommand[]
+
+  @@index([status])
+  @@index([providerId])
+  @@index([customerUserId])
+  @@map("orders")
+}
+
+model OrderStatusHistory {
+  id          String       @id @default(cuid())
+  orderId     String       @map("order_id")
+  fromStatus  OrderStatus? @map("from_status")
+  toStatus    OrderStatus  @map("to_status")
+  actorUserId String       @map("actor_user_id")
+  actorRole   String       @map("actor_role") @db.VarChar(40)
+  reasonCode  String?      @map("reason_code") @db.VarChar(100)
+  metadata    Json?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+  @@map("order_status_history")
+}
+
+model CompletionCode {
+  id               String               @id @default(cuid())
+  orderId          String               @map("order_id")
+  codeHash         String               @map("code_hash") @db.VarChar(128)
+  codeSalt         String               @map("code_salt") @db.VarChar(64)
+  status           CompletionCodeStatus
+  expiresAt        DateTime             @map("expires_at")
+  maxAttempts      Int                  @map("max_attempts")
+  attemptsUsed     Int                  @default(0) @map("attempts_used")
+  issuedAt         DateTime             @map("issued_at")
+  consumedAt       DateTime?            @map("consumed_at")
+  supersedesCodeId String?              @map("supersedes_code_id")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  order            Order                @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  attempts         CompletionCodeAttempt[]
+  supersedes       CompletionCode?      @relation("CompletionCodeSupersede", fields: [supersedesCodeId], references: [id], onDelete: Restrict)
+  supersededBy     CompletionCode[]     @relation("CompletionCodeSupersede")
+
+  @@index([orderId])
+  @@map("completion_codes")
+}
+
+model CompletionCodeAttempt {
+  id               String         @id @default(cuid())
+  completionCodeId String         @map("completion_code_id")
+  orderId          String         @map("order_id")
+  actorUserId      String         @map("actor_user_id")
+  success          Boolean
+  createdAt        DateTime       @default(now()) @map("created_at")
+  completionCode   CompletionCode @relation(fields: [completionCodeId], references: [id], onDelete: Restrict)
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([completionCodeId, createdAt])
+  @@index([orderId, createdAt])
+  @@map("completion_code_attempts")
+}
+
+model OrderMedia {
+  id               String         @id @default(cuid())
+  orderId          String         @map("order_id")
+  mediaFileId      String         @map("media_file_id")
+  kind             OrderMediaKind
+  uploadedByUserId String         @map("uploaded_by_user_id")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, mediaFileId])
+  @@index([orderId, kind])
+  @@map("order_media")
+}
+
+model OrderNote {
+  id          String   @id @default(cuid())
+  orderId     String   @map("order_id")
+  body        String   @db.VarChar(2000)
+  authorUserId String  @map("author_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+  @@map("order_notes")
+}
+
+model OrderEvent {
+  id          String         @id @default(cuid())
+  orderId     String         @map("order_id")
+  type        OrderEventType
+  actorUserId String?        @map("actor_user_id")
+  payload     Json
+  createdAt   DateTime       @default(now()) @map("created_at")
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+  @@map("order_events")
+}
+
+model OrderNotificationIntent {
+  id              String                          @id @default(cuid())
+  orderId         String                          @map("order_id")
+  templateKey     OrderNotificationTemplateKey    @map("template_key")
+  recipientUserId String                          @map("recipient_user_id")
+  payload         Json
+  deliveryStatus  OrderNotificationDeliveryStatus @default(PENDING) @map("delivery_status")
+  createdAt       DateTime                        @default(now()) @map("created_at")
+  order           Order                           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, templateKey])
+  @@index([deliveryStatus, createdAt])
+  @@map("order_notification_intents")
+}
+
+model OrderActorCommand {
+  id             String                @id @default(cuid())
+  orderId        String                @map("order_id")
+  actorUserId    String                @map("actor_user_id")
+  commandType    OrderActorCommandType @map("command_type")
+  idempotencyKey String                @map("idempotency_key") @db.VarChar(128)
+  requestHash    String                @map("request_hash") @db.VarChar(64)
+  responseJson   Json                  @map("response_json")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  order          Order                 @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, actorUserId, commandType, idempotencyKey])
+  @@index([orderId])
+  @@map("order_actor_commands")
+}

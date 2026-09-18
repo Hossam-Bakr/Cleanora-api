@@ -1,0 +1,49 @@
+VERDICT: ACCEPT_IMPLEMENTATION
+
+1. Exceptions keep/change (EX-01..EX-04)
+
+- **EX-01 — KEEP:** No `FAILED` order status in this MVB. The frozen `OrderStatus` remains exactly: `ASSIGNED | ON_THE_WAY | IN_PROGRESS | READY_TO_COMPLETE | COMPLETED | CANCELLED`.
+- **EX-02 — KEEP:** No `PENDING_SCHEDULED` status. `ASSIGNED` represents the waiting state.
+- **EX-03 — KEEP:** Staff access remains read-only. No staff force-transition, force-complete, code bypass, or other administrative override.
+- **EX-04 — KEEP:** Produce notification intents only. Actual SMS, FCM, email, or other notification delivery is out of scope.
+- **Changes:** None. All four exceptions are consistent with the locked MVB boundary and must remain in force.
+
+2. Any Txxx that must change before code
+
+- **None identified from the supplied brief.**
+- T001–T025 are accepted only insofar as they implement the named R1-P18 artifacts and the locked holdings exactly.
+- Any task would require correction before code if it contradicts a locked holding—for example, by adding another `OrderStatus`, changing `BookingStatus`, allowing customer/staff completion, storing or returning plaintext codes, sending notifications directly, inventing cancellation fees, or introducing another excluded feature. This is a conformity condition, not a request to expand or rewrite the task plan.
+- The repository skill and phase artifacts could not be read because the read-only command process failed to start in the available sandbox. As explicitly permitted by the request, this verdict is therefore grounded in the supplied brief and the named artifact paths rather than independently verified task text.
+
+3. Authorization sentence for which tasks may proceed
+
+**T001–T025 may proceed as the complete in-scope implementation of R1-P18, with EX-01, EX-02, EX-03, and EX-04 kept unchanged and with no work beyond the locked MVB holdings.**
+
+4. Risks: accept-as-is vs must-fix-before-code
+
+**Accept-as-is risks**
+
+- **Inference — concurrent ensure-order calls:** The idempotent one-order-per-booking rule must remain reliable when multiple requests attempt lazy creation for the same `bookingId`.
+- **Inference — transition races:** Forward-only order transitions should fail closed when two actors act on the same order concurrently.
+- **Inference — completion-code handling:** Expiry and attempt consumption must consistently apply the default TTL of 1,800 seconds and default maximum of five attempts, while persisting only a code hash.
+- **Inference — authorization drift:** Field-action authorization depends on current ACTIVE assignment membership or selected-provider OWNER/ADMIN status; stale or revoked relationships could otherwise authorize an action incorrectly.
+- **Inference — notification duplication:** Intent creation for `ORDER_ON_THE_WAY`, `ORDER_READY_TO_COMPLETE`, and `ORDER_COMPLETED` should follow the same idempotency expectations as the corresponding transitions.
+- **Inference — cancellation race:** Booking cancellation and order advancement may compete; the required result is that cancellation cancels a non-terminal order without inventing a fee.
+- **Inference — completion-data visibility:** Completion media must remain unreadable to the customer until the order is `COMPLETED`, and timeline reads must never expose the plaintext completion code.
+- These are implementation and validation risks within the accepted scope; they do not justify adding statuses, delivery infrastructure, staff overrides, wallets, live tracking, or other features.
+
+**Must-fix-before-code**
+
+- No defect requiring a specific T001–T025 change is established by the brief.
+- A must-fix condition exists only if the actual artifacts or task text conflict with one of the locked holdings or omit enforcement of one—for example:
+  - ownership of all seven roadmap tables by the new `orders` module;
+  - migration name `r1_p18_order_execution_completion_code`;
+  - unchanged `BookingStatus`;
+  - the exact frozen `OrderStatus` set and forward-only path;
+  - idempotent 1:1 order creation from an ASSIGNED booking with an ACTIVE assignment;
+  - the specified actor and completion-proof rules;
+  - required notification intents without direct delivery;
+  - post-completion customer visibility for `COMPLETION` media;
+  - booking-cancellation propagation without fee invention;
+  - the 80/75/80/80 phase-owned coverage thresholds.
+- No additional feature or endpoint is authorized by this acceptance.

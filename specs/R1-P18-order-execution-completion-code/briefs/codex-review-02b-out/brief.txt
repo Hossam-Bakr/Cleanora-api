@@ -1,0 +1,29 @@
+<task>
+Read-only. Continue prior R1-P18 final review. Do NOT edit. Prior turn timed out before a verdict.
+
+Deliver ONLY the verdict contract below. Prefer reading these files if available:
+- src/modules/orders/orders.matrix.ts
+- src/modules/orders/domain/completion-code.ts
+- src/modules/orders/domain/order-authz.ts
+- src/modules/orders/orders.service.ts (authz + complete + cancel paths)
+- prisma/migrations/r1_p18_order_execution_completion_code/migration.sql
+- specs/R1-P18-order-execution-completion-code/migration-evidence.md
+
+Gate summary already verified by Cursor (trust unless you find contradiction in code):
+tests 23 PASS; coverage 87.39/76.62/81/87.29; typecheck/openapi/postman/docs PASS; live clean+upgrade migration PASS on disposable Neon via pg apply.
+
+KEEP EX-01–04. Report BLOCKER/MAJOR only with file:line evidence.
+</task>
+
+<action_safety>
+Read-only. No edits. No shell if avoidable.
+</action_safety>
+
+<structured_output_contract>
+First line MUST be one of:
+VERDICT: PASS
+VERDICT: CHANGES REQUIRED
+VERDICT: BLOCKED
+
+Then at most 12 short bullets: findings (or "none"), residual risks, verdict sentence.
+</structured_output_contract>

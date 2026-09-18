@@ -1,0 +1,4 @@
+VERDICT: BLOCKED
+- Code not inspected.
+- The gate package alone is insufficient to verify the locked holdings and exclusions.
+- Cursor-reported tests, coverage, typecheck, documentation, and migration checks are positive evidence but cannot substitute for code review.

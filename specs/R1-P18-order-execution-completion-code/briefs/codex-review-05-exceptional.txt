@@ -1,0 +1,33 @@
+<task>
+Read-only Cleanora adversarial final review for R1-P18. Do NOT edit files. Do NOT implement.
+
+Inspect these paths (minimum):
+- src/modules/orders/**
+- src/modules/bookings/infrastructure/prisma-booking-order-activation.reader.ts
+- bookings cancel hook wiring to cancelOrderForBooking
+- prisma/migrations/r1_p18_order_execution_completion_code/migration.sql
+- specs/R1-P18-order-execution-completion-code/{spec,review-report,dod-evidence}.md
+
+Locked holdings (KEEP):
+- EX-01 no FAILED; EX-02 no PENDING_SCHEDULED; EX-03 staff read-only writes; EX-04 intents only
+- BookingStatus not used for fulfillment
+- Authz before ensure-order; status CAS on transitions; one ACTIVE code (supersede on READY)
+
+Cursor gates (post-repair): 26 tests PASS; coverage 88.15/77.77/80.18/88.03; typecheck/openapi/postman/docs PASS; live Neon migration clean+upgrade PASS.
+
+Return a real code-inspecting verdict. If you cannot read the files, VERDICT: BLOCKED reason "code not inspected".
+</task>
+
+<structured_output_contract>
+First line exactly one of:
+VERDICT: PASS
+VERDICT: CHANGES_REQUIRED
+VERDICT: BLOCKED
+
+Then:
+1. Files inspected (paths)
+2. BLOCKER/MAJOR findings with file:line or "none"
+3. MINOR findings (max 5) or "none"
+4. EX-01..04 confirmation
+5. One-paragraph rationale
+</structured_output_contract>

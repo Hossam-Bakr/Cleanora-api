@@ -58,6 +58,11 @@ export interface BookingResponseServiceDependencies {
       readonly displayNameAr: string;
     }[];
   } | null>;
+  /** R1-P18: after booking cancel succeeds, cancel non-terminal order (no fees). */
+  readonly onBookingCancelled?: (input: {
+    readonly bookingId: string;
+    readonly actorUserId: string | null;
+  }) => Promise<void>;
 }
 
 export interface InboxItem {
@@ -470,7 +475,7 @@ export class BookingResponseService {
   }> {
     await this.deps.assertActiveProviderManager(input.providerId, input.actorUserId);
     await this.expireIfPending(input.bookingId);
-    return this.withActorIdempotency({
+    const result = await this.withActorIdempotency({
       actorUserId: input.actorUserId,
       commandType: "REJECT",
       idempotencyKey: input.idempotencyKey,
@@ -525,6 +530,11 @@ export class BookingResponseService {
         };
       },
     });
+    await this.notifyOrderCancel({
+      bookingId: input.bookingId,
+      actorUserId: input.actorUserId,
+    });
+    return result;
   }
 
   public async providerCancel(input: {
@@ -536,7 +546,7 @@ export class BookingResponseService {
     readonly idempotencyKey: string;
   }): Promise<{ readonly bookingId: string; readonly status: "CANCELLED"; readonly version: number; readonly cancellationId: string }> {
     await this.deps.assertActiveProviderManager(input.providerId, input.actorUserId);
-    return this.withActorIdempotency({
+    const result = await this.withActorIdempotency({
       actorUserId: input.actorUserId,
       commandType: "PROVIDER_CANCEL",
       idempotencyKey: input.idempotencyKey,
@@ -589,6 +599,11 @@ export class BookingResponseService {
         };
       },
     });
+    await this.notifyOrderCancel({
+      bookingId: input.bookingId,
+      actorUserId: input.actorUserId,
+    });
+    return result;
   }
 
   public async staffCancel(input: {
@@ -600,7 +615,7 @@ export class BookingResponseService {
   }): Promise<{ readonly bookingId: string; readonly status: "CANCELLED"; readonly version: number; readonly cancellationId: string }> {
     failWhen(!(await this.deps.isStaffAdmin(input.actorUserId)), () => bookingError("FORBIDDEN"));
     await this.expireThenDenyIfExpired(input.bookingId);
-    return this.withActorIdempotency({
+    const result = await this.withActorIdempotency({
       actorUserId: input.actorUserId,
       commandType: "STAFF_CANCEL",
       idempotencyKey: input.idempotencyKey,
@@ -655,6 +670,11 @@ export class BookingResponseService {
         };
       },
     });
+    await this.notifyOrderCancel({
+      bookingId: input.bookingId,
+      actorUserId: input.actorUserId,
+    });
+    return result;
   }
 
   public async customerCancelConfirmed(input: {
@@ -677,7 +697,7 @@ export class BookingResponseService {
     });
     failWhen(owned === null, () => bookingError("NOT_FOUND"));
     await this.expireThenDenyIfExpired(input.bookingId);
-    return db.$transaction(async (tx) => {
+    const cancelled = await db.$transaction(async (tx) => {
       const booking = requirePresent(
         await tx.booking.findFirst({
           where: { id: input.bookingId, customerUserId: input.customerUserId },
@@ -731,6 +751,11 @@ export class BookingResponseService {
       }
       return { bookingId: input.bookingId, status: "CANCELLED" as const };
     });
+    await this.notifyOrderCancel({
+      bookingId: input.bookingId,
+      actorUserId: input.customerUserId,
+    });
+    return cancelled;
   }
 
   private async reserveCustomerCommand(
@@ -938,6 +963,16 @@ export class BookingResponseService {
       idempotencyKey: shaIdempotency([input.notifyTemplate, input.bookingId]),
     });
     return cancellation.id;
+  }
+
+  private async notifyOrderCancel(input: {
+    readonly bookingId: string;
+    readonly actorUserId: string | null;
+  }): Promise<void> {
+    if (this.deps.onBookingCancelled === undefined) {
+      return;
+    }
+    await this.deps.onBookingCancelled(input);
   }
 
   private async insertIntent(

@@ -262,7 +262,12 @@ import { PaymentsUnitOfWork } from "#modules/payments/infrastructure/payments.un
 import {
   createConfirmDepositPayment,
   createPrismaBookingFinancialSnapshotReader,
+  createPrismaBookingOrderActivationReader,
 } from "#modules/bookings/bookings.public";
+import {
+  createOrdersRouter,
+  createOrdersService,
+} from "#modules/orders/orders.public";
 import {
   createPaymentsRouter,
   createPaymobWebhookRouter,
@@ -1564,6 +1569,21 @@ export function createRuntimeDependencies(
         | "coversWorkerBookingWindow"
       >),
   });
+  const bookingOrderActivationReader = createPrismaBookingOrderActivationReader(
+    database.client,
+  );
+  const ordersService = createOrdersService({
+    client: database.client,
+    now: () => new Date(),
+    completionCodePepper:
+      environment.AUTH_PRIVACY_HASH_SECRET ??
+      environment.JWT_ACCESS_SECRET ??
+      "cleanora-completion-code-dev",
+    readBookingActivation: (bookingId) =>
+      bookingOrderActivationReader.readByBookingId(bookingId),
+    assertActiveProviderManager,
+    isStaffAdmin,
+  });
   const bookingResponseService = createBookingResponseService({
     client: database.client,
     now: () => new Date(),
@@ -1580,6 +1600,12 @@ export function createRuntimeDependencies(
     isStaffAdmin,
     readAssignmentSummary: (bookingId) =>
       bookingAssignmentService.peekCurrentSummary(bookingId),
+    onBookingCancelled: async (input) => {
+      await ordersService.cancelOrderForBooking({
+        bookingId: input.bookingId,
+        actorUserId: input.actorUserId,
+      });
+    },
   });
   const bookingsCommandService = new BookingsCommandService({
     repository: createPrismaBookingsCommandRepository(database.client),
@@ -1712,6 +1738,15 @@ export function createRuntimeDependencies(
           authenticateAccess: authentication.authenticateAccess,
           service: bookingAssignmentService,
         });
+  const ordersRouter =
+    authentication === undefined
+      ? undefined
+      : createOrdersRouter({
+          authenticateAccess: authentication.authenticateAccess,
+          rateLimiter,
+          privacyHashSecret: browseCursorSecret,
+          service: ordersService,
+        });
 
   return {
     database,
@@ -1794,6 +1829,7 @@ export function createRuntimeDependencies(
       ...(bookingsWorkerVisibilityRouter === undefined
         ? {}
         : { bookingsWorkerVisibilityRouter }),
+      ...(ordersRouter === undefined ? {} : { ordersRouter }),
       ...(paymentsRouter === undefined ? {} : { paymentsRouter }),
       ...(staffPaymentsRouter === undefined ? {} : { staffPaymentsRouter }),
       paymobWebhookRouter,

@@ -44,6 +44,7 @@ const migrationNames = [
   'r1_p15_deposit_payments_methods_webhooks',
   'r1_p16_provider_booking_response_cancellation_events',
   'r1_p17_worker_team_assignment',
+  'r1_p18_order_execution_completion_code',
 ] as const;
 const expectedTablesThroughR1P10 = [
   "currencies",
@@ -174,6 +175,15 @@ const expectedTables = [
   "booking_assignments",
   "booking_assignment_members",
   "booking_assignment_history",
+  "orders",
+  "order_status_history",
+  "completion_codes",
+  "completion_code_attempts",
+  "order_media",
+  "order_notes",
+  "order_events",
+  "order_notification_intents",
+  "order_actor_commands",
 ] as const;
 /** Tables each table-creating migration is allowed and required to create. */
 const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
@@ -333,6 +343,17 @@ const migrationOwnedTables: Readonly<Record<string, readonly string[]>> = {
     "booking_assignments",
     "booking_assignment_members",
     "booking_assignment_history",
+  ],
+  r1_p18_order_execution_completion_code: [
+    "orders",
+    "order_status_history",
+    "completion_codes",
+    "completion_code_attempts",
+    "order_media",
+    "order_notes",
+    "order_events",
+    "order_notification_intents",
+    "order_actor_commands",
   ],
 };
 const expectedPostDeployTablesThroughR1P10 = [
@@ -1638,6 +1659,33 @@ export const APPROVED_R1_P16_TARGET_PATTERN =
 export const APPROVED_R1_P17_TARGET_PATTERN =
   /^cleanora_r1_p17(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
 
+export const R1_P18_MIGRATION = "r1_p18_order_execution_completion_code";
+
+export const R1_P18_TABLES = [
+  "orders",
+  "order_status_history",
+  "completion_codes",
+  "completion_code_attempts",
+  "order_media",
+  "order_notes",
+  "order_events",
+  "order_notification_intents",
+  "order_actor_commands",
+] as const;
+
+export const MIGRATION_NAMES_THROUGH_R1_P18 = [
+  ...MIGRATION_NAMES_THROUGH_R1_P17,
+  R1_P18_MIGRATION,
+] as const;
+
+export const POST_DEPLOY_TABLES_THROUGH_R1_P18 = [
+  ...POST_DEPLOY_TABLES_THROUGH_R1_P17,
+  ...R1_P18_TABLES,
+] as const;
+
+export const APPROVED_R1_P18_TARGET_PATTERN =
+  /^cleanora_r1_p18(?:_[a-z0-9]+)*_(?:test|proof|clean|ci)$/;
+
 /** Require an explicitly named R1-P16 disposable target. */
 export function assertR1P16DisposableDatabaseUrl(
   connectionString: string,
@@ -1715,6 +1763,49 @@ export function requireR1P17ProofDatabaseUrl(
     );
   }
   assertR1P17DisposableDatabaseUrl(value);
+  try {
+    const url = new URL(value);
+    url.hostname = url.hostname.replace("-pooler", "");
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
+/** Require an explicitly named R1-P18 disposable target. */
+export function assertR1P18DisposableDatabaseUrl(
+  connectionString: string,
+  runtimeEnvironment: string | undefined = process.env["NODE_ENV"],
+): void {
+  let targetName: string;
+  try {
+    const url = new URL(connectionString);
+    targetName = decodeURIComponent(url.pathname.replace(/^\//u, ""));
+  } catch {
+    throw new Error("R1-P18 database URL is not a valid URL");
+  }
+  if (!APPROVED_R1_P18_TARGET_PATTERN.test(targetName)) {
+    throw new Error(
+      `Refusing R1-P18 database work against unapproved target "${targetName}"`,
+    );
+  }
+  assertSafeCleanTestDatabaseUrl(connectionString, runtimeEnvironment);
+}
+
+/**
+ * Resolve the separate R1-P18 live/proof URL.
+ * Never falls back to DATABASE_URL or any prior-phase target.
+ */
+export function requireR1P18ProofDatabaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const value = env["CLEANORA_R1_P18_DATABASE_URL"];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      "CLEANORA_R1_P18_DATABASE_URL is required for R1-P18 disposable proofs",
+    );
+  }
+  assertR1P18DisposableDatabaseUrl(value);
   try {
     const url = new URL(value);
     url.hostname = url.hostname.replace("-pooler", "");
@@ -1809,6 +1900,54 @@ export function assertR1P17MigrationSql(sql: string): void {
   ]) {
     if (!sql.includes(required)) {
       throw new Error(`R1-P17 migration is missing ${required}`);
+    }
+  }
+}
+
+/** Accept only the additive, phase-owned R1-P18 orders migration. */
+export function assertR1P18MigrationSql(sql: string): void {
+  const uncommented = sql.replace(/--[^\n]*/gu, "");
+  if (/\b(DROP\s+TABLE|TRUNCATE)\b/iu.test(uncommented)) {
+    throw new Error("R1-P18 orders migration contains destructive SQL");
+  }
+  if (/\bDELETE\s+FROM\b/iu.test(uncommented)) {
+    throw new Error("R1-P18 orders migration must not delete existing rows");
+  }
+  if (
+    sql.includes('CREATE TABLE "wallets"') ||
+    sql.includes('CREATE TABLE "user_wallets"') ||
+    sql.includes('CREATE TABLE "customer_wallets"')
+  ) {
+    throw new Error("R1-P18 migration must not create wallets");
+  }
+  if (/fee_minor|fee_amount|cancellation_fee/iu.test(sql)) {
+    throw new Error("R1-P18 migration must not add fee columns");
+  }
+  if (/ALTER TYPE "BookingStatus"/u.test(sql)) {
+    throw new Error("R1-P18 migration must not alter BookingStatus");
+  }
+  if (sql.includes("'FAILED'") || sql.includes("PENDING_SCHEDULED")) {
+    throw new Error("R1-P18 migration must not introduce FAILED or PENDING_SCHEDULED");
+  }
+  const tables = migrationOwnedTables[R1_P18_MIGRATION] ?? [];
+  for (const table of tables) {
+    if (!sql.includes(`CREATE TABLE "${table}"`)) {
+      throw new Error(`R1-P18 migration is missing table ${table}`);
+    }
+  }
+  if ((sql.match(/CREATE TABLE/g) ?? []).length !== 9) {
+    throw new Error("R1-P18 migration must create exactly nine tables");
+  }
+  for (const required of [
+    "CREATE TYPE \"OrderStatus\"",
+    "ON_THE_WAY",
+    "READY_TO_COMPLETE",
+    "orders_booking_id_key",
+    "completion_codes_one_active_per_order_idx",
+    "ORDER_READY_TO_COMPLETE",
+  ]) {
+    if (!sql.includes(required)) {
+      throw new Error(`R1-P18 migration is missing ${required}`);
     }
   }
 }
@@ -1931,6 +2070,10 @@ async function validateMigrationFolder(): Promise<void> {
     }
     if (migrationName === R1_P17_MIGRATION) {
       assertR1P17MigrationSql(sql);
+      continue;
+    }
+    if (migrationName === R1_P18_MIGRATION) {
+      assertR1P18MigrationSql(sql);
       continue;
     }
     for (const table of migrationOwnedTables[migrationName] ?? []) {
@@ -2317,6 +2460,48 @@ export async function assertPostDeployState(
       if (partialUnique.length !== 1) {
         throw new Error(
           "R1-P17 migration must create one ACTIVE assignment partial unique index",
+        );
+      }
+    }
+    if (expectedMigrationNames.includes(R1_P18_MIGRATION)) {
+      const orderEnum = await prisma.$queryRaw<Array<{ label: string }>>`
+        SELECT label::text AS label
+        FROM unnest(enum_range(NULL::"OrderStatus")) AS label
+        WHERE label::text = 'READY_TO_COMPLETE'
+      `;
+      if (orderEnum.length !== 1) {
+        throw new Error("R1-P18 migration must create OrderStatus.READY_TO_COMPLETE");
+      }
+      for (const table of R1_P18_TABLES) {
+        const rows = await prisma.$queryRawUnsafe<Array<{ total: bigint }>>(
+          `SELECT count(*)::bigint AS total FROM "${table}"`,
+        );
+        if ((rows[0]?.total ?? 0n) !== 0n) {
+          throw new Error(
+            `R1-P18 seed must leave ${table} empty; found commercial order rows`,
+          );
+        }
+      }
+      const bookingUnique = await prisma.$queryRaw<Array<{ indexname: string }>>`
+        SELECT indexname::text AS indexname
+        FROM pg_indexes
+        WHERE schemaname = current_schema()
+          AND tablename = 'orders'
+          AND indexname = 'orders_booking_id_key'
+      `;
+      if (bookingUnique.length !== 1) {
+        throw new Error("R1-P18 migration must unique-index orders.booking_id");
+      }
+      const activeCodeUnique = await prisma.$queryRaw<Array<{ indexname: string }>>`
+        SELECT indexname::text AS indexname
+        FROM pg_indexes
+        WHERE schemaname = current_schema()
+          AND tablename = 'completion_codes'
+          AND indexname = 'completion_codes_one_active_per_order_idx'
+      `;
+      if (activeCodeUnique.length !== 1) {
+        throw new Error(
+          "R1-P18 migration must create one ACTIVE completion-code partial unique index",
         );
       }
     }
@@ -3465,9 +3650,9 @@ async function run(): Promise<void> {
     "SQL review: no unexplained DROP TABLE / TRUNCATE / DELETE FROM detected; only the two reviewed R1-P03A bootstrap-cleanup drops are allowlisted",
   );
 
-  const configuredConnectionString = requireR1P17ProofDatabaseUrl();
+  const configuredConnectionString = requireR1P18ProofDatabaseUrl();
   const proofUrl = new URL(configuredConnectionString);
-  const proofSchema = `cleanora_r1_p17_proof_${process.pid}_${Date.now()}`;
+  const proofSchema = `cleanora_r1_p18_proof_${process.pid}_${Date.now()}`;
   if (!/^[a-z][a-z0-9_]{0,62}$/u.test(proofSchema)) {
     throw new Error("Disposable proof identifier is invalid");
   }
@@ -3499,7 +3684,7 @@ async function run(): Promise<void> {
   );
   await assertPostDeployState(connectionString);
   console.info(
-    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, eight Egypt system ledger accounts, empty commercial ledger journals, Egypt Paymob CARD+WALLET enabled methods, empty commercial payment tables, ACCEPTED+ASSIGNED statuses, seeded cancellation_reasons including PROVIDER_RESPONSE_EXPIRED, Egypt provider_response_hours=24, empty booking response/cancellation/intent/actor-command tables, empty assignment tables with one-ACTIVE partial unique and ACCEPTED→ASSIGNED rules, live snapshot/price-breakdown and ledger immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
+    `Applied all migrations in isolated schema ${proofSchema}; verified exact ${String(expectedPostDeployTables.length)} tables, ${String(migrationNames.length)}-migration history, double-seed idempotency, empty R1-P09/R1-P10 phase tables, empty Eligibility evaluation trees with seeded rule versions, empty booking commercial tables with seeded status_transition_rules, eight Egypt system ledger accounts, empty commercial ledger journals, Egypt Paymob CARD+WALLET enabled methods, empty commercial payment tables, ACCEPTED+ASSIGNED statuses, seeded cancellation_reasons including PROVIDER_RESPONSE_EXPIRED, Egypt provider_response_hours=24, empty booking response/cancellation/intent/actor-command tables, empty assignment tables with one-ACTIVE partial unique and ACCEPTED→ASSIGNED rules, empty orders/completion-code tables with booking_id unique and ACTIVE code partial unique, live snapshot/price-breakdown and ledger immutability triggers, and live R1-P05/R1-P06/R1-P07/R1-P08/R1-P09 constraint probes.`,
   );
 }
 
