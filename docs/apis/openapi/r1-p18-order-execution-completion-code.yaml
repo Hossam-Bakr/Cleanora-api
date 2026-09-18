@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: Cleanora R1-P18 Order Execution & Client Completion Code
+  version: 1.0.0
+  description: >
+    Order fulfillment transitions, hashed completion codes, media/notes,
+    timeline, and booking-cancel coordination. Intents only (no SMS/FCM).
+    No wallets, fees, panic, remaining/COD, GPS, or sockets.
+paths:
+  /api/v1/orders/{orderId}:
+    get:
+      operationId: getOrder
+      tags: [Orders]
+      summary: Get order dossier (never returns completion-code plaintext)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Order dossier
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /api/v1/orders/by-booking/{bookingId}:
+    get:
+      operationId: getOrderByBooking
+      tags: [Orders]
+      summary: Ensure+get order by booking id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Order dossier
+        "409":
+          description: Ensure rejected
+  /api/v1/orders/{orderId}/timeline:
+    get:
+      operationId: getOrderTimeline
+      tags: [Orders]
+      summary: Chronological timeline (code plaintext redacted)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Timeline items
+  /api/v1/orders/{orderId}/transitions/on-the-way:
+    post:
+      operationId: transitionOrderOnTheWay
+      tags: [Orders]
+      summary: ASSIGNED → ON_THE_WAY
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      responses:
+        "200":
+          description: Transitioned
+        "403":
+          description: Forbidden
+        "409":
+          description: Illegal transition
+  /api/v1/orders/{orderId}/transitions/in-progress:
+    post:
+      operationId: transitionOrderInProgress
+      tags: [Orders]
+      summary: ON_THE_WAY → IN_PROGRESS
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      responses:
+        "200":
+          description: Transitioned
+  /api/v1/orders/{orderId}/transitions/ready-to-complete:
+    post:
+      operationId: transitionOrderReadyToComplete
+      tags: [Orders]
+      summary: IN_PROGRESS → READY_TO_COMPLETE (issues hashed code + intent)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      responses:
+        "200":
+          description: Ready to complete; code hashed only on GET
+  /api/v1/orders/{orderId}/complete:
+    post:
+      operationId: completeOrder
+      tags: [Orders]
+      summary: Complete with six-digit code proof
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, pattern: "^[0-9]{6}$" }
+                idempotencyKey: { type: string }
+      responses:
+        "200":
+          description: Completed
+        "409":
+          description: Invalid, expired, or locked code
+  /api/v1/orders/{orderId}/completion-code/resend:
+    post:
+      operationId: resendOrderCompletionCode
+      tags: [Orders]
+      summary: Supersede ACTIVE code and emit new intent
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      responses:
+        "200":
+          description: Code resent
+  /api/v1/orders/{orderId}/media:
+    get:
+      operationId: listOrderMedia
+      tags: [Orders]
+      summary: Role-filtered media list
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Visible media
+    post:
+      operationId: attachOrderMedia
+      tags: [Orders]
+      summary: Attach progress or completion media
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaFileId, kind]
+              properties:
+                mediaFileId: { type: string }
+                kind: { type: string, enum: [PROGRESS, COMPLETION] }
+      responses:
+        "200":
+          description: Media attached
+  /api/v1/orders/{orderId}/notes:
+    post:
+      operationId: addOrderNote
+      tags: [Orders]
+      summary: Add field note
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 1, maxLength: 2000 }
+      responses:
+        "200":
+          description: Note added

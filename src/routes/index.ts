@@ -58,6 +58,8 @@ export interface RouteDependencies {
   readonly bookingsAssignmentRouter?: Router;
   /** R1-P17 worker my-assignments visibility. */
   readonly bookingsWorkerVisibilityRouter?: Router;
+  /** R1-P18 order execution & completion code. */
+  readonly ordersRouter?: Router;
   /** R1-P15 customer payment routes. */
   readonly paymentsRouter?: Router;
   /** R1-P15 staff payment method admin routes. */
@@ -178,6 +180,10 @@ export function mountRoutes(
 
   if (dependencies.bookingsWorkerVisibilityRouter !== undefined) {
     app.use(`${apiPrefix}/workers`, dependencies.bookingsWorkerVisibilityRouter);
+  }
+
+  if (dependencies.ordersRouter !== undefined) {
+    app.use(`${apiPrefix}/orders`, dependencies.ordersRouter);
   }
 
   if (dependencies.bookingsStaffResponseRouter !== undefined) {

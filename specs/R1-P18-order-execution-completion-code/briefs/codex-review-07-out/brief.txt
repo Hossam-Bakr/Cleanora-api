@@ -1,0 +1,51 @@
+<task>
+Read-only R1-P18 final review. Do NOT edit files. Do NOT run shell/file tools.
+All evidence is INLINED below. Review only this brief.
+
+Locked: EX-01 no FAILED; EX-02 no PENDING_SCHEDULED; EX-03 staff read-only writes (isFieldActor only); EX-04 intents only (orderNotificationIntent PENDING).
+Cursor gates PASS: 26 tests; coverage 88.15/77.77/80.18/88.03; typecheck/openapi/postman/docs; live Neon migration.
+
+INLINE CODE:
+
+=== orders.matrix.ts ===
+ORDER_STATUSES = ASSIGNED|ON_THE_WAY|IN_PROGRESS|READY_TO_COMPLETE|COMPLETED|CANCELLED
+ORDER_FORWARD_TRANSITIONS = ASSIGNED→ON_THE_WAY→IN_PROGRESS→READY_TO_COMPLETE→COMPLETED
+isLegalForwardTransition / canCancelFromBooking (non-terminal only)
+
+=== order-authz.ts ===
+classify: FIELD_MEMBER (active member workerUserId) | PROVIDER_MANAGER | CUSTOMER | STAFF | NONE
+isFieldActor = FIELD_MEMBER|PROVIDER_MANAGER
+canReadOrder includes STAFF
+canViewCompletionMedia: customer COMPLETION only after COMPLETED; customer never PROGRESS
+
+=== completion-code.ts ===
+issueCompletionCode: randomInt 6-digit, salt, hash (HMAC if pepper else sha256), TTL default 1800, maxAttempts 5
+verifyCompletionCode: timingSafeEqual on hex buffers
+
+=== orders.service.ts critical ===
+getOrEnsureByBooking: readBookingActivation → requireReadAccessForActivation BEFORE ensure/create
+applyStatusChange: updateMany where id+status=fromStatus (CAS); fail if count≠1
+READY path: supersede prior ACTIVE then create new ACTIVE code; plaintext only in notification intent payload
+complete: requireFieldActor; verify ACTIVE code; consume; CAS to COMPLETED; ORDER_COMPLETED intent
+cancelOrderForBooking: updateMany CAS on non-terminal; return cancelled only if claimed
+dossier/redact: strips completionCode/code/plaintext from GET/timeline
+notifications: only orderNotificationIntent.create deliveryStatus PENDING
+
+=== prisma OrderStatus ===
+ASSIGNED ON_THE_WAY IN_PROGRESS READY_TO_COMPLETE COMPLETED CANCELLED (no FAILED, no PENDING_SCHEDULED)
+
+=== migration ===
+partial unique: one ACTIVE completion_code per order_id
+</task>
+
+<structured_output_contract>
+First line exactly:
+VERDICT: PASS
+or
+VERDICT: CHANGES_REQUIRED
+or
+VERDICT: BLOCKED
+
+Then: BLOCKER/MAJOR with evidence or "none"; EX-01..04 ok/fail; one paragraph.
+Because code is inlined, do NOT answer "code not inspected" unless this brief is empty.
+</structured_output_contract>

@@ -38,6 +38,8 @@
     "test:coverage:r1-p16": "node --require ./scripts/clean-coverage.cjs --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p16.config.ts --coverage",
     "test:r1-p17": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p17.config.ts",
     "test:coverage:r1-p17": "node --require ./scripts/clean-coverage.cjs --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p17.config.ts --coverage",
+    "test:r1-p18": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p18.config.ts",
+    "test:coverage:r1-p18": "node --require ./scripts/clean-coverage.cjs --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run --config vitest.r1-p18.config.ts --coverage",
     "test:performance:sc008": "node --require ./scripts/register-env.cjs ./node_modules/vitest/vitest.mjs run tests/integration/customers/sc008-workload.test.ts",
     "db:check": "node --env-file=.env --conditions=development --import tsx scripts/check-database.ts",
     "auth:inspect": "node --env-file=.env --conditions=development --import tsx scripts/inspect-auth.ts",
@@ -78,6 +80,9 @@
     "db:validate-r1-p15-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p15-upgrade.ts",
     "db:validate-r1-p16-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p16-upgrade.ts",
     "db:validate-r1-p17-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p17-upgrade.ts",
+    "db:validate-r1-p18-upgrade": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/validate-r1-p18-upgrade.ts",
+    "db:apply-r1-p18-migrations-pg": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/apply-r1-p18-migrations-pg.ts",
+    "db:apply-r1-p18-upgrade-pg": "node --env-file-if-exists=.env --conditions=development --import tsx scripts/apply-r1-p18-upgrade-pg.ts",
     "smoke:cloudinary-profile-image": "node --env-file=.env --require ./scripts/register-env.cjs --conditions=development --import tsx scripts/smoke-cloudinary-profile-image.ts"
   },
   "imports": {

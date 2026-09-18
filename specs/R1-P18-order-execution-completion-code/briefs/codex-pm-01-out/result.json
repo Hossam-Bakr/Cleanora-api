@@ -1,0 +1,33 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "lane": null,
+  "laneSource": null,
+  "workdir": "d:\\new_repos\\Cleanora_R1",
+  "sandbox": "read-only",
+  "model": "gpt-5.6-sol",
+  "effort": "xhigh",
+  "serviceTier": "priority",
+  "resumeLast": false,
+  "session": null,
+  "cleanEnv": false,
+  "ignoreUserConfig": false,
+  "keepEnv": [],
+  "codexVersion": "codex-cli 0.154.0",
+  "startedAt": "2026-09-14T11:49:27.780Z",
+  "finishedAt": "2026-09-14T11:50:27.783Z",
+  "briefPath": "d:\\new_repos\\Cleanora_R1\\specs\\R1-P18-order-execution-completion-code\\briefs\\codex-pm-01-out\\brief.txt",
+  "eventsPath": "d:\\new_repos\\Cleanora_R1\\specs\\R1-P18-order-execution-completion-code\\briefs\\codex-pm-01-out\\events.jsonl",
+  "finalPath": "d:\\new_repos\\Cleanora_R1\\specs\\R1-P18-order-execution-completion-code\\briefs\\codex-pm-01-out\\final.txt",
+  "stderrPath": "d:\\new_repos\\Cleanora_R1\\specs\\R1-P18-order-execution-completion-code\\briefs\\codex-pm-01-out\\stderr.txt",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "threadId": "01a09fc0-3640-7c00-9f40-3741ff8b5ca9",
+  "finalMessage": "VERDICT: ACCEPT_IMPLEMENTATION\n\n1. Exceptions keep/change (EX-01..EX-04)\n\n- **EX-01 — KEEP:** No `FAILED` order status in this MVB. The frozen `OrderStatus` remains exactly: `ASSIGNED | ON_THE_WAY | IN_PROGRESS | READY_TO_COMPLETE | COMPLETED | CANCELLED`.\n- **EX-02 — KEEP:** No `PENDING_SCHEDULED` status. `ASSIGNED` represents the waiting state.\n- **EX-03 — KEEP:** Staff access remains read-only. No staff force-transition, force-complete, code bypass, or other administrative override.\n- **EX-04 — KEEP:** Produce notification intents only. Actual SMS, FCM, email, or other notification delivery is out of scope.\n- **Changes:** None. All four exceptions are consistent with the locked MVB boundary and must remain in force.\n\n2. Any Txxx that must change before code\n\n- **None identified from the supplied brief.**\n- T001–T025 are accepted only insofar as they implement the named R1-P18 artifacts and the locked holdings exactly.\n- Any task would require correction before code if it contradicts a locked holding—for example, by adding another `OrderStatus`, changing `BookingStatus`, allowing customer/staff completion, storing or returning plaintext codes, sending notifications directly, inventing cancellation fees, or introducing another excluded feature. This is a conformity condition, not a request to expand or rewrite the task plan.\n- The repository skill and phase artifacts could not be read because the read-only command process failed to start in the available sandbox. As explicitly permitted by the request, this verdict is therefore grounded in the supplied brief and the named artifact paths rather than independently verified task text.\n\n3. Authorization sentence for which tasks may proceed\n\n**T001–T025 may proceed as the complete in-scope implementation of R1-P18, with EX-01, EX-02, EX-03, and EX-04 kept unchanged and with no work beyond the locked MVB holdings.**\n\n4. Risks: accept-as-is vs must-fix-before-code\n\n**Accept-as-is risks**\n\n- **Inference — concurrent ensure-order calls:** The idempotent one-order-per-booking rule must remain reliable when multiple requests attempt lazy creation for the same `bookingId`.\n- **Inference — transition races:** Forward-only order transitions should fail closed when two actors act on the same order concurrently.\n- **Inference — completion-code handling:** Expiry and attempt consumption must consistently apply the default TTL of 1,800 seconds and default maximum of five attempts, while persisting only a code hash.\n- **Inference — authorization drift:** Field-action authorization depends on current ACTIVE assignment membership or selected-provider OWNER/ADMIN status; stale or revoked relationships could otherwise authorize an action incorrectly.\n- **Inference — notification duplication:** Intent creation for `ORDER_ON_THE_WAY`, `ORDER_READY_TO_COMPLETE`, and `ORDER_COMPLETED` should follow the same idempotency expectations as the corresponding transitions.\n- **Inference — cancellation race:** Booking cancellation and order advancement may compete; the required result is that cancellation cancels a non-terminal order without inventing a fee.\n- **Inference — completion-data visibility:** Completion media must remain unreadable to the customer until the order is `COMPLETED`, and timeline reads must never expose the plaintext completion code.\n- These are implementation and validation risks within the accepted scope; they do not justify adding statuses, delivery infrastructure, staff overrides, wallets, live tracking, or other features.\n\n**Must-fix-before-code**\n\n- No defect requiring a specific T001–T025 change is established by the brief.\n- A must-fix condition exists only if the actual artifacts or task text conflict with one of the locked holdings or omit enforcement of one—for example:\n  - ownership of all seven roadmap tables by the new `orders` module;\n  - migration name `r1_p18_order_execution_completion_code`;\n  - unchanged `BookingStatus`;\n  - the exact frozen `OrderStatus` set and forward-only path;\n  - idempotent 1:1 order creation from an ASSIGNED booking with an ACTIVE assignment;\n  - the specified actor and completion-proof rules;\n  - required notification intents without direct delivery;\n  - post-completion customer visibility for `COMPLETION` media;\n  - booking-cancellation propagation without fee invention;\n  - the 80/75/80/80 phase-owned coverage thresholds.\n- No additional feature or endpoint is authorized by this acceptance.",
+  "touchedFiles": [
+    " M .specify/feature.json",
+    " M docs/product/current.md",
+    " M docs/product/decision-log.md",
+    "?? specs/R1-P18-order-execution-completion-code/"
+  ]
+}

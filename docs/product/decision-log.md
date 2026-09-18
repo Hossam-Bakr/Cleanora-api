@@ -1,26 +1,26 @@
-# Cleanora â€” Decision Log
+# Cleanora Ã¢â¬â Decision Log
 
 > This file records approved project decisions that clarify delivery timing or terminology.
 > It does not silently rewrite locked product behavior in `vision.md`.
 
 ---
 
-## DEC-001 â€” Three-release delivery model
+## DEC-001 Ã¢â¬â Three-release delivery model
 
 **Date:** 2026-07-23
 **Status:** Approved
 
 The product will be delivered through three releases:
 
-1. Release 1 â€” Core Marketplace
-2. Release 2 â€” Marketers & Growth
-3. Release 3 â€” Smart Marketplace
+1. Release 1 Ã¢â¬â Core Marketplace
+2. Release 2 Ã¢â¬â Marketers & Growth
+3. Release 3 Ã¢â¬â Smart Marketplace
 
-Bassam's P0â€“P5 labels remain useful as historical product prioritization, but the implementation roadmap uses these three releases.
+Bassam's P0Ã¢â¬âP5 labels remain useful as historical product prioritization, but the implementation roadmap uses these three releases.
 
 ---
 
-## DEC-002 â€” Release 1 is a large end-to-end marketplace
+## DEC-002 Ã¢â¬â Release 1 is a large end-to-end marketplace
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -46,7 +46,7 @@ A real user must be able to complete the journey without manual database edits.
 
 ---
 
-## DEC-003 â€” No internal Cleanora wallets
+## DEC-003 Ã¢â¬â No internal Cleanora wallets
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -67,11 +67,11 @@ Not allowed:
 - Reusable in-platform balance
 - Wallet top-up or wallet transfer feature
 
-Any source-document reference to a provider or marketer â€œwalletâ€‌ must be interpreted as an external payout method unless product explicitly changes this decision.
+Any source-document reference to a provider or marketer Ã¢â¬ÅwalletÃ¢â¬â must be interpreted as an external payout method unless product explicitly changes this decision.
 
 ---
 
-## DEC-004 â€” Maps and WebSockets are deferred to Release 3
+## DEC-004 Ã¢â¬â Maps and WebSockets are deferred to Release 3
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -92,7 +92,7 @@ These remain part of the product vision and are delivered in Release 3.
 
 ---
 
-## DEC-005 â€” Eligibility engine is built in two versions
+## DEC-005 Ã¢â¬â Eligibility engine is built in two versions
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -119,7 +119,7 @@ The engine must not be duplicated.
 
 ---
 
-## DEC-006 â€” Money closure moves into Release 1
+## DEC-006 Ã¢â¬â Money closure moves into Release 1
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -138,7 +138,7 @@ This is required for an end-to-end production release.
 
 ---
 
-## DEC-007 â€” Marketers and Premium are Release 2
+## DEC-007 Ã¢â¬â Marketers and Premium are Release 2
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -157,7 +157,7 @@ Coupons are excluded until their stacking and accounting rules are approved.
 
 ---
 
-## DEC-008 â€” Basic ratings and reviews are Release 1
+## DEC-008 Ã¢â¬â Basic ratings and reviews are Release 1
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -174,7 +174,7 @@ Advanced dimensions, edit windows, publication rules, and richer moderation rema
 
 ---
 
-## DEC-009 â€” Panic core is Release 1; live location is Release 3
+## DEC-009 Ã¢â¬â Panic core is Release 1; live location is Release 3
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -189,7 +189,7 @@ Release 3 adds:
 
 ---
 
-## DEC-010 â€” Admin control is split by dependency
+## DEC-010 Ã¢â¬â Admin control is split by dependency
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -202,7 +202,7 @@ Release 3 adds live map and realtime operations.
 
 ---
 
-## DEC-011 â€” Google sign-in is part of complete authentication
+## DEC-011 Ã¢â¬â Google sign-in is part of complete authentication
 
 **Date:** 2026-07-23
 **Status:** Approved product addition
@@ -213,7 +213,7 @@ It does not replace the actor-specific verification rules. Required phone or ema
 
 ---
 
-## DEC-012 â€” Cleanora is a standalone greenfield project
+## DEC-012 Ã¢â¬â Cleanora is a standalone greenfield project
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -253,7 +253,7 @@ The rule is:
 
 ---
 
-## DEC-013 â€” Product sources remain traceable
+## DEC-013 Ã¢â¬â Product sources remain traceable
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -270,7 +270,7 @@ Bassam's four documents remain unchanged source references.
 
 ---
 
-## DEC-014 â€” Prisma schema and migrations evolve phase by phase
+## DEC-014 Ã¢â¬â Prisma schema and migrations evolve phase by phase
 
 **Date:** 2026-07-23
 **Status:** Approved
@@ -294,7 +294,7 @@ Future-release models must not be created early without a documented dependency.
 
 ---
 
-## DEC-015 â€” Release 1 Google sign-in is individual-only
+## DEC-015 Ã¢â¬â Release 1 Google sign-in is individual-only
 
 **Date:** 2026-07-24
 **Status:** Approved
@@ -314,7 +314,7 @@ This decision resolves OQ-014.
 
 ---
 
-## DEC-016 â€” R1-P02 temporary branch-coverage debt (not a DoD exception)
+## DEC-016 Ã¢â¬â R1-P02 temporary branch-coverage debt (not a DoD exception)
 
 **Date:** 2026-07-25
 **Status:** Approved (temporary)
@@ -335,7 +335,7 @@ runtime acceptance. Coverage-only percentage-chasing tests are stopped for now.
 
 ---
 
-## DEC-017 â€” Development-only SMS delivery redirect
+## DEC-017 Ã¢â¬â Development-only SMS delivery redirect
 
 **Date:** 2026-07-26
 **Status:** Approved (temporary development operations)
@@ -361,7 +361,7 @@ silently substitute ordinary email.
 
 ---
 
-## DEC-018 â€” Browser-safe Google callback and phone verification
+## DEC-018 Ã¢â¬â Browser-safe Google callback and phone verification
 
 **Date:** 2026-07-26
 **Status:** Approved for R1-P02 implementation
@@ -385,7 +385,7 @@ verification-only session to full access.
 
 ---
 
-## DEC-019 â€” Development-only Google browser result page
+## DEC-019 Ã¢â¬â Development-only Google browser result page
 
 **Date:** 2026-07-26
 **Status:** Approved (temporary development integration)
@@ -409,7 +409,7 @@ returns only to the configured backend `GOOGLE_REDIRECT_URI`.
 
 ---
 
-## DEC-020 â€” Descriptive API failures and practical password policy
+## DEC-020 Ã¢â¬â Descriptive API failures and practical password policy
 
 **Date:** 2026-07-26
 **Status:** Approved by human owner
@@ -427,7 +427,7 @@ forgot-password remains indistinguishable for existing and absent accounts.
 
 The shared password policy for signup, reset, and authenticated change is now:
 
-- 7â€“128 characters and no more than 512 UTF-8 bytes;
+- 7Ã¢â¬â128 characters and no more than 512 UTF-8 bytes;
 - no character-class composition requirement;
 - numbers-only values are permitted; and
 - common values, one/repeated patterns, and ascending or descending numeric
@@ -435,7 +435,7 @@ The shared password policy for signup, reset, and authenticated change is now:
 
 ---
 
-## DEC-021 â€” Aggregate validation and explicit cookie names
+## DEC-021 Ã¢â¬â Aggregate validation and explicit cookie names
 
 **Date:** 2026-07-27
 **Status:** Approved by human owner
@@ -458,7 +458,7 @@ are not treated as credentials under the canonical configuration.
 
 ---
 
-## DEC-022 â€” Aggregate safe signup identifier conflicts
+## DEC-022 Ã¢â¬â Aggregate safe signup identifier conflicts
 
 **Date:** 2026-07-27
 **Status:** Approved by human owner
@@ -470,14 +470,14 @@ already-registered email, Cleanora returns one
 existing stable codes.
 
 This extends the human-approved signup-only disclosure from DEC-020. It returns
-only field names, stable reasons, and safe messagesâ€”never submitted values,
+only field names, stable reasons, and safe messagesÃ¢â¬ânever submitted values,
 account records, ownership relationships, or identity details. Passwords are
 not unique identifiers, are never compared across accounts, and must never be
 reported as duplicate.
 
 ---
 
-## DEC-023 â€” Google phone OTP temporary email delivery
+## DEC-023 Ã¢â¬â Google phone OTP temporary email delivery
 
 **Date:** 2026-07-27
 **Status:** Approved for R1-P02 development integration
@@ -499,7 +499,7 @@ path only:
 
 ---
 
-## DEC-024 â€” Account-bound OTP delivery and frontend-only Google handoff
+## DEC-024 Ã¢â¬â Account-bound OTP delivery and frontend-only Google handoff
 
 **Date:** 2026-07-27
 **Status:** Approved by human owner; supersedes DEC-019 and the fixed-inbox part of DEC-017
@@ -526,7 +526,7 @@ retained temporarily for backward compatibility.
 
 ---
 
-## DEC-025 â€” Google presentation claims for frontend authentication
+## DEC-025 Ã¢â¬â Google presentation claims for frontend authentication
 
 **Date:** 2026-07-28
 **Status:** Approved by human owner for the R1-P02 browser integration
@@ -543,7 +543,7 @@ HttpOnly refresh cookie, and shows only this safe user contract.
 
 ---
 
-## DEC-026 â€” Four-digit password-reset code with opaque correlation
+## DEC-026 Ã¢â¬â Four-digit password-reset code with opaque correlation
 
 **Date:** 2026-07-28
 **Status:** Approved by human owner
@@ -566,7 +566,7 @@ and retains local development as an explicit secondary server.
 
 ---
 
-## DEC-027 â€” Explicit hosted-preview SMS-to-email fallback
+## DEC-027 Ã¢â¬â Explicit hosted-preview SMS-to-email fallback
 
 **Date:** 2026-07-28
 **Status:** Approved by human owner for hosted authentication acceptance
@@ -591,7 +591,7 @@ development and cannot be enabled together with the hosted-preview mode.
 
 ---
 
-## DEC-028 â€” Email-only R1-P02 authentication; phone verification deferred
+## DEC-028 Ã¢â¬â Email-only R1-P02 authentication; phone verification deferred
 
 **Date:** 2026-07-28
 **Status:** Approved by human owner; supersedes DEC-017, DEC-023, DEC-024 phone-gate rules, and DEC-027
@@ -618,7 +618,7 @@ verified without silently marking historical data as verified.
 
 ---
 
-## DEC-029 â€” R1-P03A production role-provisioning boundaries
+## DEC-029 Ã¢â¬â R1-P03A production role-provisioning boundaries
 
 > **Supersession note (2026-08-07):** DEC-030 supersedes this entry's
 > first-administrator bootstrap and customer-role provisioning clauses. Historical
@@ -657,7 +657,7 @@ select, or automatically grant a role.
 
 ---
 
-## DEC-030 â€” Junior-friendly MVP staff-admin and customer authorization
+## DEC-030 Ã¢â¬â Junior-friendly MVP staff-admin and customer authorization
 
 **Date:** 2026-08-07
 **Status:** Approved by human owner; supersedes DEC-029 bootstrap and customer-provisioning parts
@@ -719,7 +719,7 @@ ordinary marketplace participation.
 
 ---
 
-## DEC-031 â€” R1-P04 planning authority, outcomes, and retention
+## DEC-031 Ã¢â¬â R1-P04 planning authority, outcomes, and retention
 
 **Date:** 2026-08-07
 **Status:** Approved by human owner during R1-P04 technical-planning repair
@@ -775,7 +775,7 @@ detailed codes require a future explicit product decision.
 
 ---
 
-## DEC-032 â€” R1-P04 preference PUT full-replacement semantics
+## DEC-032 Ã¢â¬â R1-P04 preference PUT full-replacement semantics
 
 **Date:** 2026-08-07
 **Status:** Approved by human owner during R1-P04 technical-planning re-review repair
@@ -798,7 +798,7 @@ preference matrix:
 
 ---
 
-## DEC-033 â€” R1-P04 Cloudinary profile-image storage (always replace)
+## DEC-033 Ã¢â¬â R1-P04 Cloudinary profile-image storage (always replace)
 
 **Date:** 2026-08-07
 **Status:** Approved by human owner during R1-P04 implementation-repair authorization
@@ -843,7 +843,7 @@ images.
 
 ---
 
-## DEC-034 â€” Category-aware customer signup and contact verification
+## DEC-034 Ã¢â¬â Category-aware customer signup and contact verification
 
 **Date:** 2026-08-09
 **Status:** Approved by human owner; supersedes DEC-028 for the behavior below
@@ -913,7 +913,7 @@ the completed R1-P04 profile ownership model.
 
 ---
 
-## DEC-035 â€” Email-only R1-P04A activation; SMS deferred
+## DEC-035 Ã¢â¬â Email-only R1-P04A activation; SMS deferred
 
 **Date:** 2026-08-10
 **Status:** Approved by human owner; temporarily supersedes DEC-034 contact-verification and grace behavior
@@ -945,10 +945,10 @@ remain separately controlled actions.
 
 ---
 
-## DEC-036 â€” Application-based provider ownership and kind-specific readiness
+## DEC-036 Ã¢â¬â Application-based provider ownership and kind-specific readiness
 
 **Date:** 2026-08-10
-**Status:** Approved and Complete â€” implementation, independent review PASS
+**Status:** Approved and Complete Ã¢â¬â implementation, independent review PASS
 (T158), and human completion authorization (T159) recorded 2026-08-11; R1-P06
 subsequently activated for specification preparation only on 2026-08-13; no
 deployment or production migration
@@ -958,7 +958,7 @@ the direct Provider Owner signup and self-enrollment direction in DEC-034 and
 DEC-035. It does not alter R1-P04A's historical delivered behavior; the runtime
 change belongs to the separately authorized R1-P05 implementation workflow.
 
-**Completion note (2026-08-11):** R1-P05 tasks T001â€“T159 are checked with
+**Completion note (2026-08-11):** R1-P05 tasks T001Ã¢â¬âT159 are checked with
 evidence in
 `specs/R1-P05-provider-onboarding-profile-lifecycle/completion-report.md`.
 Independent review returned PASS and the human owner approved completion.
@@ -1129,7 +1129,7 @@ Independent review returned PASS and the human owner approved completion.
 
 ---
 
-## DEC-037 â€” Provider verification and external payout-destination baseline
+## DEC-037 Ã¢â¬â Provider verification and external payout-destination baseline
 
 **Date:** 2026-08-13
 **Status:** Approved baseline; R1-P06 clarification and the authorized
@@ -1165,8 +1165,8 @@ does not move money, execute payouts, or create a Cleanora-held balance.
   not reduce `profileCompletion`.
 - The initial `REGISTERED_COMPANY` checklist contains exactly two required,
   configurable document types:
-  - Commercial Registration â€” stable code `COMMERCIAL_REGISTRATION`.
-  - Tax Registration, Tax Card, or Tax Certificate â€” stable code
+  - Commercial Registration Ã¢â¬â stable code `COMMERCIAL_REGISTRATION`.
+  - Tax Registration, Tax Card, or Tax Certificate Ã¢â¬â stable code
     `TAX_REGISTRATION`.
 - Document types remain configurable rather than hard-coded entirely into
   business behavior. The configuration authority, country-and-kind policy
@@ -1181,8 +1181,8 @@ does not move money, execute payouts, or create a Cleanora-held balance.
 ### External payout-destination baseline
 
 - R1-P06 supports exactly two external destination types:
-  - Mobile Wallet â€” stable code `MOBILE_WALLET`.
-  - Bank Account â€” stable code `BANK_ACCOUNT`.
+  - Mobile Wallet Ã¢â¬â stable code `MOBILE_WALLET`.
+  - Bank Account Ã¢â¬â stable code `BANK_ACCOUNT`.
 - Card payout destinations and InstaPay integration are excluded from R1-P06.
 - Cleanora stored-value wallets, reusable balances, wallet top-ups, internal
   account balances, and ledger balances are prohibited. A Mobile Wallet is an
@@ -1197,7 +1197,7 @@ does not move money, execute payouts, or create a Cleanora-held balance.
   while the exact payout and settlement schedule remains open for the later
   payout-execution phase.
 
-### Clarification decisions â€” 2026-08-13
+### Clarification decisions Ã¢â¬â 2026-08-13
 
 - An active Provider `OWNER` or `ADMIN` with active exact-Provider membership
   may create document drafts, enter metadata, upload, submit, replace, and view
@@ -1250,7 +1250,7 @@ does not move money, execute payouts, or create a Cleanora-held balance.
   metadata rules under which it was validated so later changes do not rewrite
   historical meaning.
 - One document version uses exactly one format: either one validated PDF of at
-  most 15 MiB and 10 pages, or 1â€“10 ordered validated JPEG/PNG images, each at
+  most 15 MiB and 10 pages, or 1Ã¢â¬â10 ordered validated JPEG/PNG images, each at
   most 5 MiB and at most 20 MiB in aggregate. `image/jpeg` explicitly includes
   `.jpg` and `.jpeg`; `image/png` includes `.png`. PDF and image evidence cannot
   be mixed.
@@ -1308,7 +1308,7 @@ does not move money, execute payouts, or create a Cleanora-held balance.
 - Submitting a Mobile Wallet makes the exact version `PENDING_VERIFICATION` and
   does not satisfy `payoutDestinationReady`. Only an active `STAFF_ADMIN` may
   approve, reject, or request correction or replacement.
-- Before approval, the Staff Admin manually startsâ€”but does not completeâ€”an
+- Before approval, the Staff Admin manually startsÃ¢â¬âbut does not completeÃ¢â¬âan
   external wallet transfer attempt or beneficiary lookup and compares the
   displayed registered holder name with the Provider's authoritative legal-
   entity name for `PROVIDER_LEGAL_ENTITY`, or the exact active Owner's
@@ -1353,7 +1353,7 @@ does not move money, execute payouts, or create a Cleanora-held balance.
   does not satisfy `payoutDestinationReady`. Only an active `STAFF_ADMIN` may
   approve, reject, or request correction or replacement.
 - Before approval, the Staff Admin manually performs a beneficiary lookup or
-  startsâ€”but does not completeâ€”a bank transfer and compares the displayed
+  startsÃ¢â¬âbut does not completeÃ¢â¬âa bank transfer and compares the displayed
   beneficiary name with the Provider's authoritative legal-entity name for
   `PROVIDER_LEGAL_ENTITY`, or the exact active Owner's authoritative legal name
   for `PROVIDER_OWNER`. A mismatch or unverifiable name requires rejection or
@@ -1444,7 +1444,7 @@ does not move money, execute payouts, or create a Cleanora-held balance.
 - Mobile Wallet masks preserve `+` and the country calling code, mask every
   national digit except the final four, and display those four. IBAN masks
   preserve only the two-letter country prefix and final four, replace every
-  intervening alphanumeric with `â€¢`, and group in blocks of four. Holder legal
+  intervening alphanumeric with `Ã¢â¬Â¢`, and group in blocks of four. Holder legal
   name is either shown in full for an expressly authorized management or
   verification purpose or omitted; it is never partially masked.
 - Full identifier and holder-name reveal is allowed only to an active
@@ -1520,7 +1520,7 @@ does not move money, execute payouts, or create a Cleanora-held balance.
   complete and constitution-aligned.
 - The mandatory after-plan and after-tasks Companion captures succeeded; all 25
   general and 80 focused specification-quality checklist items pass.
-- `tasks.md` contains continuous T001â€“T137 across all 10 user stories with
+- `tasks.md` contains continuous T001Ã¢â¬âT137 across all 10 user stories with
   independent test criteria. The second cross-artifact analysis pass reports no
   remaining inconsistency, ambiguity, constitution conflict, or coverage gap.
 - The implementation prompt is a handoff only. No implementation task, product
@@ -1532,7 +1532,7 @@ OQ-011 remains open only for payout and settlement scheduling.
 
 ---
 
-## DEC-038 â€” Worker, team, access, and readiness pre-activation baseline
+## DEC-038 Ã¢â¬â Worker, team, access, and readiness pre-activation baseline
 
 **Date:** 2026-08-22
 **Status:** Approved baseline; R1-P07 activated on 2026-08-22 and later advanced
@@ -1571,7 +1571,7 @@ decisions.
 
 ### Worker lifecycle, contact privacy, and media
 
-- Worker operational lifecycle is `DRAFT â†’ ACTIVE â†” INACTIVE â†’ REMOVED`.
+- Worker operational lifecycle is `DRAFT Ã¢â â ACTIVE Ã¢â â INACTIVE Ã¢â â REMOVED`.
   `REMOVED` is terminal. Login-access lifecycle is separate and uses
   `INVITED`, `ACTIVE`, `EXPIRED`, and `REVOKED`.
 - The Worker operational phone is normalized to E.164 and is separate from the
@@ -1626,7 +1626,7 @@ decisions.
 
 - A Worker has at most one active team membership, while earlier memberships
   remain historical.
-- Team lifecycle is `DRAFT â†’ ACTIVE â†” INACTIVE â†’ ARCHIVED`; `ARCHIVED` is
+- Team lifecycle is `DRAFT Ã¢â â ACTIVE Ã¢â â INACTIVE Ã¢â â ARCHIVED`; `ARCHIVED` is
   terminal. A normalized team name is unique among the exact Provider's
   non-archived teams.
 - A `DRAFT` team may be empty. Activation requires a valid name and at least one
@@ -1684,7 +1684,7 @@ decisions.
   work, staging, commit, push, merge, deployment, and production operations
   remain separately controlled and unperformed.
 
-## DEC-039 â€” R1-P07 Supervisor scope, Escort cleaning, reasons, and notification locale
+## DEC-039 Ã¢â¬â R1-P07 Supervisor scope, Escort cleaning, reasons, and notification locale
 
 **Date:** 2026-08-22
 **Status:** Approved clarification decision; R1-P07 pre-implementation workflow
@@ -1776,10 +1776,10 @@ production work.
   staging, commit, push, merge, deployment, or production work is authorized or
   performed by this decision.
 
-## DEC-040 â€” R1-P07 implementation completion and publication boundary
+## DEC-040 Ã¢â¬â R1-P07 implementation completion and publication boundary
 
 **Date:** 2026-08-24
-**Status:** Approved and Complete â€” implementation, migration proofs, tests,
+**Status:** Approved and Complete Ã¢â¬â implementation, migration proofs, tests,
 coverage, independent review, and evidence gates passed
 
 The human owner instructed Codex to complete R1-P07, make it ready for Git
@@ -1789,8 +1789,8 @@ pre-implementation boundaries in DEC-038 or DEC-039.
 
 ### Completion evidence
 
-- All FR-001â€“FR-088 and SC-001â€“SC-014 are implemented and trace to completed
-  tasks T001â€“T156.
+- All FR-001Ã¢â¬âFR-088 and SC-001Ã¢â¬âSC-014 are implemented and trace to completed
+  tasks T001Ã¢â¬âT156.
 - The phase-owned additive migration applied chronologically on a clean
   disposable R1-P07 database and upgraded a populated R1-P06 fixture without
   changing any pre-existing baseline table digest or business truth.
@@ -1820,10 +1820,10 @@ pre-implementation boundaries in DEC-038 or DEC-039.
   whose entire content is exactly `commit and push`.
 - No later roadmap phase is activated by this decision.
 
-## DEC-041 â€” R1-P08 strict bilingual catalog activation without fallback
+## DEC-041 Ã¢â¬â R1-P08 strict bilingual catalog activation without fallback
 
 **Date:** 2026-08-30
-**Status:** Approved â€” first R1-P08 product clarification
+**Status:** Approved Ã¢â¬â first R1-P08 product clarification
 
 The human owner selected strict bilingual activation for localized Catalog
 records.
@@ -1852,10 +1852,10 @@ choose the remaining service-field-kind or staff-authority policies, implement
 frontend behavior, or authorize product code, database operations, Git actions,
 deployment, production migration, or phase completion.
 
-## DEC-042 â€” R1-P08 closed Release 1 service-field kinds
+## DEC-042 Ã¢â¬â R1-P08 closed Release 1 service-field kinds
 
 **Date:** 2026-08-30
-**Status:** Approved â€” second R1-P08 product clarification
+**Status:** Approved Ã¢â¬â second R1-P08 product clarification
 
 The human owner selected the balanced six-kind service-field model for Release
 1. R1-P08 defines field metadata for later consumers and does not persist
@@ -1895,10 +1895,10 @@ This decision does not choose the remaining staff-authority policy, implement
 frontend behavior, or authorize product code, database operations, Git actions,
 deployment, production migration, or phase completion.
 
-## DEC-043 â€” R1-P08 staff-admin-only protected Catalog management
+## DEC-043 Ã¢â¬â R1-P08 staff-admin-only protected Catalog management
 
 **Date:** 2026-08-30
-**Status:** Approved â€” final R1-P08 product clarification
+**Status:** Approved Ã¢â¬â final R1-P08 product clarification
 
 The human owner selected active-`staff_admin`-only authority for protected
 Catalog management.
@@ -1939,10 +1939,10 @@ This decision completes R1-P08 product clarification. It does not implement
 frontend behavior or authorize product code, database operations, Git actions,
 deployment, production migration, or phase completion.
 
-## DEC-044 â€” R1-P08 minimal complete Egypt housekeeping seed
+## DEC-044 Ã¢â¬â R1-P08 minimal complete Egypt housekeeping seed
 
 **Date:** 2026-08-30
-**Status:** Approved â€” fourth and final R1-P08 product clarification
+**Status:** Approved Ã¢â¬â fourth and final R1-P08 product clarification
 
 The human owner selected the smallest complete, active, selectable Egypt seed
 rather than a multi-service catalog or inactive structural placeholders.
@@ -1950,10 +1950,10 @@ rather than a multi-service catalog or inactive structural placeholders.
 ### Seed contract
 
 - Create one `HOME_CLEANING` category named `Home Cleaning` /
-  `طھظ†ط¸ظٹظپ ط§ظ„ظ…ظ†ط§ط²ظ„` and one `STANDARD_HOME_CLEANING` service named
-  `Standard Home Cleaning` / `طھظ†ط¸ظٹظپ ظ…ظ†ط²ظ„ظٹ ظ‚ظٹط§ط³ظٹ`.
-- Configure active `PER_VISIT` (`Per visit` / `ظ„ظƒظ„ ط²ظٹط§ط±ط©`) and `PER_HOUR`
-  (`Per hour` / `ظ„ظƒظ„ ط³ط§ط¹ط©`) price units.
+  `Ø·Ú¾Ø¸â Ø·Â¸Ø¸Ù¹Ø¸Ù¾ Ø·Â§Ø¸âØ¸â¦Ø¸â Ø·Â§Ø·Â²Ø¸â` and one `STANDARD_HOME_CLEANING` service named
+  `Standard Home Cleaning` / `Ø·Ú¾Ø¸â Ø·Â¸Ø¸Ù¹Ø¸Ù¾ Ø¸â¦Ø¸â Ø·Â²Ø¸âØ¸Ù¹ Ø¸âØ¸Ù¹Ø·Â§Ø·Â³Ø¸Ù¹`.
+- Configure active `PER_VISIT` (`Per visit` / `Ø¸âØ¸ÆØ¸â Ø·Â²Ø¸Ù¹Ø·Â§Ø·Â±Ø·Â©`) and `PER_HOUR`
+  (`Per hour` / `Ø¸âØ¸ÆØ¸â Ø·Â³Ø·Â§Ø·Â¹Ø·Â©`) price units.
 - Configure five representative fields: localized preparation information,
   integer bedroom count, integer bathroom count, optional pet presence, and
   optional special instructions. The seed does not require all six supported
@@ -1982,10 +1982,10 @@ placeholder-only catalog and an unapproved multi-service taxonomy. It does not
 authorize Provider prices, bookings, customer answers, frontend work, external
 media creation, deployment, production migration, or any Git operation.
 
-## DEC-045 â€” Dual disposable targets for R1-P08 repository gates
+## DEC-045 Ã¢â¬â Dual disposable targets for R1-P08 repository gates
 
 **Date:** 2026-09-02
-**Status:** Approved â€” SC-012 closeout arrangement for R1-P08
+**Status:** Approved Ã¢â¬â SC-012 closeout arrangement for R1-P08
 
 The human owner selected option 1 of the R1-P08 closeout question: authorize a
 current-schema disposable integration target that satisfies the historical
@@ -2025,22 +2025,22 @@ does not mark R1-P08 Complete, does not authorize Git publication, deployment,
 production configuration, or production migration, and does not accept a red
 repository gate as tracked debt.
 
-## DEC-046 â€” R1-P08 implementation completion and publication boundary
+## DEC-046 Ã¢â¬â R1-P08 implementation completion and publication boundary
 
 **Date:** 2026-09-03
-**Status:** Approved and Complete â€” implementation, DEC-045 dual disposable
+**Status:** Approved and Complete Ã¢â¬â implementation, DEC-045 dual disposable
 targets, migration proofs, tests, coverage, independent review, and evidence
 gates passed
 
 The human owner instructed the active agent to mark R1-P08 Complete after the
 Ready-for-owner-completion-approval gate. This decision closes the sole active
 phase after repository-grounded verification; it does not reinterpret
-DEC-041â€“DEC-045.
+DEC-041Ã¢â¬âDEC-045.
 
 ### Completion evidence
 
-- All FR-001â€“FR-052 and SC-001â€“SC-012 are implemented and trace to completed
-  tasks T001â€“T156.
+- All FR-001Ã¢â¬âFR-052 and SC-001Ã¢â¬âSC-012 are implemented and trace to completed
+  tasks T001Ã¢â¬âT156.
 - The phase-owned additive migration applied chronologically on disposable
   R1-P08 targets and upgraded a populated R1-P07 fixture without changing
   pre-existing baseline digests or workforce truth.
@@ -2068,10 +2068,10 @@ DEC-041â€“DEC-045.
   whose entire content is exactly `commit and push`.
 - No later roadmap phase (including R1-P09) is activated by this decision.
 
-## DEC-047 â€” R1-P09 Provider OWNER-and-ADMIN offering management
+## DEC-047 Ã¢â¬â R1-P09 Provider OWNER-and-ADMIN offering management
 
 **Date:** 2026-09-05
-**Status:** Approved â€” first R1-P09 product clarification
+**Status:** Approved Ã¢â¬â first R1-P09 product clarification
 
 The human owner accepted the recommended Provider-service authority model.
 
@@ -2098,10 +2098,10 @@ snapshot/readiness details, or authorize implementation, schema or migration
 changes, database operations, Git actions, deployment, production work, phase
 completion, or R1-P10.
 
-## DEC-048 â€” R1-P09 country-configured staff-admin price approval
+## DEC-048 Ã¢â¬â R1-P09 country-configured staff-admin price approval
 
 **Date:** 2026-09-05
-**Status:** Approved â€” second R1-P09 product clarification
+**Status:** Approved Ã¢â¬â second R1-P09 product clarification
 
 The human owner accepted the recommended Provider-price approval policy.
 
@@ -2141,10 +2141,10 @@ snapshot/readiness contract, or authorize implementation, schema or migration
 changes, database operations, Git actions, deployment, production work, phase
 completion, or R1-P10.
 
-## DEC-049 â€” R1-P09 country-currency decimal and duration contract
+## DEC-049 Ã¢â¬â R1-P09 country-currency decimal and duration contract
 
 **Date:** 2026-09-05
-**Status:** Approved â€” third R1-P09 product clarification
+**Status:** Approved Ã¢â¬â third R1-P09 product clarification
 
 The human owner accepted the recommended Provider-service monetary and
 estimated-duration contract.
@@ -2183,10 +2183,10 @@ snapshot/readiness contract, and does not authorize implementation, schema or
 migration changes, database operations, Git actions, deployment, production
 work, phase completion, or R1-P10.
 
-## DEC-050 â€” R1-P09 retained price proposals and aggregate concurrency
+## DEC-050 Ã¢â¬â R1-P09 retained price proposals and aggregate concurrency
 
 **Date:** 2026-09-05
-**Status:** Approved â€” fourth R1-P09 product clarification
+**Status:** Approved Ã¢â¬â fourth R1-P09 product clarification
 
 The human owner accepted the recommended current-price, price-history, pending-
 replacement, and optimistic-concurrency policy.
@@ -2230,10 +2230,10 @@ the final snapshot/readiness contract and does not authorize implementation,
 schema or migration changes, database operations, Git actions, deployment,
 production work, phase completion, or R1-P10.
 
-## DEC-051 â€” R1-P09 usable-offering readiness and snapshot-ready contract
+## DEC-051 Ã¢â¬â R1-P09 usable-offering readiness and snapshot-ready contract
 
 **Date:** 2026-09-05
-**Status:** Approved â€” fifth and final R1-P09 product clarification
+**Status:** Approved Ã¢â¬â fifth and final R1-P09 product clarification
 
 The human owner accepted the recommended `servicesReady`, Catalog-change,
 localized-note, and internal snapshot-ready policy.
@@ -2262,7 +2262,7 @@ localized-note, and internal snapshot-ready policy.
   transition. Restoration of the same qualifying Catalog truth automatically
   requalifies the unchanged offering when all other conditions still pass.
 - Service notes are optional. If either localized note is present, Arabic and
-  English must both be present and contain 1â€“1000 characters after trimming.
+  English must both be present and contain 1Ã¢â¬â1000 characters after trimming.
   Management sees the pair; safe consumers receive only the exact requested-
   locale note. There is no locale fallback and no OQ-002 materials rule.
 
@@ -2294,10 +2294,10 @@ This decision completes R1-P09 product clarification. It does not authorize
 implementation, schema or migration changes, database operations, Git actions,
 deployment, production work, phase completion, or R1-P10.
 
-## DEC-052 â€” R1-P09 completion and R1-P10 activation
+## DEC-052 Ã¢â¬â R1-P09 completion and R1-P10 activation
 
 **Date:** 2026-09-07
-**Status:** Approved phase transition â€” activation only
+**Status:** Approved phase transition Ã¢â¬â activation only
 
 After the PASS review and publication, the owner reported merging the pull
 request and deleting the branch, then instructed: "are we ready now for activate
@@ -2308,7 +2308,7 @@ applied after verifying the predecessor's readiness, not inferred from merge alo
   at 19d4b00 (PR #9); the merge tree has no differences from the reviewed tree.
 - Its 84 tasks, review resolution, tests/coverage, migration proofs and artifact
   gates passed. Companion completion is recorded through the canonical writer.
-- R1-P10 â€” Availability, Capacity & Textual Coverage becomes the sole active
+- R1-P10 Ã¢â¬â Availability, Capacity & Textual Coverage becomes the sole active
   phase, for activation and subsequent specification preparation only.
 - Phase 10 follows its existing roadmap scope. This decision chooses no new
   scheduling, capacity, pause, area-management or authorization semantics.
@@ -2317,9 +2317,9 @@ No Phase 10 implementation, schema/migration, database work, new Git publication
 deployment, production migration or later-phase activation is authorized.
 See both phases' completion/activation records and docs/product/current.md.
 
-## DEC-053 â€” R1-P10 authoritative scheduling time zone
+## DEC-053 Ã¢â¬â R1-P10 authoritative scheduling time zone
 
-Date: 2026-09-07. Status: Approved by owner (specify Q1: â€œrecommendedâ€‌).
+Date: 2026-09-07. Status: Approved by owner (specify Q1: Ã¢â¬ÅrecommendedÃ¢â¬â).
 
 Configuration Staff manage one IANA operating time zone per country. Egypt uses
 `Africa/Cairo`; all Providers and their Workers inherit the country's zone.
@@ -2328,9 +2328,9 @@ must honor that zone's daylight-saving rules rather than a fixed UTC offset.
 This decision does not approve other interval, exception, capacity or pause
 semantics; those remain to be resolved before implementation.
 
-## DEC-054 â€” R1-P10 calendar boundaries, overnight shifts and exceptions
+## DEC-054 Ã¢â¬â R1-P10 calendar boundaries, overnight shifts and exceptions
 
-Date: 2026-09-07. Status: Approved by owner (specify Q2: â€œrecommendedâ€‌).
+Date: 2026-09-07. Status: Approved by owner (specify Q2: Ã¢â¬ÅrecommendedÃ¢â¬â).
 
 Periods include their start and exclude their end. Adjacent periods do not
 conflict; overlapping periods for the same schedule are rejected. Positive
@@ -2338,12 +2338,12 @@ shifts no longer than 24 hours may cross midnight using an explicit
 `endsNextDay` flag. Evaluation splits them at local midnight and applies dated
 exceptions per civil date. A dated exception replaces that entire date's weekly
 hours, including carryover; an empty exception is a holiday. Thus a Monday
-22:00â€“Tuesday 02:00 shift loses its Tuesday portion when Tuesday is a holiday.
+22:00Ã¢â¬âTuesday 02:00 shift loses its Tuesday portion when Tuesday is a holiday.
 Worker availability is always intersected with Provider availability.
 Capacity, pause, exact access and other unresolved semantics are not approved
 by this calendar decision.
 
-## DEC-055 â€” R1-P10 complete-Team capacity units
+## DEC-055 Ã¢â¬â R1-P10 complete-Team capacity units
 
 Date: 2026-09-07. Status: Approved by owner (specify Q3: option 1).
 
@@ -2356,7 +2356,7 @@ Three available Teams with a limit of two yield capacity two.
 Phase 10 reports potential supply only; it creates no Booking, reservations or
 busy-time ledger and makes no claim that this supply is unbooked.
 
-## DEC-056 â€” R1-P10 textual area administration and coverage granularity
+## DEC-056 Ã¢â¬â R1-P10 textual area administration and coverage granularity
 
 Date: 2026-09-07. Status: Approved by owner (clarify question 1 / overall Q4: option 1).
 
@@ -2367,7 +2367,7 @@ that city, including subsequently added districts. Areas retain stable identity
 and are deactivated rather than deleted. Inactive ancestry stops matching.
 Coordinates and radius searches remain excluded.
 
-## DEC-057 â€” R1-P10 temporary Provider pause
+## DEC-057 Ã¢â¬â R1-P10 temporary Provider pause
 
 Date: 2026-09-07. Status: Approved by owner (clarify question 2 / overall Q5: option 1).
 
@@ -2378,7 +2378,7 @@ An Owner/Admin may resume early; optional expiry occurs automatically by time
 evaluation. Neither event alters approval, suspension or go-live truth.
 No future pause calendar, Booking cancellation or Booking modification is added.
 
-## DEC-058 â€” R1-P10 Provider-setting authorization during suspension
+## DEC-058 Ã¢â¬â R1-P10 Provider-setting authorization during suspension
 
 Date: 2026-09-07. Status: Approved by owner (clarify question 3 / overall Q6: recommended option 1).
 
@@ -2391,7 +2391,7 @@ Workers and Team Supervisors gain no Phase 10 management authority. Staff
 locality/time-zone administration uses separate Configuration permissions and
 does not grant authority over Provider-owned settings.
 
-## DEC-059 â€” R1-P10 internal coverage and availability read contracts
+## DEC-059 Ã¢â¬â R1-P10 internal coverage and availability read contracts
 
 Date: 2026-09-07. Status: Approved by owner (clarify question 4 / overall Q7: recommended option 1).
 
@@ -2405,7 +2405,7 @@ Providers persistence. Phase 10 HTTP is limited to protected Staff locality and
 Provider operational-management surfaces. Customer and anonymous availability
 lookup remains with later Eligibility and Browse phases.
 
-## DEC-060 â€” R1-P10 configuration readiness versus runtime availability
+## DEC-060 Ã¢â¬â R1-P10 configuration readiness versus runtime availability
 
 Date: 2026-09-07. Status: Approved by owner (clarify question 5 / overall Q8: recommended option 1).
 
@@ -2419,21 +2419,21 @@ different valid Team. Temporary pause, suspension, requested-time closure and
 requested capacity affect runtime evaluation without erasing configuration
 readiness. `eligibleForPublicBrowse` remains blocked until its later phase.
 
-## DEC-061 â€” R1-P10 completion
+## DEC-061 Ã¢â¬â R1-P10 completion
 
 **Date:** 2026-09-09
-**Status:** Approved â€” explicit human-owner phase completion
+**Status:** Approved Ã¢â¬â explicit human-owner phase completion
 
 After receiving the final technical-readiness handoff, the owner stated:
-`I approve R1-P10 â€” Availability, Capacity & Textual Coverage as Complete.`
+`I approve R1-P10 Ã¢â¬â Availability, Capacity & Textual Coverage as Complete.`
 
-- R1-P10 is Complete. FR-001â€“FR-016 and SC-001â€“SC-008 are reconciled, and
-  tasks T001â€“T077 are checked.
+- R1-P10 is Complete. FR-001Ã¢â¬âFR-016 and SC-001Ã¢â¬âSC-008 are reconciled, and
+  tasks T001Ã¢â¬âT077 are checked.
 - The final Codex adversarial review has no unresolved BLOCKER or MAJOR; seven
   verified correctness/integrity defects were repaired and regression-tested.
 - The Phase 10 live suite passed 43 files / 301 tests. Coverage passed at
   86.85% statements, 76.47% branches, 93.38% functions and 87.60% lines.
-- Clean chronological installation and populated R1-P09â†’R1-P10 upgrade proofs
+- Clean chronological installation and populated R1-P09Ã¢â âR1-P10 upgrade proofs
   both passed on the approved disposable `cleanora_r1_p10_proof` target.
 - Typecheck, Prisma, build, source/test/script lint for the intended tree,
   OpenAPI, Postman, documentation, module-boundary and whitespace gates passed.
@@ -2445,13 +2445,13 @@ staging, commit, push, merge, deployment, production migration, history
 rewriting or destructive cleanup. Git publication still requires a separate
 human message whose entire content is exactly `commit and push`.
 
-## DEC-062 â€” R1-P11 activation and delegated owner authority
+## DEC-062 Ã¢â¬â R1-P11 activation and delegated owner authority
 
 **Date:** 2026-09-09
-**Status:** Approved â€” explicit human-owner phase activation with delegated
+**Status:** Approved Ã¢â¬â explicit human-owner phase activation with delegated
 Codex decision and completion authority for R1-P11 only
 
-The human owner activated `R1-P11 â€” Eligibility Engine V1` and authorized:
+The human owner activated `R1-P11 Ã¢â¬â Eligibility Engine V1` and authorized:
 
 - Local feature branch `codex/r1-p11-eligibility-engine-v1` from the verified
   P10 baseline (`38f3efa` on
@@ -2473,7 +2473,7 @@ Git publication still requires a separate human message whose entire content is
 exactly `commit and push`.
 
 Canonical activation: `specs/R1-P11-eligibility-engine-v1/activation.md`.
-## DEC-063 â€” Eligibility module ownership and dependency direction
+## DEC-063 Ã¢â¬â Eligibility module ownership and dependency direction
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2490,7 +2490,7 @@ models of other modules.
 Rejected: Providers-owned eligibility, shared generic engine, separate
 deployable, Browse/Bookings module in P11.
 
-## DEC-064 â€” Evaluation order, complete applicable reasons and candidate scope
+## DEC-064 Ã¢â¬â Evaluation order, complete applicable reasons and candidate scope
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2508,7 +2508,7 @@ providers outside discovery scope are not claimed evaluated. Optional internal
 explicit-candidate entry point may evaluate a bounded Provider-ID set (not HTTP).
 Rejected: first-failure-only, invented defaults, global Provider scans for local search.
 
-## DEC-065 â€” UTC input, P10 zone semantics and service duration
+## DEC-065 Ã¢â¬â UTC input, P10 zone semantics and service duration
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2518,11 +2518,11 @@ country/city, optional district, exact service identity, crew preference and
 positive required complete-Team units. Reuse DEC-053/054 calendar behavior via
 Configuration country IANA zone. Interval must cover offering estimated duration;
 too short excludes with `REQUESTED_INTERVAL_TOO_SHORT`. V1 bounds: positive
-duration up to 24 elapsed hours; required units 1â€“50. Capture one trusted
+duration up to 24 elapsed hours; required units 1Ã¢â¬â50. Capture one trusted
 evaluation clock per invocation. Reject ambiguous local timestamps and
 caller-controlled historical-time live APIs.
 
-## DEC-066 â€” Consistency and deterministic-result boundaries
+## DEC-066 Ã¢â¬â Consistency and deterministic-result boundaries
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2531,7 +2531,7 @@ One Eligibility-owned bounded `RepeatableRead` transaction binds discovery,
 rule version, database-backed readers and successful persistence. Extend public
 factories for transaction-bound execution. Deterministic function:
 normalized request + pinned rule/config + captured facts + evaluation time +
-engine/calendar version â†’ semantic result. Metadata includes contract/engine
+engine/calendar version Ã¢â â semantic result. Metadata includes contract/engine
 version, rule-version ID/checksum, input/evidence/result hashes, source versions,
 zone, calendar runtime version, discovery scope/counts and completeness.
 Canonical ID and reason ordering; decimal money strings only. Generated IDs and
@@ -2540,7 +2540,7 @@ within retention.
 Rejected: claiming equal query text always yields equal live results; wall-clock
 inside rules; indefinite replay of old code.
 
-## DEC-067 â€” Immutable rule versions and configuration
+## DEC-067 Ã¢â¬â Immutable rule versions and configuration
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2554,7 +2554,7 @@ content and must not overwrite changed content. Missing/invalid version is hard
 error. No rule-authoring HTTP or dynamic code loading. Configuration retains
 country/zone/pricing ownership; Eligibility records consumed values/versions.
 
-## DEC-068 â€” Performance data, freshness and cold start
+## DEC-068 Ã¢â¬â Performance data, freshness and cold start
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2568,7 +2568,7 @@ reader-outage evidence is technical failure. No production metric producer or
 Ratings module in P11; tests supply controlled evidence.
 Rejected: missing equals zero; silently enabling invented ratings.
 
-## DEC-069 â€” Evaluation persistence, atomicity and retention
+## DEC-069 Ã¢â¬â Evaluation persistence, atomicity and retention
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2584,20 +2584,20 @@ bounded idempotent purge (scheduling optional). Persistence failure fails the
 operation. Fresh evaluations per invocation; request hash is not a unique key.
 Does not authorize deleting inherited/existing user data.
 
-## DEC-070 â€” Internal API, privacy and authorization
+## DEC-070 Ã¢â¬â Internal API, privacy and authorization
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
 
-P11 exposes **in-process public module contracts only** â€” no eligibility HTTP.
+P11 exposes **in-process public module contracts only** Ã¢â¬â no eligibility HTTP.
 Composition supplies the service to approved consumers. Separate detailed
 internal diagnostic result from safe Browse-consumer projection (eligible
 identities + allowlisted commercial/availability facts; omit rejected diagnostics
 and member-level evidence). No historical-evaluation browsing surface.
 Rejected: public diagnostic endpoints; exposing internal reasons because labelled
-â€œinternal.â€‌
+Ã¢â¬Åinternal.Ã¢â¬â
 
-## DEC-071 â€” Expected exclusions versus technical failures
+## DEC-071 Ã¢â¬â Expected exclusions versus technical failures
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2605,12 +2605,12 @@ Rejected: public diagnostic endpoints; exposing internal reasons because labelle
 Expected business failures exclude the candidate and continue evaluation.
 Malformed global input, missing rule version, dependency/DB failure, invalid DTO,
 exhausted transaction conflict or persistence failure fails the **whole
-evaluation** with typed error â€” no apparently complete partial list. Retry whole
+evaluation** with typed error Ã¢â¬â no apparently complete partial list. Retry whole
 transaction at most three attempts for recognised retryable failures. Preserve
 P09 `CONFLICT` as technical failure, never `UNAVAILABLE`.
 Rejected: catch-all empty arrays; silent per-candidate technical drops.
 
-## DEC-072 â€” Minimum honest Browse integration
+## DEC-072 Ã¢â¬â Minimum honest Browse integration
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2623,7 +2623,7 @@ DoD: **P11 supplies and proves the Browse-use application contract; P12 mounts
 the marketplace consumer.** Preserve `eligibleForPublicBrowse: false` placeholder
 on Providers setup readiness; do not treat it as a P11 exclusion filter.
 
-## DEC-073 â€” Reuse and exact public-contract extensions
+## DEC-073 Ã¢â¬â Reuse and exact public-contract extensions
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2635,7 +2635,7 @@ eligibility projections as required for atomic evaluation. Applicable
 verification uses Providers-owned satisfied/not-required rules. No direct foreign
 Prisma access or copied calendar/price logic inside Eligibility.
 
-## DEC-074 â€” Crew preference and capacity after filtering
+## DEC-074 Ã¢â¬â Crew preference and capacity after filtering
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2648,7 +2648,7 @@ crew-matching Teams, capped by Provider simultaneous-Team limit. Return all
 qualifying Team alternatives with aggregate capacity limit (alternatives do not
 imply simultaneous booking of all).
 
-## DEC-075 â€” Sorting inputs and bounded work
+## DEC-075 Ã¢â¬â Sorting inputs and bounded work
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2656,22 +2656,22 @@ imply simultaneous booking of all).
 Return price, minimum charge, currency, price-unit identity, estimated duration,
 matching capacity, optional valid performance facts and stable Provider/Team IDs.
 Canonical order: Provider ID then Team ID. Bounds: **500** discovered/explicit
-Providers and **5,000** Team results per evaluation. Overflow â†’
+Providers and **5,000** Team results per evaluation. Overflow Ã¢â â
 `EVALUATION_LIMIT_EXCEEDED` (no silent truncation). No premium boosts or
 synthetic ratings.
 
-## DEC-076 â€” Migration scope
+## DEC-076 Ã¢â¬â Migration scope
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
 
 One additive migration `prisma/migrations/r1_p11_eligibility_engine_v1/`. Add
 three tables, constraints/indexes and deterministic rule seed. Clean proof:
-complete chronological history. Upgrade proof: populated P10 â†’ P11 preserving
+complete chronological history. Upgrade proof: populated P10 Ã¢â â P11 preserving
 earlier data. Expected ~18 migrations / ~96 tables under P10 counting convention,
 verified not assumed. No applied-migration edits or geo tables.
 
-## DEC-077 â€” R3 extension boundary
+## DEC-077 Ã¢â¬â R3 extension boundary
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
@@ -2680,59 +2680,59 @@ Keep typed rule context and versioned identities for future geo rules. P11
 accepts textual location only; reject unsupported geographic input explicitly.
 No coordinates, radius, distance, geo module or dormant geographic persistence.
 
-## DEC-078 â€” Validation scope and automatic progression
+## DEC-078 Ã¢â¬â Validation scope and automatic progression
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
 
 P11 requires phase tests/coverage **and** repository regression gates. Phase
-coverage â‰¥ 80% statements, 75% branches, 80% functions, 80% lines including new
+coverage Ã¢â°Â¥ 80% statements, 75% branches, 80% functions, 80% lines including new
 code and changed seams. Repository coverage meets configured thresholds. P10
 phase-only exemption does not carry forward. Inherited failures reported with
 baseline evidence. Automatic progression after actual gates pass. Completion is
 not Git/deploy authorization.
 
-## DEC-079 â€” Concrete participant and public projection design
+## DEC-079 Ã¢â¬â Concrete participant and public projection design
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
 
-Composition-supplied transaction-bound factories with opaque transaction context; bound readers must not open nested/independent transactions. ID-based Eligibility inputs; resolve country via Configuration public reader and service via Catalog ID lookup. Locale-independent Providers eligibility pricing projection reusing P09 selection/usability (no invented locale). Separate normal-discovery and explicit-Provider entry points; `providerIds` forbidden on Browse facade. Providers return Team validity/availability plus aggregate cleaner-gender counts and Escort-validity facts â€” no Worker IDs/raw member arrays at Eligibility boundary. Methods return Promise<SuccessDto>; business exclusions are successful diagnostics; technical errors reject. Refines DEC-066/070/073.
+Composition-supplied transaction-bound factories with opaque transaction context; bound readers must not open nested/independent transactions. ID-based Eligibility inputs; resolve country via Configuration public reader and service via Catalog ID lookup. Locale-independent Providers eligibility pricing projection reusing P09 selection/usability (no invented locale). Separate normal-discovery and explicit-Provider entry points; `providerIds` forbidden on Browse facade. Providers return Team validity/availability plus aggregate cleaner-gender counts and Escort-validity facts Ã¢â¬â no Worker IDs/raw member arrays at Eligibility boundary. Methods return Promise<SuccessDto>; business exclusions are successful diagnostics; technical errors reject. Refines DEC-066/070/073.
 
-## DEC-080 â€” Rule prerequisites and final eligibility
-
-**Date:** 2026-09-09
-**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
-
-Evaluation order is presentation order, not universal prerequisites. Preconditions are required facts; independent readable facts still evaluate on non-live Providers. Unknown/inactive textual ancestry is global validation failure. Provider eligibility requires all applicable Provider gates, sufficient crew-filtered capacity, and â‰¥1 qualifying Team. Disabled/missing/stale optional performance does not falsify that predicate. Team eligibility requires Team qualifies AND Provider qualifies. Provider capacity/performance failure excludes all Team alternatives. One invalid Team does not exclude a Provider with other qualifying Teams. Disabled performance = NOT_APPLICABLE (port not called). Enabled missing/stale/insufficient = NOT_EVALUATED informational. Rejected rows need â‰¥1 real exclusion reason; informational diagnostics are not exclusion reasons. Refines DEC-064/068/074.
-
-## DEC-081 â€” Invocation clock and reproducible evidence
+## DEC-080 Ã¢â¬â Rule prerequisites and final eligibility
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
 
-Capture evaluatedAt once before the retry loop; reuse across â‰¤3 attempts. Each retry gets a fresh DB snapshot and reselects the effective bundle against the same captured instant; discard failed-attempt evidence. SHA-256 over UTF-8 canonical JSON (sorted keys, defined array order, no undefined, UTC timestamps, canonical decimals). evaluatedAt is semantic; only generated IDs/trace/duration/persistence timestamps are non-semantic. Performance evidence includes metric identity, policy/version identity, decimal value, sample count, observedAt; Eligibility computes freshness. No slow external calls inside the transaction. Persist normalized rule inputs and owned-reader outcomes sufficient for Eligibility decision replay without Worker identities. Refines DEC-065/066/068.
+Evaluation order is presentation order, not universal prerequisites. Preconditions are required facts; independent readable facts still evaluate on non-live Providers. Unknown/inactive textual ancestry is global validation failure. Provider eligibility requires all applicable Provider gates, sufficient crew-filtered capacity, and Ã¢â°Â¥1 qualifying Team. Disabled/missing/stale optional performance does not falsify that predicate. Team eligibility requires Team qualifies AND Provider qualifies. Provider capacity/performance failure excludes all Team alternatives. One invalid Team does not exclude a Provider with other qualifying Teams. Disabled performance = NOT_APPLICABLE (port not called). Enabled missing/stale/insufficient = NOT_EVALUATED informational. Rejected rows need Ã¢â°Â¥1 real exclusion reason; informational diagnostics are not exclusion reasons. Refines DEC-064/068/074.
 
-## DEC-082 â€” Persistence and seed invariants
-
-**Date:** 2026-09-09
-**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
-
-Text-backed IDs; evaluation/candidate IDs UUID strings; fixed deterministic text ID for seeded rule bundle. schemaVersion text; rowKind enum PROVIDER_SUMMARY | TEAM_RESULT. Exactly one Provider summary per evaluated Provider (including excluded/nonexistent explicit). Team rows only for actual evaluated Teams. Enforce rowKind/teamId XOR and both partial uniqueness constraints. Restrictive FKs for rule country and evaluationâ†’rule; evaluation country agrees with selected rule. Provider/Team result IDs are historical logical references without live FKs (explicit nonexistent Providers must remain representable). Required createdAt; expiresAt = completedAt + 30 elapsed days. Purge: fixed cutoff per invocation, order (expiresAt, id), default batch 100, max 500, return deleted counts + moreRemaining. Initial bundle r1-v1 for Egypt EG effective 2026-09-09T00:00:00.000Z. Seed verifies all immutable fields including country/version/effective, not checksum alone. Refines DEC-067/069/076.
-
-## DEC-083 â€” Minimal Batch A and evidence requirements
+## DEC-081 Ã¢â¬â Invocation clock and reproducible evidence
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
 
-T007 creates only substantive approved declarations in eligibility.public.ts â€” no empty layer folders, barrels, fake runtime stubs. Later tasks add concrete files when needed under compact module convention. T006 must pass before Batch A acceptance. Phase selection is exact allowlist of P11 suites plus explicitly named changed-seam suites. Batch A must pass selection/boundary tests, fixture compilation, typecheck and relevant lint with actual outcomes. Coverage scripts may exist before substantial coverage; do not claim coverage pass early. Refines Batch A / DEC-063 scaffolding.
+Capture evaluatedAt once before the retry loop; reuse across Ã¢â°Â¤3 attempts. Each retry gets a fresh DB snapshot and reselects the effective bundle against the same captured instant; discard failed-attempt evidence. SHA-256 over UTF-8 canonical JSON (sorted keys, defined array order, no undefined, UTC timestamps, canonical decimals). evaluatedAt is semantic; only generated IDs/trace/duration/persistence timestamps are non-semantic. Performance evidence includes metric identity, policy/version identity, decimal value, sample count, observedAt; Eligibility computes freshness. No slow external calls inside the transaction. Persist normalized rule inputs and owned-reader outcomes sufficient for Eligibility decision replay without Worker identities. Refines DEC-065/066/068.
 
-## DEC-084 â€” Final P11 contract and persistence clarifications
+## DEC-082 Ã¢â¬â Persistence and seed invariants
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
 
-Refines DEC-079â€“082. Does not reopen phase scope. Full repair instructions:
+Text-backed IDs; evaluation/candidate IDs UUID strings; fixed deterministic text ID for seeded rule bundle. schemaVersion text; rowKind enum PROVIDER_SUMMARY | TEAM_RESULT. Exactly one Provider summary per evaluated Provider (including excluded/nonexistent explicit). Team rows only for actual evaluated Teams. Enforce rowKind/teamId XOR and both partial uniqueness constraints. Restrictive FKs for rule country and evaluationÃ¢â ârule; evaluation country agrees with selected rule. Provider/Team result IDs are historical logical references without live FKs (explicit nonexistent Providers must remain representable). Required createdAt; expiresAt = completedAt + 30 elapsed days. Purge: fixed cutoff per invocation, order (expiresAt, id), default batch 100, max 500, return deleted counts + moreRemaining. Initial bundle r1-v1 for Egypt EG effective 2026-09-09T00:00:00.000Z. Seed verifies all immutable fields including country/version/effective, not checksum alone. Refines DEC-067/069/076.
+
+## DEC-083 Ã¢â¬â Minimal Batch A and evidence requirements
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+T007 creates only substantive approved declarations in eligibility.public.ts Ã¢â¬â no empty layer folders, barrels, fake runtime stubs. Later tasks add concrete files when needed under compact module convention. T006 must pass before Batch A acceptance. Phase selection is exact allowlist of P11 suites plus explicitly named changed-seam suites. Batch A must pass selection/boundary tests, fixture compilation, typecheck and relevant lint with actual outcomes. Coverage scripts may exist before substantial coverage; do not claim coverage pass early. Refines Batch A / DEC-063 scaffolding.
+
+## DEC-084 Ã¢â¬â Final P11 contract and persistence clarifications
+
+**Date:** 2026-09-09
+**Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
+
+Refines DEC-079Ã¢â¬â082. Does not reopen phase scope. Full repair instructions:
 `specs/R1-P11-eligibility-engine-v1/preparation-rereview-report.md`.
 
 **Dependency contracts:** Name actual reused Catalog/Configuration methods
@@ -2750,10 +2750,10 @@ contain an Escort.
 **Outcomes/reasons:** Required typed `evaluationOutcomes` on
 `DiagnosticResult` / persisted semantic result (Catalog outcome even with zero
 Providers). Closed `EligibilityRuleId` union. Well-formed unknown/inactive/
-unavailable service â†’ Catalog business outcome (not hard error); malformed
+unavailable service Ã¢â â Catalog business outcome (not hard error); malformed
 service input and unknown/inactive textual ancestry remain global validation
-failures. Expected absence â†’ dependent `NOT_EVALUATED`; reader outage/invalid
-DTO â†’ whole-evaluation failure. Team-scoped `TEAM_STRUCTURALLY_INVALID`;
+failures. Expected absence Ã¢â â dependent `NOT_EVALUATED`; reader outage/invalid
+DTO Ã¢â â whole-evaluation failure. Team-scoped `TEAM_STRUCTURALLY_INVALID`;
 `NO_VALID_COMPLETE_TEAM` remains Provider summary. Public `EligibilityError` is
 an interface extending `Error` (declaration-only for T007).
 
@@ -2766,15 +2766,15 @@ succeed on one consistent snapshot; retry only recognised transaction failures.
 
 **Persistence/purge:** Rule versions unique `(id, countryId)`; evaluations
 composite FK `(ruleVersionId, countryId)`. Retention **720 elapsed hours**
-(`interval '720 hours'`). Purge `batchSize` integer 1â€“500 only (default 100);
+(`interval '720 hours'`). Purge `batchSize` integer 1Ã¢â¬â500 only (default 100);
 reject invalid. No caller-supplied `asOf` on production purge; composition clock.
 
-## DEC-085 â€” R1-P11 Complete
+## DEC-085 Ã¢â¬â R1-P11 Complete
 
 **Date:** 2026-09-09
 **Status:** Approved by Codex under delegated owner authority for R1-P11, DEC-062
 
-R1-P11 â€” Eligibility Engine V1 is Complete. Live evaluate, overflow, concurrent
+R1-P11 Ã¢â¬â Eligibility Engine V1 is Complete. Live evaluate, overflow, concurrent
 snapshot and Browse-facade proofs passed on disposable `cleanora_r1_p11_proof`.
 Phase coverage meets FR-032. Clean chronological install and populated R1-P10
 upgrade validators passed. Review verdict is PASS with no unresolved BLOCKER or
@@ -2787,14 +2787,14 @@ action and still excludes those operations.
 
 Canonical closure: `specs/R1-P11-eligibility-engine-v1/completion-report.md`.
 
-## DEC-086 â€” R1-P12 preparation acceptance (MVB Browse HTTP)
+## DEC-086 Ã¢â¬â R1-P12 preparation acceptance (MVB Browse HTTP)
 
 **Date:** 2026-09-10
 **Status:** Approved by Codex PM consultation (`gpt-5.6-sol` / `xhigh`) under
 `/work-on-next-phase` preparation acceptance (thread
 `01a0883e-4163-7483-8c53-2543cf0daee8`)
 
-R1-P12 is activated as the sole active phase. Implementation of tasks T001â€“T036
+R1-P12 is activated as the sole active phase. Implementation of tasks T001Ã¢â¬âT036
 is authorized for continuous Cursor delivery without mandatory batch gates.
 
 Locked MVB holdings include: new `bookings` module owning `/api/v1/browse/*`;
@@ -2821,7 +2821,7 @@ Codex consultation before READY_FOR_OWNER_REVIEW.
 Canonical record:
 `specs/R1-P12-browse-marketplace-provider-details/preparation-acceptance-pm02.md`.
 
-## DEC-087 â€” R1-P12 owner substitution for Codex final review
+## DEC-087 Ã¢â¬â R1-P12 owner substitution for Codex final review
 
 **Date:** 2026-09-10
 **Status:** Approved by human owner (option 2) after Codex final-review
@@ -2840,14 +2840,14 @@ Canonical record:
 `specs/R1-P12-browse-marketplace-provider-details/review-report.md`,
 `specs/R1-P12-browse-marketplace-provider-details/work-on-next-phase-progress.md`.
 
-## DEC-088 â€” Complete Git staging and `commit and push plus`
+## DEC-088 Ã¢â¬â Complete Git staging and `commit and push plus`
 
 **Date:** 2026-09-10
 **Status:** Approved by human owner (explicit skill update request)
 
 `commit and push` must stage the complete remaining working tree, including
 skills, docs, specs, Cursor/Codex/agent files, and leftover inherited files.
-Agents must not omit those paths as â€œunintendedâ€‌ or â€œunrelatedâ€‌. Secrets,
+Agents must not omit those paths as Ã¢â¬ÅunintendedÃ¢â¬â or Ã¢â¬ÅunrelatedÃ¢â¬â. Secrets,
 credentials, `.env` files other than `.env.example`, and gitignored junk stay
 excluded.
 
@@ -2859,7 +2859,7 @@ migration, force-push, or rewrite history.
 Canonical record: `docs/ai/workflows/commit-and-push.md`,
 `docs/ai/workflows/commit-and-push-plus.md`.
 
-## DEC-089 â€” Combined P11 follow-up + P12 review PASS
+## DEC-089 Ã¢â¬â Combined P11 follow-up + P12 review PASS
 
 **Date:** 2026-09-10
 **Status:** Recorded after owner instruction to repair unpublished P11 follow-ups
@@ -2878,14 +2878,14 @@ Canonical record:
 `specs/R1-P12-browse-marketplace-provider-details/review-report.md`,
 `specs/R1-P11-eligibility-engine-v1/follow-up-review-resolution.md`.
 
-## DEC-090 â€” R1-P12 Complete and R1-P13 activation
+## DEC-090 Ã¢â¬â R1-P12 Complete and R1-P13 activation
 
 **Date:** 2026-09-10
 **Status:** Approved by human owner (explicit `/work-on-next-phase` plus
 `/goal` to activate and complete R1-P13), using Codex on Windows user `hossa`
 
 The owner instructed the next-phase workflow to activate and complete
-R1-P13 â€” Booking Draft, Pricing Snapshot & Status Machine. R1-P12 had already
+R1-P13 Ã¢â¬â Booking Draft, Pricing Snapshot & Status Machine. R1-P12 had already
 reached READY_FOR_OWNER_REVIEW with combined review PASS (DEC-089). That
 advance is treated as completion of R1-P12 and activation of R1-P13 as the
 sole active phase.
@@ -2908,20 +2908,20 @@ Canonical record:
 `specs/R1-P12-browse-marketplace-provider-details/completion-report.md`,
 `specs/R1-P13-booking-draft-pricing-snapshot-status-machine/activation.md`.
 
-## DEC-091 â€” R1-P13 OQ-010 freeze and in-scope implementation acceptance
+## DEC-091 Ã¢â¬â R1-P13 OQ-010 freeze and in-scope implementation acceptance
 
 **Date:** 2026-09-10
 **Status:** Approved by Codex PM (`gpt-5.6-sol` / `xhigh` / `priority` on Windows
 user `hossa`) via `/codex-delegate` read-only relay
 
-Codex returned `VERDICT: ACCEPT_IMPLEMENTATION` for tasks T001â€“T038. OQ-010 is
+Codex returned `VERDICT: ACCEPT_IMPLEMENTATION` for tasks T001Ã¢â¬âT038. OQ-010 is
 frozen as written in the P13 spec Clarifications:
 
 - Statuses: `DRAFT | AWAITING_DEPOSIT | CONFIRMED | CANCELLED`
-- Executable customer transitions: `NONEâ†’DRAFT`, `DRAFTâ†’AWAITING_DEPOSIT`,
-  `DRAFT|AWAITING_DEPOSITâ†’CANCELLED`
+- Executable customer transitions: `NONEÃ¢â âDRAFT`, `DRAFTÃ¢â âAWAITING_DEPOSIT`,
+  `DRAFT|AWAITING_DEPOSITÃ¢â âCANCELLED`
 - Emergency is `emergencySignaled` (default false), not a status and not HTTP
-- Snapshots freeze exactly on `DRAFT â†’ AWAITING_DEPOSIT`
+- Snapshots freeze exactly on `DRAFT Ã¢â â AWAITING_DEPOSIT`
 - Configuration owns `commercial.deposit_percent` (Egypt 25); fail closed
 - Eligibility uses `evaluateEligibility` explicit mode; selected team must be eligible
 - Cancel records history and closed reasons with **no fees**
@@ -2934,10 +2934,10 @@ ledger, wallets, Staff override HTTP, Docker, or cloud.
 Evidence: Codex thread `01a08b89-20e3-79c3-ba81-8998b18f980b`,
 `C:\Users\hossa\AppData\Local\Temp\delegate-relay\Cleanora_R1-2026-09-10T13-36-53-560Z\result.json`.
 
-## DEC-092 â€” R1-P13 owner substitution for Codex re-review
+## DEC-092 Ã¢â¬â R1-P13 owner substitution for Codex re-review
 
 **Date:** 2026-09-10
-**Status:** Approved by human owner (explicit â€œcomplete without Codexâ€‌
+**Status:** Approved by human owner (explicit Ã¢â¬Åcomplete without CodexÃ¢â¬â
 because Codex hit the usage-time limit)
 
 The required R1-P13 Codex re-review after call-4 FAIL and Cursor repairs is
@@ -2953,7 +2953,7 @@ basis for readiness. Live clean/upgrade proofs stay **BLOCKED** on missing
 `CLEANORA_R1_P13_DATABASE_URL` (SC-010 / T035).
 
 **Later the same day:** live proofs ran against a new empty disposable Neon
-project naming `cleanora_r1_p13_proof`. Clean install, populated P11â†’P13
+project naming `cleanora_r1_p13_proof`. Clean install, populated P11Ã¢â âP13
 upgrade, and trigger rewrite proofs are recorded **PASS** in
 `specs/R1-P13-booking-draft-pricing-snapshot-status-machine/migration-evidence.md`.
 DEC-092's owner substitution is unchanged. This still does **not** invent a
@@ -2974,17 +2974,17 @@ Canonical record:
 `specs/R1-P13-booking-draft-pricing-snapshot-status-machine/review-report.md`,
 `specs/R1-P13-booking-draft-pricing-snapshot-status-machine/work-on-next-phase-progress.md`.
 
-## DEC-093 â€” R1-P13 Complete and R1-P14 activation
+## DEC-093 Ã¢â¬â R1-P13 Complete and R1-P14 activation
 
 **Date:** 2026-09-11
 **Status:** Approved by human owner (explicit `/work-on-next-phase` plus
 instruction to activate phase 14 and work on it)
 
 The owner instructed the next-phase workflow to activate and complete
-R1-P14 â€” Financial Ledger & Payment Architecture. R1-P13 had already reached
+R1-P14 Ã¢â¬â Financial Ledger & Payment Architecture. R1-P13 had already reached
 READY_FOR_OWNER_REVIEW with a fresh Codex re-review PASS. That advance is
 treated as completion of R1-P13 and activation of R1-P14 as the sole active
-phase, matching the DEC-090 P12â†’P13 precedent.
+phase, matching the DEC-090 P12Ã¢â âP13 precedent.
 
 - R1-P13 is Complete. Booking draft, server quote/deposit, snapshot freeze,
   status matrix, and cancel-without-fees remain as reviewed.
@@ -3004,10 +3004,10 @@ Canonical record:
 `specs/R1-P13-booking-draft-pricing-snapshot-status-machine/completion-report.md`,
 `specs/R1-P14-financial-ledger-payment-architecture/activation.md`.
 
-## DEC-094 — R1-P14 completion
+## DEC-094 â R1-P14 completion
 
 **Date:** 2026-09-12
-**Status:** Approved — explicit human-owner phase completion
+**Status:** Approved â explicit human-owner phase completion
 
 After receiving the READY_FOR_OWNER_REVIEW handoff (Codex T031 PASS), the
 owner stated: `mark P14 complete`.
@@ -3015,11 +3015,11 @@ owner stated: `mark P14 complete`.
 - R1-P14 is Complete. Append-only ledger, system accounts, balanced journals,
   adjustments, snapshots, derived balances, booking reconciliation, idempotency,
   and the wallet ban remain as reviewed. Zero payments/ledger HTTP shipped.
-- Tasks T001–T032 are checked. Codex final review T031 returned PASS with no
+- Tasks T001âT032 are checked. Codex final review T031 returned PASS with no
   unresolved BLOCKER or MAJOR.
 - Phase tests passed 8 files / 37 tests. Coverage passed at 89.23% statements,
   80.66% branches, 98.59% functions, and 88.84% lines.
-- Live clean install and populated P13→P14 upgrade proofs passed on disposable
+- Live clean install and populated P13âP14 upgrade proofs passed on disposable
   `cleanora_r1_p14_proof`. Typecheck, Prisma, OpenAPI, Postman, and docs gates
   passed as recorded in the handoff.
 - Companion `mark-complete` is skipped: `python3` on this Windows host is the
@@ -3036,17 +3036,17 @@ Canonical record:
 `specs/R1-P14-financial-ledger-payment-architecture/completion-report.md`,
 `specs/R1-P14-financial-ledger-payment-architecture/handoff-ready-for-owner-review.md`.
 
-## DEC-095 — R1-P15 completion
+## DEC-095 â R1-P15 completion
 
 **Date:** 2026-09-13
-**Status:** Approved — explicit human-owner phase completion
+**Status:** Approved â explicit human-owner phase completion
 
 After receiving the READY_FOR_OWNER_REVIEW handoff (Cursor interim PASS after
 remediated Codex final BLOCKED migration/typecheck findings), the owner
 stated: `mark complete`.
 
 - R1-P15 is Complete. Deposit methods, idempotent initiate, browser return
-  (status only), verified Paymob webhook → SUCCEEDED + DEPOSIT journal +
+  (status only), verified Paymob webhook â SUCCEEDED + DEPOSIT journal +
   receipt + Bookings `confirmDepositPayment`, staff method toggle, and
   refund-request foundation remain as reviewed. No stored-value wallets or
   invented InstaPay.
@@ -3055,7 +3055,7 @@ stated: `mark complete`.
   PASS with no unresolved BLOCKER or MAJOR (Codex budget exhausted).
 - Phase tests and coverage passed as recorded in the handoff
   (89.47% statements, 78.87% branches, 98.8% functions, 89.32% lines).
-- Live clean install and populated P14→P15 upgrade proofs passed on disposable
+- Live clean install and populated P14âP15 upgrade proofs passed on disposable
   `cleanora_r1_p15_proof`. Typecheck, OpenAPI, Postman, and docs gates passed
   as recorded in the handoff.
 - Companion `mark-complete` refused: no finished Companion implement context
@@ -3073,14 +3073,14 @@ Canonical record:
 `specs/R1-P15-deposit-payments-methods-webhooks/completion-report.md`,
 `specs/R1-P15-deposit-payments-methods-webhooks/handoff-ready-for-owner-review.md`.
 
-## DEC-096 — R1-P16 activation
+## DEC-096 â R1-P16 activation
 
 **Date:** 2026-09-13
 **Status:** Approved by human owner (explicit `/work-on-next-phase` plus
 `/goal` to finish phase 16 and achieve accepted coverage)
 
 The owner instructed the next-phase workflow to activate and complete
-R1-P16 — Provider Booking Response & Cancellation Events. R1-P15 is
+R1-P16 â Provider Booking Response & Cancellation Events. R1-P15 is
 Complete under DEC-095. That instruction activates R1-P16 as the sole
 active phase.
 
@@ -3103,10 +3103,10 @@ invention, stored-value wallets, Docker, or cloud.
 Canonical record:
 `specs/R1-P16-provider-booking-response-cancellation-events/activation.md`.
 
-## DEC-097 — R1-P16 completion
+## DEC-097 â R1-P16 completion
 
 **Date:** 2026-09-14
-**Status:** Approved — explicit human-owner phase completion
+**Status:** Approved â explicit human-owner phase completion
 
 After receiving the READY_FOR_OWNER_REVIEW handoff (Codex call 7 PASS after
 five MAJOR repairs from call 6), the owner stated: `mark complete`.
@@ -3115,13 +3115,13 @@ five MAJOR repairs from call 6), the owner stated: `mark complete`.
   accept/reject, lazy expiry, customer/provider/staff cancellation events,
   and notification intents remain as reviewed. No fees, wallets,
   refund_request, REFUND journals, delivery, expiry worker, or counteroffers.
-- Tasks T001–T033 are checked. Codex prep-accept returned
+- Tasks T001âT033 are checked. Codex prep-accept returned
   ACCEPT_WITH_EXCEPTIONS (KEEP EX-01/02/03). Codex final review call 6
   returned CHANGES REQUIRED; five MAJORs were repaired; call 7 re-review
   returned PASS with no unresolved BLOCKER or MAJOR.
 - Phase tests passed 9 files / 108 tests. Coverage passed at 98.16%
   statements, 85.61% branches, 96.29% functions, and 98.51% lines.
-- Live clean install and populated P15→P16 upgrade later **PASS** on
+- Live clean install and populated P15âP16 upgrade later **PASS** on
   disposable `cleanora_r1_p16_proof` (2026-09-14; see
   `specs/R1-P16-provider-booking-response-cancellation-events/migration-evidence.md`).
   Typecheck, OpenAPI, Postman, and docs gates passed as recorded in the
@@ -3141,14 +3141,14 @@ Canonical record:
 `specs/R1-P16-provider-booking-response-cancellation-events/completion-report.md`,
 `specs/R1-P16-provider-booking-response-cancellation-events/handoff-ready-for-owner-review.md`.
 
-## DEC-098 — R1-P17 activation
+## DEC-098 â R1-P17 activation
 
 **Date:** 2026-09-14
 **Status:** Approved by human owner (explicit `/work-on-next-phase` after
 R1-P16 Complete)
 
 The owner instructed the next-phase workflow after R1-P16 Complete under
-DEC-097 with no next phase active. That instruction activates R1-P17 —
+DEC-097 with no next phase active. That instruction activates R1-P17 â
 Worker & Team Assignment as the sole active phase.
 
 - R1-P16 remains Complete. Provider accept/reject, lazy expiry, and
@@ -3171,10 +3171,10 @@ invention, stored-value wallets, Docker, or cloud.
 Canonical record:
 `specs/R1-P17-worker-team-assignment/activation.md`.
 
-## DEC-099 — R1-P17 completion
+## DEC-099 â R1-P17 completion
 
 **Date:** 2026-09-14
-**Status:** Approved — explicit human-owner phase completion
+**Status:** Approved â explicit human-owner phase completion
 
 After receiving the READY_FOR_OWNER_REVIEW handoff (Codex call 4 PASS) and
 T025 live migration proofs PASS on disposable `cleanora_r1_p17_proof`, the
@@ -3186,13 +3186,13 @@ owner stated: `mark complete`.
   cancel-from-ASSIGNED, and notification intents remain as reviewed. No
   staff assignment write (EX-03), order execution, completion code, panic,
   fees, wallets, Docker, or cloud.
-- Phase tasks T001–T028 are checked. Codex prep-accept returned
+- Phase tasks T001âT028 are checked. Codex prep-accept returned
   ACCEPT_IMPLEMENTATION (KEEP EX-01/02/03). Codex final review call 4
   returned PASS with no unresolved BLOCKER or MAJOR.
 - Phase tests passed 7 files / 33 tests. Coverage passed at 88.52%
   statements, 79.1% branches, 82.3% functions, and 88.78% lines
   (thresholds 80/75/80/80).
-- Live clean install and populated P16→P17 upgrade **PASS** on disposable
+- Live clean install and populated P16âP17 upgrade **PASS** on disposable
   `cleanora_r1_p17_proof` (see
   `specs/R1-P17-worker-team-assignment/migration-evidence.md`).
   Typecheck, OpenAPI, Postman, and docs gates passed as recorded in the
@@ -3210,3 +3210,72 @@ or `commit and push plus`.
 Canonical record:
 `specs/R1-P17-worker-team-assignment/completion-report.md`,
 `specs/R1-P17-worker-team-assignment/handoff-ready-for-owner-review.md`.
+## DEC-100 â R1-P18 activation
+
+**Date:** 2026-09-14
+**Status:** Approved by human owner (explicit `/work-on-next-phase` after
+R1-P17 Complete)
+
+The owner instructed the next-phase workflow after R1-P17 Complete under
+DEC-099 with no next phase active. That instruction activates R1-P18 â
+Order Execution & Client Completion Code as the sole active phase.
+
+- R1-P17 remains Complete. Assignment, `ASSIGNED` status, history, and
+  worker visibility remain as reviewed.
+- R1-P18 becomes the sole active phase for Spec Kit preparation, Cursor
+  implementation, bounded Codex PM/review (`gpt-5.6-sol` / `xhigh` /
+  `service_tier=priority`), accepted coverage 80/75/80/80, and
+  READY_FOR_OWNER_REVIEW.
+- Scope is operational order creation from an ASSIGNED booking, controlled
+  order status transitions, six-digit completion code (hash/TTL/attempts),
+  SMS delivery intent, optional completion media/notes, and shared timeline.
+- Panic (P19), remaining/COD (P20), live socket/GPS, fee invention (OQ-001),
+  wallets, InstaPay invention, Docker, and cloud remain out of scope.
+
+This decision does **not** authorize R1-P18 Complete, commit, push, merge,
+deployment, production migration, force-push, history rewriting, fee
+invention, stored-value wallets, Docker, or cloud.
+
+Canonical record:
+`specs/R1-P18-order-execution-completion-code/activation.md`.
+
+## DEC-101 — R1-P18 completion
+
+**Date:** 2026-09-16
+**Status:** Approved — explicit human-owner phase completion
+
+After receiving the READY_FOR_OWNER_REVIEW handoff (Codex call 7 PASS) and
+recorded gates/migration evidence, the owner stated: `mark complete`.
+
+- R1-P18 is Complete. The `orders` module owns ensure-order from ASSIGNED
+  bookings, forward fulfillment transitions, hashed six-digit completion
+  codes (TTL/attempts), media/notes/timeline, and booking-cancel to order
+  CANCELLED. Notification intents only (EX-04). Staff remain read-only
+  (EX-03). No FAILED (EX-01) or PENDING_SCHEDULED (EX-02). BookingStatus is
+  unchanged for fulfillment. No panic, remaining/COD, GPS/sockets, fees,
+  wallets, Docker, or cloud.
+- Phase tasks T001–T025 are checked. Codex prep-accept returned
+  ACCEPT_IMPLEMENTATION (KEEP EX-01/02/03/04). Codex final review call 7
+  returned PASS with no unresolved BLOCKER or MAJOR. Cursor repaired the
+  ensure-before-authz BLOCKER and status-CAS MAJOR before that PASS.
+- Phase tests passed 10 files / 26 tests. Coverage passed at 88.15%
+  statements, 77.77% branches, 80.18% functions, and 88.03% lines
+  (thresholds 80/75/80/80).
+- Live clean install and populated P17→P18 upgrade **PASS** on disposable
+  Neon databases (see
+  `specs/R1-P18-order-execution-completion-code/migration-evidence.md`).
+  Typecheck, OpenAPI, Postman, and docs gates passed as recorded in the
+  handoff.
+- Companion `mark-complete` skipped: no usable `python3` on PATH.
+  Cleanora Complete is this decision plus the phase completion report.
+
+No next phase is activated by this decision. Completion does not authorize
+staging, commit, push, merge, deployment, production migration, history
+rewriting, unapproved cancellation fees (OQ-001), stored-value wallets,
+invented InstaPay, Docker, or cloud. Git publication still requires a
+separate human message whose entire content is exactly `commit and push`
+or `commit and push plus`.
+
+Canonical record:
+`specs/R1-P18-order-execution-completion-code/completion-report.md`,
+`specs/R1-P18-order-execution-completion-code/handoff-ready-for-owner-review.md`.

@@ -1,0 +1,10 @@
+VERDICT: PASS
+
+BLOCKER/MAJOR: none.
+
+EX-01: ok  
+EX-02: ok  
+EX-03: ok  
+EX-04: ok
+
+The inlined evidence satisfies the locked constraints: forbidden statuses are absent, staff access remains read-only through `isFieldActor`-restricted mutations, notification delivery is intent-only with `PENDING` status, authorization precedes order creation, state changes use CAS guards, completion codes are securely issued and verified, active-code uniqueness is enforced, and sensitive plaintext is excluded from read models. Cursor’s tests, coverage, schema, documentation, and live migration gates all pass.

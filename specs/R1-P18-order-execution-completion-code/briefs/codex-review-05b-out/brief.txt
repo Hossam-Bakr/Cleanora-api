@@ -1,0 +1,16 @@
+<task>
+Resume only. Do NOT explore further. Do NOT edit files.
+
+From whatever you already inspected in this thread for R1-P18 orders, emit the structured verdict NOW.
+
+If you did not inspect code, first line must be:
+VERDICT: BLOCKED
+reason: code not inspected
+
+Otherwise:
+VERDICT: PASS
+or
+VERDICT: CHANGES_REQUIRED
+
+Then list any BLOCKER/MAJOR with file:line, or "none".
+</task>

@@ -1,0 +1,466 @@
+{
+  "info": {
+    "_postman_id": "a1b0c018-4000-8000-8000-000000000018",
+    "name": "Cleanora R1-P18 Order Execution Completion Code",
+    "description": "Order transitions, completion codes, media/notes, timeline. Intents only. No fees, wallets, FAILED, or staff force-complete.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "hostUrl",
+      "value": "https://YOUR-HOSTED-DOMAIN.example"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "idempotencyKey",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    },
+    {
+      "key": "completionCode",
+      "value": "123456"
+    },
+    {
+      "key": "mediaFileId",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const body = pm.response.json();",
+          "pm.test('Uses the Cleanora response envelope', function () {",
+          "  pm.expect(body.requestId).to.be.a('string');",
+          "  pm.expect(body.success).to.be.a('boolean');",
+          "  if (pm.response.code < 400) { pm.expect(body.success).to.eql(true); pm.expect(body).to.have.property('data'); }",
+          "  else { pm.expect(body.success).to.eql(false); pm.expect(body.error.statusCode).to.eql(pm.response.code); pm.expect(body.error.code).to.be.a('string'); }",
+          "});",
+          "pm.test('Does not invent fees, wallets, or plaintext completion codes on GET envelopes', function () {",
+          "  const text = JSON.stringify(body);",
+          "  pm.expect(text).to.not.match(/feeAmount|feeMinor|walletBalance/i);",
+          "  if (pm.request.method === 'GET') { pm.expect(text).to.not.match(/\"completionCode\"\\s*:\\s*\"[0-9]{6}\"/); }",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Hosted (Not hosted yet)",
+      "item": [
+        {
+          "name": "Get order by booking",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{hostUrl}}/api/v1/orders/by-booking/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Get order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}"
+          }
+        },
+        {
+          "name": "Get timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}/timeline"
+          }
+        },
+        {
+          "name": "Transition on-the-way",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}/transitions/on-the-way"
+          }
+        },
+        {
+          "name": "Transition in-progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}/transitions/in-progress"
+          }
+        },
+        {
+          "name": "Transition ready-to-complete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}/transitions/ready-to-complete"
+          }
+        },
+        {
+          "name": "Complete with code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{completionCode}}\"\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}/complete"
+          }
+        },
+        {
+          "name": "Resend completion code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}/completion-code/resend"
+          }
+        },
+        {
+          "name": "Attach media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaFileId\": \"{{mediaFileId}}\",\n  \"kind\": \"COMPLETION\"\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}/media"
+          }
+        },
+        {
+          "name": "List media",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}/media"
+          }
+        },
+        {
+          "name": "Add note",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Job finished\"\n}"
+            },
+            "url": "{{hostUrl}}/api/v1/orders/{{orderId}}/notes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Local",
+      "item": [
+        {
+          "name": "Get order by booking",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/by-booking/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Get order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
+          }
+        },
+        {
+          "name": "Get timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/timeline"
+          }
+        },
+        {
+          "name": "Transition on-the-way",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/transitions/on-the-way"
+          }
+        },
+        {
+          "name": "Transition in-progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/transitions/in-progress"
+          }
+        },
+        {
+          "name": "Transition ready-to-complete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/transitions/ready-to-complete"
+          }
+        },
+        {
+          "name": "Complete with code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{completionCode}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/complete"
+          }
+        },
+        {
+          "name": "Resend completion code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/completion-code/resend"
+          }
+        },
+        {
+          "name": "Attach media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaFileId\": \"{{mediaFileId}}\",\n  \"kind\": \"COMPLETION\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/media"
+          }
+        },
+        {
+          "name": "List media",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/media"
+          }
+        },
+        {
+          "name": "Add note",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Job finished\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/notes"
+          }
+        }
+      ]
+    }
+  ]
+}
