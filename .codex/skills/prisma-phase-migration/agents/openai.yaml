@@ -1,4 +1,0 @@
-interface:
-  display_name: "Prisma Phase Migration"
-  short_description: "Guide incremental phase-owned migrations"
-  default_prompt: "Use $prisma-phase-migration to prepare the current phase database change."

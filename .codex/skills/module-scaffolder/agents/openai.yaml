@@ -1,4 +1,0 @@
-interface:
-  display_name: "Module Scaffolder"
-  short_description: "Scaffold one approved domain module"
-  default_prompt: "Use $module-scaffolder to scaffold the active-phase module."

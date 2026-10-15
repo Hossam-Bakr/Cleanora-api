@@ -1,4 +1,0 @@
-interface:
-  display_name: "Next Phase Prompt"
-  short_description: "Prepare the next approved phase prompt"
-  default_prompt: "Use $next-phase-prompt to prepare the next Cleanora phase handoff."
