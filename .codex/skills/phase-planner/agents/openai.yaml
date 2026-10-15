@@ -1,4 +1,0 @@
-interface:
-  display_name: "Phase Planner"
-  short_description: "Prepare focused phase specifications and plans"
-  default_prompt: "Use $phase-planner to prepare the current Cleanora phase."

@@ -37,3 +37,11 @@ railway.exampleRailway.env
 tmp/
 __pycache__/
 *.py[cod]
+
+.claude/
+.cursor/
+.codex/
+.agents/
+.specify/
+.mcp.json
+skills-lock.json

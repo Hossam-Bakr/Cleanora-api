@@ -1,4 +1,0 @@
-interface:
-  display_name: "Debug and Fix"
-  short_description: "Diagnose and repair focused defects"
-  default_prompt: "Use $debug-and-fix to diagnose and repair the current error."

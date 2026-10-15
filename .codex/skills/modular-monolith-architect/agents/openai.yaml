@@ -1,4 +1,0 @@
-interface:
-  display_name: "Modular Monolith Architect"
-  short_description: "Define safe modular-monolith boundaries"
-  default_prompt: "Use $modular-monolith-architect to define Cleanora module ownership and dependencies."

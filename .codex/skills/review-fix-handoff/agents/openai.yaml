@@ -1,4 +1,0 @@
-interface:
-  display_name: "Review Fix Handoff"
-  short_description: "Verify and resolve review findings"
-  default_prompt: "Use $review-fix-handoff to resolve the current review report."
